@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    console.log("LOGIN ERROR:", error);
     await recordLoginAttempt(email, ip, userAgent, false);
     const code = error.message.toLowerCase().includes("email not confirmed")
       ? "email_not_confirmed"
