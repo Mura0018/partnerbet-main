@@ -54,8 +54,7 @@ function LoginForm() {
         setLoading(false);
         return;
       }
-
-// Route handler set the session cookies server-side; refresh the
+     // Route handler set the session cookies server-side; refresh the
 // browser client so it picks them up, then redirect appropriately.
 const redirectTo = searchParams.get("redirect");
 
@@ -63,10 +62,17 @@ router.refresh();
 window.location.href = redirectTo || "/admin/dashboard";
 return;
 
-  const resendConfirmation = async () => {
-    const supabase = createClient();
-    await supabase.auth.resend({ type: "signup", email });
-    setResendSent(true);
+} catch {
+  setError(t("login.genericError"));
+  setLoading(false);
+}
+};
+
+const resendConfirmation = async () => {
+  const supabase = createClient();
+  await supabase.auth.resend({ type: "signup", email });
+  setResendSent(true);
+
   };
 
   return (
