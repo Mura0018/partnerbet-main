@@ -60,7 +60,7 @@ function LoginForm() {
       const redirectTo = searchParams.get("redirect");
       const supabase = createClient();
       const { data: isAdmin } = await supabase.rpc("is_admin_user");
-      router.push(redirectTo || (isAdmin ? "/admin/dashboard" : "/"));
+      router.push(redirectTo || "/admin/dashboard");
       router.refresh();
     } catch {
       setError(t("login.genericError"));
