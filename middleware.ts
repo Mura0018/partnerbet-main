@@ -29,9 +29,9 @@ function buildSupabaseClient(request: NextRequest, response: NextResponse) {
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get: (name) => request.cookies.get(name)?.value,
-      set: (name, value, options) => response.cookies.set({ name, value, ...options }),
-      remove: (name, options) => response.cookies.set({ name, value: "", ...options }),
+      get: (name: string) => request.cookies.get(name)?.value,
+      set: (name: string, value: string, options: any) => response.cookies.set({ name, value, ...options }),
+      remove: (name: string, options: any) => response.cookies.set({ name, value: "", ...options }),
     },
   });
 }
