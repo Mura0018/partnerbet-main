@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   PARTNERBET DESIGN SYSTEM — Phase 5
+   Original visual identity: deep navy + modern blue + a single
+   dedicated green reserved ONLY for conversion CTAs (Download App,
+   Claim Bonus, Open Partner). Gold is used only for ratings/featured
+   badges, never for buttons — keeps the CTA color meaningful.
+
+   Values are "R G B" (space-separated) so Tailwind's opacity modifiers
+   (bg-accent/10 etc.) keep working, and so an admin's custom Theme
+   Colors (Site Settings, Phase 3) can override them at runtime via a
+   small inline <style> tag in app/layout.tsx — no rebuild needed.
+   ========================================================= */
+:root {
+  --color-bg: 8 12 22;              /* #080C16 — near-black navy */
+  --color-bg-panel: 15 22 38;       /* #0F1626 — card/panel surface */
+  --color-bg-elevated: 21 31 51;    /* #151F33 — modal/elevated surface */
+  --color-accent: 61 127 255;       /* #3D7FFF — brand blue (links, highlights, UI actions) */
+  --color-accent-dim: 47 99 217;    /* #2F63D9 */
+  --color-cta: 23 201 100;          /* #17C964 — RESERVED for conversion CTAs only */
+  --color-cta-dim: 18 166 82;       /* #12A652 */
+  --color-vip: 255 182 39;          /* #FFB627 — ratings / featured badges only, never buttons */
+  --color-muted: 143 163 196;       /* #8FA3C4 */
+  --color-danger: 255 70 103;       /* #FF4667 */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: rgba(61, 127, 255, 0.3);
+}
+
+/* Glassmorphism surface — used sparingly (headers, floating cards, modals) */
+.glass {
+  background: rgba(15, 22, 38, 0.65);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Premium card: subtle border + hover lift, no jarring shadow */
+.card-premium {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, background 0.25s ease;
+}
+.card-premium:hover {
+  transform: translateY(-2px);
+  border-color: rgba(61, 127, 255, 0.25);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease both;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+/* Stagger helper: apply with inline style `animationDelay` for list reveals */
+.stagger-item {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
