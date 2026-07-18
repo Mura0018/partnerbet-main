@@ -49,7 +49,7 @@ async function handleAdminRoute(request: NextRequest) {
 
   const {
     data: { user },
-  } = await supabase.auth.getSession();
+  } = await supabase.auth.getUser();
   if (!user) return loginRedirect();
 
   const { data: isAdmin } = await supabase.rpc("is_admin_user");
@@ -95,9 +95,9 @@ async function handlePublicRoute(request: NextRequest) {
 
   // Admins/staff can still browse the live site during maintenance.
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (session) {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
     const { data: isAdmin } = await supabase.rpc("is_admin_user");
     if (isAdmin) return response;
   }
