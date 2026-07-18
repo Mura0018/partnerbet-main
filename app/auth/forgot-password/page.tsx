@@ -20,17 +20,20 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-      // Always show the same success state regardless of whether the email
-      // exists — prevents account enumeration.
-      setSent(true);
-    } catch {
-      setError(t("login.genericError"));
-    } finally {
-      setLoading(false);
-    }
+
+const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: `${window.location.origin}/auth/reset-password`,
+});
+
+if (error) {
+  console.log("RESET ERROR:", error);
+  throw error;
+}
+} catch {
+  setError(t("login.genericError"));
+} finally {
+  setLoading(false);
+}
   };
 
   return (
