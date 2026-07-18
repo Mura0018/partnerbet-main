@@ -48,9 +48,9 @@ async function handleAdminRoute(request: NextRequest) {
   if (!supabase) return loginRedirect();
 
   const {
-    data: { session },
+    data: { user },
   } = await supabase.auth.getSession();
-  if (!session) return loginRedirect();
+  if (!user) return loginRedirect();
 
   const { data: isAdmin } = await supabase.rpc("is_admin_user");
   if (!isAdmin) {
