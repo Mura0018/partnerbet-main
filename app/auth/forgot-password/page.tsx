@@ -26,9 +26,13 @@ const { error } = await supabase.auth.resetPasswordForEmail(email, {
 });
 
 if (error) {
-  console.log("RESET ERROR:", error);
+  console.error("RESET ERROR:", error);
+  alert(JSON.stringify(error));
   throw error;
 }
+
+setSent(true);
+
 } catch {
   setError(t("login.genericError"));
 } finally {
