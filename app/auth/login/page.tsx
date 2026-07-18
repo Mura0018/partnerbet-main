@@ -47,7 +47,7 @@ function LoginForm() {
           setError(t("login.emailNotConfirmed"));
           setShowResend(true);
         } else if (json.error === "invalid_credentials") {
-          setError(t("login.invalidCredentials"));
+        setError(t("login.invalidCredentials"));
         } else {
           setError(t("login.genericError"));
         }
@@ -55,18 +55,13 @@ function LoginForm() {
         return;
       }
 
-      // Route handler set the session cookies server-side; refresh the
-      // browser client so it picks them up, then redirect appropriately.
-      const redirectTo = searchParams.get("redirect");
-      const supabase = createClient();
-      const { data: isAdmin } = await supabase.rpc("is_admin_user");
-      router.push(redirectTo || "/admin/dashboard");
-      router.refresh();
-    } catch {
-      setError(t("login.genericError"));
-      setLoading(false);
-    }
-  };
+// Route handler set the session cookies server-side; refresh the
+// browser client so it picks them up, then redirect appropriately.
+const redirectTo = searchParams.get("redirect");
+
+router.refresh();
+window.location.href = redirectTo || "/admin/dashboard";
+return;
 
   const resendConfirmation = async () => {
     const supabase = createClient();
