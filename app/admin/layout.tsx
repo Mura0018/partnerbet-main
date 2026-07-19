@@ -66,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center">
             <Zap size={14} className="text-white" fill="white" />
           </div>
-          <span className="font-bold text-[14px]">PARTNERBET <span className="text-muted font-normal">Admin</span></span>
+          <span className="font-bold text-[14px]">WINORA <span className="text-muted font-normal">Admin</span></span>
         </div>
         <button onClick={() => setMobileOpen(false)} className="md:hidden p-1.5 rounded-lg hover:bg-white/10" aria-label="Menyuni yopish">
           <X size={18} />
@@ -131,7 +131,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center">
             <Zap size={12} className="text-white" fill="white" />
           </div>
-          <span className="font-bold text-[13px]">PARTNERBET Admin</span>
+          <span className="font-bold text-[13px]">WINORA Admin</span>
         </div>
         <div className="w-9" />
       </div>

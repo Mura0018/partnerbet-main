@@ -20,7 +20,7 @@ export class StripeProvider implements PaymentGatewayProvider {
       const body = new URLSearchParams({
         mode: "payment",
         "line_items[0][price_data][currency]": params.currency.toLowerCase(),
-        "line_items[0][price_data][product_data][name]": "Donation to PartnerBet",
+        "line_items[0][price_data][product_data][name]": "Donation to WINORA",
         "line_items[0][price_data][unit_amount]": String(Math.round(params.amount * 100)),
         "line_items[0][quantity]": "1",
         success_url: params.successUrl,

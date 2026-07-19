@@ -40,7 +40,7 @@ async function checkSingleUrl(url: string): Promise<LinkHealthResult> {
         method: "HEAD",
         redirect: "manual",
         signal: controller.signal,
-        headers: { "User-Agent": "PartnerBet-LinkHealthCheck/1.0" },
+        headers: { "User-Agent": "WINORA-LinkHealthCheck/1.0" },
       });
       clearTimeout(timeout);
 

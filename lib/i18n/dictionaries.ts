@@ -94,7 +94,7 @@ export const dictionaries = {
       user: "Foydalanuvchi",
     },
     donations: {
-      title: "PartnerBetni qo'llab-quvvatlang",
+      title: "WINORAni qo'llab-quvvatlang",
       subtitle: "Sizning hissangiz saytni rivojlantirishga yordam beradi",
       chooseAmount: "Miqdorni tanlang",
       customAmount: "Boshqa miqdor",
@@ -200,7 +200,7 @@ export const dictionaries = {
       user: "Пользователь",
     },
     donations: {
-      title: "Поддержите PartnerBet",
+      title: "Поддержите WINORA",
       subtitle: "Ваш вклад поможет развитию платформы",
       chooseAmount: "Выберите сумму",
       customAmount: "Другая сумма",
@@ -306,7 +306,7 @@ export const dictionaries = {
       user: "User",
     },
     donations: {
-      title: "Support PartnerBet",
+      title: "Support WINORA",
       subtitle: "Your contribution helps the platform grow",
       chooseAmount: "Choose an amount",
       customAmount: "Custom amount",

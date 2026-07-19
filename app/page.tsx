@@ -274,7 +274,7 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-6 text-[11px] text-muted leading-relaxed max-w-md">
-            18+ only. Gambling can be addictive — play responsibly. PartnerBet is an independent
+            18+ only. Gambling can be addictive — play responsibly. WINORA is an independent
             football analytics platform and licensed affiliate partner; it does not accept wagers
             directly. See full affiliate disclosure in the footer.
           </p>
@@ -413,7 +413,7 @@ export default function Home() {
         <div className="rounded-2xl border border-accent/20 bg-gradient-to-br from-panel to-bg p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1">
             <Badge tone="gold"><Flame size={11} /> Latest version</Badge>
-            <h2 className="text-[26px] md:text-[32px] font-bold mt-4">Get the PartnerBet app</h2>
+            <h2 className="text-[26px] md:text-[32px] font-bold mt-4">Get the WINORA app</h2>
             <p className="text-[14px] text-muted mt-2 max-w-md leading-relaxed">
               Live scores, push alerts and match insights in your pocket.
             </p>
@@ -509,7 +509,7 @@ export default function Home() {
             </div>
             <p className="text-muted leading-relaxed text-[12px]">
               18+ only. Gambling can be addictive — please play responsibly.{" "}
-              {siteSettings.identity.site_name || "PartnerBet"} is a
+              {siteSettings.identity.site_name || "WINORA"} is a
               licensed affiliate marketing platform and does not itself accept wagers or hold
               client funds. Promo codes are issued by third-party licensed operators.
             </p>

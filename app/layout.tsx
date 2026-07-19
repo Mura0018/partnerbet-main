@@ -5,7 +5,7 @@ import { createPublicServerClient } from "@/lib/supabasePublic";
 import { buildThemeCssVars } from "@/lib/theme";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://couponbet.org";
-const DEFAULT_SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "PartnerBet";
+const DEFAULT_SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "WINORA";
 const DEFAULT_DESCRIPTION = "Daily football analytics, live scores, match insights and APK access.";
 
 async function loadSiteSettings() {

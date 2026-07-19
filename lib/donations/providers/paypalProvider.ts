@@ -46,7 +46,7 @@ export class PayPalProvider implements PaymentGatewayProvider {
             {
               custom_id: params.donationId,
               amount: { currency_code: params.currency, value: params.amount.toFixed(2) },
-              description: "Donation to PartnerBet",
+              description: "Donation to WINORA",
             },
           ],
           application_context: {

@@ -13,7 +13,7 @@ export default function GlobalError({
   useEffect(() => {
     // Log to console for now; Phase 10 (Security) wires this to a real
     // server-side audit/error log.
-    console.error("PartnerBet runtime error:", error);
+    console.error("WINORA runtime error:", error);
   }, [error]);
 
   return (

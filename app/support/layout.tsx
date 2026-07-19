@@ -5,8 +5,8 @@ import type { Metadata } from "next";
 // Router — this Server Component layout provides it for the whole
 // /support segment instead.
 export const metadata: Metadata = {
-  title: "Support PartnerBet",
-  description: "Support PartnerBet through secure, official donation methods — one-time donations via card, PayPal, or crypto.",
+  title: "Support WINORA",
+  description: "Support WINORA through secure, official donation methods — one-time donations via card, PayPal, or crypto.",
 };
 
 export default function SupportLayout({ children }: { children: React.ReactNode }) {

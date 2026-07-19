@@ -1,7 +1,7 @@
 function required(name: string, value: string | undefined): string {
   if (!value || value.trim() === "") {
     throw new Error(
-      `[PartnerBet] "${name}" environment o'zgaruvchisi topilmadi. ` +
+      `[WINORA] "${name}" environment o'zgaruvchisi topilmadi. ` +
         `".env.local" faylini yarating (".env.example" dan nusxa oling) va ` +
         `barcha qiymatlarni to'ldiring. Vercel'da bu Settings > Environment Variables bo'limida.`
     );
@@ -23,6 +23,6 @@ export const env = {
     return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   },
   get siteName() {
-    return process.env.NEXT_PUBLIC_SITE_NAME || "PartnerBet";
+    return process.env.NEXT_PUBLIC_SITE_NAME || "WINORA";
   },
 } as const;

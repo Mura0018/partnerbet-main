@@ -4,7 +4,7 @@ import type { LegalPageContent } from "@/lib/legal/about";
 export const privacyContent: Record<Locale, LegalPageContent> = {
   uz: {
     title: "Maxfiylik siyosati",
-    intro: "Ushbu siyosat PartnerBet (couponbet.org) qanday ma'lumot to'plashi, ishlatishi va himoya qilishini tushuntiradi.",
+    intro: "Ushbu siyosat WINORA (couponbet.org) qanday ma'lumot to'plashi, ishlatishi va himoya qilishini tushuntiradi.",
     sections: [
       { heading: "1. Qaysi ma'lumotlarni to'playmiz", body: "Hisob yaratganda: ism, email manzili. Saytdan foydalanganda: qurilma turi, brauzer, taxminiy mamlakat (IP orqali), tashrif sanasi va ko'rilgan sahifalar. To'lov ma'lumotlarini biz umuman to'plamaymiz — bunday ma'lumotlar faqat hamkor kompaniyalarning o'z saytida qayta ishlanadi." },
       { heading: "2. Ma'lumotlardan qanday foydalanamiz", body: "To'plangan ma'lumotlar saytni ishga tushirish va yaxshilash, statistik tahlil, xavfsizlik (masalan, hisobga kirishga urinishlarni kuzatish) va — agar siz ruxsat bergan bo'lsangiz — push-bildirishnoma yuborish uchun ishlatiladi." },
@@ -17,7 +17,7 @@ export const privacyContent: Record<Locale, LegalPageContent> = {
   },
   ru: {
     title: "Политика конфиденциальности",
-    intro: "Эта политика объясняет, какие данные собирает, использует и защищает PartnerBet (couponbet.org).",
+    intro: "Эта политика объясняет, какие данные собирает, использует и защищает WINORA (couponbet.org).",
     sections: [
       { heading: "1. Какие данные мы собираем", body: "При создании аккаунта: имя, email. При использовании сайта: тип устройства, браузер, приблизительная страна (по IP), дата посещения и просмотренные страницы. Платёжные данные мы вообще не собираем — они обрабатываются только на стороне компаний-партнёров." },
       { heading: "2. Как мы используем данные", body: "Собранные данные используются для работы и улучшения сайта, статистического анализа, безопасности (например, отслеживание попыток входа) и — при вашем согласии — отправки push-уведомлений." },
@@ -30,7 +30,7 @@ export const privacyContent: Record<Locale, LegalPageContent> = {
   },
   en: {
     title: "Privacy Policy",
-    intro: "This policy explains what data PartnerBet (couponbet.org) collects, uses, and protects.",
+    intro: "This policy explains what data WINORA (couponbet.org) collects, uses, and protects.",
     sections: [
       { heading: "1. What data we collect", body: "When you create an account: name, email address. When using the site: device type, browser, approximate country (via IP), visit date, and pages viewed. We never collect payment data ourselves — that is processed solely on the partner company's own site." },
       { heading: "2. How we use data", body: "Collected data is used to operate and improve the site, for statistical analysis, security (e.g. tracking login attempts), and — if you've opted in — to send push notifications." },

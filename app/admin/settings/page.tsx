@@ -143,7 +143,7 @@ function GeneralTab({ settings, updateLocal, saveKey }: TabProps) {
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
       <Field label="Sayt nomi">
-        <input className={inputCls} value={identity.site_name ?? ""} onChange={(e) => updateLocal("site_identity", { site_name: e.target.value })} placeholder="PartnerBet" />
+        <input className={inputCls} value={identity.site_name ?? ""} onChange={(e) => updateLocal("site_identity", { site_name: e.target.value })} placeholder="WINORA" />
       </Field>
       <Field label="Slogan">
         <input className={inputCls} value={identity.tagline ?? ""} onChange={(e) => updateLocal("site_identity", { tagline: e.target.value })} />

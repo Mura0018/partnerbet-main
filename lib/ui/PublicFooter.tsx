@@ -58,7 +58,7 @@ export function PublicFooter() {
             <Link href="/legal/dmca" className="hover:text-white transition-colors">DMCA</Link>
           </div>
           <p className="text-muted leading-relaxed text-[12px]">
-            18+ only. Gambling can be addictive — please play responsibly. {siteName || "PartnerBet"} is a
+            18+ only. Gambling can be addictive — please play responsibly. {siteName || "WINORA"} is a
             licensed affiliate marketing platform and does not itself accept wagers or hold
             client funds. Promo codes are issued by third-party licensed operators.
           </p>
