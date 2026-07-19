@@ -69,7 +69,7 @@ export function BannerSlot({ placement, size, className = "" }: { placement: str
       rel="noopener noreferrer nofollow sponsored"
       className={`block rounded-2xl overflow-hidden border border-white/10 shadow-2xl ${className}`}
     >
-      <img src={banner.image_url} alt="" className="w-full h-full object-cover" />
+      <img src={banner.image_url} alt="" className="w-full h-full object-contain" />
     </a>
   );
 }

@@ -250,6 +250,10 @@ export default function Home() {
         </div>
       </header>
 
+      <div className="max-w-7xl mx-auto px-5 md:px-8 mt-4">
+        <BannerSlot placement="header" size="desktop" className="w-full aspect-[970/90] max-h-[100px] mx-auto" />
+      </div>
+
       <section className="relative max-w-7xl mx-auto px-5 md:px-8 pt-16 pb-20 md:pt-24 md:pb-28 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <Badge tone="live"><Radio size={11} className="animate-pulse" /> {liveScores.length} matches live now</Badge>
