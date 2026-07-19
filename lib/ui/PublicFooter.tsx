@@ -33,7 +33,6 @@ export function PublicFooter() {
             <Link href="/partners" className="hover:text-white transition-colors">Partners</Link>
             <Link href="/apk" className="hover:text-white transition-colors">Download App</Link>
               <Link href="/support" className="hover:text-white transition-colors">Support Us</Link>
-            <Link href="/support" className="hover:text-white transition-colors">Support Us</Link>
           </div>
         </div>
         <div>

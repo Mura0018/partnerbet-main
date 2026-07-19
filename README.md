@@ -3,7 +3,7 @@
 Bu yo'riqnoma **kod yozishni talab qilmaydi** — faqat tugmalar bosiladi va
 kalitlar joylashtiriladi. Har bir qadamni tartibi bilan bajaring.
 
-----
+---
 
 ## 1-QADAM — Supabase (ma'lumotlar bazasi) yaratish
 

@@ -5,17 +5,10 @@ import Link from "next/link";
 import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
-import {
-  AuthShell,
-  FieldError,
-  FieldSuccess,
-  inputClass,
-  submitButtonClass,
-} from "@/lib/auth/AuthShell";
+import { AuthShell, FieldError, FieldSuccess, inputClass, submitButtonClass } from "@/lib/auth/AuthShell";
 
 export default function ForgotPasswordPage() {
   const { t } = useLocale();
-
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,42 +16,18 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (loading) return;
-
     setError("");
     setLoading(true);
-
     try {
       const supabase = createClient();
-
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://couponbet.org/auth/reset-password",
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       });
-
-      if (error) {
-        console.error("RESET ERROR:", error);
-
-        if (error.status === 429) {
-          setError(
-            "Juda ko'p urinish bo'ldi. Iltimos, 15 daqiqadan keyin qayta urinib ko'ring."
-          );
-        } else {
-          setError(
-            "Parolni tiklash havolasini yuborib bo'lmadi. Iltimos, keyinroq qayta urinib ko'ring."
-          );
-        }
-
-        return;
-      }
-
+      // Always show the same success state regardless of whether the email
+      // exists — prevents account enumeration.
       setSent(true);
-    } catch (err) {
-      console.error("CATCH ERROR:", err);
-
-      setError(
-        "Kutilmagan xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring."
-      );
+    } catch {
+      setError(t("login.genericError"));
     } finally {
       setLoading(false);
     }
@@ -69,10 +38,7 @@ export default function ForgotPasswordPage() {
       title={t("forgotPassword.title")}
       subtitle={!sent ? t("forgotPassword.subtitle") : undefined}
       footer={
-        <Link
-          href="/auth/login"
-          className="text-accent font-medium hover:underline"
-        >
+        <Link href="/auth/login" className="text-accent font-medium hover:underline">
           {t("forgotPassword.backToLogin")}
         </Link>
       }
@@ -81,16 +47,9 @@ export default function ForgotPasswordPage() {
         <FieldSuccess>{t("forgotPassword.success")}</FieldSuccess>
       ) : (
         <form onSubmit={handleSubmit}>
-          <label className="block text-[12px] text-muted mb-1.5">
-            {t("common.email")}
-          </label>
-
+          <label className="block text-[12px] text-muted mb-1.5">{t("common.email")}</label>
           <div className="relative">
-            <Mail
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]"
-            />
-
+            <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
             <input
               type="email"
               required
@@ -100,17 +59,9 @@ export default function ForgotPasswordPage() {
               placeholder="you@example.com"
             />
           </div>
-
           <FieldError>{error}</FieldError>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={submitButtonClass}
-          >
-            {loading
-              ? t("forgotPassword.submitting")
-              : t("forgotPassword.submit")}
+          <button type="submit" disabled={loading} className={submitButtonClass}>
+            {loading ? t("forgotPassword.submitting") : t("forgotPassword.submit")}
           </button>
         </form>
       )}

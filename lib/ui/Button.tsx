@@ -32,11 +32,11 @@ type ButtonAsButton = CommonProps & React.ButtonHTMLAttributes<HTMLButtonElement
 type ButtonAsLink = CommonProps & { href: string; target?: string; rel?: string };
 
 export function Button(props: ButtonAsButton | ButtonAsLink) {
-  const { variant = "primary", size = "md", children, className = "", icon, ...rest } = props;
+  const { variant = "primary", size = "md", children, className = "", icon, ...rest } = props as any;
   const cls = `inline-flex items-center justify-center font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`;
 
   if ("href" in props && props.href) {
-   const { href, target, rel } = props as ButtonAsLink;
+    const { href, target, rel } = props as ButtonAsLink;
     return (
       <Link href={href} target={target} rel={rel} className={cls}>
         {icon}

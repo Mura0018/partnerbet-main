@@ -1,1 +1,8 @@
-{}
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-affiliate-links",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}

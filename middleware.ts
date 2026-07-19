@@ -29,9 +29,9 @@ function buildSupabaseClient(request: NextRequest, response: NextResponse) {
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get: (name: string) => request.cookies.get(name)?.value,
-      set: (name: string, value: string, options: any) => response.cookies.set({ name, value, ...options }),
-      remove: (name: string, options: any) => response.cookies.set({ name, value: "", ...options }),
+      get: (name) => request.cookies.get(name)?.value,
+      set: (name, value, options) => response.cookies.set({ name, value, ...options }),
+      remove: (name, options) => response.cookies.set({ name, value: "", ...options }),
     },
   });
 }
@@ -48,9 +48,9 @@ async function handleAdminRoute(request: NextRequest) {
   if (!supabase) return loginRedirect();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return loginRedirect();
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return loginRedirect();
 
   const { data: isAdmin } = await supabase.rpc("is_admin_user");
   if (!isAdmin) {
@@ -95,9 +95,9 @@ async function handlePublicRoute(request: NextRequest) {
 
   // Admins/staff can still browse the live site during maintenance.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (session) {
     const { data: isAdmin } = await supabase.rpc("is_admin_user");
     if (isAdmin) return response;
   }

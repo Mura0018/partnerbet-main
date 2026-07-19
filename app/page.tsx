@@ -312,7 +312,11 @@ export default function Home() {
               const activeCodes = (partner.promo_codes ?? []).filter((c: any) => c.is_active !== false);
               const topCode = activeCodes.find((c: any) => c.is_featured) ?? activeCodes[0];
               return (
-                <div key={partner.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 flex items-center gap-4">
+                <a
+                  href={`/partners/${partner.slug}`}
+                  key={partner.id}
+                  className="rounded-xl border border-white/8 bg-white/[0.02] p-5 flex items-center gap-4 hover:border-accent/30 transition"
+                >
                   {partner.logo_url ? (
                     <img src={partner.logo_url} alt={partner.name} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
                   ) : (
@@ -327,17 +331,17 @@ export default function Home() {
                   </div>
                   {topCode ? (
                     <button
-                      onClick={() => copyPromoCode(topCode.id, topCode.code)}
+                      onClick={(e) => { e.preventDefault(); copyPromoCode(topCode.id, topCode.code); }}
                       className="shrink-0 px-3 py-2 rounded-lg border border-accent/30 bg-accent/10 text-accent font-mono text-[12px] font-semibold hover:bg-accent/20 transition"
                     >
                       {copiedCode === topCode.id ? "Nusxalandi ✓" : topCode.code}
                     </button>
                   ) : (
-                    <a href={`/go/${partner.slug}`} target="_blank" rel="noopener noreferrer sponsored" className="shrink-0 px-3.5 py-2.5 rounded-lg bg-gradient-to-r from-cta to-cta-dim text-white font-semibold text-[12px] hover:brightness-110 transition">
-                      Open Partner
-                    </a>
+                    <span className="shrink-0 px-3.5 py-2.5 rounded-lg bg-gradient-to-r from-cta to-cta-dim text-white font-semibold text-[12px]">
+                      Batafsil
+                    </span>
                   )}
-                </div>
+                </a>
               );
             })}
           </div>
@@ -478,7 +482,6 @@ export default function Home() {
               <Link href="/blog" className="hover:text-white transition-colors">News</Link>
               <Link href="/partners" className="hover:text-white transition-colors">Partners</Link>
               <Link href="/apk" className="hover:text-white transition-colors">Download App</Link>
-              <Link href="/support" className="hover:text-white transition-colors">Support Us</Link>
               <Link href="/support" className="hover:text-white transition-colors">Support Us</Link>
             </div>
           </div>
