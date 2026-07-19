@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
     try {
       const supabase = createClient();
 
-const { error } = await supabase.auth.resetPasswordForEmail(email, {
+ const { error } = await supabase.auth.resetPasswordForEmail(email, {
  redirectTo: "https://couponbet.org/auth/reset-password",
 });
 
@@ -30,10 +30,11 @@ if (error) {
   alert(JSON.stringify(error));
   throw error;
 }
-
 setSent(true);
 
-} catch {
+} catch (err) {
+  console.error("CATCH ERROR:", err);
+  alert(String(err));
   setError(t("login.genericError"));
 } finally {
   setLoading(false);
