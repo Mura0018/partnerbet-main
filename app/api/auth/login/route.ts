@@ -37,6 +37,8 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createServerSupabaseClient({ persistSession: rememberMe });
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+ 
+  console.log("LOGIN USER:", data.user);
 
   if (error) {
     console.log("LOGIN ERROR:", error);
