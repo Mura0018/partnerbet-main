@@ -1,8 +1,10 @@
+cat > vercel.json << 'EOF'
 {
   "crons": [
     {
       "path": "/api/cron/check-affiliate-links",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
+
