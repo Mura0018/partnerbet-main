@@ -54,6 +54,19 @@ export default function BannersManager() {
   };
   useEffect(() => { load(); }, []);
 
+  const totalViews = banners.reduce((s, b) => s + (b.views || 0), 0);
+  const totalClicks = banners.reduce((s, b) => s + (b.clicks || 0), 0);
+  const overallCtr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
+  const now = new Date();
+  const isExpired = (b: Banner) => !!b.ends_at && new Date(b.ends_at) <= now;
+  const isScheduled = (b: Banner) => !!b.starts_at && new Date(b.starts_at) > now;
+  const activeCount = banners.filter((b) => b.is_active && !isExpired(b) && !isScheduled(b)).length;
+  const expiredCount = banners.filter(isExpired).length;
+  const scheduledCount = banners.filter(isScheduled).length;
+  const ranked = banners.filter((b) => b.views >= 20).map((b) => ({ ...b, ctr: (b.clicks / b.views) * 100 })).sort((a, c) => c.ctr - a.ctr);
+  const topBanner = ranked[0];
+  const worstBanner = ranked.length > 1 ? ranked[ranked.length - 1] : undefined;
+
   const toggleLanguage = (lang: string) => {
     setForm((prev) => ({ ...prev, languages: prev.languages.includes(lang) ? prev.languages.filter((l) => l !== lang) : [...prev.languages, lang] }));
   };
@@ -113,6 +126,56 @@ export default function BannersManager() {
     <div className="p-8">
       <h1 className="text-[22px] font-bold mb-1">Banner Manager</h1>
       <p className="text-[13px] text-muted mb-6">Har qanday o'lchamdagi bannerlar — yuklash, maqsadlash, rejalashtirish.</p>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="text-[20px] font-bold">{totalViews.toLocaleString()}</div>
+          <div className="text-[11px] text-muted mt-1">Jami ko'rishlar</div>
+        </div>
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="text-[20px] font-bold">{totalClicks.toLocaleString()}</div>
+          <div className="text-[11px] text-muted mt-1">Jami kliklar</div>
+        </div>
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="text-[20px] font-bold">{overallCtr.toFixed(2)}%</div>
+          <div className="text-[11px] text-muted mt-1">Umumiy CTR</div>
+        </div>
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="text-[20px] font-bold">{banners.length}</div>
+          <div className="text-[11px] text-muted mt-1">Jami bannerlar</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="text-[11px] text-muted mb-2">Holat</div>
+          <div className="flex items-center justify-between text-[12px] mb-1"><span>Faol</span><span className="text-[#17C964] font-semibold">{activeCount}</span></div>
+          <div className="flex items-center justify-between text-[12px] mb-1"><span>Rejalashtirilgan</span><span className="text-accent font-semibold">{scheduledCount}</span></div>
+          <div className="flex items-center justify-between text-[12px]"><span>Muddati tugagan</span><span className="text-[#FF6B85] font-semibold">{expiredCount}</span></div>
+        </div>
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="text-[11px] text-muted mb-2">Eng yaxshi ishlagan (20+ ko'rish)</div>
+          {topBanner ? (
+            <>
+              <div className="text-[13px] font-semibold">{partnerName(topBanner.partner_id) ?? topBanner.placement}</div>
+              <div className="text-[11px] text-[#5b6f85] mt-1">{topBanner.ctr.toFixed(2)}% CTR · {topBanner.views} ko'rish · {topBanner.clicks} klik</div>
+            </>
+          ) : (
+            <p className="text-[11px] text-[#5b6f85]">Hali yetarli ma'lumot yo'q.</p>
+          )}
+        </div>
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="text-[11px] text-muted mb-2">Eng past ishlagan (20+ ko'rish)</div>
+          {worstBanner ? (
+            <>
+              <div className="text-[13px] font-semibold">{partnerName(worstBanner.partner_id) ?? worstBanner.placement}</div>
+              <div className="text-[11px] text-[#5b6f85] mt-1">{worstBanner.ctr.toFixed(2)}% CTR · {worstBanner.views} ko'rish · {worstBanner.clicks} klik</div>
+            </>
+          ) : (
+            <p className="text-[11px] text-[#5b6f85]">Hali yetarli ma'lumot yo'q.</p>
+          )}
+        </div>
+      </div>
 
       <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
