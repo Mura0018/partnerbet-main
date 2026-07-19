@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { LocaleSwitcher } from "@/lib/i18n/LocaleSwitcher";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
+import { useSiteSettings } from "@/lib/site/useSiteSettings";
 
 const NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: null },
@@ -47,6 +48,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { t } = useLocale();
   const { profile } = useCurrentProfile();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const settings = useSiteSettings();
+  const siteName: string = settings.site_identity?.site_name?.trim() || "WINORA";
+  const logoUrl: string | null = settings.branding?.logo_media_id_url ?? null;
 
   useEffect(() => {
     setMobileOpen(false);
@@ -63,10 +67,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <div className="h-16 flex items-center justify-between gap-2 px-5 border-b border-white/8 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center">
-            <Zap size={14} className="text-white" fill="white" />
-          </div>
-          <span className="font-bold text-[14px]">WINORA <span className="text-muted font-normal">Admin</span></span>
+          {logoUrl ? (
+            <img src={logoUrl} alt={siteName} className="w-7 h-7 rounded-lg object-cover" />
+          ) : (
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center">
+              <Zap size={14} className="text-white" fill="white" />
+            </div>
+          )}
+          <span className="font-bold text-[14px]">{siteName} <span className="text-muted font-normal">Admin</span></span>
         </div>
         <button onClick={() => setMobileOpen(false)} className="md:hidden p-1.5 rounded-lg hover:bg-white/10" aria-label="Menyuni yopish">
           <X size={18} />
@@ -128,10 +136,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Menu size={20} />
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center">
-            <Zap size={12} className="text-white" fill="white" />
-          </div>
-          <span className="font-bold text-[13px]">WINORA Admin</span>
+          {logoUrl ? (
+            <img src={logoUrl} alt={siteName} className="w-6 h-6 rounded-md object-cover" />
+          ) : (
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center">
+              <Zap size={12} className="text-white" fill="white" />
+            </div>
+          )}
+          <span className="font-bold text-[13px]">{siteName} Admin</span>
         </div>
         <div className="w-9" />
       </div>
