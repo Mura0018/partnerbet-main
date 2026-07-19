@@ -73,51 +73,107 @@ function ProvidersTab() {
   };
   useEffect(() => { load(); }, []);
 
-  const openNew = () => { setForm({ name: "", key: "", base_api_url: "", priority: 0 }); setEditingId(null); setShowForm(true); setError(""); };
-  const openEdit = (p: Provider) => { setForm({ name: p.name, key: p.key, base_api_url: p.base_api_url, priority: p.priority }); setEditingId(p.id); setShowForm(true); setError(""); };
+   const openNew = () => {
+  setForm({ name: "", key: "", base_api_url: "", priority: 0 });
+  setEditingId(null);
+  setShowForm(true);
+  setError("");
+};
 
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!form.name.trim() || !isValidHttpUrl(form.base_api_url)) { setError("Nom va to'g'ri Base API URL kiriting."); return; }
-    const payload = { name: form.name.trim(), key: form.key.trim() || slugify(form.name), base_api_url: form.base_api_url.trim(), priority: Number(form.priority) || 0 };
-    const result = editingId
-      ? await supabase.from("streaming_providers").update(payload).eq("id", editingId)
-      : await supabase.from("streaming_providers").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
-    setShowForm(false);
-    load();
+const openEdit = (p: Provider) => {
+  setForm({
+    name: p.name,
+    key: p.key,
+    base_api_url: p.base_api_url,
+    priority: p.priority,
+  });
+  setEditingId(p.id);
+  setShowForm(true);
+  setError("");
+};
+
+const save = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+
+  if (!form.name.trim() || !isValidHttpUrl(form.base_api_url)) {
+    setError("Nom va to'g'ri Base API URL kiriting.");
+    return;
+  }
+
+  const payload = {
+    name: form.name.trim(),
+    key: form.key.trim() || slugify(form.name),
+    base_api_url: form.base_api_url.trim(),
+    priority: Number(form.priority) || 0,
   };
 
-  const toggleActive = async (p: Provider) => {
-    await supabase.from("streaming_providers").update({ is_active: !p.is_active }).eq("id", p.id);
-    load();
-  };
+  const result = editingId
+    ? await supabase
+        .from("streaming_providers")
+        .update(payload)
+        .eq("id", editingId)
+    : await supabase.from("streaming_providers").insert(payload);
 
-  const remove = async (id: string) => {
-    if (!confirm("Provider o'chirilsinmi?")) return;
-    await supabase.from("streaming_providers").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
-  };
+  if (result.error) {
+    setError(result.error.message);
+    return;
+  }
 
-  const testConnection = async (providerId: string) => {
-    setTestingId(providerId);
-    try {
-      const res = await fetch("/api/admin/streaming/test-connection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ providerId }),
-      });
-      const json = await res.json();
-      if (res.status === 429) alert("Juda ko'p urinish. Bir necha daqiqadan so'ng qayta urinib ko'ring.");
-      else if (!json.success) alert(`Ulanish muvaffaqiyatsiz: ${json.message ?? "noma'lum xato"}`);
-    } catch {
-      alert("Ulanishni tekshirishda xatolik.");
-    } finally {
-      setTestingId(null);
-      load();
+  setShowForm(false);
+  load();
+};
+
+const toggleActive = async (p: Provider) => {
+  await supabase
+    .from("streaming_providers")
+    .update({ is_active: !p.is_active })
+    .eq("id", p.id);
+
+  load();
+};
+
+const remove = async (id: string) => {
+  if (!confirm("Provider o'chirilsinmi?")) return;
+
+  await supabase
+    .from("streaming_providers")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+
+  load();
+};
+
+const testConnection = async (providerId: string) => {
+  setTestingId(providerId);
+
+  try {
+    const res = await fetch("/api/admin/streaming/test-connection", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ providerId }),
+    });
+
+    const json = await res.json();
+
+    if (res.status === 429) {
+      setError(
+        "Juda ko'p urinish. Bir necha daqiqadan so'ng qayta urinib ko'ring."
+      );
+    } else if (!json.success) {
+      setError(json.message ?? "Ulanishni tekshirish muvaffaqiyatsiz.");
+    } else {
+      setError("");
+      await load();
     }
-  };
+  } catch {
+    setError("Ulanishni tekshirishda xatolik yuz berdi.");
+  } finally {
+    setTestingId(null);
+  }
+};
 
   return (
     <div>
