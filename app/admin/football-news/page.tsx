@@ -181,7 +181,7 @@ export default function FootballNewsManager() {
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">Kategoriya</label>
                 <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputCls}>
@@ -206,7 +206,7 @@ export default function FootballNewsManager() {
               <textarea rows={2} placeholder="SEO tavsif" value={form.seo_description} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} className={inputCls} />
             </details>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">Holat</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>

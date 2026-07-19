@@ -313,7 +313,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
                 </label>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] text-muted mb-1">Nomi *</label>
                   <input className={inputCls} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -330,7 +330,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
               <label className="block text-[11px] text-muted mb-1 mt-3">Bonus tavsifi</label>
               <textarea rows={2} className={inputCls} value={form.bonus_description ?? ""} onChange={(e) => setForm({ ...form, bonus_description: e.target.value })} />
 
-              <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 <div>
                   <label className="block text-[11px] text-muted mb-1">Website URL</label>
                   <input className={inputCls} value={form.website_url ?? ""} onChange={(e) => setForm({ ...form, website_url: e.target.value })} placeholder="https://..." />
@@ -357,7 +357,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 <div>
                   <label className="block text-[11px] text-muted mb-1">Mamlakatlar (vergul bilan, bo'sh = hammasi)</label>
                   <input className={inputCls} value={countriesInput} onChange={(e) => setCountriesInput(e.target.value)} placeholder="UZ, RU, KZ" />
@@ -377,7 +377,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                 <div>
                   <label className="block text-[11px] text-muted mb-1">Reyting (0-5)</label>
                   <input type="number" min={0} max={5} step={0.1} className={inputCls} value={form.rating ?? ""} onChange={(e) => setForm({ ...form, rating: e.target.value })} />
@@ -448,7 +448,7 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
   return (
     <div>
       <form onSubmit={add} className="rounded-lg border border-white/8 p-4 mb-4 space-y-2">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input className={inputCls} placeholder="Promo kod (masalan: WELCOME100)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
           <input type="date" className={inputCls} value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} />
         </div>
@@ -516,7 +516,7 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
         Qoida topilmasa, mobil/planshet uchun Deep Link (agar kiritilgan bo'lsa), aks holda standart Affiliate URL ishlatiladi.
       </p>
       <form onSubmit={add} className="rounded-lg border border-white/8 p-4 mb-4 space-y-2">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <select className={inputCls} value={form.match_type} onChange={(e) => setForm({ ...form, match_type: e.target.value as any })}>
             <option value="country">Mamlakat</option>
             <option value="language">Til</option>

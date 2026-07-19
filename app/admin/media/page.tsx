@@ -134,7 +134,7 @@ export default function MediaLibraryPage() {
           Hech narsa topilmadi.
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
           {filtered.map((item) => (
             <div key={item.id} className="group relative rounded-lg border border-white/8 bg-white/[0.02] overflow-hidden">
               <img src={item.public_url} alt={item.file_name} className="w-full aspect-square object-cover" />

@@ -38,7 +38,7 @@ export default function Dashboard() {
     <div className="p-8">
       <h1 className="text-[22px] font-bold mb-1">Dashboard</h1>
       <p className="text-[13px] text-muted mb-6">Umumiy statistika.</p>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {cards.map((c) => (
           <div key={c.label} className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
             <c.icon size={18} className="text-accent mb-3" />
@@ -111,7 +111,7 @@ function AffiliateAnalytics() {
         <h2 className="text-[16px] font-bold">Affiliate Click Analytics</h2>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         {[
           { label: "Jami klik", value: summary.total },
           { label: "Bugun", value: summary.today },

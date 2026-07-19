@@ -88,7 +88,7 @@ export default function CategoriesPage() {
       </div>
 
       <form onSubmit={save} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-2">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input className={inputCls} placeholder="Nomi" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className={inputCls} placeholder="Slug (avtomatik)" value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} />
         </div>

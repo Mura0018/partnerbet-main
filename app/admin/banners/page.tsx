@@ -115,7 +115,7 @@ export default function BannersManager() {
       <p className="text-[13px] text-muted mb-6">Har qanday o'lchamdagi bannerlar — yuklash, maqsadlash, rejalashtirish.</p>
 
       <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-3">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })} className={inputCls}>
             <option value="image">Rasm banner</option>
             <option value="embed">HTML/JS kod</option>
@@ -141,7 +141,7 @@ export default function BannersManager() {
           <textarea rows={4} placeholder="Hamkordan olingan HTML/JS kod" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className={`${inputCls} font-mono`} />
         )}
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input placeholder="Target URL (ixtiyoriy — /go/hamkor-slug tavsiya etiladi)" value={form.target_url} onChange={(e) => setForm({ ...form, target_url: e.target.value })} className={inputCls} />
           <select value={form.partner_id} onChange={(e) => setForm({ ...form, partner_id: e.target.value })} className={inputCls}>
             <option value="">— hamkor tanlanmagan —</option>
@@ -149,7 +149,7 @@ export default function BannersManager() {
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input placeholder="Mamlakatlar (UZ, RU — bo'sh = hammasi)" value={form.countriesInput} onChange={(e) => setForm({ ...form, countriesInput: e.target.value })} className={inputCls} />
           <div className="flex gap-2 items-center">
             {["uz", "ru", "en"].map((l) => (
@@ -158,7 +158,7 @@ export default function BannersManager() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
             <label className="block text-[11px] text-muted mb-1">Boshlanish sanasi</label>
             <input type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} className={inputCls} />

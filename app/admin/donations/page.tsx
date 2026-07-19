@@ -79,7 +79,7 @@ function DashboardTab() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Jami daromad", value: stats.total },
           { label: "Bugun", value: stats.today },

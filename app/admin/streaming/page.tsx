@@ -341,20 +341,20 @@ function MatchStreamsTab() {
       </p>
 
       <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-2">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <select className={inputCls} value={form.football_provider} onChange={(e) => setForm({ ...form, football_provider: e.target.value })}>
             {FOOTBALL_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
           <input className={inputCls} placeholder="O'yin (fixture) ID" value={form.external_fixture_id} onChange={(e) => setForm({ ...form, external_fixture_id: e.target.value })} />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <select className={inputCls} value={form.streaming_provider_id} onChange={(e) => setForm({ ...form, streaming_provider_id: e.target.value })}>
             <option value="">— Streaming provider tanlang —</option>
             {providers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           <input className={inputCls} placeholder="Provайderdagi stream ID (ixtiyoriy)" value={form.external_stream_id} onChange={(e) => setForm({ ...form, external_stream_id: e.target.value })} />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
             <label className="block text-[11px] text-muted mb-1">Boshlanish (ixtiyoriy)</label>
             <input type="datetime-local" className={inputCls} value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} />

@@ -209,7 +209,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
       </Field>
       {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label="Asosiy rang">
           <input type="color" className="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer" value={theme.accent_color ?? "#00A3FF"} onChange={(e) => updateLocal("theme", { accent_color: e.target.value })} />
         </Field>
@@ -370,7 +370,7 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
             {PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Standart liga ID">
             <input className={inputCls} value={footballProvider.default_league_id ?? ""} onChange={(e) => updateLocal("football_provider", { default_league_id: e.target.value })} placeholder="masalan: 39" />
           </Field>
