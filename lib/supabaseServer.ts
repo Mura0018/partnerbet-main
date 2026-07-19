@@ -15,8 +15,8 @@ export async function createServerSupabaseClient(options?: { persistSession?: bo
   const cookieStore = await cookies();
   return createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
     cookies: {
-      get: (name) => cookieStore.get(name)?.value,
-      set: (name, value, cookieOptions) => {
+      get: (name: string) => cookieStore.get(name)?.value,
+      set: (name: string, value: string, cookieOptions: any) => {
         try {
           const finalOptions = persistSession
             ? cookieOptions
@@ -27,7 +27,7 @@ export async function createServerSupabaseClient(options?: { persistSession?: bo
           // cookies are read-only there; middleware handles refresh instead.
         }
       },
-      remove: (name, cookieOptions) => {
+      remove: (name: string, cookieOptions: any) => {
         try {
           cookieStore.set(name, "", { ...cookieOptions, maxAge: 0 });
         } catch {}
