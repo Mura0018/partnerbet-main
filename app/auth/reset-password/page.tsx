@@ -20,18 +20,29 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    const supabase = createClient();
-    // The recovery link from the email sets a session via the URL hash;
-    // @supabase/ssr processes it automatically. We just confirm it landed.
-    supabase.auth.getSession().then(({ data }) => {
-      setHasRecoverySession(!!data.session);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setHasRecoverySession(true);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+ useEffect(() => {
+  const supabase = createClient();
+
+  const checkSession = async () => {
+    // Supabase recovery sessionni yaratishi uchun ozgina kutamiz
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const { data } = await supabase.auth.getSession();
+    setHasRecoverySession(!!data.session);
+  };
+
+  checkSession();
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") {
+      setHasRecoverySession(true);
+    }
+  });
+
+  return () => subscription.unsubscribe();
+}, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
