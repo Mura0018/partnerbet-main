@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { NotificationBell } from "@/lib/push/NotificationBell";
+import { BannerSlot } from "@/lib/ui/BannerSlot";
 
 type Insight = {
   id: string;
@@ -280,7 +281,7 @@ export default function Home() {
           </p>
         </div>
 
-        {insights[0] && (
+        {insights[0] ? (
           <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-panel to-[#0A1626] p-6 backdrop-blur-xl shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <Badge tone="blue"><TrendingUp size={11} /> Top Insight</Badge>
@@ -295,6 +296,8 @@ export default function Home() {
             </div>
             <p className="text-[13px] text-muted mt-4 leading-relaxed">{insights[0].analysis}</p>
           </div>
+        ) : (
+          <BannerSlot placement="homepage" size="square" className="w-full max-w-md aspect-[6/5] mx-auto" />
         )}
       </section>
 
