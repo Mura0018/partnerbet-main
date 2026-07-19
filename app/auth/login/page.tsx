@@ -62,9 +62,10 @@ function LoginForm() {
       const { data: isAdmin } = await supabase.rpc("is_admin_user");
       router.push(redirectTo || (isAdmin ? "/admin/dashboard" : "/"));
       router.refresh();
-    } catch {
-      setError(t("login.genericError"));
-      setLoading(false);
+    } catch (err) {
+        alert("DEBUG: " + String(err));
+        setError(t("login.genericError"));
+        setLoading(false);
     }
   };
 
