@@ -76,7 +76,7 @@ export function BannerSlot({ placement, size, className = "", rounded = true }: 
       onClick={handleClick}
       target="_blank"
       rel="noopener noreferrer nofollow sponsored"
-      className={`${baseCls} border border-white/10 shadow-2xl ${className}`}
+      className={`${baseCls} ${className}`}
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
       <img src={banner.image_url} alt="" className="w-full h-full object-contain" />
