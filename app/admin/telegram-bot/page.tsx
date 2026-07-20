@@ -1233,7 +1233,7 @@ export default function TelegramBotAdminPage() {
         <Can permission="team_chat.use">
           <button
             onClick={() => setTab("chat")}
-            className={`px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px flex items-center gap-1.5 whitespace-nowrap ${tab === "chat" ? "border-accent text-white" : "border-transparent text-muted"}`}
+            className="px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px flex items-center gap-1.5 whitespace-nowrap border-transparent text-muted"
           >
             <MessageCircle size={14} /> Jamoa chati
           </button>
