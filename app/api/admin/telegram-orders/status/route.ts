@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
-import { sendTelegramMessage } from "@/lib/telegram/notify";
+import { sendTelegramMessage, buildOrderResolvedMessage } from "@/lib/telegram/notify";
 import { cashdeskDeposit, cashdeskPayout, isCashdeskConfigured } from "@/lib/cashdesk/client";
 
 async function requireOrdersManage() {
@@ -85,13 +85,7 @@ export async function POST(req: NextRequest) {
 
   const telegramId = (order as any).customers?.telegram_id;
   if (telegramId) {
-    const label = order.type === "topup" ? "Hisob to'ldirish" : "Pul yechish";
-    const amountText = Number(order.amount).toLocaleString("ru-RU");
-    const text =
-      status === "completed"
-        ? `✅ ${label} buyurtmangiz (${amountText}) BAJARILDI.${note ? `\n\nOperator izohi: ${note}` : ""}`
-        : `❌ ${label} buyurtmangiz (${amountText}) RAD ETILDI.${note ? `\n\nSabab: ${note}` : "\n\nBatafsil uchun operator bilan bog'laning."}`;
-    await sendTelegramMessage(telegramId, text);
+    await sendTelegramMessage(telegramId, buildOrderResolvedMessage(order.type, Number(order.amount), status, note));
   }
 
   return NextResponse.json({ success: true, autoProcessed });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
-import { sendTelegramMessage } from "@/lib/telegram/notify";
+import { sendTelegramMessage, buildSupportReplyMessage } from "@/lib/telegram/notify";
 
 async function requireOrdersManage() {
   const supabase = await createServerSupabaseClient();
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   const { data: customer } = await admin.from("customers").select("telegram_id").eq("id", customerId).maybeSingle();
   if (customer?.telegram_id) {
-    await sendTelegramMessage(customer.telegram_id, `💬 Operator javobi:\n\n${text}`);
+    await sendTelegramMessage(customer.telegram_id, buildSupportReplyMessage(text));
   }
 
   return NextResponse.json({ success: true });

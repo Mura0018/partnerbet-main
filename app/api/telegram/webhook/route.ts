@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { sendTelegramMessage } from "@/lib/telegram/notify";
+import { sendTelegramMessage, OPEN_APP_KEYBOARD } from "@/lib/telegram/notify";
 
-const MINIAPP_URL = "https://www.couponbet.org/telegram-app";
 const SECRET_HEADER = "x-telegram-bot-api-secret-token";
-
-const OPEN_APP_MENU = {
-  inline_keyboard: [[{ text: "🚀 Ilovani ochish", web_app: { url: MINIAPP_URL } }]],
-};
 
 export async function POST(req: NextRequest) {
   const token = await getApiCredential("telegram_bot_token");
@@ -41,11 +36,11 @@ export async function POST(req: NextRequest) {
   if (text === "/start") {
     await sendTelegramMessage(
       chatId,
-      "Assalomu alaykum! BetCore Pay botiga xush kelibsiz.\n\nHisob to'ldirish, pul yechish va operator bilan bog'lanish uchun quyidagi ilovani oching:",
-      OPEN_APP_MENU
+      "🟦 BETCORE PAY\n\nAssalomu alaykum! BetCore Pay botiga xush kelibsiz.\n\n💳 Hisob to'ldirish\n💵 Pul yechish\n🎧 Operator bilan aloqa\n\nBoshlash uchun quyidagi tugmani bosing:",
+      OPEN_APP_KEYBOARD
     );
   } else {
-    await sendTelegramMessage(chatId, "Ilovani ochish uchun /start ni yuboring.", OPEN_APP_MENU);
+    await sendTelegramMessage(chatId, "🟦 BETCORE PAY\n\nIlovani ochish uchun quyidagi tugmani bosing:", OPEN_APP_KEYBOARD);
   }
 
   return NextResponse.json({ ok: true });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
-import { sendTelegramMessage } from "@/lib/telegram/notify";
+import { sendTelegramMessage, buildOrderCreatedMessage } from "@/lib/telegram/notify";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
@@ -96,11 +96,7 @@ export async function POST(req: NextRequest) {
 
   if (error || !order) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
 
-  const label = type === "topup" ? "Hisob to'ldirish" : "Pul yechish";
-  await sendTelegramMessage(
-    customer.telegram_id,
-    `✅ ${label} buyurtmangiz qabul qilindi.\n\nSumma: ${amountNum.toLocaleString("ru-RU")}\nHolat: Kutilmoqda\n\nOperator tez orada ko'rib chiqadi — natija shu yerda va ilovada "Buyurtmalarim" bo'limida ko'rinadi.`
-  );
+  await sendTelegramMessage(customer.telegram_id, buildOrderCreatedMessage(type, amountNum));
 
   return NextResponse.json({ order });
 }

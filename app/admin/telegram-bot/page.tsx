@@ -640,73 +640,168 @@ function SupportTab() {
   );
 }
 
-function PaymentInfoTab() {
-  const [values, setValues] = useState({ card_number: "", click_number: "", payme_number: "", crypto_wallet: "" });
+type OperatorPaymentMethod = {
+  id: string;
+  method_type: "card" | "click" | "payme" | "crypto";
+  account_number: string;
+  holder_name: string | null;
+  is_active: boolean;
+};
+
+const METHOD_TYPE_LABELS: Record<OperatorPaymentMethod["method_type"], string> = {
+  card: "Bank kartasi",
+  click: "Click",
+  payme: "Payme",
+  crypto: "USDT (TRC20)",
+};
+
+function MyPaymentMethodsTab() {
+  const [methods, setMethods] = useState<OperatorPaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<{ method_type: OperatorPaymentMethod["method_type"]; account_number: string; holder_name: string }>({
+    method_type: "card", account_number: "", holder_name: "",
+  });
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const supabase = createClient();
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from("site_settings").select("value").eq("key", "betcore_pay_payment_info").maybeSingle();
-      if (data?.value) setValues((prev) => ({ ...prev, ...(data.value as any) }));
-      setLoading(false);
-    })();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    const { data } = await supabase
+      .from("telegram_operator_payment_methods")
+      .select("id, method_type, account_number, holder_name, is_active")
+      .eq("operator_id", user.id)
+      .order("method_type");
+    setMethods((data as OperatorPaymentMethod[]) ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
 
-  const save = async () => {
+  const addMethod = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.account_number.trim()) return;
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase
-      .from("site_settings")
-      .update({ value: values, updated_by: user?.id, updated_at: new Date().toISOString() })
-      .eq("key", "betcore_pay_payment_info");
+    if (user) {
+      await supabase.from("telegram_operator_payment_methods").insert({
+        operator_id: user.id,
+        method_type: form.method_type,
+        account_number: form.account_number.trim(),
+        holder_name: form.holder_name.trim() || null,
+      });
+    }
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setForm({ method_type: "card", account_number: "", holder_name: "" });
+    setShowForm(false);
+    load();
+  };
+
+  const toggleActive = async (m: OperatorPaymentMethod) => {
+    await supabase.from("telegram_operator_payment_methods").update({ is_active: !m.is_active }).eq("id", m.id);
+    load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+    await supabase.from("telegram_operator_payment_methods").delete().eq("id", id);
+    load();
   };
 
   if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda...</p>;
 
-  const fields: { key: keyof typeof values; label: string; placeholder: string }[] = [
-    { key: "card_number", label: "Bank karta raqami", placeholder: "8600 1234 5678 9012" },
-    { key: "click_number", label: "Click raqami", placeholder: "+998 90 123 45 67" },
-    { key: "payme_number", label: "Payme raqami", placeholder: "+998 90 123 45 67" },
-    { key: "crypto_wallet", label: "USDT (TRC20) wallet", placeholder: "T..." },
-  ];
-
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 max-w-lg">
+    <div className="max-w-lg">
       <p className="text-[12px] text-muted mb-4 leading-relaxed">
-        Bu ma'lumotlar Mini App'da mijozga to'lov usulini tanlaganda ko'rsatiladi — maxfiy emas, shuning uchun
-        oddiy matn sifatida saqlanadi.
+        Bu — sizning shaxsiy to'lov rekvizitlaringiz. Mijoz Mini App'da hisob to'ldirishni tanlaganda, faol
+        rekvizitlar orasidan tasodifiy biri ko'rsatiladi — shu bilan to'lovlar operatorlar orasida taqsimlanadi.
       </p>
-      {fields.map((f) => (
-        <div key={f.key} className="mb-3.5">
-          <label className="block text-[12px] text-muted mb-1.5">{f.label}</label>
-          <input
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] text-white outline-none focus:border-accent"
-            placeholder={f.placeholder}
-            value={values[f.key]}
-            onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
-          />
+
+      {methods.length === 0 && !showForm && (
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-6 text-center text-[13px] text-muted mb-4">
+          Hali rekvizit qo'shmagansiz.
         </div>
-      ))}
-      <button
-        onClick={save}
-        disabled={saving}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-60"
-      >
-        {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : null}
-        {saving ? "Saqlanmoqda…" : saved ? "Saqlandi" : "Saqlash"}
-      </button>
+      )}
+
+      <div className="space-y-2.5 mb-4">
+        {methods.map((m) => (
+          <div key={m.id} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-3.5">
+            <div className="flex-1 min-w-0">
+              <div className="text-[12px] text-accent font-semibold">{METHOD_TYPE_LABELS[m.method_type]}</div>
+              <div className="text-[13px] font-medium truncate">{m.account_number}</div>
+              {m.holder_name && <div className="text-[11px] text-muted truncate">{m.holder_name}</div>}
+            </div>
+            <button
+              onClick={() => toggleActive(m)}
+              className={`text-[10px] px-2 py-1 rounded-full border shrink-0 ${m.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-white/10"}`}
+            >
+              {m.is_active ? "Faol" : "O'chirilgan"}
+            </button>
+            <button onClick={() => remove(m.id)} className="p-1.5 rounded-md hover:bg-white/10 text-[#FF6B85] shrink-0">
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {showForm ? (
+        <form onSubmit={addMethod} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="mb-3">
+            <label className="block text-[12px] text-muted mb-1.5">Turi</label>
+            <select
+              className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]"
+              value={form.method_type}
+              onChange={(e) => setForm((prev) => ({ ...prev, method_type: e.target.value as OperatorPaymentMethod["method_type"] }))}
+            >
+              {(Object.keys(METHOD_TYPE_LABELS) as OperatorPaymentMethod["method_type"][]).map((k) => (
+                <option key={k} value={k}>{METHOD_TYPE_LABELS[k]}</option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="block text-[12px] text-muted mb-1.5">Raqam / manzil</label>
+            <input
+              className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+              value={form.account_number}
+              onChange={(e) => setForm((prev) => ({ ...prev, account_number: e.target.value }))}
+              placeholder={form.method_type === "crypto" ? "T..." : "+998 90 123 45 67"}
+            />
+          </div>
+          {form.method_type !== "crypto" && (
+            <div className="mb-4">
+              <label className="block text-[12px] text-muted mb-1.5">Egasining F.I.Sh.</label>
+              <input
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+                value={form.holder_name}
+                onChange={(e) => setForm((prev) => ({ ...prev, holder_name: e.target.value }))}
+                placeholder="Masalan: Aliyev Vali"
+              />
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[13px]">
+              Bekor qilish
+            </button>
+            <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
+              {saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Qo'shish"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]"
+        >
+          <CreditCard size={15} /> Yangi rekvizit qo'shish
+        </button>
+      )}
     </div>
   );
 }
 
 export default function TelegramBotAdminPage() {
-  const [tab, setTab] = useState<"orders" | "operators" | "chat" | "support" | "payment-info">("orders");
+  const [tab, setTab] = useState<"orders" | "operators" | "chat" | "support" | "my-payments">("orders");
 
   return (
     <div className="p-8">
@@ -745,21 +840,19 @@ export default function TelegramBotAdminPage() {
             <MessageCircle size={14} /> Jamoa chati
           </button>
         </Can>
-        <Can permission="settings.manage">
-          <button
-            onClick={() => setTab("payment-info")}
-            className={`px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px flex items-center gap-1.5 whitespace-nowrap ${tab === "payment-info" ? "border-accent text-white" : "border-transparent text-muted"}`}
-          >
-            <CreditCard size={14} /> To'lov ma'lumotlari
-          </button>
-        </Can>
+        <button
+          onClick={() => setTab("my-payments")}
+          className={`px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px flex items-center gap-1.5 whitespace-nowrap ${tab === "my-payments" ? "border-accent text-white" : "border-transparent text-muted"}`}
+        >
+          <CreditCard size={14} /> Mening to'lovlarim
+        </button>
       </div>
 
       {tab === "orders" && <OrdersTab />}
       {tab === "support" && <SupportTab />}
       {tab === "operators" && <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
       {tab === "chat" && <Can permission="team_chat.use"><ChatTab /></Can>}
-      {tab === "payment-info" && <Can permission="settings.manage"><PaymentInfoTab /></Can>}
+      {tab === "my-payments" && <MyPaymentMethodsTab />}
     </div>
   );
 }

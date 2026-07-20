@@ -29,7 +29,12 @@ type Order = {
 
 type SupportMessage = { id: string; sender: "customer" | "operator"; message: string; created_at: string };
 
-type PaymentInfo = { cardNumber: string; clickNumber: string; paymeNumber: string; cryptoWallet: string };
+type PaymentInfo = {
+  cardNumber: string; cardHolder: string;
+  clickNumber: string; clickHolder: string;
+  paymeNumber: string; paymeHolder: string;
+  cryptoWallet: string;
+};
 
 const PLATFORMS = ["1xBet", "Melbet", "Betwinner", "Boshqa"];
 const PAYMENT_METHODS: { id: PaymentMethod; label: string }[] = [
@@ -89,11 +94,11 @@ function PaymentMethodPicker({
   onChange: (m: PaymentMethod) => void;
   paymentInfo: PaymentInfo | null;
 }) {
-  const detail: Record<PaymentMethod, string> = {
-    click: paymentInfo?.clickNumber ? `Click: ${paymentInfo.clickNumber}` : "",
-    payme: paymentInfo?.paymeNumber ? `Payme: ${paymentInfo.paymeNumber}` : "",
-    card: paymentInfo?.cardNumber ? `Karta: ${paymentInfo.cardNumber}` : "",
-    crypto: paymentInfo?.cryptoWallet ? `USDT (TRC20): ${paymentInfo.cryptoWallet}` : "",
+  const detail: Record<PaymentMethod, { number: string; holder: string; label: string } | null> = {
+    click: paymentInfo?.clickNumber ? { number: paymentInfo.clickNumber, holder: paymentInfo.clickHolder, label: "Click" } : null,
+    payme: paymentInfo?.paymeNumber ? { number: paymentInfo.paymeNumber, holder: paymentInfo.paymeHolder, label: "Payme" } : null,
+    card: paymentInfo?.cardNumber ? { number: paymentInfo.cardNumber, holder: paymentInfo.cardHolder, label: "Karta" } : null,
+    crypto: paymentInfo?.cryptoWallet ? { number: paymentInfo.cryptoWallet, holder: "", label: "USDT (TRC20)" } : null,
   };
   return (
     <div className="mb-3.5">
@@ -112,9 +117,14 @@ function PaymentMethodPicker({
           </button>
         ))}
       </div>
-      {detail[value] && (
-        <div className="rounded-lg bg-white/[0.04] border border-white/10 px-3.5 py-2.5 text-[12px] text-[#c7d5e6]">
-          {detail[value]}
+      {detail[value] ? (
+        <div className="rounded-lg bg-white/[0.04] border border-white/10 px-3.5 py-2.5 text-[12px] text-[#c7d5e6] space-y-0.5">
+          <div>{detail[value]!.label}: <span className="font-semibold text-white">{detail[value]!.number}</span></div>
+          {detail[value]!.holder && <div className="text-[#93a5ba]">Egasi: {detail[value]!.holder}</div>}
+        </div>
+      ) : (
+        <div className="rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
+          Bu usul uchun ma'lumot hali kiritilmagan. Boshqa usulni tanlang yoki operator bilan bog'laning.
         </div>
       )}
     </div>
