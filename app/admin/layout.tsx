@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -19,6 +19,7 @@ const NAV = [
   { href: "/admin/football", label: "Football Center", icon: Trophy, permission: "football.manage" },
   { href: "/admin/streaming", label: "Live Streaming", icon: Radio, permission: "streaming.manage" },
   { href: "/admin/donations", label: "Donations", icon: Heart, permission: "donations.manage" },
+  { href: "/admin/telegram-bot", label: "BetCore Pay", icon: Wallet, permission: "telegram_orders.manage" },
   { href: "/admin/football-news", label: "Football News", icon: Newspaper, permission: "football_news.manage" },
   { href: "/admin/insights", label: "Insights", icon: Newspaper, permission: "match_insights.manage" },
   { href: "/admin/blog", label: "Blog", icon: FileText, permission: "posts.manage" },
