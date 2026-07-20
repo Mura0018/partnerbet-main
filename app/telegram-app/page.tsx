@@ -27,7 +27,7 @@ type Order = {
   created_at: string;
 };
 
-type SupportMessage = { id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null; created_at: string };
+type SupportMessage = { id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null; file_name: string | null; created_at: string };
 
 type PaymentInfo = {
   cardNumber: string; cardHolder: string;
@@ -576,7 +576,7 @@ export default function TelegramAppPage() {
         const res = await fetch("/api/telegram/miniapp/support/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ initData: getInitData(), imageBase64, mimeType: file.type }),
+          body: JSON.stringify({ initData: getInitData(), imageBase64, mimeType: file.type, fileName: file.name }),
         });
         if (res.ok) await loadSupport();
       } finally {
@@ -850,7 +850,7 @@ export default function TelegramAppPage() {
           <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} />
           <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 flex flex-col justify-end space-y-3">
+        <div className="flex-1 overflow-y-auto px-5 flex flex-col justify-end space-y-3 min-h-0">
           {supportLoading ? (
             <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
           ) : supportMessages.length === 0 ? (
@@ -865,7 +865,7 @@ export default function TelegramAppPage() {
                   }`}
                 >
                   {m.image_path ? (
-                    <div className="flex items-center gap-1.5 text-[#c7d5e6]"><ImageIcon size={14} /> Rasm yuborildi</div>
+                    <div className="flex items-center gap-1.5 text-[#c7d5e6]"><ImageIcon size={14} /> {m.file_name || "Rasm yuborildi"}</div>
                   ) : (
                     m.message
                   )}

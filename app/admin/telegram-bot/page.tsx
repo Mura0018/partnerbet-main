@@ -23,6 +23,7 @@ type ChatMessage = {
   id: string;
   message: string | null;
   image_path: string | null;
+  file_name: string | null;
   created_at: string;
   sender_id: string;
   profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; roles: { key: string } | null } | null;
@@ -41,7 +42,7 @@ function ChatTab() {
   const load = async () => {
     const { data } = await supabase
       .from("team_chat_messages")
-      .select("id, message, image_path, created_at, sender_id, profiles(full_name, display_name, avatar_url, roles(key))")
+      .select("id, message, image_path, file_name, created_at, sender_id, profiles(full_name, display_name, avatar_url, roles(key))")
       .order("created_at", { ascending: true })
       .limit(100);
     setMessages((data as any[]) ?? []);
@@ -84,7 +85,7 @@ function ChatTab() {
       const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("team-chat-attachments").upload(path, file, { upsert: false });
       if (!error) {
-        await supabase.from("team_chat_messages").insert({ sender_id: user.id, image_path: path });
+        await supabase.from("team_chat_messages").insert({ sender_id: user.id, image_path: path, file_name: file.name });
         await load();
       }
     } finally {
@@ -93,7 +94,7 @@ function ChatTab() {
   };
 
   const filtered = search.trim()
-    ? messages.filter((m) => (m.message ?? "").toLowerCase().includes(search.trim().toLowerCase()))
+    ? messages.filter((m) => `${m.message ?? ""} ${m.file_name ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()))
     : messages;
 
   return (
@@ -118,7 +119,7 @@ function ChatTab() {
           <Search size={15} />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3 min-w-0">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3 min-w-0 min-h-0">
         {filtered.length === 0 && (
           <p className="text-[13px] text-muted text-center mt-8">
             {search ? "Hech narsa topilmadi." : "Hozircha xabar yo'q. Birinchi bo'lib yozing."}
@@ -152,7 +153,14 @@ function ChatTab() {
                     isMe ? "bg-gradient-to-br from-accent to-accent-dim text-white" : "bg-white/[0.07] text-white/90"
                   }`}
                 >
-                  {imageUrl ? <img src={imageUrl} alt="" className="max-w-[200px] rounded-lg" /> : m.message}
+                  {imageUrl ? (
+                    <div>
+                      <img src={imageUrl} alt="" className="max-w-[200px] rounded-lg" />
+                      {m.file_name && <div className="text-[10px] text-white/50 mt-1 truncate max-w-[200px]">{m.file_name}</div>}
+                    </div>
+                  ) : (
+                    m.message
+                  )}
                 </div>
               </div>
             </div>
@@ -829,7 +837,7 @@ function OrdersTab() {
 }
 
 type SupportThread = { customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string };
-type SupportMsg = { id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null; created_at: string };
+type SupportMsg = { id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null; file_name: string | null; created_at: string };
 
 const REPLY_TEMPLATES = [
   "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
@@ -908,7 +916,7 @@ function SupportTab() {
   const loadThread = async (customerId: string) => {
     const { data } = await supabase
       .from("telegram_support_messages")
-      .select("id, sender, message, image_path, created_at")
+      .select("id, sender, message, image_path, file_name, created_at")
       .eq("customer_id", customerId)
       .order("created_at", { ascending: true })
       .limit(200);
@@ -977,14 +985,21 @@ function SupportTab() {
           <div className="flex-1 flex items-center justify-center text-[13px] text-muted">Murojaatni tanlang</div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3 min-w-0">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3 min-w-0 min-h-0">
               {msgs.map((m) => (
                 <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
                   <span className="text-[10px] text-[#5b6f85] mb-0.5 px-1">
                     {m.sender === "operator" ? "Siz (operator)" : "Mijoz"}
                   </span>
                   <div className={`max-w-[75%] rounded-xl px-3.5 py-2.5 text-[13px] ${m.sender === "operator" ? "bg-gradient-to-r from-accent to-accent-dim" : "bg-white/[0.06]"}`}>
-                    {m.image_path ? <SupportImage path={m.image_path} /> : m.message}
+                    {m.image_path ? (
+                      <div>
+                        <SupportImage path={m.image_path} />
+                        {m.file_name && <div className="text-[10px] text-white/50 mt-1 truncate max-w-[200px]">{m.file_name}</div>}
+                      </div>
+                    ) : (
+                      m.message
+                    )}
                     <div className="text-[9px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                   </div>
                 </div>

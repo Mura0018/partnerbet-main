@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
-  const { initData, imageBase64, mimeType } = body ?? {};
+  const { initData, imageBase64, mimeType, fileName } = body ?? {};
   if (!initData || !imageBase64 || !mimeType) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
 
   const { data: inserted, error } = await supabase
     .from("telegram_support_messages")
-    .insert({ customer_id: customer.id, sender: "customer", image_path: path })
-    .select("id, sender, message, image_path, created_at")
+    .insert({ customer_id: customer.id, sender: "customer", image_path: path, file_name: fileName ? String(fileName).slice(0, 200) : null })
+    .select("id, sender, message, image_path, file_name, created_at")
     .single();
 
   if (error || !inserted) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
