@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip, Mic, Trash2, Check,
 } from "lucide-react";
 
 declare global {
@@ -27,7 +27,12 @@ type Order = {
   created_at: string;
 };
 
-type SupportMessage = { id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null; file_name: string | null; created_at: string };
+import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
+
+type SupportMessage = {
+  id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
+  file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; created_at: string;
+};
 
 type PaymentInfo = {
   cardNumber: string; cardHolder: string;
@@ -73,6 +78,27 @@ const menuCardCls =
   "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4)] transition-all";
 
 const bgCls = "min-h-screen bg-gradient-to-b from-[#123f77] via-[#0f3364] to-[#0a1a30] text-white";
+
+function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/telegram/miniapp/support/media-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData: getInitData(), path }),
+    })
+      .then((r) => r.json())
+      .then((data) => setUrl(data.url ?? null))
+      .catch(() => setUrl(null))
+      .finally(() => setLoading(false));
+  }, [path]);
+
+  if (loading) return <p className="text-[12px] text-white/70">Yuklanmoqda…</p>;
+  if (!url) return <p className="text-[12px] text-[#FF6B85]">Ovozli xabarni yuklab bo'lmadi.</p>;
+  return <audio controls src={url} className="max-w-[220px] h-9" />;
+}
 
 function ScreenHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
@@ -218,6 +244,7 @@ export default function TelegramAppPage() {
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportSending, setSupportSending] = useState(false);
   const supportBottomRef = useRef<HTMLDivElement>(null);
+  const voiceRecorder = useVoiceRecorder();
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
 
@@ -591,6 +618,34 @@ export default function TelegramAppPage() {
     reader.readAsDataURL(file);
   };
 
+  const startVoiceRecording = async () => {
+    setError("");
+    await voiceRecorder.start();
+  };
+
+  const cancelVoiceRecording = () => {
+    voiceRecorder.cancel();
+  };
+
+  const stopAndSendVoice = async () => {
+    const recorded = await voiceRecorder.stop();
+    if (!recorded) return;
+    if (recorded.durationSeconds < 1) return;
+    setSupportSending(true);
+    try {
+      const audioBase64 = await blobToBase64(recorded.blob);
+      const res = await fetch("/api/telegram/miniapp/support/voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
+      });
+      if (res.ok) await loadSupport();
+      else setError("Ovozli xabar yuborishda xatolik. Qayta urinib ko'ring.");
+    } finally {
+      setSupportSending(false);
+    }
+  };
+
   if (screen === "loading") {
     return (
       <div className={`${bgCls} flex items-center justify-center`}>
@@ -869,7 +924,9 @@ export default function TelegramAppPage() {
                     m.sender === "customer" ? "bg-gradient-to-br from-[#3D7FFF] to-[#2456c9]" : "bg-white/[0.06]"
                   }`}
                 >
-                  {m.image_path ? (
+                  {m.voice_path ? (
+                    <VoicePlayer path={m.voice_path} getInitData={getInitData} />
+                  ) : m.image_path ? (
                     <div className="flex items-center gap-1.5 text-[#c7d5e6]"><ImageIcon size={14} /> {m.file_name || "Rasm yuborildi"}</div>
                   ) : (
                     m.message
@@ -881,11 +938,29 @@ export default function TelegramAppPage() {
           )}
           <div ref={supportBottomRef} />
         </div>
+        {voiceRecorder.recording ? (
+          <div className="flex items-center gap-3 p-4 bg-[#0e2038]">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B85] animate-pulse" />
+              <span className="text-[13px] text-white font-mono">{formatDuration(voiceRecorder.durationSeconds)}</span>
+              <span className="text-[12px] text-[#93a5ba]">Ovoz yozilmoqda...</span>
+            </div>
+            <button onClick={cancelVoiceRecording} className="shrink-0 p-2.5 rounded-xl bg-white/10 text-white/70" aria-label="Bekor qilish">
+              <Trash2 size={16} />
+            </button>
+            <button onClick={stopAndSendVoice} disabled={supportSending} className="shrink-0 p-2.5 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed]" aria-label="Yuborish">
+              <Check size={16} />
+            </button>
+          </div>
+        ) : (
         <div className="flex gap-2 p-4">
           <label className="shrink-0 flex items-center justify-center w-11 rounded-xl bg-white/[0.06] cursor-pointer">
             <Paperclip size={16} className="text-[#7db8ff]" />
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendSupportImage} disabled={supportSending} />
           </label>
+          <button onClick={startVoiceRecording} disabled={supportSending} className="shrink-0 flex items-center justify-center w-11 rounded-xl bg-white/[0.06] disabled:opacity-50" aria-label="Ovozli xabar">
+            <Mic size={16} className="text-[#7db8ff]" />
+          </button>
           <input
             className={`${inputCls} flex-1`}
             placeholder="Xabar yozing..."
@@ -897,6 +972,7 @@ export default function TelegramAppPage() {
             <Send size={16} />
           </button>
         </div>
+        )}
       </div>
     );
   }

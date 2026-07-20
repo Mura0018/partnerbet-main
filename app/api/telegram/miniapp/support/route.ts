@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: messages } = await supabase
     .from("telegram_support_messages")
-    .select("id, sender, message, image_path, file_name, created_at")
+    .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, created_at")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: true })
     .limit(200);

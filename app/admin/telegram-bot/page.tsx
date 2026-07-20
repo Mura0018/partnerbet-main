@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft } from "lucide-react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
+import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -24,6 +25,8 @@ type ChatMessage = {
   message: string | null;
   image_path: string | null;
   file_name: string | null;
+  voice_path: string | null;
+  voice_duration_seconds: number | null;
   created_at: string;
   sender_id: string;
   profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; roles: { key: string } | null } | null;
@@ -37,12 +40,13 @@ function ChatTab() {
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
 
   const load = async () => {
     const { data } = await supabase
       .from("team_chat_messages")
-      .select("id, message, image_path, file_name, created_at, sender_id, profiles(full_name, display_name, avatar_url, roles(key))")
+      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, profiles(full_name, display_name, avatar_url, roles(key))")
       .order("created_at", { ascending: true })
       .limit(100);
     setMessages((data as any[]) ?? []);
@@ -93,6 +97,25 @@ function ChatTab() {
     }
   };
 
+  const stopAndSendVoice = async () => {
+    const recorded = await voiceRecorder.stop();
+    if (!recorded || recorded.durationSeconds < 1) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    setSending(true);
+    try {
+      const ext = recorded.mimeType.includes("mp4") ? "m4a" : recorded.mimeType.includes("ogg") ? "ogg" : "webm";
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("team-chat-attachments").upload(path, recorded.blob, { upsert: false, contentType: recorded.mimeType });
+      if (!error) {
+        await supabase.from("team_chat_messages").insert({ sender_id: user.id, voice_path: path, voice_duration_seconds: recorded.durationSeconds });
+        await load();
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
   const filtered = search.trim()
     ? messages.filter((m) => `${m.message ?? ""} ${m.file_name ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()))
     : messages;
@@ -131,6 +154,7 @@ function ChatTab() {
           const name = m.profiles?.display_name || m.profiles?.full_name || "?";
           const isMe = m.sender_id === currentUserId;
           const imageUrl = m.image_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.image_path).data.publicUrl : null;
+          const voiceUrl = m.voice_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.voice_path).data.publicUrl : null;
           return (
             <div key={m.id} className={`flex items-end gap-2.5 ${isMe ? "flex-row-reverse" : ""}`}>
               {m.profiles?.avatar_url ? (
@@ -153,7 +177,9 @@ function ChatTab() {
                     isMe ? "bg-gradient-to-br from-accent to-accent-dim text-white" : "bg-white/[0.07] text-white/90"
                   }`}
                 >
-                  {imageUrl ? (
+                  {voiceUrl ? (
+                    <audio controls src={voiceUrl} className="max-w-[220px] h-9" />
+                  ) : imageUrl ? (
                     <div>
                       <img src={imageUrl} alt="" className="max-w-[200px] rounded-lg" />
                       {m.file_name && <div className="text-[10px] text-white/50 mt-1 truncate max-w-[200px]">{m.file_name}</div>}
@@ -168,11 +194,26 @@ function ChatTab() {
         })}
         <div ref={bottomRef} />
       </div>
+      {voiceRecorder.recording ? (
+        <div className="flex items-center gap-3 p-3 border-t border-white/8">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B85] animate-pulse" />
+          <span className="text-[13px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
+          <button onClick={voiceRecorder.cancel} className="p-2 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
+            <Trash2 size={15} />
+          </button>
+          <button onClick={stopAndSendVoice} disabled={sending} className="p-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label="Yuborish">
+            <Check size={15} />
+          </button>
+        </div>
+      ) : (
       <div className="flex gap-2 p-3 border-t border-white/8">
         <label className="shrink-0 flex items-center justify-center w-10 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10">
           <Paperclip size={15} className="text-muted" />
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendImage} disabled={sending} />
         </label>
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
+          <Mic size={15} className="text-muted" />
+        </button>
         <input
           className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
           placeholder="Xabar yozing..."
@@ -184,6 +225,7 @@ function ChatTab() {
           <Send size={15} />
         </button>
       </div>
+      )}
     </div>
   );
 }
@@ -837,7 +879,10 @@ function OrdersTab() {
 }
 
 type SupportThread = { customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string };
-type SupportMsg = { id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null; file_name: string | null; created_at: string };
+type SupportMsg = {
+  id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
+  file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; created_at: string;
+};
 
 const REPLY_TEMPLATES = [
   "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
@@ -874,18 +919,33 @@ function SupportImage({ path }: { path: string }) {
 }
 
 // Fullscreen thread view — opened when a thread is selected from the list.
+function SupportVoice({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/telegram-orders/support-image-url?path=${encodeURIComponent(path)}`)
+      .then((r) => r.json())
+      .then((data) => setUrl(data.url ?? null))
+      .catch(() => setUrl(null));
+  }, [path]);
+
+  if (!url) return <p className="text-[11px] text-muted">Yuklanmoqda…</p>;
+  return <audio controls src={url} className="max-w-[220px] h-9" />;
+}
+
 function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThread; onBack: () => void; onArchived: () => void }) {
   const [msgs, setMsgs] = useState<SupportMsg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
 
   const loadThread = async () => {
     const { data } = await supabase
       .from("telegram_support_messages")
-      .select("id, sender, message, image_path, file_name, created_at")
+      .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, created_at")
       .eq("customer_id", thread.customer_id)
       .order("created_at", { ascending: true })
       .limit(200);
@@ -912,6 +972,23 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
         body: JSON.stringify({ customerId: thread.customer_id, message: text.trim() }),
       });
       setText("");
+      await loadThread();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const stopAndSendVoice = async () => {
+    const recorded = await voiceRecorder.stop();
+    if (!recorded || recorded.durationSeconds < 1) return;
+    setSending(true);
+    try {
+      const audioBase64 = await blobToBase64(recorded.blob);
+      await fetch("/api/admin/telegram-orders/support-reply-voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: thread.customer_id, audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
+      });
       await loadThread();
     } finally {
       setSending(false);
@@ -956,7 +1033,9 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
           <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
             <span className="text-[10px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? "Siz (operator)" : "Mijoz"}</span>
             <div className={`max-w-[75%] rounded-xl px-3.5 py-2.5 text-[13px] ${m.sender === "operator" ? "bg-gradient-to-r from-accent to-accent-dim" : "bg-white/[0.06]"}`}>
-              {m.image_path ? (
+              {m.voice_path ? (
+                <SupportVoice path={m.voice_path} />
+              ) : m.image_path ? (
                 <div>
                   <SupportImage path={m.image_path} />
                   {m.file_name && <div className="text-[10px] text-white/50 mt-1 truncate max-w-[200px]">{m.file_name}</div>}
@@ -982,7 +1061,22 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
           </button>
         ))}
       </div>
+      {voiceRecorder.recording ? (
+        <div className="flex items-center gap-3 p-3 shrink-0">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B85] animate-pulse" />
+          <span className="text-[13px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
+          <button onClick={voiceRecorder.cancel} className="p-2 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
+            <Trash2 size={15} />
+          </button>
+          <button onClick={stopAndSendVoice} disabled={sending} className="p-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label="Yuborish">
+            <Check size={15} />
+          </button>
+        </div>
+      ) : (
       <div className="flex gap-2 p-3 shrink-0">
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
+          <Mic size={15} className="text-muted" />
+        </button>
         <input
           className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
           placeholder="Javob yozing..."
@@ -994,6 +1088,7 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
           <Send size={15} />
         </button>
       </div>
+      )}
     </div>
   );
 }
