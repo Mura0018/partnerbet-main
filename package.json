@@ -25,6 +25,7 @@
     "isomorphic-dompurify": "^2.14.0",
     "sanitize-html": "^2.13.0",
     "web-push": "^3.6.7",
+    "bcryptjs": "^2.4.3",
     "qrcode": "^1.5.3"
   },
   "devDependencies": {
@@ -38,6 +39,7 @@
     "@tailwindcss/typography": "^0.5.13",
     "@types/web-push": "^3.6.4",
     "@types/qrcode": "^1.5.5",
-    "@types/sanitize-html": "^2.13.0"
+    "@types/sanitize-html": "^2.13.0",
+    "@types/bcryptjs": "^2.4.6"
   }
 }
