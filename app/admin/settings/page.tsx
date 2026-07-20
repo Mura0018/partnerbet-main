@@ -307,6 +307,9 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
     { key: "push_vapid_public_key", label: "Push — VAPID Public Key", placeholder: "BF..." },
     { key: "push_vapid_private_key", label: "Push — VAPID Private Key", placeholder: "..." },
   ];
+  const AI_KEYS: { key: string; label: string; placeholder: string }[] = [
+    { key: "openai_api_key", label: "OpenAI API kaliti (Match Insights uchun)", placeholder: "sk-..." },
+  ];
 
   const save = async (key: string) => {
     if (!values[key]) return;
@@ -397,6 +400,9 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
         <h3 className="text-[13px] font-semibold mb-3 mt-2">Push xabarnoma kalitlari</h3>
         <p className="text-[11px] text-[#5b6f85] mb-3">Hozircha faqat xavfsiz saqlanadi — xabar yuborish funksiyasi Phase 4'da qo'shiladi.</p>
         {PUSH_KEYS.map(renderKeyRow)}
+        <h3 className="text-[13px] font-semibold mb-3 mt-2">AI kalitlari</h3>
+        <p className="text-[11px] text-[#5b6f85] mb-3">Match Insights uchun avtomatik matn xulosa generatsiyasida ishlatiladi.</p>
+        {AI_KEYS.map(renderKeyRow)}
       </div>
     </div>
   );
