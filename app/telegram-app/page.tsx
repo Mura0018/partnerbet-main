@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip,
 } from "lucide-react";
@@ -217,6 +217,7 @@ export default function TelegramAppPage() {
   const [supportText, setSupportText] = useState("");
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportSending, setSupportSending] = useState(false);
+  const supportBottomRef = useRef<HTMLDivElement>(null);
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
 
@@ -537,6 +538,10 @@ export default function TelegramAppPage() {
     return () => clearInterval(interval);
   }, [screen]);
 
+  useEffect(() => {
+    if (screen === "support") supportBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [supportMessages.length, screen]);
+
   const sendSupportMessage = async () => {
     if (!supportText.trim()) return;
     setSupportSending(true);
@@ -850,7 +855,7 @@ export default function TelegramAppPage() {
           <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} />
           <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 flex flex-col justify-end space-y-3 min-h-0">
+        <div className="flex-1 overflow-y-auto px-5 space-y-3 min-h-0">
           {supportLoading ? (
             <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
           ) : supportMessages.length === 0 ? (
@@ -874,6 +879,7 @@ export default function TelegramAppPage() {
               </div>
             ))
           )}
+          <div ref={supportBottomRef} />
         </div>
         <div className="flex gap-2 p-4">
           <label className="shrink-0 flex items-center justify-center w-11 rounded-xl bg-white/[0.06] cursor-pointer">

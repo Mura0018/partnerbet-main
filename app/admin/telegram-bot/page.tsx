@@ -119,7 +119,7 @@ function ChatTab() {
           <Search size={15} />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3 min-w-0 min-h-0">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-w-0 min-h-0">
         {filtered.length === 0 && (
           <p className="text-[13px] text-muted text-center mt-8">
             {search ? "Hech narsa topilmadi." : "Hozircha xabar yo'q. Birinchi bo'lib yozing."}
@@ -873,23 +873,150 @@ function SupportImage({ path }: { path: string }) {
   );
 }
 
-function SupportTab() {
-  const [threads, setThreads] = useState<SupportThread[]>([]);
-  const [activeCustomer, setActiveCustomer] = useState<SupportThread | null>(null);
+// Fullscreen thread view — opened when a thread is selected from the list.
+function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThread; onBack: () => void; onArchived: () => void }) {
   const [msgs, setMsgs] = useState<SupportMsg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
+
+  const loadThread = async () => {
+    const { data } = await supabase
+      .from("telegram_support_messages")
+      .select("id, sender, message, image_path, file_name, created_at")
+      .eq("customer_id", thread.customer_id)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    setMsgs((data as any[]) ?? []);
+  };
+
+  useEffect(() => {
+    loadThread();
+    const interval = setInterval(loadThread, 4000);
+    return () => clearInterval(interval);
+  }, [thread.customer_id]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs.length]);
+
+  const reply = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+    try {
+      await fetch("/api/admin/telegram-orders/support-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: thread.customer_id, message: text.trim() }),
+      });
+      setText("");
+      await loadThread();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const archive = async () => {
+    setArchiving(true);
+    try {
+      await fetch("/api/admin/telegram-orders/support-archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: thread.customer_id, archived: true }),
+      });
+      onArchived();
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 bg-bg flex flex-col">
+      <div className="flex items-center gap-2 px-5 py-4 border-b border-white/8 shrink-0">
+        <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10" aria-label="Orqaga">
+          <ChevronLeft size={20} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-[15px] font-bold truncate">{thread.full_name || thread.phone}</h1>
+        </div>
+        <button
+          onClick={archive}
+          disabled={archiving}
+          className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white disabled:opacity-50"
+        >
+          {archiving ? "…" : "Arxivlash"}
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+        {msgs.length === 0 && <p className="text-[13px] text-muted text-center mt-8">Hozircha xabar yo'q.</p>}
+        {msgs.map((m) => (
+          <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
+            <span className="text-[10px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? "Siz (operator)" : "Mijoz"}</span>
+            <div className={`max-w-[75%] rounded-xl px-3.5 py-2.5 text-[13px] ${m.sender === "operator" ? "bg-gradient-to-r from-accent to-accent-dim" : "bg-white/[0.06]"}`}>
+              {m.image_path ? (
+                <div>
+                  <SupportImage path={m.image_path} />
+                  {m.file_name && <div className="text-[10px] text-white/50 mt-1 truncate max-w-[200px]">{m.file_name}</div>}
+                </div>
+              ) : (
+                m.message
+              )}
+              <div className="text-[9px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+            </div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="flex gap-1.5 px-3 pt-2.5 overflow-x-auto shrink-0">
+        {REPLY_TEMPLATES.map((tpl, i) => (
+          <button
+            key={i}
+            onClick={() => setText(tpl)}
+            className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
+          >
+            {tpl.length > 28 ? tpl.slice(0, 28) + "…" : tpl}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-2 p-3 shrink-0">
+        <input
+          className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+          placeholder="Javob yozing..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && reply()}
+        />
+        <button onClick={reply} disabled={sending || !text.trim()} className="px-3.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
+          <Send size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SupportTab() {
+  const [threads, setThreads] = useState<SupportThread[]>([]);
+  const [archivedIds, setArchivedIds] = useState<Set<string>>(new Set());
+  const [activeCustomer, setActiveCustomer] = useState<SupportThread | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
   const supabase = createClient();
 
   const loadThreads = async (isInitial = false) => {
     if (isInitial) setLoading(true);
-    const { data } = await supabase
-      .from("telegram_support_messages")
-      .select("customer_id, message, image_path, created_at, customers(phone, full_name)")
-      .order("created_at", { ascending: false })
-      .limit(300);
+    const [{ data }, { data: archivedRows }] = await Promise.all([
+      supabase
+        .from("telegram_support_messages")
+        .select("customer_id, message, image_path, created_at, customers(phone, full_name)")
+        .order("created_at", { ascending: false })
+        .limit(300),
+      supabase.from("telegram_support_threads").select("customer_id").eq("is_archived", true),
+    ]);
     const grouped = new Map<string, SupportThread>();
     for (const row of (data as any[]) ?? []) {
       if (!grouped.has(row.customer_id)) {
@@ -904,6 +1031,7 @@ function SupportTab() {
       }
     }
     setThreads(Array.from(grouped.values()));
+    setArchivedIds(new Set((archivedRows ?? []).map((r) => r.customer_id)));
     if (isInitial) setLoading(false);
   };
 
@@ -913,44 +1041,22 @@ function SupportTab() {
     return () => clearInterval(interval);
   }, []);
 
-  const loadThread = async (customerId: string) => {
-    const { data } = await supabase
-      .from("telegram_support_messages")
-      .select("id, sender, message, image_path, file_name, created_at")
-      .eq("customer_id", customerId)
-      .order("created_at", { ascending: true })
-      .limit(200);
-    setMsgs((data as any[]) ?? []);
-  };
-
-  useEffect(() => {
-    if (!activeCustomer) return;
-    loadThread(activeCustomer.customer_id);
-    const interval = setInterval(() => loadThread(activeCustomer.customer_id), 4000);
-    return () => clearInterval(interval);
-  }, [activeCustomer?.customer_id]);
-
-  const reply = async () => {
-    if (!text.trim() || !activeCustomer) return;
-    setSending(true);
-    try {
-      await fetch("/api/admin/telegram-orders/support-reply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: activeCustomer.customer_id, message: text.trim() }),
-      });
-      setText("");
-      await loadThread(activeCustomer.customer_id);
-    } finally {
-      setSending(false);
-    }
-  };
+  if (activeCustomer) {
+    return (
+      <SupportThreadView
+        thread={activeCustomer}
+        onBack={() => { setActiveCustomer(null); loadThreads(false); }}
+        onArchived={() => { setActiveCustomer(null); loadThreads(false); }}
+      />
+    );
+  }
 
   if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda...</p>;
 
+  const visibleThreads = threads.filter((t) => archivedIds.has(t.customer_id) === showArchived);
   const filteredThreads = search.trim()
-    ? threads.filter((t) => `${t.full_name ?? ""} ${t.phone}`.toLowerCase().includes(search.trim().toLowerCase()))
-    : threads;
+    ? visibleThreads.filter((t) => `${t.full_name ?? ""} ${t.phone}`.toLowerCase().includes(search.trim().toLowerCase()))
+    : visibleThreads;
 
   return (
     <div>
@@ -960,78 +1066,39 @@ function SupportTab() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 md:h-[560px] min-w-0">
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] overflow-y-auto max-h-[240px] md:max-h-none min-w-0">
-          {filteredThreads.length === 0 ? (
-            <p className="text-[12px] text-muted text-center p-6">{search ? "Hech narsa topilmadi." : "Hozircha murojaat yo'q."}</p>
-          ) : (
-            filteredThreads.map((t) => (
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setShowArchived(false)}
+          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${!showArchived ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+        >
+          Faol
+        </button>
+        <button
+          onClick={() => setShowArchived(true)}
+          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${showArchived ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+        >
+          Arxiv
+        </button>
+      </div>
+
+      {filteredThreads.length === 0 ? (
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          {search ? "Hech narsa topilmadi." : showArchived ? "Arxiv bo'sh." : "Hozircha murojaat yo'q."}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredThreads.map((t) => (
             <button
               key={t.customer_id}
               onClick={() => setActiveCustomer(t)}
-              className={`w-full text-left p-3.5 border-b border-white/5 ${
-                activeCustomer?.customer_id === t.customer_id ? "bg-white/[0.05]" : "hover:bg-white/[0.03]"
-              }`}
+              className="w-full text-left p-3.5 rounded-xl border border-white/8 bg-white/[0.02] hover:border-accent/40"
             >
-              <div className="text-[12px] font-semibold truncate">{t.full_name || t.phone}</div>
-              <div className="text-[11px] text-muted truncate mt-0.5">{t.last_image ? "📷 Rasm" : t.last_message}</div>
+              <div className="text-[13px] font-semibold truncate">{t.full_name || t.phone}</div>
+              <div className="text-[12px] text-muted truncate mt-0.5">{t.last_image ? "📷 Rasm" : t.last_message}</div>
             </button>
-            ))
-          )}
+          ))}
         </div>
-
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col min-w-0 h-[420px] md:h-auto">
-        {!activeCustomer ? (
-          <div className="flex-1 flex items-center justify-center text-[13px] text-muted">Murojaatni tanlang</div>
-        ) : (
-          <>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3 min-w-0 min-h-0">
-              {msgs.map((m) => (
-                <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
-                  <span className="text-[10px] text-[#5b6f85] mb-0.5 px-1">
-                    {m.sender === "operator" ? "Siz (operator)" : "Mijoz"}
-                  </span>
-                  <div className={`max-w-[75%] rounded-xl px-3.5 py-2.5 text-[13px] ${m.sender === "operator" ? "bg-gradient-to-r from-accent to-accent-dim" : "bg-white/[0.06]"}`}>
-                    {m.image_path ? (
-                      <div>
-                        <SupportImage path={m.image_path} />
-                        {m.file_name && <div className="text-[10px] text-white/50 mt-1 truncate max-w-[200px]">{m.file_name}</div>}
-                      </div>
-                    ) : (
-                      m.message
-                    )}
-                    <div className="text-[9px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-1.5 px-3 pt-2.5 overflow-x-auto min-w-0">
-              {REPLY_TEMPLATES.map((tpl, i) => (
-                <button
-                  key={i}
-                  onClick={() => setText(tpl)}
-                  className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
-                >
-                  {tpl.length > 28 ? tpl.slice(0, 28) + "…" : tpl}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2 p-3">
-              <input
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
-                placeholder="Javob yozing..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && reply()}
-              />
-              <button onClick={reply} disabled={sending || !text.trim()} className="px-3.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
-                <Send size={15} />
-              </button>
-            </div>
-          </>
-        )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

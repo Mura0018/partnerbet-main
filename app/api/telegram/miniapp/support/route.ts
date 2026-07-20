@@ -62,5 +62,9 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !inserted) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+  await supabase.from("telegram_support_threads").upsert(
+    { customer_id: customerId, is_archived: false, updated_at: new Date().toISOString() },
+    { onConflict: "customer_id" }
+  );
   return NextResponse.json({ message: inserted });
 }
