@@ -11,7 +11,7 @@ type BannerData = {
   partnerSlug: string | null;
 };
 
-export function BannerSlot({ placement, size, className = "" }: { placement: string; size?: string; className?: string }) {
+export function BannerSlot({ placement, size, className = "", rounded = true }: { placement: string; size?: string; className?: string; rounded?: boolean }) {
   const [banner, setBanner] = useState<BannerData | null | undefined>(undefined);
 
   useEffect(() => {
@@ -51,10 +51,19 @@ export function BannerSlot({ placement, size, className = "" }: { placement: str
 
   const href = banner.partnerSlug ? `/go/${banner.partnerSlug}?banner=${banner.id}` : banner.target_url || "#";
 
+  const baseCls = `block ${rounded ? "rounded-2xl" : ""} overflow-hidden outline-none focus:outline-none ring-0 [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:block [&_iframe]:border-0`;
+
   if (banner.kind === "embed" && banner.embed_code) {
     return (
-      <a href={href} onClick={handleClick} target="_blank" rel="noopener noreferrer nofollow sponsored" className={className}>
-        <div dangerouslySetInnerHTML={{ __html: banner.embed_code }} />
+      <a
+        href={href}
+        onClick={handleClick}
+        target="_blank"
+        rel="noopener noreferrer nofollow sponsored"
+        className={`${baseCls} ${className}`}
+        style={{ WebkitTapHighlightColor: "transparent" }}
+      >
+        <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: banner.embed_code }} />
       </a>
     );
   }
@@ -67,7 +76,8 @@ export function BannerSlot({ placement, size, className = "" }: { placement: str
       onClick={handleClick}
       target="_blank"
       rel="noopener noreferrer nofollow sponsored"
-      className={`block rounded-2xl overflow-hidden border border-white/10 shadow-2xl ${className}`}
+      className={`${baseCls} border border-white/10 shadow-2xl ${className}`}
+      style={{ WebkitTapHighlightColor: "transparent" }}
     >
       <img src={banner.image_url} alt="" className="w-full h-full object-contain" />
     </a>
