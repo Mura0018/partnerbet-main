@@ -329,6 +329,9 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
   const AI_KEYS: { key: string; label: string; placeholder: string }[] = [
     { key: "openai_api_key", label: "OpenAI API kaliti (Match Insights uchun)", placeholder: "sk-..." },
   ];
+  const TELEGRAM_KEYS: { key: string; label: string; placeholder: string }[] = [
+    { key: "telegram_bot_token", label: "Telegram Bot Token (BetCore Pay)", placeholder: "123456789:ABC..." },
+  ];
 
   const save = async (key: string) => {
     if (!values[key]) return;
@@ -422,6 +425,9 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
         <h3 className="text-[13px] font-semibold mb-3 mt-2">AI kalitlari</h3>
         <p className="text-[11px] text-[#5b6f85] mb-3">Match Insights uchun avtomatik matn xulosa generatsiyasida ishlatiladi.</p>
         {AI_KEYS.map(renderKeyRow)}
+        <h3 className="text-[13px] font-semibold mb-3 mt-2">Telegram Bot kalitlari</h3>
+        <p className="text-[11px] text-[#5b6f85] mb-3">BetCore Pay — hisob to'ldirish/yechish uchun Telegram bot.</p>
+        {TELEGRAM_KEYS.map(renderKeyRow)}
       </div>
     </div>
   );

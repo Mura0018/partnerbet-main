@@ -5,7 +5,7 @@ import { getApiCredentialStatuses, setApiCredential } from "@/lib/auth/apiCreden
 const MANAGED_KEYS = [
   "football_api_key", "sportmonks_api_key", "footballdata_org_api_key",
   "push_fcm_server_key", "push_vapid_public_key", "push_vapid_private_key",
-  "openai_api_key",
+  "openai_api_key", "telegram_bot_token",
 ];
 
 async function requireSettingsManage() {
