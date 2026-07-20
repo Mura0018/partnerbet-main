@@ -75,6 +75,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "player_not_found" }, { status: 404 });
   }
 
+  const adminForLimits = createAdminClient();
+  const { data: limitsRow } = await adminForLimits.from("site_settings").select("value").eq("key", "betcore_pay_limits").maybeSingle();
+  const limits = (limitsRow?.value as any) ?? {};
+  const maxOrderAmount = Number(limits.max_order_amount) || Infinity;
+  const dailyCustomerLimit = Number(limits.daily_customer_limit) || Infinity;
+
+  if (amountNum > maxOrderAmount) {
+    return NextResponse.json({ error: "order_limit_exceeded", limit: maxOrderAmount }, { status: 400 });
+  }
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const { data: todaysOrders } = await adminForLimits
+    .from("telegram_orders")
+    .select("amount")
+    .eq("customer_id", customer.id)
+    .in("status", ["pending", "completed"])
+    .gte("created_at", startOfToday.toISOString());
+  const todaysTotal = (todaysOrders ?? []).reduce((sum, o: any) => sum + Number(o.amount), 0);
+  if (todaysTotal + amountNum > dailyCustomerLimit) {
+    return NextResponse.json({ error: "daily_limit_exceeded", limit: dailyCustomerLimit }, { status: 400 });
+  }
+
   const supabase = createAdminClient();
   const { data: order, error } = await supabase
     .from("telegram_orders")

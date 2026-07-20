@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 
+// Without this, Next.js can statically render this GET handler once at
+// build time (no Request/cookies/headers usage triggers that) and keep
+// serving that frozen snapshot in production forever — which is exactly
+// why a payment method added after deploy wasn't showing up.
+export const dynamic = "force-dynamic";
+
 type MethodRow = { method_type: string; account_number: string; holder_name: string | null };
 
 function pickRandom(rows: MethodRow[], type: string): MethodRow | null {

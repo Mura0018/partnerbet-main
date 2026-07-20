@@ -11,6 +11,14 @@ const ROLE_COLOR: Record<string, string> = {
   operator: "#4ADE80",
 };
 
+const REJECT_REASON_TEMPLATES = [
+  "To'lov cheki noaniq/mos emas",
+  "Hisob ID noto'g'ri yoki topilmadi",
+  "Summasi to'lovga mos kelmayapti",
+  "Pul yechish kodi noto'g'ri",
+  "Takroriy buyurtma",
+];
+
 type ChatMessage = {
   id: string;
   message: string;
@@ -360,6 +368,18 @@ function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () =>
           {order.payout_details && <Row label="Qabul qiluvchi raqam" value={order.payout_details} highlight />}
         </div>
 
+        <div className="flex gap-1.5 mb-2 overflow-x-auto">
+          {REJECT_REASON_TEMPLATES.map((tpl, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setNote(tpl)}
+              className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
+            >
+              {tpl}
+            </button>
+          ))}
+        </div>
         <textarea
           rows={2}
           className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3"
@@ -419,6 +439,77 @@ function CashdeskBalanceBadge() {
   );
 }
 
+function LimitsEditor() {
+  const [values, setValues] = useState({ max_order_amount: "", daily_customer_limit: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("site_settings").select("value").eq("key", "betcore_pay_limits").maybeSingle();
+      const v = (data?.value as any) ?? {};
+      setValues({
+        max_order_amount: v.max_order_amount != null ? String(v.max_order_amount) : "",
+        daily_customer_limit: v.daily_customer_limit != null ? String(v.daily_customer_limit) : "",
+      });
+      setLoading(false);
+    })();
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase
+      .from("site_settings")
+      .update({
+        value: { max_order_amount: Number(values.max_order_amount) || 0, daily_customer_limit: Number(values.daily_customer_limit) || 0 },
+        updated_by: user?.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("key", "betcore_pay_limits");
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-3">
+      <div className="text-[11px] text-muted mb-2">Xavfsizlik limitlari (so'mda)</div>
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label className="block text-[10px] text-[#5b6f85] mb-1">Bitta buyurtma maksimumi</label>
+          <input
+            type="number"
+            className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]"
+            value={values.max_order_amount}
+            onChange={(e) => setValues((prev) => ({ ...prev, max_order_amount: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] text-[#5b6f85] mb-1">Kunlik mijoz limiti</label>
+          <input
+            type="number"
+            className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]"
+            value={values.daily_customer_limit}
+            onChange={(e) => setValues((prev) => ({ ...prev, daily_customer_limit: e.target.value }))}
+          />
+        </div>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold disabled:opacity-60"
+        >
+          {saving ? "…" : saved ? "Saqlandi ✓" : "Saqlash"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -442,6 +533,7 @@ function OrdersTab() {
 
   return (
     <div>
+      <Can permission="telegram_operators.manage"><LimitsEditor /></Can>
       <CashdeskBalanceBadge />
       <div className="flex gap-2 mb-4">
         {ORDER_STATUS_FILTERS.map((f) => (
@@ -510,8 +602,42 @@ function OrdersTab() {
   );
 }
 
-type SupportThread = { customer_id: string; phone: string; full_name: string | null; last_message: string; last_at: string };
-type SupportMsg = { id: string; sender: "customer" | "operator"; message: string; created_at: string };
+type SupportThread = { customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string };
+type SupportMsg = { id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null; created_at: string };
+
+const REPLY_TEMPLATES = [
+  "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
+  "So'rovingiz ko'rib chiqilmoqda, biroz kuting.",
+  "Iltimos, to'lov chekining aniqroq skrinshotini yuboring.",
+  "Ma'lumotlaringiz uchun rahmat, tekshirib ko'ramiz.",
+  "Muammo hal qilindi. Yana savollaringiz bo'lsa, murojaat qiling.",
+  "Kechirasiz, kutish uchun rahmat — operator tez orada javob beradi.",
+];
+
+function SupportImage({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/admin/telegram-orders/support-image-url?path=${encodeURIComponent(path)}`)
+      .then((r) => r.json())
+      .then((data) => setUrl(data.url ?? null))
+      .catch(() => setUrl(null));
+  }, [path]);
+
+  if (!url) return <p className="text-[11px] text-muted">Rasm yuklanmoqda…</p>;
+
+  return (
+    <>
+      <img src={url} alt="Mijoz yuborgan rasm" onClick={() => setExpanded(true)} className="max-w-[180px] rounded-lg cursor-zoom-in" />
+      {expanded && (
+        <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-[60] p-5" onClick={() => setExpanded(false)}>
+          <img src={url} alt="Mijoz yuborgan rasm" className="max-w-full max-h-full object-contain rounded-lg" />
+        </div>
+      )}
+    </>
+  );
+}
 
 function SupportTab() {
   const [threads, setThreads] = useState<SupportThread[]>([]);
@@ -526,7 +652,7 @@ function SupportTab() {
     setLoading(true);
     const { data } = await supabase
       .from("telegram_support_messages")
-      .select("customer_id, message, created_at, customers(phone, full_name)")
+      .select("customer_id, message, image_path, created_at, customers(phone, full_name)")
       .order("created_at", { ascending: false })
       .limit(300);
     const grouped = new Map<string, SupportThread>();
@@ -537,6 +663,7 @@ function SupportTab() {
           phone: row.customers?.phone ?? "—",
           full_name: row.customers?.full_name ?? null,
           last_message: row.message,
+          last_image: !!row.image_path,
           last_at: row.created_at,
         });
       }
@@ -554,7 +681,7 @@ function SupportTab() {
   const loadThread = async (customerId: string) => {
     const { data } = await supabase
       .from("telegram_support_messages")
-      .select("id, sender, message, created_at")
+      .select("id, sender, message, image_path, created_at")
       .eq("customer_id", customerId)
       .order("created_at", { ascending: true })
       .limit(200);
@@ -587,7 +714,7 @@ function SupportTab() {
   if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda...</p>;
 
   return (
-    <div className="grid md:grid-cols-[240px_1fr] gap-4 h-[520px]">
+    <div className="grid md:grid-cols-[240px_1fr] gap-4 h-[560px]">
       <div className="rounded-xl border border-white/8 bg-white/[0.02] overflow-y-auto">
         {threads.length === 0 ? (
           <p className="text-[12px] text-muted text-center p-6">Hozircha murojaat yo'q.</p>
@@ -601,7 +728,7 @@ function SupportTab() {
               }`}
             >
               <div className="text-[12px] font-semibold truncate">{t.full_name || t.phone}</div>
-              <div className="text-[11px] text-muted truncate mt-0.5">{t.last_message}</div>
+              <div className="text-[11px] text-muted truncate mt-0.5">{t.last_image ? "📷 Rasm" : t.last_message}</div>
             </button>
           ))
         )}
@@ -614,14 +741,29 @@ function SupportTab() {
           <>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {msgs.map((m) => (
-                <div key={m.id} className={`flex ${m.sender === "operator" ? "justify-end" : "justify-start"}`}>
+                <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
+                  <span className="text-[10px] text-[#5b6f85] mb-0.5 px-1">
+                    {m.sender === "operator" ? "Siz (operator)" : "Mijoz"}
+                  </span>
                   <div className={`max-w-[75%] rounded-xl px-3.5 py-2.5 text-[13px] ${m.sender === "operator" ? "bg-gradient-to-r from-accent to-accent-dim" : "bg-white/[0.06]"}`}>
-                    {m.message}
+                    {m.image_path ? <SupportImage path={m.image_path} /> : m.message}
+                    <div className="text-[9px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="flex gap-2 p-3 border-t border-white/8">
+            <div className="flex gap-1.5 px-3 pt-2.5 overflow-x-auto">
+              {REPLY_TEMPLATES.map((tpl, i) => (
+                <button
+                  key={i}
+                  onClick={() => setText(tpl)}
+                  className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
+                >
+                  {tpl.length > 28 ? tpl.slice(0, 28) + "…" : tpl}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 p-3">
               <input
                 className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
                 placeholder="Javob yozing..."

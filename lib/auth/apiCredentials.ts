@@ -1,10 +1,18 @@
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { encryptSecret, decryptSecret } from "@/lib/security/encryption";
 
-// Server-only access to api_credentials (football API key, push keys, etc).
-// This table has zero RLS policies for anon/authenticated — only the
-// service-role client used here can reach it, and only from server-only
-// code (API routes). The actual secret value is NEVER sent back to the
-// browser; callers only ever learn whether a key is configured.
+// Server-only access to api_credentials (football API key, push keys,
+// Telegram bot token, cashdesk credentials, etc). Values are encrypted at
+// rest (AES-256-GCM, see lib/security/encryption.ts) — a database dump or
+// leaked service-role key alone is no longer enough to read them, since
+// ENCRYPTION_KEY lives only in server environment variables. The actual
+// secret value is NEVER sent back to the browser; callers only ever learn
+// whether a key is configured.
+//
+// NOTE: rows written before encryption was added are plain text and will
+// no longer decrypt (decryptSecret throws, caught below and treated as
+// "not configured") — every credential must be re-saved once after this
+// change ships.
 
 export async function getApiCredential(key: string): Promise<string | null> {
   const supabase = createAdminClient();
@@ -14,13 +22,18 @@ export async function getApiCredential(key: string): Promise<string | null> {
     .eq("key", key)
     .eq("is_active", true)
     .maybeSingle();
-  return data?.value ?? null;
+  if (!data?.value) return null;
+  try {
+    return decryptSecret(data.value);
+  } catch {
+    return null; // pre-encryption plaintext row or corrupted value — treat as not configured
+  }
 }
 
 export async function setApiCredential(key: string, value: string, updatedBy: string): Promise<void> {
   const supabase = createAdminClient();
   await supabase.from("api_credentials").upsert(
-    { key, value, is_active: true, updated_by: updatedBy, updated_at: new Date().toISOString() },
+    { key, value: encryptSecret(value), is_active: true, updated_by: updatedBy, updated_at: new Date().toISOString() },
     { onConflict: "key" }
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip,
 } from "lucide-react";
 
 declare global {
@@ -27,7 +27,7 @@ type Order = {
   created_at: string;
 };
 
-type SupportMessage = { id: string; sender: "customer" | "operator"; message: string; created_at: string };
+type SupportMessage = { id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null; created_at: string };
 
 type PaymentInfo = {
   cardNumber: string; cardHolder: string;
@@ -210,6 +210,7 @@ export default function TelegramAppPage() {
   // Orders
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersFilter, setOrdersFilter] = useState<"all" | "pending" | "completed" | "rejected">("all");
 
   // Support
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
@@ -420,6 +421,10 @@ export default function TelegramAppPage() {
         const data = await res.json().catch(() => ({}));
         if (data.error === "player_not_found") {
           setError("Bunday hisob ID topilmadi. Platforma va ID raqamini tekshiring.");
+        } else if (data.error === "order_limit_exceeded") {
+          setError(`Bitta buyurtma uchun maksimal summa: ${Number(data.limit).toLocaleString("ru-RU")} so'm.`);
+        } else if (data.error === "daily_limit_exceeded") {
+          setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
         } else {
           setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
         }
@@ -471,6 +476,10 @@ export default function TelegramAppPage() {
         const data = await res.json().catch(() => ({}));
         if (data.error === "player_not_found") {
           setError("Bunday hisob ID topilmadi. Platforma va ID raqamini tekshiring.");
+        } else if (data.error === "order_limit_exceeded") {
+          setError(`Bitta buyurtma uchun maksimal summa: ${Number(data.limit).toLocaleString("ru-RU")} so'm.`);
+        } else if (data.error === "daily_limit_exceeded") {
+          setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
         } else {
           setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
         }
@@ -534,6 +543,37 @@ export default function TelegramAppPage() {
     } finally {
       setSupportSending(false);
     }
+  };
+
+  const sendSupportImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setError("Faqat rasm fayli (PNG/JPEG/WEBP) yuklash mumkin.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Rasm hajmi 5MB dan oshmasligi kerak.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const result = reader.result as string;
+      const imageBase64 = result.split(",")[1] ?? "";
+      setSupportSending(true);
+      try {
+        const res = await fetch("/api/telegram/miniapp/support/image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initData: getInitData(), imageBase64, mimeType: file.type }),
+        });
+        if (res.ok) await loadSupport();
+      } finally {
+        setSupportSending(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   if (screen === "loading") {
@@ -738,16 +778,38 @@ export default function TelegramAppPage() {
   }
 
   if (screen === "orders") {
+    const ORDER_FILTERS: { id: "all" | "pending" | "completed" | "rejected"; label: string }[] = [
+      { id: "all", label: "Barchasi" },
+      { id: "pending", label: "Kutilmoqda" },
+      { id: "completed", label: "Bajarildi" },
+      { id: "rejected", label: "Rad etildi" },
+    ];
+    const filteredOrders = ordersFilter === "all" ? orders : orders.filter((o) => o.status === ordersFilter);
     return (
       <div className={`${bgCls} p-5`}>
         <ScreenHeader title="Buyurtmalarim" onBack={() => setScreen("menu")} />
+        <div className="flex gap-2 mb-4 overflow-x-auto">
+          {ORDER_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setOrdersFilter(f.id)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold border whitespace-nowrap ${
+                ordersFilter === f.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
         {ordersLoading ? (
           <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
-        ) : orders.length === 0 ? (
-          <p className="text-[13px] text-[#93a5ba] text-center mt-8">Hozircha buyurtmalar yo'q.</p>
+        ) : filteredOrders.length === 0 ? (
+          <p className="text-[13px] text-[#93a5ba] text-center mt-8">
+            {orders.length === 0 ? "Hozircha buyurtmalar yo'q." : "Bu holatda buyurtmalar yo'q."}
+          </p>
         ) : (
           <div className="space-y-3">
-            {orders.map((o) => {
+            {filteredOrders.map((o) => {
               const s = STATUS_LABEL[o.status];
               const Icon = s.icon;
               return (
@@ -776,6 +838,7 @@ export default function TelegramAppPage() {
       <div className={`${bgCls} flex flex-col h-screen`}>
         <div className="p-5 pb-3">
           <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} />
+          <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
         </div>
         <div className="flex-1 overflow-y-auto px-5 space-y-3">
           {supportLoading ? (
@@ -784,13 +847,18 @@ export default function TelegramAppPage() {
             <p className="text-[13px] text-[#93a5ba] text-center mt-8">Savolingiz bo'lsa, quyidan yozing — operator tez orada javob beradi.</p>
           ) : (
             supportMessages.map((m) => (
-              <div key={m.id} className={`flex ${m.sender === "customer" ? "justify-end" : "justify-start"}`}>
+              <div key={m.id} className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
+                {m.sender === "operator" && <span className="text-[10px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
                 <div
                   className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-[13px] ${
                     m.sender === "customer" ? "bg-gradient-to-br from-[#3D7FFF] to-[#2456c9]" : "bg-white/[0.06]"
                   }`}
                 >
-                  {m.message}
+                  {m.image_path ? (
+                    <div className="flex items-center gap-1.5 text-[#c7d5e6]"><ImageIcon size={14} /> Rasm yuborildi</div>
+                  ) : (
+                    m.message
+                  )}
                   <div className="text-[9px] text-white/50 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                 </div>
               </div>
@@ -798,6 +866,10 @@ export default function TelegramAppPage() {
           )}
         </div>
         <div className="flex gap-2 p-4">
+          <label className="shrink-0 flex items-center justify-center w-11 rounded-xl bg-white/[0.06] cursor-pointer">
+            <Paperclip size={16} className="text-[#7db8ff]" />
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendSupportImage} disabled={supportSending} />
+          </label>
           <input
             className={`${inputCls} flex-1`}
             placeholder="Xabar yozing..."

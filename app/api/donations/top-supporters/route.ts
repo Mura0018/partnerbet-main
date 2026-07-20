@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 
+export const dynamic = "force-dynamic";
+
 // Public: returns only safe, intentionally-public fields (name, message,
 // amount, date) for completed, public, non-anonymous donations. Never
 // exposes donor_email or any internal donation/payment metadata.
