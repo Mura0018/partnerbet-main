@@ -16,14 +16,24 @@ export function NotificationBell() {
 
   const handleClick = async () => {
     setBusy(true);
-    if (state === "granted") {
-      await unsubscribeFromPush();
-      setState("default");
-    } else {
-      const result = await subscribeToPush();
-      setState(result.success ? "granted" : await getPushPermissionState());
+    try {
+      if (state === "granted") {
+        await unsubscribeFromPush();
+        setState("default");
+      } else {
+        const result = await subscribeToPush();
+        if (result.success) {
+          setState("granted");
+        } else {
+          alert("Obuna yozilmadi: " + (result.error ?? "noma'lum xato"));
+          setState(await getPushPermissionState());
+        }
+      }
+    } catch (err: any) {
+      alert("Kutilmagan xato: " + (err?.message || String(err)));
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   };
 
   return (
