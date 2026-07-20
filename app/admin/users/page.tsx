@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ShieldCheck, ShieldOff, Pencil, Check, X, Plus, Loader2 } from "lucide-react";
+import { ShieldCheck, ShieldOff, Pencil, Check, X, Plus, Loader2, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
@@ -183,6 +183,17 @@ export default function UsersManager() {
     load();
   };
 
+  const deleteUser = async (user: UserRow) => {
+    if (!confirm(`${user.full_name || "Bu foydalanuvchi"}ni butunlay o'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.`)) return;
+    const res = await fetch("/api/admin/users/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    });
+    if (res.ok) load();
+    else alert("O'chirishda xatolik yuz berdi.");
+  };
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-1">
@@ -239,15 +250,26 @@ export default function UsersManager() {
                   </td>
                   <td className="px-4 py-3 text-[#5b6f85]">{u.last_login_at ? new Date(u.last_login_at).toLocaleString() : "—"}</td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => toggleActive(u)}
-                      disabled={isSelf}
-                      className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-                      aria-label={u.is_active ? "Faolsizlantirish" : "Faollashtirish"}
-                      title={u.is_active ? "Faolsizlantirish (kirish taqiqlanadi)" : "Faollashtirish (kirishga ruxsat)"}
-                    >
-                      {u.is_active ? <ShieldOff size={15} /> : <ShieldCheck size={15} className="text-[#4ADE80]" />}
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => toggleActive(u)}
+                        disabled={isSelf}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-[11px]"
+                        title={u.is_active ? "Faolsizlantirish (kirish taqiqlanadi)" : "Faollashtirish (kirishga ruxsat)"}
+                      >
+                        {u.is_active ? <ShieldOff size={14} /> : <ShieldCheck size={14} className="text-[#4ADE80]" />}
+                        {u.is_active ? "Faolsizlantirish" : "Faollashtirish"}
+                      </button>
+                      <button
+                        onClick={() => deleteUser(u)}
+                        disabled={isSelf}
+                        className="p-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85] disabled:opacity-30 disabled:cursor-not-allowed"
+                        aria-label="O'chirish"
+                        title="Butunlay o'chirish"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

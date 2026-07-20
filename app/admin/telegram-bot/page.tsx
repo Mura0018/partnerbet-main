@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck } from "lucide-react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
 
@@ -21,7 +21,8 @@ const REJECT_REASON_TEMPLATES = [
 
 type ChatMessage = {
   id: string;
-  message: string;
+  message: string | null;
+  image_path: string | null;
   created_at: string;
   sender_id: string;
   profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; roles: { key: string } | null } | null;
@@ -31,19 +32,23 @@ function ChatTab() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   const load = async () => {
     const { data } = await supabase
       .from("team_chat_messages")
-      .select("id, message, created_at, sender_id, profiles(full_name, display_name, avatar_url, roles(key))")
+      .select("id, message, image_path, created_at, sender_id, profiles(full_name, display_name, avatar_url, roles(key))")
       .order("created_at", { ascending: true })
       .limit(100);
     setMessages((data as any[]) ?? []);
   };
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
     load();
     const interval = setInterval(load, 4000);
     return () => clearInterval(interval);
@@ -65,18 +70,68 @@ function ChatTab() {
     setSending(false);
   };
 
+  const sendImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return;
+    if (file.size > 5 * 1024 * 1024) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    setSending(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("team-chat-attachments").upload(path, file, { upsert: false });
+      if (!error) {
+        await supabase.from("team_chat_messages").insert({ sender_id: user.id, image_path: path });
+        await load();
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const filtered = search.trim()
+    ? messages.filter((m) => (m.message ?? "").toLowerCase().includes(search.trim().toLowerCase()))
+    : messages;
+
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col h-[520px]">
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.length === 0 && (
-          <p className="text-[13px] text-muted text-center mt-8">Hozircha xabar yo'q. Birinchi bo'lib yozing.</p>
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col h-[520px] min-w-0">
+      <div className="flex items-center gap-2 p-2.5 border-b border-white/8">
+        {showSearch ? (
+          <input
+            autoFocus
+            className="flex-1 bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-[12px] outline-none focus:border-accent"
+            placeholder="Xabarlarni qidirish..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        ) : (
+          <span className="text-[12px] text-muted flex-1">Jamoa chati</span>
         )}
-        {messages.map((m) => {
+        <button
+          onClick={() => { setShowSearch((v) => !v); setSearch(""); }}
+          className="p-1.5 rounded-md hover:bg-white/10 text-muted shrink-0"
+          aria-label="Qidirish"
+        >
+          <Search size={15} />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3 min-w-0">
+        {filtered.length === 0 && (
+          <p className="text-[13px] text-muted text-center mt-8">
+            {search ? "Hech narsa topilmadi." : "Hozircha xabar yo'q. Birinchi bo'lib yozing."}
+          </p>
+        )}
+        {filtered.map((m) => {
           const roleKey = m.profiles?.roles?.key ?? "user";
           const color = ROLE_COLOR[roleKey] ?? "#5b6f85";
           const name = m.profiles?.display_name || m.profiles?.full_name || "?";
+          const isMe = m.sender_id === currentUserId;
+          const imageUrl = m.image_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.image_path).data.publicUrl : null;
           return (
-            <div key={m.id} className="flex items-start gap-2.5">
+            <div key={m.id} className={`flex items-end gap-2.5 ${isMe ? "flex-row-reverse" : ""}`}>
               {m.profiles?.avatar_url ? (
                 <img src={m.profiles.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border shrink-0" style={{ borderColor: color }} />
               ) : (
@@ -87,12 +142,18 @@ function ChatTab() {
                   {name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className="min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[12px] font-bold" style={{ color }}>{name}</span>
+              <div className={`min-w-0 max-w-[75%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                <div className={`flex items-baseline gap-2 mb-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
+                  <span className="text-[11px] font-bold" style={{ color }}>{isMe ? "Siz" : name}</span>
                   <span className="text-[10px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
-                <div className="text-[13px] text-white/90 break-words">{m.message}</div>
+                <div
+                  className={`rounded-2xl px-3.5 py-2.5 text-[13px] break-words ${
+                    isMe ? "bg-gradient-to-br from-accent to-accent-dim text-white" : "bg-white/[0.07] text-white/90"
+                  }`}
+                >
+                  {imageUrl ? <img src={imageUrl} alt="" className="max-w-[200px] rounded-lg" /> : m.message}
+                </div>
               </div>
             </div>
           );
@@ -100,6 +161,10 @@ function ChatTab() {
         <div ref={bottomRef} />
       </div>
       <div className="flex gap-2 p-3 border-t border-white/8">
+        <label className="shrink-0 flex items-center justify-center w-10 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10">
+          <Paperclip size={15} className="text-muted" />
+          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendImage} disabled={sending} />
+        </label>
         <input
           className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
           placeholder="Xabar yozing..."
@@ -648,8 +713,8 @@ function SupportTab() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  const loadThreads = async () => {
-    setLoading(true);
+  const loadThreads = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     const { data } = await supabase
       .from("telegram_support_messages")
       .select("customer_id, message, image_path, created_at, customers(phone, full_name)")
@@ -669,12 +734,12 @@ function SupportTab() {
       }
     }
     setThreads(Array.from(grouped.values()));
-    setLoading(false);
+    if (isInitial) setLoading(false);
   };
 
   useEffect(() => {
-    loadThreads();
-    const interval = setInterval(loadThreads, 6000);
+    loadThreads(true);
+    const interval = setInterval(() => loadThreads(false), 6000);
     return () => clearInterval(interval);
   }, []);
 

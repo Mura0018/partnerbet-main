@@ -509,16 +509,16 @@ export default function TelegramAppPage() {
     }
   };
 
-  const loadSupport = async () => {
-    setSupportLoading(true);
+  const loadSupport = async (silent = false) => {
+    if (!silent) setSupportLoading(true);
     try {
       const res = await fetch(`/api/telegram/miniapp/support?initData=${encodeURIComponent(getInitData())}`);
       const data = await res.json();
       setSupportMessages(data.messages ?? []);
     } catch {
-      setSupportMessages([]);
+      if (!silent) setSupportMessages([]);
     } finally {
-      setSupportLoading(false);
+      if (!silent) setSupportLoading(false);
     }
   };
 
@@ -526,6 +526,12 @@ export default function TelegramAppPage() {
     setScreen("support");
     await loadSupport();
   };
+
+  useEffect(() => {
+    if (screen !== "support") return;
+    const interval = setInterval(() => loadSupport(true), 4000);
+    return () => clearInterval(interval);
+  }, [screen]);
 
   const sendSupportMessage = async () => {
     if (!supportText.trim()) return;
