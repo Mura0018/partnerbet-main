@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Download, ArrowUpFromLine, ListOrdered, Headset, Loader2 } from "lucide-react";
+import {
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock,
+} from "lucide-react";
 
 declare global {
   interface Window {
@@ -10,12 +12,44 @@ declare global {
 }
 
 type Customer = { id: string; full_name: string | null; phone: string };
-type Screen = "loading" | "auth" | "menu" | "placeholder";
+type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success";
+type PaymentMethod = "click" | "payme" | "card" | "crypto";
+
+type Order = {
+  id: string;
+  type: "topup" | "withdraw";
+  platform: string;
+  account_id: string;
+  amount: number;
+  payment_method: PaymentMethod;
+  status: "pending" | "completed" | "rejected";
+  operator_note: string | null;
+  created_at: string;
+};
+
+type SupportMessage = { id: string; sender: "customer" | "operator"; message: string; created_at: string };
+
+type PaymentInfo = { cardNumber: string; clickNumber: string; paymeNumber: string; cryptoWallet: string };
+
+const PLATFORMS = ["1xBet", "Melbet", "Betwinner", "Boshqa"];
+const PAYMENT_METHODS: { id: PaymentMethod; label: string }[] = [
+  { id: "click", label: "Click" },
+  { id: "payme", label: "Payme" },
+  { id: "card", label: "Bank kartasi" },
+  { id: "crypto", label: "Crypto (USDT)" },
+];
+const STATUS_LABEL: Record<Order["status"], { label: string; color: string; icon: any }> = {
+  pending: { label: "Kutilmoqda", color: "#F4C76A", icon: Clock },
+  completed: { label: "Bajarildi", color: "#4ADE80", icon: CheckCircle2 },
+  rejected: { label: "Rad etildi", color: "#FF6B85", icon: XCircle },
+};
 
 const inputCls =
   "w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[14px] text-white outline-none placeholder:text-[#5b7089] " +
   "shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)] " +
   "focus:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.12),0_0_0_2px_rgba(61,127,255,0.4)] transition-shadow";
+
+const selectCls = inputCls + " appearance-none";
 
 const buttonCls =
   "w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-[15px] text-white " +
@@ -33,6 +67,93 @@ const menuCardCls =
   "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.08)] " +
   "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4)] transition-all";
 
+const bgCls = "min-h-screen bg-gradient-to-b from-[#123f77] via-[#0f3364] to-[#0a1a30] text-white";
+
+function ScreenHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <div className="flex items-center gap-2 mb-5">
+      <button onClick={onBack} className="p-2 -ml-2 rounded-lg active:bg-white/5" aria-label="Orqaga">
+        <ChevronLeft size={20} />
+      </button>
+      <h1 className="text-[18px] font-bold">{title}</h1>
+    </div>
+  );
+}
+
+function PaymentMethodPicker({
+  value,
+  onChange,
+  paymentInfo,
+}: {
+  value: PaymentMethod;
+  onChange: (m: PaymentMethod) => void;
+  paymentInfo: PaymentInfo | null;
+}) {
+  const detail: Record<PaymentMethod, string> = {
+    click: paymentInfo?.clickNumber ? `Click: ${paymentInfo.clickNumber}` : "",
+    payme: paymentInfo?.paymeNumber ? `Payme: ${paymentInfo.paymeNumber}` : "",
+    card: paymentInfo?.cardNumber ? `Karta: ${paymentInfo.cardNumber}` : "",
+    crypto: paymentInfo?.cryptoWallet ? `USDT (TRC20): ${paymentInfo.cryptoWallet}` : "",
+  };
+  return (
+    <div className="mb-3.5">
+      <label className="block text-[12px] text-[#93a5ba] mb-1.5">To'lov usuli</label>
+      <div className="grid grid-cols-2 gap-2 mb-2.5">
+        {PAYMENT_METHODS.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onChange(m.id)}
+            className={`py-2.5 rounded-xl text-[13px] font-semibold border transition-colors ${
+              value === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"
+            }`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      {detail[value] && (
+        <div className="rounded-lg bg-white/[0.04] border border-white/10 px-3.5 py-2.5 text-[12px] text-[#c7d5e6]">
+          {detail[value]}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlatformField({
+  platform,
+  setPlatform,
+  customPlatform,
+  setCustomPlatform,
+}: {
+  platform: string;
+  setPlatform: (v: string) => void;
+  customPlatform: string;
+  setCustomPlatform: (v: string) => void;
+}) {
+  return (
+    <>
+      <div className="mb-3.5">
+        <label className="block text-[12px] text-[#93a5ba] mb-1.5">Platforma</label>
+        <select className={selectCls} value={platform} onChange={(e) => setPlatform(e.target.value)}>
+          {PLATFORMS.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+      </div>
+      {platform === "Boshqa" && (
+        <input
+          className={`${inputCls} mb-3.5`}
+          placeholder="Platforma nomi"
+          value={customPlatform}
+          onChange={(e) => setCustomPlatform(e.target.value)}
+        />
+      )}
+    </>
+  );
+}
+
 export default function TelegramAppPage() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -42,8 +163,36 @@ export default function TelegramAppPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [placeholderText, setPlaceholderText] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
+
+  // Top-up form
+  const [tuPlatform, setTuPlatform] = useState(PLATFORMS[0]);
+  const [tuCustomPlatform, setTuCustomPlatform] = useState("");
+  const [tuAccountId, setTuAccountId] = useState("");
+  const [tuAmount, setTuAmount] = useState("");
+  const [tuMethod, setTuMethod] = useState<PaymentMethod>("click");
+
+  // Withdraw form
+  const [wdPlatform, setWdPlatform] = useState(PLATFORMS[0]);
+  const [wdCustomPlatform, setWdCustomPlatform] = useState("");
+  const [wdAccountId, setWdAccountId] = useState("");
+  const [wdCode, setWdCode] = useState("");
+  const [wdAmount, setWdAmount] = useState("");
+  const [wdMethod, setWdMethod] = useState<PaymentMethod>("click");
+  const [wdPayoutDetails, setWdPayoutDetails] = useState("");
+
+  const [successLabel, setSuccessLabel] = useState("");
+
+  // Orders
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  // Support
+  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [supportText, setSupportText] = useState("");
+  const [supportLoading, setSupportLoading] = useState(false);
+  const [supportSending, setSupportSending] = useState(false);
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
 
@@ -51,6 +200,10 @@ export default function TelegramAppPage() {
     fetch("/api/telegram/miniapp/branding")
       .then((r) => r.json())
       .then((data) => setLogoUrl(data.logoUrl))
+      .catch(() => {});
+    fetch("/api/telegram/miniapp/payment-info")
+      .then((r) => r.json())
+      .then((data) => setPaymentInfo(data))
       .catch(() => {});
   }, []);
 
@@ -88,7 +241,7 @@ export default function TelegramAppPage() {
     document.body.appendChild(script);
   }, []);
 
-  const submit = async (e: React.FormEvent) => {
+  const submitAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!phone.trim() || !password.trim()) {
@@ -126,12 +279,118 @@ export default function TelegramAppPage() {
     }
   };
 
-  const openPlaceholder = (label: string) => {
-    setPlaceholderText(`${label} bo'limi tez orada ishga tushadi.`);
-    setScreen("placeholder");
+  const resetForms = () => {
+    setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
+    setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails("");
   };
 
-  const bgCls = "min-h-screen bg-gradient-to-b from-[#123f77] via-[#0f3364] to-[#0a1a30] text-white";
+  const submitTopup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
+    if (!platform || !tuAccountId.trim() || !tuAmount || Number(tuAmount) <= 0) {
+      setError("Barcha maydonlarni to'ldiring.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: getInitData(), type: "topup", platform, accountId: tuAccountId.trim(),
+          amount: Number(tuAmount), paymentMethod: tuMethod,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setSuccessLabel("Hisob to'ldirish");
+      resetForms();
+      setScreen("order-success");
+    } catch {
+      setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitWithdraw = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    const platform = wdPlatform === "Boshqa" ? wdCustomPlatform.trim() : wdPlatform;
+    if (!platform || !wdAccountId.trim() || !wdCode.trim() || !wdAmount || Number(wdAmount) <= 0 || !wdPayoutDetails.trim()) {
+      setError("Barcha maydonlarni to'ldiring.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: getInitData(), type: "withdraw", platform, accountId: wdAccountId.trim(),
+          amount: Number(wdAmount), paymentMethod: wdMethod, withdrawCode: wdCode.trim(), payoutDetails: wdPayoutDetails.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setSuccessLabel("Pul yechish");
+      resetForms();
+      setScreen("order-success");
+    } catch {
+      setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openOrders = async () => {
+    setScreen("orders");
+    setOrdersLoading(true);
+    try {
+      const res = await fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`);
+      const data = await res.json();
+      setOrders(data.orders ?? []);
+    } catch {
+      setOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const loadSupport = async () => {
+    setSupportLoading(true);
+    try {
+      const res = await fetch(`/api/telegram/miniapp/support?initData=${encodeURIComponent(getInitData())}`);
+      const data = await res.json();
+      setSupportMessages(data.messages ?? []);
+    } catch {
+      setSupportMessages([]);
+    } finally {
+      setSupportLoading(false);
+    }
+  };
+
+  const openSupport = async () => {
+    setScreen("support");
+    await loadSupport();
+  };
+
+  const sendSupportMessage = async () => {
+    if (!supportText.trim()) return;
+    setSupportSending(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), message: supportText.trim() }),
+      });
+      if (res.ok) {
+        setSupportText("");
+        await loadSupport();
+      }
+    } finally {
+      setSupportSending(false);
+    }
+  };
 
   if (screen === "loading") {
     return (
@@ -147,26 +406,16 @@ export default function TelegramAppPage() {
         <div className="max-w-sm mx-auto w-full">
           <div className="flex justify-center mb-2">
             {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt="BetCore Pay"
-                className="w-40 h-40 object-contain drop-shadow-[0_8px_20px_rgba(61,127,255,0.4)]"
-              />
+              <img src={logoUrl} alt="BetCore Pay" className="w-40 h-40 object-contain drop-shadow-[0_8px_20px_rgba(61,127,255,0.4)]" />
             ) : (
-              <div
-                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center text-[28px]
-                           shadow-[7px_7px_18px_rgba(0,0,0,0.5),-4px_-4px_14px_rgba(120,180,255,0.2)]"
-              >
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center text-[28px] shadow-[7px_7px_18px_rgba(0,0,0,0.5),-4px_-4px_14px_rgba(120,180,255,0.2)]">
                 ⬡
               </div>
             )}
           </div>
 
           {!logoUrl && (
-            <h1
-              className="text-[30px] font-black text-center mb-1 bg-gradient-to-r from-[#7db8ff] via-white to-[#F4C76A] bg-clip-text text-transparent"
-              style={titleShadow}
-            >
+            <h1 className="text-[30px] font-black text-center mb-1 bg-gradient-to-r from-[#7db8ff] via-white to-[#F4C76A] bg-clip-text text-transparent" style={titleShadow}>
               BetCore Pay
             </h1>
           )}
@@ -174,7 +423,7 @@ export default function TelegramAppPage() {
             {mode === "login" ? "Hisobingizga kiring" : "Yangi hisob yarating"}
           </p>
 
-          <form onSubmit={submit} className="space-y-3.5">
+          <form onSubmit={submitAuth} className="space-y-3.5">
             {mode === "register" && (
               <input className={inputCls} placeholder="Ism-familiya (ixtiyoriy)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             )}
@@ -190,8 +439,7 @@ export default function TelegramAppPage() {
 
           <button
             onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
-            className="w-full text-center mt-5 py-2.5 rounded-lg text-[13px] font-semibold text-[#7db8ff]
-                       bg-white/[0.03] border border-[#3D7FFF]/25 active:bg-white/[0.06] transition-colors"
+            className="w-full text-center mt-5 py-2.5 rounded-lg text-[13px] font-semibold text-[#7db8ff] bg-white/[0.03] border border-[#3D7FFF]/25 active:bg-white/[0.06] transition-colors"
           >
             {mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting →" : "Hisobingiz bormi? Kiring →"}
           </button>
@@ -200,47 +448,194 @@ export default function TelegramAppPage() {
     );
   }
 
-  if (screen === "placeholder") {
+  if (screen === "order-success") {
     return (
       <div className={`${bgCls} p-6 flex flex-col items-center justify-center text-center`}>
-        <p className="text-[14px] text-[#93a5ba] mb-6">{placeholderText}</p>
-        <button onClick={() => setScreen("menu")} className={`${buttonCls} max-w-[200px]`}>
-          Orqaga
-        </button>
+        <CheckCircle2 size={48} className="text-[#4ADE80] mb-4" />
+        <p className="text-[16px] font-bold mb-1.5">{successLabel} buyurtmangiz qabul qilindi</p>
+        <p className="text-[13px] text-[#93a5ba] mb-6">Operator tez orada ko'rib chiqadi. Holatni "Buyurtmalarim" bo'limida kuzatishingiz mumkin.</p>
+        <button onClick={() => setScreen("menu")} className={`${buttonCls} max-w-[220px]`}>Menyuga qaytish</button>
       </div>
     );
   }
 
+  if (screen === "topup") {
+    return (
+      <div className={`${bgCls} p-5`}>
+        <ScreenHeader title="Hisob to'ldirish" onBack={() => setScreen("menu")} />
+        <form onSubmit={submitTopup}>
+          <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
+          <div className="mb-3.5">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID raqami</label>
+            <input className={inputCls} placeholder="Masalan: 123456789" value={tuAccountId} onChange={(e) => setTuAccountId(e.target.value)} />
+          </div>
+          <div className="mb-3.5">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Summa</label>
+            <input className={inputCls} type="number" min={1} placeholder="Masalan: 50000" value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
+          </div>
+          <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} paymentInfo={paymentInfo} />
+          <p className="text-[11px] text-[#5b7089] mb-4 leading-relaxed">
+            Ko'rsatilgan raqamga to'lovni amalga oshirib, quyidagi tugmani bosing — operator to'lovni tekshirib, hisobingizni to'ldiradi.
+          </p>
+          {error && <p className="text-[12px] text-[#FF6B85] text-center mb-3">{error}</p>}
+          <button type="submit" disabled={submitting} className={buttonCls}>
+            {submitting ? <Loader2 size={16} className="animate-spin" /> : "To'ladim, buyurtma berish"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  if (screen === "withdraw") {
+    return (
+      <div className={`${bgCls} p-5`}>
+        <ScreenHeader title="Pul yechish" onBack={() => setScreen("menu")} />
+        <form onSubmit={submitWithdraw}>
+          <PlatformField platform={wdPlatform} setPlatform={setWdPlatform} customPlatform={wdCustomPlatform} setCustomPlatform={setWdCustomPlatform} />
+          <div className="mb-3.5">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID raqami</label>
+            <input className={inputCls} placeholder="Masalan: 123456789" value={wdAccountId} onChange={(e) => setWdAccountId(e.target.value)} />
+          </div>
+          <div className="mb-3.5">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">4 xonali pul yechish kodi</label>
+            <input className={inputCls} placeholder="Masalan: 1234" value={wdCode} onChange={(e) => setWdCode(e.target.value)} inputMode="numeric" />
+          </div>
+          <div className="mb-3.5">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Summa</label>
+            <input className={inputCls} type="number" min={1} placeholder="Masalan: 50000" value={wdAmount} onChange={(e) => setWdAmount(e.target.value)} />
+          </div>
+          <div className="mb-3.5">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Pulni qabul qilish usuli</label>
+            <div className="grid grid-cols-2 gap-2">
+              {PAYMENT_METHODS.map((m) => (
+                <button
+                  key={m.id} type="button" onClick={() => setWdMethod(m.id)}
+                  className={`py-2.5 rounded-xl text-[13px] font-semibold border transition-colors ${
+                    wdMethod === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Qabul qiluvchi raqam/karta</label>
+            <input className={inputCls} placeholder="Karta/Click/Payme raqamingiz" value={wdPayoutDetails} onChange={(e) => setWdPayoutDetails(e.target.value)} />
+          </div>
+          {error && <p className="text-[12px] text-[#FF6B85] text-center mb-3">{error}</p>}
+          <button type="submit" disabled={submitting} className={buttonCls}>
+            {submitting ? <Loader2 size={16} className="animate-spin" /> : "Buyurtma berish"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  if (screen === "orders") {
+    return (
+      <div className={`${bgCls} p-5`}>
+        <ScreenHeader title="Buyurtmalarim" onBack={() => setScreen("menu")} />
+        {ordersLoading ? (
+          <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
+        ) : orders.length === 0 ? (
+          <p className="text-[13px] text-[#93a5ba] text-center mt-8">Hozircha buyurtmalar yo'q.</p>
+        ) : (
+          <div className="space-y-3">
+            {orders.map((o) => {
+              const s = STATUS_LABEL[o.status];
+              const Icon = s.icon;
+              return (
+                <div key={o.id} className="rounded-xl bg-gradient-to-b from-[#0e2038] to-[#0a1a30] p-4 shadow-[5px_5px_14px_rgba(0,0,0,0.4)]">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[13px] font-bold">{o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"}</span>
+                    <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: s.color }}>
+                      <Icon size={12} /> {s.label}
+                    </span>
+                  </div>
+                  <div className="text-[12px] text-[#93a5ba]">{o.platform} · ID: {o.account_id}</div>
+                  <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} so'm</div>
+                  {o.operator_note && <div className="text-[11px] text-[#93a5ba] mt-1.5 italic">{o.operator_note}</div>}
+                  <div className="text-[10px] text-[#5b7089] mt-2">{new Date(o.created_at).toLocaleString()}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (screen === "support") {
+    return (
+      <div className={`${bgCls} flex flex-col h-screen`}>
+        <div className="p-5 pb-3">
+          <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} />
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 space-y-3">
+          {supportLoading ? (
+            <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
+          ) : supportMessages.length === 0 ? (
+            <p className="text-[13px] text-[#93a5ba] text-center mt-8">Savolingiz bo'lsa, quyidan yozing — operator tez orada javob beradi.</p>
+          ) : (
+            supportMessages.map((m) => (
+              <div key={m.id} className={`flex ${m.sender === "customer" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-[13px] ${
+                    m.sender === "customer" ? "bg-gradient-to-br from-[#3D7FFF] to-[#2456c9]" : "bg-white/[0.06]"
+                  }`}
+                >
+                  {m.message}
+                  <div className="text-[9px] text-white/50 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <div className="flex gap-2 p-4">
+          <input
+            className={`${inputCls} flex-1`}
+            placeholder="Xabar yozing..."
+            value={supportText}
+            onChange={(e) => setSupportText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendSupportMessage()}
+          />
+          <button onClick={sendSupportMessage} disabled={supportSending || !supportText.trim()} className="shrink-0 px-4 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] disabled:opacity-50">
+            <Send size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // menu
   return (
     <div className={`${bgCls} p-5`}>
-      <div
-        className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5
-                   shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]"
-      >
+      <div className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5 shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]">
         <p className="text-[11px] text-[#93a5ba] mb-1">Xush kelibsiz</p>
         <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3.5">
-        <button onClick={() => openPlaceholder("Hisob to'ldirish")} className={menuCardCls}>
+        <button onClick={() => setScreen("topup")} className={menuCardCls}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#2456c9] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <Download size={17} className="text-white" />
           </div>
           <div className="text-[13px] font-bold">Hisob to'ldirish</div>
         </button>
-        <button onClick={() => openPlaceholder("Pul yechish")} className={menuCardCls}>
+        <button onClick={() => setScreen("withdraw")} className={menuCardCls}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F4C76A] to-[#c99a3e] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <ArrowUpFromLine size={17} className="text-[#2a1e05]" />
           </div>
           <div className="text-[13px] font-bold">Pul yechish</div>
         </button>
-        <button onClick={() => openPlaceholder("Buyurtmalarim")} className={menuCardCls}>
+        <button onClick={openOrders} className={menuCardCls}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4ADE80] to-[#22a355] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <ListOrdered size={17} className="text-[#06170e]" />
           </div>
           <div className="text-[13px] font-bold">Buyurtmalarim</div>
         </button>
-        <button onClick={() => openPlaceholder("Operator bilan aloqa")} className={menuCardCls}>
+        <button onClick={openSupport} className={menuCardCls}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f2d9c] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <Headset size={17} className="text-white" />
           </div>

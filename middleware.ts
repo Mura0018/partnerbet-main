@@ -20,6 +20,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: string }[] = [
   { prefix: "/admin/football", permission: "football.manage" },
   { prefix: "/admin/users", permission: "users.manage" },
   { prefix: "/admin/settings", permission: "settings.manage" },
+  { prefix: "/admin/telegram-bot", permission: "telegram_orders.manage" },
 ];
 
 function buildSupabaseClient(request: NextRequest, response: NextResponse) {

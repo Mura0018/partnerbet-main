@@ -331,6 +331,7 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
   ];
   const TELEGRAM_KEYS: { key: string; label: string; placeholder: string }[] = [
     { key: "telegram_bot_token", label: "Telegram Bot Token (BetCore Pay)", placeholder: "123456789:ABC..." },
+    { key: "telegram_webhook_secret", label: "Webhook Secret Token", placeholder: "o'zingiz o'ylab topgan tasodifiy matn" },
   ];
 
   const save = async (key: string) => {
@@ -428,6 +429,13 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
         <h3 className="text-[13px] font-semibold mb-3 mt-2">Telegram Bot kalitlari</h3>
         <p className="text-[11px] text-[#5b6f85] mb-3">BetCore Pay — hisob to'ldirish/yechish uchun Telegram bot.</p>
         {TELEGRAM_KEYS.map(renderKeyRow)}
+        <p className="text-[11px] text-[#5b6f85] mb-3 leading-relaxed">
+          "Webhook Secret Token"ni saqlagandan so'ng, xuddi shu qiymatni Telegram tomonida ham
+          o'rnatish kerak — aks holda webhook ishlamay qoladi:{" "}
+          <code className="text-[10px] bg-white/5 px-1 py-0.5 rounded break-all">
+            {'curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://www.couponbet.org/api/telegram/webhook&secret_token=<SECRET>"'}
+          </code>
+        </p>
       </div>
     </div>
   );

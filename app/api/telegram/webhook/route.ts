@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
+import { sendTelegramMessage } from "@/lib/telegram/notify";
 
 const MINIAPP_URL = "https://www.couponbet.org/telegram-app";
-
-async function sendMessage(token: string, chatId: number, text: string, replyMarkup?: any) {
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, reply_markup: replyMarkup }),
-  });
-}
+const SECRET_HEADER = "x-telegram-bot-api-secret-token";
 
 const OPEN_APP_MENU = {
   inline_keyboard: [[{ text: "🚀 Ilovani ochish", web_app: { url: MINIAPP_URL } }]],
@@ -18,6 +12,18 @@ const OPEN_APP_MENU = {
 export async function POST(req: NextRequest) {
   const token = await getApiCredential("telegram_bot_token");
   if (!token) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 200 });
+
+  // Telegram sends back whatever secret_token was set on setWebhook — if
+  // one is configured here, reject anything that doesn't match. This is
+  // the only thing standing between this public URL and a spoofed update,
+  // since Telegram webhooks have no other built-in verification.
+  const configuredSecret = await getApiCredential("telegram_webhook_secret");
+  if (configuredSecret) {
+    const received = req.headers.get(SECRET_HEADER);
+    if (received !== configuredSecret) {
+      return NextResponse.json({ ok: false }, { status: 401 });
+    }
+  }
 
   let update: any;
   try {
@@ -33,14 +39,13 @@ export async function POST(req: NextRequest) {
   const text: string = message.text ?? "";
 
   if (text === "/start") {
-    await sendMessage(
-      token,
+    await sendTelegramMessage(
       chatId,
-      "Assalomu alaykum! BetCore Pay botiga xush kelibsiz.\n\nHisob to'ldirish va pul yechish uchun quyidagi ilovani oching:",
+      "Assalomu alaykum! BetCore Pay botiga xush kelibsiz.\n\nHisob to'ldirish, pul yechish va operator bilan bog'lanish uchun quyidagi ilovani oching:",
       OPEN_APP_MENU
     );
   } else {
-    await sendMessage(token, chatId, "Ilovani ochish uchun /start ni yuboring.");
+    await sendTelegramMessage(chatId, "Ilovani ochish uchun /start ni yuboring.", OPEN_APP_MENU);
   }
 
   return NextResponse.json({ ok: true });
