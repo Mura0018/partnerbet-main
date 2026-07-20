@@ -4,6 +4,7 @@ import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
 import { sendTelegramMessage } from "@/lib/telegram/notify";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
+import { findCashdeskPlayer } from "@/lib/cashdesk/client";
 
 const PAYMENT_METHODS = ["click", "payme", "card", "crypto"] as const;
 
@@ -55,6 +56,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_withdraw_code" }, { status: 400 });
   }
 
+  // If the cashdesk API is configured, verify the account_id is a real
+  // player before creating the order — this is what catches a mistyped
+  // ID up front instead of the operator discovering it later. If the API
+  // isn't configured yet, or the lookup itself fails (network, etc), we
+  // don't block order creation — this stays optional/best-effort so the
+  // manual flow keeps working exactly as before until credentials are set.
+  let playerName: string | null = null;
+  let currencyId: string | null = null;
+  const lookup = await findCashdeskPlayer(String(accountId).trim());
+  if (lookup.ok) {
+    playerName = lookup.data.name ?? null;
+    currencyId = lookup.data.currencyId != null ? String(lookup.data.currencyId) : null;
+  } else if (lookup.error !== "not_configured" && lookup.error !== "network_error" && lookup.error !== "request_failed") {
+    return NextResponse.json({ error: "player_not_found" }, { status: 404 });
+  }
+
   const supabase = createAdminClient();
   const { data: order, error } = await supabase
     .from("telegram_orders")
@@ -67,6 +84,8 @@ export async function POST(req: NextRequest) {
       payment_method: paymentMethod,
       withdraw_code: type === "withdraw" ? String(withdrawCode).trim().slice(0, 20) : null,
       payout_details: payoutDetails ? String(payoutDetails).trim().slice(0, 500) : null,
+      player_name: playerName,
+      currency_id: currencyId,
     })
     .select("id, type, platform, account_id, amount, payment_method, status, created_at")
     .single();

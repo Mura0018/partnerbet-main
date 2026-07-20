@@ -204,6 +204,8 @@ type Order = {
   payout_details: string | null;
   status: "pending" | "completed" | "rejected";
   operator_note: string | null;
+  player_name: string | null;
+  auto_processed: boolean;
   created_at: string;
   customers: { phone: string; full_name: string | null } | null;
 };
@@ -218,15 +220,34 @@ const ORDER_STATUS_FILTERS: { id: "pending" | "completed" | "rejected" | "all"; 
 function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () => void; onDone: () => void }) {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState<"completed" | "rejected" | null>(null);
+  const [apiError, setApiError] = useState("");
+
+  const CASHDESK_ERROR_LABELS: Record<string, string> = {
+    not_configured: "Kassa API sozlanmagan — buyurtma faqat qo'lda belgilanadi.",
+    network_error: "Kassa API bilan ulanishda xatolik. Qayta urinib ko'ring.",
+    request_failed: "Kassa API so'rovi muvaffaqiyatsiz. Qayta urinib ko'ring.",
+    signature_error_401: "Kassa API imzosi noto'g'ri (401) — Sozlamalar > API kalitlar'da kassa ma'lumotlarini tekshiring.",
+    signature_error_403: "Kassa API ruxsat xatosi (403) — Sozlamalar > API kalitlar'da kassa ma'lumotlarini tekshiring.",
+  };
 
   const resolve = async (status: "completed" | "rejected") => {
+    setApiError("");
     setSubmitting(status);
     try {
-      await fetch("/api/admin/telegram-orders/status", {
+      const res = await fetch("/api/admin/telegram-orders/status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: order.id, status, note: note.trim() || undefined }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.error === "cashdesk_failed") {
+          setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? `Kassa API xatosi: ${data.detail}`);
+        } else {
+          setApiError("Xatolik yuz berdi. Qayta urinib ko'ring.");
+        }
+        return;
+      }
       onDone();
     } finally {
       setSubmitting(null);
@@ -244,6 +265,13 @@ function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () =>
           <div><span className="text-muted">Mijoz:</span> {order.customers?.full_name || order.customers?.phone || "—"}</div>
           <div><span className="text-muted">Platforma:</span> {order.platform}</div>
           <div><span className="text-muted">Hisob ID:</span> {order.account_id}</div>
+          {order.player_name && (
+            <div>
+              <span className="text-muted">O'yinchi ismi:</span>{" "}
+              <span className="text-[#4ADE80] font-medium">{order.player_name}</span>
+              <span className="text-[10px] text-[#5b6f85] ml-1">(kassa API orqali tekshirildi)</span>
+            </div>
+          )}
           <div><span className="text-muted">Summa:</span> {Number(order.amount).toLocaleString("ru-RU")}</div>
           <div><span className="text-muted">To'lov usuli:</span> {order.payment_method}</div>
           {order.withdraw_code && <div><span className="text-muted">Yechish kodi:</span> {order.withdraw_code}</div>}
@@ -251,11 +279,16 @@ function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () =>
         </div>
         <textarea
           rows={2}
-          className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-4"
+          className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3"
           placeholder="Izoh (ixtiyoriy) — mijozga yuboriladi"
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
+        {apiError && (
+          <div className="rounded-lg bg-[#FF6B85]/10 border border-[#FF6B85]/30 text-[#FF6B85] text-[12px] px-3 py-2.5 mb-3">
+            {apiError}
+          </div>
+        )}
         <div className="flex gap-2.5">
           <button
             onClick={() => resolve("rejected")}
@@ -277,6 +310,32 @@ function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () =>
   );
 }
 
+function CashdeskBalanceBadge() {
+  const [state, setState] = useState<{ configured: boolean; balance?: number | null; limit?: number | null } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/telegram-orders/balance")
+      .then((r) => r.json())
+      .then(setState)
+      .catch(() => setState({ configured: false }));
+  }, []);
+
+  if (!state || !state.configured) return null;
+
+  return (
+    <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2.5 text-[12px] flex items-center gap-4">
+      <span className="text-muted">Kassa balansi:</span>
+      <span className="font-semibold">{state.balance != null ? Number(state.balance).toLocaleString("ru-RU") : "—"}</span>
+      {state.limit != null && (
+        <>
+          <span className="text-muted">Limit:</span>
+          <span className="font-semibold">{Number(state.limit).toLocaleString("ru-RU")}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -288,7 +347,7 @@ function OrdersTab() {
     setLoading(true);
     let query = supabase
       .from("telegram_orders")
-      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, status, operator_note, created_at, customers(phone, full_name)")
+      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, status, operator_note, player_name, auto_processed, created_at, customers(phone, full_name)")
       .order("created_at", { ascending: false })
       .limit(100);
     if (filter !== "all") query = query.eq("status", filter);
@@ -300,6 +359,7 @@ function OrdersTab() {
 
   return (
     <div>
+      <CashdeskBalanceBadge />
       <div className="flex gap-2 mb-4">
         {ORDER_STATUS_FILTERS.map((f) => (
           <button
@@ -331,11 +391,14 @@ function OrdersTab() {
               }`}
             >
               <div className="min-w-0">
-                <div className="text-[13px] font-semibold">
+                <div className="text-[13px] font-semibold flex items-center gap-1.5">
                   {o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {o.platform}
+                  {o.auto_processed && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">API</span>
+                  )}
                 </div>
                 <div className="text-[11px] text-muted mt-0.5">
-                  {o.customers?.full_name || o.customers?.phone || "—"} · ID: {o.account_id} · {o.payment_method}
+                  {o.customers?.full_name || o.customers?.phone || "—"} · {o.player_name ? `${o.player_name} (ID: ${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
                 </div>
               </div>
               <div className="text-right shrink-0">

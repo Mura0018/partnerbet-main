@@ -333,6 +333,12 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
     { key: "telegram_bot_token", label: "Telegram Bot Token (BetCore Pay)", placeholder: "123456789:ABC..." },
     { key: "telegram_webhook_secret", label: "Webhook Secret Token", placeholder: "o'zingiz o'ylab topgan tasodifiy matn" },
   ];
+  const CASHDESK_KEYS: { key: string; label: string; placeholder: string }[] = [
+    { key: "cashdesk_login", label: "Kassir login", placeholder: "login" },
+    { key: "cashdesk_pass", label: "Kassir paroli (cashierpass)", placeholder: "parol" },
+    { key: "cashdesk_hash", label: "Hash kaliti", placeholder: "menejerdan olingan hash" },
+    { key: "cashdesk_id", label: "Kassa raqami (cashdeskId)", placeholder: "masalan: 77" },
+  ];
 
   const save = async (key: string) => {
     if (!values[key]) return;
@@ -436,6 +442,12 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
             {'curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://www.couponbet.org/api/telegram/webhook&secret_token=<SECRET>"'}
           </code>
         </p>
+        <h3 className="text-[13px] font-semibold mb-3 mt-2">Kassa API (1xBet — CashdeskBotAPI)</h3>
+        <p className="text-[11px] text-[#5b6f85] mb-3 leading-relaxed">
+          Sozlansa, hisob to'ldirish/pul yechish buyurtmalari operator "Bajarildi" bosganda avtomatik
+          amalga oshadi. Sozlanmasa, hammasi avvalgidek qo'lda ishlaydi — bu ixtiyoriy.
+        </p>
+        {CASHDESK_KEYS.map(renderKeyRow)}
       </div>
     </div>
   );

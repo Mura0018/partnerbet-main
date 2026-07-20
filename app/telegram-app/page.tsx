@@ -12,7 +12,7 @@ declare global {
 }
 
 type Customer = { id: string; full_name: string | null; phone: string };
-type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success";
+type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success" | "forgot-password";
 type PaymentMethod = "click" | "payme" | "card" | "crypto";
 
 type Order = {
@@ -162,6 +162,15 @@ export default function TelegramAppPage() {
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Forgot password
+  const [fpStep, setFpStep] = useState<"phone" | "code">("phone");
+  const [fpPhone, setFpPhone] = useState("");
+  const [fpCode, setFpCode] = useState("");
+  const [fpNewPassword, setFpNewPassword] = useState("");
+  const [fpInfo, setFpInfo] = useState("");
+  const [fpError, setFpError] = useState("");
+  const [fpSubmitting, setFpSubmitting] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
@@ -279,6 +288,70 @@ export default function TelegramAppPage() {
     }
   };
 
+  const requestResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFpError("");
+    setFpInfo("");
+    if (!fpPhone.trim()) {
+      setFpError("Telefon raqamini kiriting.");
+      return;
+    }
+    setFpSubmitting(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/forgot-password/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), phone: fpPhone.trim() }),
+      });
+      if (!res.ok) throw new Error();
+      setFpInfo("Agar bu raqam ro'yxatdan o'tgan va Telegram bilan bog'langan bo'lsa, tasdiqlash kodi yuborildi.");
+      setFpStep("code");
+    } catch {
+      setFpError("Ulanishda xatolik. Qayta urinib ko'ring.");
+    } finally {
+      setFpSubmitting(false);
+    }
+  };
+
+  const confirmResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFpError("");
+    if (!fpCode.trim() || fpNewPassword.length < 6) {
+      setFpError("Kodni kiriting va kamida 6 belgili yangi parol tanlang.");
+      return;
+    }
+    setFpSubmitting(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/forgot-password/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: fpPhone.trim(), code: fpCode.trim(), newPassword: fpNewPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const messages: Record<string, string> = {
+          invalid_code: "Kod noto'g'ri.",
+          code_expired: "Kod muddati tugagan. Qaytadan so'rang.",
+          weak_password: "Parol kamida 6 belgidan iborat bo'lishi kerak.",
+          rate_limited: "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.",
+        };
+        setFpError(messages[data.error] ?? "Xatolik yuz berdi.");
+        return;
+      }
+      setPhone(fpPhone.trim());
+      setPassword("");
+      setFpStep("phone");
+      setFpPhone(""); setFpCode(""); setFpNewPassword(""); setFpInfo(""); setFpError("");
+      setMode("login");
+      setError("Parol yangilandi — endi yangi parolingiz bilan kiring.");
+      setScreen("auth");
+    } catch {
+      setFpError("Ulanishda xatolik. Qayta urinib ko'ring.");
+    } finally {
+      setFpSubmitting(false);
+    }
+  };
+
   const resetForms = () => {
     setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
     setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails("");
@@ -302,7 +375,15 @@ export default function TelegramAppPage() {
           amount: Number(tuAmount), paymentMethod: tuMethod,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.error === "player_not_found") {
+          setError("Bunday hisob ID topilmadi. Platforma va ID raqamini tekshiring.");
+        } else {
+          setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
+        }
+        return;
+      }
       setSuccessLabel("Hisob to'ldirish");
       resetForms();
       setScreen("order-success");
@@ -331,7 +412,15 @@ export default function TelegramAppPage() {
           amount: Number(wdAmount), paymentMethod: wdMethod, withdrawCode: wdCode.trim(), payoutDetails: wdPayoutDetails.trim(),
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.error === "player_not_found") {
+          setError("Bunday hisob ID topilmadi. Platforma va ID raqamini tekshiring.");
+        } else {
+          setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
+        }
+        return;
+      }
       setSuccessLabel("Pul yechish");
       resetForms();
       setScreen("order-success");
@@ -437,12 +526,61 @@ export default function TelegramAppPage() {
             </button>
           </form>
 
+          {mode === "login" && (
+            <button
+              onClick={() => { setFpStep("phone"); setFpPhone(phone); setFpError(""); setFpInfo(""); setScreen("forgot-password"); }}
+              className="w-full text-center mt-3.5 text-[12px] text-[#7db8ff]/80"
+            >
+              Parolni unutdingizmi?
+            </button>
+          )}
+
           <button
             onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
             className="w-full text-center mt-5 py-2.5 rounded-lg text-[13px] font-semibold text-[#7db8ff] bg-white/[0.03] border border-[#3D7FFF]/25 active:bg-white/[0.06] transition-colors"
           >
             {mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting →" : "Hisobingiz bormi? Kiring →"}
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "forgot-password") {
+    return (
+      <div className={`${bgCls} p-6 flex flex-col justify-center`}>
+        <div className="max-w-sm mx-auto w-full">
+          <ScreenHeader title="Parolni tiklash" onBack={() => setScreen("auth")} />
+
+          {fpStep === "phone" ? (
+            <form onSubmit={requestResetCode} className="space-y-3.5">
+              <p className="text-[13px] text-[#93a5ba] mb-1">
+                Telefon raqamingizni kiriting — Telegram orqali tasdiqlash kodi yuboramiz.
+              </p>
+              <input className={inputCls} placeholder="Telefon raqami" value={fpPhone} onChange={(e) => setFpPhone(e.target.value)} inputMode="tel" />
+              {fpError && <p className="text-[12px] text-[#FF6B85] text-center">{fpError}</p>}
+              <button type="submit" disabled={fpSubmitting} className={buttonCls}>
+                {fpSubmitting ? <Loader2 size={16} className="animate-spin" /> : "Kod yuborish"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={confirmResetPassword} className="space-y-3.5">
+              {fpInfo && <p className="text-[12px] text-[#4ADE80] text-center mb-1">{fpInfo}</p>}
+              <input className={inputCls} placeholder="Tasdiqlash kodi (6 xonali)" value={fpCode} onChange={(e) => setFpCode(e.target.value)} inputMode="numeric" />
+              <input className={inputCls} placeholder="Yangi parol" type="password" value={fpNewPassword} onChange={(e) => setFpNewPassword(e.target.value)} />
+              {fpError && <p className="text-[12px] text-[#FF6B85] text-center">{fpError}</p>}
+              <button type="submit" disabled={fpSubmitting} className={buttonCls}>
+                {fpSubmitting ? <Loader2 size={16} className="animate-spin" /> : "Parolni yangilash"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFpStep("phone"); setFpError(""); setFpInfo(""); }}
+                className="w-full text-center text-[12px] text-[#7db8ff]/80"
+              >
+                Boshqa raqamga kod yuborish
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );
