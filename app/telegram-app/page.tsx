@@ -840,7 +840,7 @@ export default function TelegramAppPage() {
           <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} />
           <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 space-y-3">
+        <div className="flex-1 overflow-y-auto px-5 flex flex-col justify-end space-y-3">
           {supportLoading ? (
             <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
           ) : supportMessages.length === 0 ? (

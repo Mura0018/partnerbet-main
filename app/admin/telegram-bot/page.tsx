@@ -739,7 +739,7 @@ function SupportTab() {
           <div className="flex-1 flex items-center justify-center text-[13px] text-muted">Murojaatni tanlang</div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3">
               {msgs.map((m) => (
                 <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
                   <span className="text-[10px] text-[#5b6f85] mb-0.5 px-1">
