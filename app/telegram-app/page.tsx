@@ -12,7 +12,26 @@ declare global {
 type Customer = { id: string; full_name: string | null; phone: string };
 type Screen = "loading" | "auth" | "menu" | "placeholder";
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-[14px] text-white outline-none focus:border-accent";
+const inputCls =
+  "w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[14px] text-white outline-none placeholder:text-[#5b7089] " +
+  "shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)] " +
+  "focus:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.12),0_0_0_2px_rgba(61,127,255,0.4)] transition-shadow";
+
+const buttonCls =
+  "w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-[15px] text-white " +
+  "bg-gradient-to-br from-[#3D7FFF] via-[#4f6bff] to-[#7c3aed] " +
+  "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.15)] " +
+  "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4),inset_-2px_-2px_6px_rgba(255,255,255,0.05)] " +
+  "transition-all disabled:opacity-50";
+
+const titleShadow = {
+  textShadow: "4px 5px 10px rgba(0,0,0,0.6), -2px -2px 5px rgba(120,180,255,0.3), 0 0 20px rgba(80,150,255,0.25)",
+};
+
+const menuCardCls =
+  "rounded-2xl bg-gradient-to-b from-[#0e2038] to-[#0a1a30] p-4 text-left " +
+  "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.08)] " +
+  "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4)] transition-all";
 
 export default function TelegramAppPage() {
   const [screen, setScreen] = useState<Screen>("loading");
@@ -104,9 +123,11 @@ export default function TelegramAppPage() {
     setScreen("placeholder");
   };
 
+  const bgCls = "min-h-screen bg-gradient-to-b from-[#123f77] via-[#0f3364] to-[#0a1a30] text-white";
+
   if (screen === "loading") {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center">
+      <div className={`${bgCls} flex items-center justify-center`}>
         <Loader2 size={28} className="text-accent animate-spin" />
       </div>
     );
@@ -114,34 +135,44 @@ export default function TelegramAppPage() {
 
   if (screen === "auth") {
     return (
-      <div className="min-h-screen bg-bg text-white p-6 flex flex-col justify-center">
+      <div className={`${bgCls} p-6 flex flex-col justify-center`}>
         <div className="max-w-sm mx-auto w-full">
-          <h1 className="text-[22px] font-bold mb-1">BetCore Pay</h1>
-          <p className="text-[13px] text-muted mb-6">
+          <div className="flex justify-center mb-5">
+            <div
+              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center text-[28px]
+                         shadow-[7px_7px_18px_rgba(0,0,0,0.5),-4px_-4px_14px_rgba(120,180,255,0.2)]"
+            >
+              ⬡
+            </div>
+          </div>
+
+          <h1
+            className="text-[30px] font-black text-center mb-1 bg-gradient-to-r from-[#7db8ff] via-white to-[#F4C76A] bg-clip-text text-transparent"
+            style={titleShadow}
+          >
+            BetCore Pay
+          </h1>
+          <p className="text-[13px] text-[#93a5ba] text-center mb-7">
             {mode === "login" ? "Hisobingizga kiring" : "Yangi hisob yarating"}
           </p>
 
-          <form onSubmit={submit} className="space-y-3">
+          <form onSubmit={submit} className="space-y-3.5">
             {mode === "register" && (
               <input className={inputCls} placeholder="Ism-familiya (ixtiyoriy)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             )}
             <input className={inputCls} placeholder="Telefon raqami" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
             <input className={inputCls} placeholder="Parol" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
 
-            {error && <p className="text-[12px] text-[#FF6B85]">{error}</p>}
+            {error && <p className="text-[12px] text-[#FF6B85] text-center">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] disabled:opacity-50"
-            >
+            <button type="submit" disabled={submitting} className={buttonCls}>
               {submitting ? <Loader2 size={16} className="animate-spin" /> : mode === "login" ? "Kirish" : "Ro'yxatdan o'tish"}
             </button>
           </form>
 
           <button
             onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
-            className="w-full text-center mt-4 text-[13px] text-muted hover:text-white"
+            className="w-full text-center mt-5 text-[13px] text-[#93a5ba]"
           >
             {mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting" : "Hisobingiz bormi? Kiring"}
           </button>
@@ -152,9 +183,9 @@ export default function TelegramAppPage() {
 
   if (screen === "placeholder") {
     return (
-      <div className="min-h-screen bg-bg text-white p-6 flex flex-col items-center justify-center text-center">
-        <p className="text-[14px] text-muted mb-6">{placeholderText}</p>
-        <button onClick={() => setScreen("menu")} className="px-5 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[13px]">
+      <div className={`${bgCls} p-6 flex flex-col items-center justify-center text-center`}>
+        <p className="text-[14px] text-[#93a5ba] mb-6">{placeholderText}</p>
+        <button onClick={() => setScreen("menu")} className={`${buttonCls} max-w-[200px]`}>
           Orqaga
         </button>
       </div>
@@ -162,28 +193,39 @@ export default function TelegramAppPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-white p-5">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-5">
-        <p className="text-[11px] text-muted mb-1">Xush kelibsiz</p>
-        <p className="text-[18px] font-bold">{customer?.full_name || customer?.phone}</p>
+    <div className={`${bgCls} p-5`}>
+      <div
+        className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5
+                   shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]"
+      >
+        <p className="text-[11px] text-[#93a5ba] mb-1">Xush kelibsiz</p>
+        <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button onClick={() => openPlaceholder("Hisob to'ldirish")} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-left">
-          <div className="w-9 h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center mb-3"><Download size={16} /></div>
-          <div className="text-[13px] font-semibold">Hisob to'ldirish</div>
+      <div className="grid grid-cols-2 gap-3.5">
+        <button onClick={() => openPlaceholder("Hisob to'ldirish")} className={menuCardCls}>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#2456c9] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
+            <Download size={17} className="text-white" />
+          </div>
+          <div className="text-[13px] font-bold">Hisob to'ldirish</div>
         </button>
-        <button onClick={() => openPlaceholder("Pul yechish")} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-left">
-          <div className="w-9 h-9 rounded-xl bg-[#F4C76A]/15 text-[#F4C76A] flex items-center justify-center mb-3"><ArrowUpFromLine size={16} /></div>
-          <div className="text-[13px] font-semibold">Pul yechish</div>
+        <button onClick={() => openPlaceholder("Pul yechish")} className={menuCardCls}>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F4C76A] to-[#c99a3e] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
+            <ArrowUpFromLine size={17} className="text-[#2a1e05]" />
+          </div>
+          <div className="text-[13px] font-bold">Pul yechish</div>
         </button>
-        <button onClick={() => openPlaceholder("Buyurtmalarim")} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-left">
-          <div className="w-9 h-9 rounded-xl bg-[#4ADE80]/15 text-[#4ADE80] flex items-center justify-center mb-3"><ListOrdered size={16} /></div>
-          <div className="text-[13px] font-semibold">Buyurtmalarim</div>
+        <button onClick={() => openPlaceholder("Buyurtmalarim")} className={menuCardCls}>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4ADE80] to-[#22a355] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
+            <ListOrdered size={17} className="text-[#06170e]" />
+          </div>
+          <div className="text-[13px] font-bold">Buyurtmalarim</div>
         </button>
-        <button onClick={() => openPlaceholder("Operator bilan aloqa")} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-left">
-          <div className="w-9 h-9 rounded-xl bg-white/10 text-muted flex items-center justify-center mb-3"><Headset size={16} /></div>
-          <div className="text-[13px] font-semibold">Operator bilan aloqa</div>
+        <button onClick={() => openPlaceholder("Operator bilan aloqa")} className={menuCardCls}>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f2d9c] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
+            <Headset size={17} className="text-white" />
+          </div>
+          <div className="text-[13px] font-bold">Operator bilan aloqa</div>
         </button>
       </div>
     </div>
