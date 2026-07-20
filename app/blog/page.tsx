@@ -4,6 +4,7 @@ import { PublicHeader } from "@/lib/ui/PublicHeader";
 import { PublicFooter } from "@/lib/ui/PublicFooter";
 
 export const metadata = { title: "Blog" };
+export const revalidate = 0;
 
 export default async function BlogListPage({
   searchParams,
