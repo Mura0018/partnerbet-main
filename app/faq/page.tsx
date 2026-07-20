@@ -5,6 +5,7 @@ import { PublicFooter } from "@/lib/ui/PublicFooter";
 import { Container, EmptyState } from "@/lib/ui/primitives";
 
 export const metadata = { title: "Ko'p so'raladigan savollar" };
+export const revalidate = 0;
 
 async function getFaqs() {
   const supabase = createPublicServerClient();
