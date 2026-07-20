@@ -250,12 +250,12 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="w-full mt-4">
-        <div className="block md:hidden w-full">
-          <BannerSlot placement="header" size="mobile" className="w-full aspect-[320/50] max-h-[70px]" />
+      <div className="w-full mt-3 bg-bg">
+        <div className="block md:hidden w-full h-[50px] overflow-hidden bg-bg">
+          <BannerSlot placement="header" size="mobile" className="w-full h-full" rounded={false} />
         </div>
-        <div className="hidden md:block max-w-7xl mx-auto px-8">
-          <BannerSlot placement="header" size="desktop" className="w-full aspect-[970/90] max-h-[100px] mx-auto" />
+        <div className="hidden md:block w-full h-[90px] overflow-hidden bg-bg">
+          <BannerSlot placement="header" size="desktop" className="w-full h-full" rounded={false} />
         </div>
       </div>
 
