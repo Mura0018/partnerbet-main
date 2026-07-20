@@ -93,3 +93,22 @@ html {
 .stagger-item {
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+.blog-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+@media (max-width: 640px) {
+  .blog-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.blog-gallery-item {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
