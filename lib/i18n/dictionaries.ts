@@ -92,6 +92,7 @@ export const dictionaries = {
       affiliate_manager: "Hamkorlik menejeri",
       content_manager: "Kontent menejeri",
       user: "Foydalanuvchi",
+      operator: "Operator",
     },
     donations: {
       title: "WINORAni qo'llab-quvvatlang",
@@ -116,13 +117,6 @@ export const dictionaries = {
       noSupportersYet: "Hozircha homiylar yo'q.",
       invalidAmount: "To'g'ri miqdor kiriting.",
       genericError: "Xatolik yuz berdi. Qayta urinib ko'ring.",
-    },
-    roles: {
-      super_admin: "Super Admin",
-      admin: "Admin",
-      editor: "Muharrir",
-      user: "Foydalanuvchi",
-      operator: "Operator",
     },
   },
   ru: {
@@ -205,6 +199,7 @@ export const dictionaries = {
       affiliate_manager: "Менеджер партнёрки",
       content_manager: "Контент-менеджер",
       user: "Пользователь",
+      operator: "Оператор",
     },
     donations: {
       title: "Поддержите WINORA",
@@ -229,13 +224,6 @@ export const dictionaries = {
       noSupportersYet: "Пока нет спонсоров.",
       invalidAmount: "Введите корректную сумму.",
       genericError: "Произошла ошибка. Попробуйте снова.",
-    },
-    roles: {
-      super_admin: "Супер Админ",
-      admin: "Админ",
-      editor: "Редактор",
-      user: "Пользователь",
-      operator: "Оператор",
     },
   },
   en: {
@@ -318,6 +306,7 @@ export const dictionaries = {
       affiliate_manager: "Affiliate Manager",
       content_manager: "Content Manager",
       user: "User",
+      operator: "Operator",
     },
     donations: {
       title: "Support WINORA",
@@ -342,13 +331,6 @@ export const dictionaries = {
       noSupportersYet: "No supporters yet.",
       invalidAmount: "Please enter a valid amount.",
       genericError: "Something went wrong. Please try again.",
-    },
-    roles: {
-      super_admin: "Super Admin",
-      admin: "Admin",
-      editor: "Editor",
-      user: "User",
-      operator: "Operator",
     },
   },
 } as const;
