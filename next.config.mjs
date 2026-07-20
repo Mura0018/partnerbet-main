@@ -16,7 +16,9 @@ const nextConfig = {
       ? [{ protocol: "https", hostname: supabaseHostname }]
       : [],
   },
-  serverExternalPackages: ["jsdom", "isomorphic-dompurify"],
+  experimental: {
+    serverComponentsExternalPackages: ["jsdom", "isomorphic-dompurify"],
+  },
 };
 
 export default nextConfig;
