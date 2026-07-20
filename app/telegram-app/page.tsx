@@ -910,28 +910,31 @@ export default function TelegramAppPage() {
           <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} />
           <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 space-y-3 min-h-0">
+        <div
+          className="flex-1 overflow-y-auto px-4 space-y-2 min-h-0"
+          style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
+        >
           {supportLoading ? (
             <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
           ) : supportMessages.length === 0 ? (
-            <p className="text-[13px] text-[#93a5ba] text-center mt-8">Savolingiz bo'lsa, quyidan yozing — operator tez orada javob beradi.</p>
+            <p className="text-[12px] text-[#93a5ba] text-center mt-8">Savolingiz bo'lsa, quyidan yozing — operator tez orada javob beradi.</p>
           ) : (
             supportMessages.map((m) => (
               <div key={m.id} className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
-                {m.sender === "operator" && <span className="text-[10px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
+                {m.sender === "operator" && <span className="text-[9px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
                 <div
-                  className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-[13px] ${
-                    m.sender === "customer" ? "bg-gradient-to-br from-[#3D7FFF] to-[#2456c9]" : "bg-white/[0.06]"
+                  className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${
+                    m.sender === "customer" ? "bg-gradient-to-br from-[#3D7FFF] to-[#2456c9]" : "bg-white/[0.08]"
                   }`}
                 >
                   {m.voice_path ? (
                     <VoicePlayer path={m.voice_path} getInitData={getInitData} />
                   ) : m.image_path ? (
-                    <div className="flex items-center gap-1.5 text-[#c7d5e6]"><ImageIcon size={14} /> {m.file_name || "Rasm yuborildi"}</div>
+                    <div className="flex items-center gap-1.5 text-[#c7d5e6]"><ImageIcon size={13} /> {m.file_name || "Rasm yuborildi"}</div>
                   ) : (
                     m.message
                   )}
-                  <div className="text-[9px] text-white/50 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                  <div className="text-[8px] text-white/50 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                 </div>
               </div>
             ))
@@ -939,37 +942,37 @@ export default function TelegramAppPage() {
           <div ref={supportBottomRef} />
         </div>
         {voiceRecorder.recording ? (
-          <div className="flex items-center gap-3 p-4 bg-[#0e2038]">
-            <div className="flex items-center gap-2 flex-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B85] animate-pulse" />
-              <span className="text-[13px] text-white font-mono">{formatDuration(voiceRecorder.durationSeconds)}</span>
-              <span className="text-[12px] text-[#93a5ba]">Ovoz yozilmoqda...</span>
+          <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[#0e2038]">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
+              <span className="text-[12px] text-white font-mono shrink-0">{formatDuration(voiceRecorder.durationSeconds)}</span>
+              <span className="text-[11px] text-[#93a5ba] truncate">Ovoz yozilmoqda...</span>
             </div>
-            <button onClick={cancelVoiceRecording} className="shrink-0 p-2.5 rounded-xl bg-white/10 text-white/70" aria-label="Bekor qilish">
-              <Trash2 size={16} />
+            <button onClick={cancelVoiceRecording} className="shrink-0 p-2 rounded-lg bg-white/10 text-white/70" aria-label="Bekor qilish">
+              <Trash2 size={14} />
             </button>
-            <button onClick={stopAndSendVoice} disabled={supportSending} className="shrink-0 p-2.5 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed]" aria-label="Yuborish">
-              <Check size={16} />
+            <button onClick={stopAndSendVoice} disabled={supportSending} className="shrink-0 p-2 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed]" aria-label="Yuborish">
+              <Check size={14} />
             </button>
           </div>
         ) : (
-        <div className="flex gap-2 p-4">
-          <label className="shrink-0 flex items-center justify-center w-11 rounded-xl bg-white/[0.06] cursor-pointer">
-            <Paperclip size={16} className="text-[#7db8ff]" />
+        <div className="flex items-center gap-1.5 px-3 py-2.5">
+          <label className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] cursor-pointer">
+            <Paperclip size={14} className="text-[#7db8ff]" />
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendSupportImage} disabled={supportSending} />
           </label>
-          <button onClick={startVoiceRecording} disabled={supportSending} className="shrink-0 flex items-center justify-center w-11 rounded-xl bg-white/[0.06] disabled:opacity-50" aria-label="Ovozli xabar">
-            <Mic size={16} className="text-[#7db8ff]" />
+          <button onClick={startVoiceRecording} disabled={supportSending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] disabled:opacity-50" aria-label="Ovozli xabar">
+            <Mic size={14} className="text-[#7db8ff]" />
           </button>
           <input
-            className={`${inputCls} flex-1`}
+            className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2 px-3 text-[12.5px] text-white outline-none placeholder:text-[#5b7089]"
             placeholder="Xabar yozing..."
             value={supportText}
             onChange={(e) => setSupportText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendSupportMessage()}
           />
-          <button onClick={sendSupportMessage} disabled={supportSending || !supportText.trim()} className="shrink-0 px-4 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] disabled:opacity-50">
-            <Send size={16} />
+          <button onClick={sendSupportMessage} disabled={supportSending || !supportText.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] disabled:opacity-50">
+            <Send size={14} />
           </button>
         </div>
         )}

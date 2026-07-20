@@ -142,9 +142,12 @@ function ChatTab() {
           <Search size={15} />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-w-0 min-h-0">
+      <div
+        className="flex-1 overflow-y-auto p-3 space-y-2 min-w-0 min-h-0"
+        style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
+      >
         {filtered.length === 0 && (
-          <p className="text-[13px] text-muted text-center mt-8">
+          <p className="text-[12px] text-muted text-center mt-8">
             {search ? "Hech narsa topilmadi." : "Hozircha xabar yo'q. Birinchi bo'lib yozing."}
           </p>
         )}
@@ -156,33 +159,33 @@ function ChatTab() {
           const imageUrl = m.image_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.image_path).data.publicUrl : null;
           const voiceUrl = m.voice_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.voice_path).data.publicUrl : null;
           return (
-            <div key={m.id} className={`flex items-end gap-2.5 ${isMe ? "flex-row-reverse" : ""}`}>
+            <div key={m.id} className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
               {m.profiles?.avatar_url ? (
-                <img src={m.profiles.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border shrink-0" style={{ borderColor: color }} />
+                <img src={m.profiles.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover border shrink-0" style={{ borderColor: color }} />
               ) : (
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 border"
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border"
                   style={{ borderColor: color, color, background: `${color}1a` }}
                 >
                   {name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className={`min-w-0 max-w-[75%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                <div className={`flex items-baseline gap-2 mb-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
-                  <span className="text-[11px] font-bold" style={{ color }}>{isMe ? "Siz" : name}</span>
-                  <span className="text-[10px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+              <div className={`min-w-0 max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                <div className={`flex items-baseline gap-1.5 mb-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
+                  <span className="text-[10px] font-bold" style={{ color }}>{isMe ? "Siz" : name}</span>
+                  <span className="text-[9px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
                 <div
-                  className={`rounded-2xl px-3.5 py-2.5 text-[13px] break-words ${
-                    isMe ? "bg-gradient-to-br from-accent to-accent-dim text-white" : "bg-white/[0.07] text-white/90"
+                  className={`rounded-xl px-3 py-2 text-[12.5px] leading-snug break-words ${
+                    isMe ? "bg-gradient-to-br from-accent to-accent-dim text-white" : "bg-white/[0.08] text-white/90"
                   }`}
                 >
                   {voiceUrl ? (
-                    <audio controls src={voiceUrl} className="max-w-[220px] h-9" />
+                    <audio controls src={voiceUrl} className="max-w-[200px] h-8" />
                   ) : imageUrl ? (
                     <div>
-                      <img src={imageUrl} alt="" className="max-w-[200px] rounded-lg" />
-                      {m.file_name && <div className="text-[10px] text-white/50 mt-1 truncate max-w-[200px]">{m.file_name}</div>}
+                      <img src={imageUrl} alt="" className="max-w-[180px] rounded-lg" />
+                      {m.file_name && <div className="text-[9px] text-white/50 mt-1 truncate max-w-[180px]">{m.file_name}</div>}
                     </div>
                   ) : (
                     m.message
@@ -195,34 +198,34 @@ function ChatTab() {
         <div ref={bottomRef} />
       </div>
       {voiceRecorder.recording ? (
-        <div className="flex items-center gap-3 p-3 border-t border-white/8">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B85] animate-pulse" />
-          <span className="text-[13px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
-          <button onClick={voiceRecorder.cancel} className="p-2 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
-            <Trash2 size={15} />
+        <div className="flex items-center gap-2.5 px-3 py-2 border-t border-white/8">
+          <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
+          <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
+          <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
+            <Trash2 size={13} />
           </button>
-          <button onClick={stopAndSendVoice} disabled={sending} className="p-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label="Yuborish">
-            <Check size={15} />
+          <button onClick={stopAndSendVoice} disabled={sending} className="p-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label="Yuborish">
+            <Check size={13} />
           </button>
         </div>
       ) : (
-      <div className="flex gap-2 p-3 border-t border-white/8">
-        <label className="shrink-0 flex items-center justify-center w-10 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10">
-          <Paperclip size={15} className="text-muted" />
+      <div className="flex items-center gap-1.5 px-3 py-2 border-t border-white/8">
+        <label className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10">
+          <Paperclip size={13} className="text-muted" />
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendImage} disabled={sending} />
         </label>
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
-          <Mic size={15} className="text-muted" />
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
+          <Mic size={13} className="text-muted" />
         </button>
         <input
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+          className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
           placeholder="Xabar yozing..."
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
         />
-        <button onClick={send} disabled={sending || !text.trim()} className="px-3.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
-          <Send size={15} />
+        <button onClick={send} disabled={sending || !text.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
+          <Send size={13} />
         </button>
       </div>
       )}
@@ -1027,65 +1030,68 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-        {msgs.length === 0 && <p className="text-[13px] text-muted text-center mt-8">Hozircha xabar yo'q.</p>}
+      <div
+        className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0"
+        style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
+      >
+        {msgs.length === 0 && <p className="text-[12px] text-muted text-center mt-8">Hozircha xabar yo'q.</p>}
         {msgs.map((m) => (
           <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
-            <span className="text-[10px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? "Siz (operator)" : "Mijoz"}</span>
-            <div className={`max-w-[75%] rounded-xl px-3.5 py-2.5 text-[13px] ${m.sender === "operator" ? "bg-gradient-to-r from-accent to-accent-dim" : "bg-white/[0.06]"}`}>
+            <span className="text-[9px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? "Siz (operator)" : "Mijoz"}</span>
+            <div className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "operator" ? "bg-gradient-to-r from-accent to-accent-dim" : "bg-white/[0.08]"}`}>
               {m.voice_path ? (
                 <SupportVoice path={m.voice_path} />
               ) : m.image_path ? (
                 <div>
                   <SupportImage path={m.image_path} />
-                  {m.file_name && <div className="text-[10px] text-white/50 mt-1 truncate max-w-[200px]">{m.file_name}</div>}
+                  {m.file_name && <div className="text-[9px] text-white/50 mt-1 truncate max-w-[180px]">{m.file_name}</div>}
                 </div>
               ) : (
                 m.message
               )}
-              <div className="text-[9px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+              <div className="text-[8px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
             </div>
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex gap-1.5 px-3 pt-2.5 overflow-x-auto shrink-0">
+      <div className="flex gap-1.5 px-3 pt-2 overflow-x-auto shrink-0">
         {REPLY_TEMPLATES.map((tpl, i) => (
           <button
             key={i}
             onClick={() => setText(tpl)}
-            className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
+            className="shrink-0 text-[10px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
           >
             {tpl.length > 28 ? tpl.slice(0, 28) + "…" : tpl}
           </button>
         ))}
       </div>
       {voiceRecorder.recording ? (
-        <div className="flex items-center gap-3 p-3 shrink-0">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B85] animate-pulse" />
-          <span className="text-[13px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
-          <button onClick={voiceRecorder.cancel} className="p-2 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
-            <Trash2 size={15} />
+        <div className="flex items-center gap-2.5 px-3 py-2 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
+          <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
+          <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
+            <Trash2 size={13} />
           </button>
-          <button onClick={stopAndSendVoice} disabled={sending} className="p-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label="Yuborish">
-            <Check size={15} />
+          <button onClick={stopAndSendVoice} disabled={sending} className="p-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label="Yuborish">
+            <Check size={13} />
           </button>
         </div>
       ) : (
-      <div className="flex gap-2 p-3 shrink-0">
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
-          <Mic size={15} className="text-muted" />
+      <div className="flex items-center gap-1.5 px-3 py-2 shrink-0">
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
+          <Mic size={13} className="text-muted" />
         </button>
         <input
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+          className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
           placeholder="Javob yozing..."
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && reply()}
         />
-        <button onClick={reply} disabled={sending || !text.trim()} className="px-3.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
-          <Send size={15} />
+        <button onClick={reply} disabled={sending || !text.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
+          <Send size={13} />
         </button>
       </div>
       )}
