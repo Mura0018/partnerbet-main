@@ -81,7 +81,7 @@ export default function Home() {
   const [liveScores, setLiveScores] = useState<any[]>([]);
   const [loadingLive, setLoadingLive] = useState(true);
   const [siteSettings, setSiteSettings] = useState<{
-    identity: { site_name?: string; branding_logo_url?: string };
+    identity: { site_name?: string; branding_logo_url?: string; branding_hero_image_url?: string };
     footer: { description?: string };
     contact: { email?: string };
     social: Record<string, string>;
@@ -136,7 +136,11 @@ export default function Home() {
           .in("key", ["site_identity", "branding", "footer", "contact_info", "social_links"]);
         const byKey = Object.fromEntries((data ?? []).map((r) => [r.key, r.value as any]));
         setSiteSettings({
-          identity: { site_name: byKey.site_identity?.site_name, branding_logo_url: byKey.branding?.logo_media_id_url },
+          identity: {
+            site_name: byKey.site_identity?.site_name,
+            branding_logo_url: byKey.branding?.logo_media_id_url,
+            branding_hero_image_url: byKey.branding?.hero_image_media_id_url,
+          },
           footer: { description: byKey.footer?.description },
           contact: { email: byKey.contact_info?.email },
           social: byKey.social_links ?? {},
@@ -263,8 +267,16 @@ export default function Home() {
         </div>
       </div>
 
-      <section className="relative max-w-7xl mx-auto px-5 md:px-8 pt-16 pb-20 md:pt-24 md:pb-28 grid md:grid-cols-2 gap-12 items-center">
-        <div>
+      <section className="relative max-w-7xl mx-auto px-5 md:px-8 pt-16 pb-20 md:pt-24 md:pb-28 grid md:grid-cols-2 gap-12 items-center overflow-hidden">
+        {siteSettings.identity.branding_hero_image_url && (
+          <img
+            src={siteSettings.identity.branding_hero_image_url}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none select-none absolute z-0 right-[-5%] top-1/2 -translate-y-1/2 h-[85%] md:h-[110%] max-h-[520px] w-auto object-contain opacity-40 md:opacity-100 [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)] md:[mask-image:none]"
+          />
+        )}
+        <div className="relative z-10">
           <Badge tone="live"><Radio size={11} className="animate-pulse" /> {liveScores.length} matches live now</Badge>
           <h1 className="mt-5 text-[42px] leading-[1.05] md:text-[64px] font-extrabold tracking-tight">
             BET SMARTER<br />
@@ -294,6 +306,7 @@ export default function Home() {
           </p>
         </div>
 
+        <div className="relative z-10">
         {insights[0] ? (
           <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-panel to-[#0A1626] p-6 backdrop-blur-xl shadow-2xl">
             <div className="flex items-center justify-between mb-4">
@@ -312,6 +325,7 @@ export default function Home() {
         ) : (
           <BannerSlot placement="homepage" size="square" className="w-full max-w-md aspect-[6/5] mx-auto" />
         )}
+        </div>
       </section>
 
       <section id="promos" className="max-w-7xl mx-auto px-5 md:px-8 pb-16 scroll-mt-20">

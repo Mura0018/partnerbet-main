@@ -170,7 +170,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
   const [faviconUploading, setFaviconUploading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleUpload = async (file: File, field: "logo_media_id" | "favicon_media_id", setUploading: (b: boolean) => void) => {
+  const handleUpload = async (file: File, field: "logo_media_id" | "favicon_media_id" | "hero_image_media_id", setUploading: (b: boolean) => void) => {
     setError("");
     setUploading(true);
     try {
@@ -182,6 +182,8 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
       setUploading(false);
     }
   };
+
+  const [heroUploading, setHeroUploading] = useState(false);
 
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
@@ -208,6 +210,23 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
         </div>
       </Field>
       {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
+
+      <Field label="Bosh sahifa hero rasmi">
+        <div className="flex items-center gap-3 mb-2">
+          {branding.hero_image_media_id_url && (
+            <img src={branding.hero_image_media_id_url} alt="Hero" className="w-16 h-20 rounded-lg object-cover border border-white/10 bg-black/20" />
+          )}
+          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5">
+            {heroUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            Yuklash
+            <input type="file" accept="image/png,image/webp" className="hidden" disabled={heroUploading}
+              onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "hero_image_media_id", setHeroUploading)} />
+          </label>
+        </div>
+        <p className="text-[11px] text-[#5b6f85]">
+          Tavsiya: shaffof fonli (PNG) rasm, taxminan 1200×1600px, 3MB dan kichik. Bir xil rasm kompyuter va telefonda avtomatik moslashadi — alohida versiya yuklash shart emas.
+        </p>
+      </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label="Asosiy rang">
