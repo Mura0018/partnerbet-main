@@ -43,8 +43,16 @@ export default function TelegramAppPage() {
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [placeholderText, setPlaceholderText] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
+
+  useEffect(() => {
+    fetch("/api/telegram/miniapp/branding")
+      .then((r) => r.json())
+      .then((data) => setLogoUrl(data.logoUrl))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -137,21 +145,31 @@ export default function TelegramAppPage() {
     return (
       <div className={`${bgCls} p-6 flex flex-col justify-center`}>
         <div className="max-w-sm mx-auto w-full">
-          <div className="flex justify-center mb-5">
-            <div
-              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center text-[28px]
-                         shadow-[7px_7px_18px_rgba(0,0,0,0.5),-4px_-4px_14px_rgba(120,180,255,0.2)]"
-            >
-              ⬡
-            </div>
+          <div className="flex justify-center mb-2">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="BetCore Pay"
+                className="w-40 h-40 object-contain drop-shadow-[0_8px_20px_rgba(61,127,255,0.4)]"
+              />
+            ) : (
+              <div
+                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center text-[28px]
+                           shadow-[7px_7px_18px_rgba(0,0,0,0.5),-4px_-4px_14px_rgba(120,180,255,0.2)]"
+              >
+                ⬡
+              </div>
+            )}
           </div>
 
-          <h1
-            className="text-[30px] font-black text-center mb-1 bg-gradient-to-r from-[#7db8ff] via-white to-[#F4C76A] bg-clip-text text-transparent"
-            style={titleShadow}
-          >
-            BetCore Pay
-          </h1>
+          {!logoUrl && (
+            <h1
+              className="text-[30px] font-black text-center mb-1 bg-gradient-to-r from-[#7db8ff] via-white to-[#F4C76A] bg-clip-text text-transparent"
+              style={titleShadow}
+            >
+              BetCore Pay
+            </h1>
+          )}
           <p className="text-[13px] text-[#93a5ba] text-center mb-7">
             {mode === "login" ? "Hisobingizga kiring" : "Yangi hisob yarating"}
           </p>
@@ -172,9 +190,10 @@ export default function TelegramAppPage() {
 
           <button
             onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
-            className="w-full text-center mt-5 text-[13px] text-[#93a5ba]"
+            className="w-full text-center mt-5 py-2.5 rounded-lg text-[13px] font-semibold text-[#7db8ff]
+                       bg-white/[0.03] border border-[#3D7FFF]/25 active:bg-white/[0.06] transition-colors"
           >
-            {mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting" : "Hisobingiz bormi? Kiring"}
+            {mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting →" : "Hisobingiz bormi? Kiring →"}
           </button>
         </div>
       </div>
