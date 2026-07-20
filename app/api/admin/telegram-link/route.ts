@@ -39,3 +39,15 @@ export async function GET() {
   const { data } = await admin.from("profiles").select("telegram_chat_id").eq("id", user.id).maybeSingle();
   return NextResponse.json({ linked: !!data?.telegram_chat_id });
 }
+
+export async function DELETE() {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "forbidden" }, { status: 401 });
+
+  const admin = createAdminClient();
+  await admin.from("profiles").update({ telegram_chat_id: null }).eq("id", user.id);
+  return NextResponse.json({ success: true });
+}

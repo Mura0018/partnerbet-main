@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip } from "lucide-react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
 
@@ -97,7 +97,7 @@ function ChatTab() {
     : messages;
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col h-[520px] min-w-0">
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col h-full min-w-0">
       <div className="flex items-center gap-2 p-2.5 border-b border-white/8">
         {showSearch ? (
           <input
@@ -279,6 +279,8 @@ type Order = {
   receipt_path: string | null;
   status: "pending" | "completed" | "rejected";
   operator_note: string | null;
+  operator_id: string | null;
+  claimed_by: string | null;
   player_name: string | null;
   auto_processed: boolean;
   created_at: string;
@@ -579,6 +581,7 @@ function TelegramLinkWidget() {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [code, setCode] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
 
   const checkStatus = () => {
     fetch("/api/admin/telegram-link")
@@ -600,10 +603,24 @@ function TelegramLinkWidget() {
     }
   };
 
+  const unlink = async () => {
+    setUnlinking(true);
+    try {
+      await fetch("/api/admin/telegram-link", { method: "DELETE" });
+      setCode("");
+      checkStatus();
+    } finally {
+      setUnlinking(false);
+    }
+  };
+
   if (linked === true) {
     return (
-      <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80]">
-        ✓ Telegram ulangan — yangi buyurtmalar haqida xabar kelib turadi.
+      <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80] flex items-center justify-between gap-3">
+        <span>✓ Telegram ulangan — yangi buyurtmalar haqida xabar kelib turadi.</span>
+        <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">
+          {unlinking ? "…" : "Uzish"}
+        </button>
       </div>
     );
   }
@@ -629,15 +646,21 @@ function OrdersTab() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"pending" | "completed" | "rejected" | "all">("pending");
   const [selected, setSelected] = useState<Order | null>(null);
+  const [operatorNames, setOperatorNames] = useState<Record<string, string>>({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [operatorFilter, setOperatorFilter] = useState<string>("all");
+  const [onlyToday, setOnlyToday] = useState(false);
+  const [onlyUnclaimed, setOnlyUnclaimed] = useState(false);
+  const [search, setSearch] = useState("");
   const supabase = createClient();
 
   const load = async () => {
     setLoading(true);
     let query = supabase
       .from("telegram_orders")
-      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, player_name, auto_processed, created_at, customers(phone, full_name)")
+      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, player_name, auto_processed, created_at, customers(phone, full_name)")
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(200);
     if (filter !== "all") query = query.eq("status", filter);
     const { data } = await query;
     setOrders((data as any[]) ?? []);
@@ -645,17 +668,72 @@ function OrdersTab() {
   };
   useEffect(() => { load(); }, [filter]);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
+    fetch("/api/admin/telegram-orders/operators-list")
+      .then((r) => r.json())
+      .then((data) => {
+        const map: Record<string, string> = {};
+        for (const op of data.operators ?? []) map[op.id] = op.name;
+        setOperatorNames(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  const openOrder = async (o: Order) => {
+    if (o.status !== "pending") { setSelected(o); return; }
+    setSelected(o);
+    try {
+      const res = await fetch("/api/admin/telegram-orders/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: o.id }),
+      });
+      const data = await res.json();
+      if (data.claimedBy) {
+        setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, claimed_by: data.claimedBy } : x)));
+        setSelected((prev) => (prev && prev.id === o.id ? { ...prev, claimed_by: data.claimedBy } : prev));
+      }
+    } catch {}
+  };
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const filtered = orders.filter((o) => {
+    if (operatorFilter !== "all") {
+      const owner = o.status === "pending" ? o.claimed_by : o.operator_id;
+      if (owner !== operatorFilter) return false;
+    }
+    if (onlyToday && new Date(o.created_at) < todayStart) return false;
+    if (onlyUnclaimed && (o.status !== "pending" || o.claimed_by)) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const haystack = `${o.account_id} ${o.platform} ${o.customers?.phone ?? ""} ${o.customers?.full_name ?? ""} ${o.player_name ?? ""}`.toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+
   return (
     <div>
       <TelegramLinkWidget />
       <Can permission="telegram_operators.manage"><LimitsEditor /></Can>
       <CashdeskBalanceBadge />
-      <div className="flex gap-2 mb-4">
+
+      <input
+        className="w-full mb-3 bg-white/5 border border-white/10 rounded-lg py-2 px-3.5 text-[13px] outline-none focus:border-accent"
+        placeholder="Qidirish: hisob ID, telefon, ism, platforma..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      <div className="flex gap-2 mb-3 overflow-x-auto">
         {ORDER_STATUS_FILTERS.map((f) => (
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${
+            className={`shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-medium border whitespace-nowrap ${
               filter === f.id ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"
             }`}
           >
@@ -664,45 +742,78 @@ function OrdersTab() {
         ))}
       </div>
 
+      <div className="flex flex-wrap gap-2 mb-4 items-center">
+        <select
+          value={operatorFilter}
+          onChange={(e) => setOperatorFilter(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]"
+        >
+          <option value="all">Barcha operatorlar</option>
+          {currentUserId && <option value={currentUserId}>Faqat mening</option>}
+          {Object.entries(operatorNames).filter(([id]) => id !== currentUserId).map(([id, name]) => (
+            <option key={id} value={id}>{name}</option>
+          ))}
+        </select>
+        <button
+          onClick={() => setOnlyToday((v) => !v)}
+          className={`px-2.5 py-1.5 rounded-lg text-[12px] border ${onlyToday ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+        >
+          Bugun
+        </button>
+        <button
+          onClick={() => setOnlyUnclaimed((v) => !v)}
+          className={`px-2.5 py-1.5 rounded-lg text-[12px] border ${onlyUnclaimed ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+        >
+          Band qilinmagan
+        </button>
+      </div>
+
       {loading ? (
         <p className="text-[13px] text-muted">Yuklanmoqda...</p>
-      ) : orders.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
           Bu holatda buyurtmalar yo'q.
         </div>
       ) : (
         <div className="space-y-2.5">
-          {orders.map((o) => (
-            <button
-              key={o.id}
-              onClick={() => o.status === "pending" && setSelected(o)}
-              className={`w-full flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4 text-left ${
-                o.status === "pending" ? "hover:border-accent/40 cursor-pointer" : "cursor-default"
-              }`}
-            >
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold flex items-center gap-1.5">
-                  {o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {o.platform}
-                  {o.auto_processed && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">API</span>
+          {filtered.map((o) => {
+            const owner = o.status === "pending" ? o.claimed_by : o.operator_id;
+            const ownerName = owner ? operatorNames[owner] : null;
+            return (
+              <button
+                key={o.id}
+                onClick={() => openOrder(o)}
+                className="w-full flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4 text-left hover:border-accent/40 cursor-pointer"
+              >
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold flex items-center gap-1.5">
+                    {o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {o.platform}
+                    {o.auto_processed && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">API</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-muted mt-0.5">
+                    {o.customers?.full_name || o.customers?.phone || "—"} · {o.player_name ? `${o.player_name} (ID: ${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
+                  </div>
+                  {ownerName && (
+                    <div className="text-[10px] text-accent mt-1">
+                      {o.status === "pending" ? `🔵 ${ownerName} ko'rib chiqmoqda` : `${ownerName} bajardi`}
+                    </div>
                   )}
                 </div>
-                <div className="text-[11px] text-muted mt-0.5">
-                  {o.customers?.full_name || o.customers?.phone || "—"} · {o.player_name ? `${o.player_name} (ID: ${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
+                <div className="text-right shrink-0">
+                  <div className="text-[13px] font-bold">{Number(o.amount).toLocaleString("ru-RU")}</div>
+                  <div
+                    className={`text-[11px] font-medium ${
+                      o.status === "pending" ? "text-[#F4C76A]" : o.status === "completed" ? "text-[#4ADE80]" : "text-[#FF6B85]"
+                    }`}
+                  >
+                    {o.status === "pending" ? "Kutilmoqda" : o.status === "completed" ? "Bajarildi" : "Rad etildi"}
+                  </div>
                 </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-[13px] font-bold">{Number(o.amount).toLocaleString("ru-RU")}</div>
-                <div
-                  className={`text-[11px] font-medium ${
-                    o.status === "pending" ? "text-[#F4C76A]" : o.status === "completed" ? "text-[#4ADE80]" : "text-[#FF6B85]"
-                  }`}
-                >
-                  {o.status === "pending" ? "Kutilmoqda" : o.status === "completed" ? "Bajarildi" : "Rad etildi"}
-                </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -761,6 +872,7 @@ function SupportTab() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const supabase = createClient();
 
   const loadThreads = async (isInitial = false) => {
@@ -828,13 +940,24 @@ function SupportTab() {
 
   if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda...</p>;
 
+  const filteredThreads = search.trim()
+    ? threads.filter((t) => `${t.full_name ?? ""} ${t.phone}`.toLowerCase().includes(search.trim().toLowerCase()))
+    : threads;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 md:h-[560px] min-w-0">
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] overflow-y-auto max-h-[240px] md:max-h-none min-w-0">
-        {threads.length === 0 ? (
-          <p className="text-[12px] text-muted text-center p-6">Hozircha murojaat yo'q.</p>
-        ) : (
-          threads.map((t) => (
+    <div>
+      <input
+        className="w-full mb-3 bg-white/5 border border-white/10 rounded-lg py-2 px-3.5 text-[13px] outline-none focus:border-accent"
+        placeholder="Mijozni qidirish: ism yoki telefon..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 md:h-[560px] min-w-0">
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] overflow-y-auto max-h-[240px] md:max-h-none min-w-0">
+          {filteredThreads.length === 0 ? (
+            <p className="text-[12px] text-muted text-center p-6">{search ? "Hech narsa topilmadi." : "Hozircha murojaat yo'q."}</p>
+          ) : (
+            filteredThreads.map((t) => (
             <button
               key={t.customer_id}
               onClick={() => setActiveCustomer(t)}
@@ -845,11 +968,11 @@ function SupportTab() {
               <div className="text-[12px] font-semibold truncate">{t.full_name || t.phone}</div>
               <div className="text-[11px] text-muted truncate mt-0.5">{t.last_image ? "📷 Rasm" : t.last_message}</div>
             </button>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
 
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col min-w-0 h-[420px] md:h-auto">
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col min-w-0 h-[420px] md:h-auto">
         {!activeCustomer ? (
           <div className="flex-1 flex items-center justify-center text-[13px] text-muted">Murojaatni tanlang</div>
         ) : (
@@ -892,6 +1015,7 @@ function SupportTab() {
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   );
@@ -1060,6 +1184,23 @@ function MyPaymentMethodsTab() {
 export default function TelegramBotAdminPage() {
   const [tab, setTab] = useState<"orders" | "operators" | "chat" | "support" | "my-payments">("orders");
 
+  if (tab === "chat") {
+    return (
+      <div className="fixed inset-0 z-40 bg-bg flex flex-col">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-white/8 shrink-0">
+          <button onClick={() => setTab("orders")} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10" aria-label="Orqaga">
+            <ChevronLeft size={20} />
+          </button>
+          <MessageCircle size={18} className="text-accent" />
+          <h1 className="text-[16px] font-bold">Jamoa chati</h1>
+        </div>
+        <div className="flex-1 p-4 min-h-0">
+          <Can permission="team_chat.use"><ChatTab /></Can>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8">
       <div className="flex items-center gap-2 mb-1">
@@ -1108,7 +1249,6 @@ export default function TelegramBotAdminPage() {
       {tab === "orders" && <OrdersTab />}
       {tab === "support" && <SupportTab />}
       {tab === "operators" && <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
-      {tab === "chat" && <Can permission="team_chat.use"><ChatTab /></Can>}
       {tab === "my-payments" && <MyPaymentMethodsTab />}
     </div>
   );
