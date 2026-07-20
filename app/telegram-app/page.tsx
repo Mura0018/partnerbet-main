@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload,
 } from "lucide-react";
 
 declare global {
@@ -181,6 +181,9 @@ export default function TelegramAppPage() {
   const [tuAccountId, setTuAccountId] = useState("");
   const [tuAmount, setTuAmount] = useState("");
   const [tuMethod, setTuMethod] = useState<PaymentMethod>("click");
+  const [tuReceiptBase64, setTuReceiptBase64] = useState("");
+  const [tuReceiptMime, setTuReceiptMime] = useState("");
+  const [tuReceiptFileName, setTuReceiptFileName] = useState("");
 
   // Withdraw form
   const [wdPlatform, setWdPlatform] = useState(PLATFORMS[0]);
@@ -190,6 +193,7 @@ export default function TelegramAppPage() {
   const [wdAmount, setWdAmount] = useState("");
   const [wdMethod, setWdMethod] = useState<PaymentMethod>("click");
   const [wdPayoutDetails, setWdPayoutDetails] = useState("");
+  const [wdRecipientName, setWdRecipientName] = useState("");
 
   const [successLabel, setSuccessLabel] = useState("");
 
@@ -354,7 +358,30 @@ export default function TelegramAppPage() {
 
   const resetForms = () => {
     setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
-    setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails("");
+    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName("");
+    setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails(""); setWdRecipientName("");
+  };
+
+  const handleReceiptSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setError("Faqat rasm fayli (PNG/JPEG/WEBP) yuklash mumkin.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Rasm hajmi 5MB dan oshmasligi kerak.");
+      return;
+    }
+    setError("");
+    setTuReceiptFileName(file.name);
+    setTuReceiptMime(file.type);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setTuReceiptBase64(result.split(",")[1] ?? "");
+    };
+    reader.readAsDataURL(file);
   };
 
   const submitTopup = async (e: React.FormEvent) => {
@@ -363,6 +390,10 @@ export default function TelegramAppPage() {
     const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
     if (!platform || !tuAccountId.trim() || !tuAmount || Number(tuAmount) <= 0) {
       setError("Barcha maydonlarni to'ldiring.");
+      return;
+    }
+    if (!tuReceiptBase64) {
+      setError("To'lov chekining skrinshotini yuklang.");
       return;
     }
     setSubmitting(true);
@@ -384,6 +415,19 @@ export default function TelegramAppPage() {
         }
         return;
       }
+      const { order } = await res.json();
+
+      const receiptRes = await fetch("/api/telegram/miniapp/orders/receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: getInitData(), orderId: order.id, imageBase64: tuReceiptBase64, mimeType: tuReceiptMime,
+        }),
+      });
+      if (!receiptRes.ok) {
+        setError("Buyurtma yaratildi, lekin chek yuklanmadi. \"Operator bilan aloqa\" orqali chekni yuboring.");
+      }
+
       setSuccessLabel("Hisob to'ldirish");
       resetForms();
       setScreen("order-success");
@@ -398,7 +442,7 @@ export default function TelegramAppPage() {
     e.preventDefault();
     setError("");
     const platform = wdPlatform === "Boshqa" ? wdCustomPlatform.trim() : wdPlatform;
-    if (!platform || !wdAccountId.trim() || !wdCode.trim() || !wdAmount || Number(wdAmount) <= 0 || !wdPayoutDetails.trim()) {
+    if (!platform || !wdAccountId.trim() || !wdCode.trim() || !wdAmount || Number(wdAmount) <= 0 || !wdPayoutDetails.trim() || !wdRecipientName.trim()) {
       setError("Barcha maydonlarni to'ldiring.");
       return;
     }
@@ -410,6 +454,7 @@ export default function TelegramAppPage() {
         body: JSON.stringify({
           initData: getInitData(), type: "withdraw", platform, accountId: wdAccountId.trim(),
           amount: Number(wdAmount), paymentMethod: wdMethod, withdrawCode: wdCode.trim(), payoutDetails: wdPayoutDetails.trim(),
+          recipientName: wdRecipientName.trim(),
         }),
       });
       if (!res.ok) {
@@ -612,8 +657,16 @@ export default function TelegramAppPage() {
             <input className={inputCls} type="number" min={1} placeholder="Masalan: 50000" value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
           </div>
           <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} paymentInfo={paymentInfo} />
+          <div className="mb-4">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">To'lov cheki (skrinshot)</label>
+            <label className="flex items-center justify-center gap-2 w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]">
+              <Upload size={15} />
+              {tuReceiptFileName || "Rasm tanlash"}
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleReceiptSelect} />
+            </label>
+          </div>
           <p className="text-[11px] text-[#5b7089] mb-4 leading-relaxed">
-            Ko'rsatilgan raqamga to'lovni amalga oshirib, quyidagi tugmani bosing — operator to'lovni tekshirib, hisobingizni to'ldiradi.
+            Ko'rsatilgan raqamga to'lovni amalga oshirib, chek skrinshotini yuklang va quyidagi tugmani bosing — operator to'lovni tekshirib, hisobingizni to'ldiradi.
           </p>
           {error && <p className="text-[12px] text-[#FF6B85] text-center mb-3">{error}</p>}
           <button type="submit" disabled={submitting} className={buttonCls}>
@@ -657,9 +710,13 @@ export default function TelegramAppPage() {
               ))}
             </div>
           </div>
-          <div className="mb-4">
+          <div className="mb-3.5">
             <label className="block text-[12px] text-[#93a5ba] mb-1.5">Qabul qiluvchi raqam/karta</label>
             <input className={inputCls} placeholder="Karta/Click/Payme raqamingiz" value={wdPayoutDetails} onChange={(e) => setWdPayoutDetails(e.target.value)} />
+          </div>
+          <div className="mb-4">
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Karta/hisob egasining F.I.Sh.</label>
+            <input className={inputCls} placeholder="Masalan: Aliyev Vali" value={wdRecipientName} onChange={(e) => setWdRecipientName(e.target.value)} />
           </div>
           {error && <p className="text-[12px] text-[#FF6B85] text-center mb-3">{error}</p>}
           <button type="submit" disabled={submitting} className={buttonCls}>

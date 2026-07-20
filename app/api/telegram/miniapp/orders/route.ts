@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
-  const { initData, type, platform, accountId, amount, paymentMethod, withdrawCode, payoutDetails } = body ?? {};
+  const { initData, type, platform, accountId, amount, paymentMethod, withdrawCode, payoutDetails, recipientName } = body ?? {};
 
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
@@ -54,6 +54,9 @@ export async function POST(req: NextRequest) {
   }
   if (type === "withdraw" && (!withdrawCode || String(withdrawCode).trim().length === 0)) {
     return NextResponse.json({ error: "invalid_withdraw_code" }, { status: 400 });
+  }
+  if (type === "withdraw" && (!recipientName || String(recipientName).trim().length === 0)) {
+    return NextResponse.json({ error: "invalid_recipient_name" }, { status: 400 });
   }
 
   // If the cashdesk API is configured, verify the account_id is a real
@@ -84,6 +87,7 @@ export async function POST(req: NextRequest) {
       payment_method: paymentMethod,
       withdraw_code: type === "withdraw" ? String(withdrawCode).trim().slice(0, 20) : null,
       payout_details: payoutDetails ? String(payoutDetails).trim().slice(0, 500) : null,
+      recipient_name: type === "withdraw" ? String(recipientName).trim().slice(0, 150) : null,
       player_name: playerName,
       currency_id: currencyId,
     })

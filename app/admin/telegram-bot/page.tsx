@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset } from "lucide-react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
 
@@ -202,6 +202,8 @@ type Order = {
   payment_method: string;
   withdraw_code: string | null;
   payout_details: string | null;
+  recipient_name: string | null;
+  receipt_path: string | null;
   status: "pending" | "completed" | "rejected";
   operator_note: string | null;
   player_name: string | null;
@@ -216,6 +218,42 @@ const ORDER_STATUS_FILTERS: { id: "pending" | "completed" | "rejected" | "all"; 
   { id: "rejected", label: "Rad etilgan" },
   { id: "all", label: "Barchasi" },
 ];
+
+function ReceiptViewer({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/admin/telegram-orders/receipt-url?path=${encodeURIComponent(path)}`)
+      .then((r) => r.json())
+      .then((data) => setUrl(data.url ?? null))
+      .catch(() => setUrl(null))
+      .finally(() => setLoading(false));
+  }, [path]);
+
+  if (loading) return <p className="text-[12px] text-muted">Chek yuklanmoqda…</p>;
+  if (!url) return <p className="text-[12px] text-[#FF6B85]">Chekni yuklab bo'lmadi.</p>;
+
+  return (
+    <>
+      <img
+        src={url}
+        alt="To'lov cheki"
+        onClick={() => setExpanded(true)}
+        className="w-full max-h-56 object-contain rounded-lg border border-white/10 cursor-zoom-in bg-black/20"
+      />
+      {expanded && (
+        <div
+          className="fixed inset-0 bg-black/85 flex items-center justify-center z-[60] p-5"
+          onClick={() => setExpanded(false)}
+        >
+          <img src={url} alt="To'lov cheki" className="max-w-full max-h-full object-contain rounded-lg" />
+        </div>
+      )}
+    </>
+  );
+}
 
 function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () => void; onDone: () => void }) {
   const [note, setNote] = useState("");
@@ -254,29 +292,74 @@ function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () =>
     }
   };
 
+  const Row = ({ label, value, highlight }: { label: string; value: React.ReactNode; highlight?: boolean }) => (
+    <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-white/5 last:border-0">
+      <span className="text-[12px] text-muted shrink-0">{label}</span>
+      <span className={`text-[13px] text-right ${highlight ? "font-semibold text-white" : ""}`}>{value}</span>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-1">
           <h2 className="font-bold text-[16px]">{order.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"}</h2>
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
         </div>
-        <div className="space-y-1.5 text-[13px] mb-4">
-          <div><span className="text-muted">Mijoz:</span> {order.customers?.full_name || order.customers?.phone || "—"}</div>
-          <div><span className="text-muted">Platforma:</span> {order.platform}</div>
-          <div><span className="text-muted">Hisob ID:</span> {order.account_id}</div>
-          {order.player_name && (
+        <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} so'm</div>
+
+        {/* Verification checks — the things an operator must actually look at */}
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
+          <div className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-2.5">Tekshiruvlar</div>
+
+          <div className="flex items-center gap-2 mb-3">
+            {order.player_name ? (
+              <>
+                <CheckCircle2 size={15} className="text-[#4ADE80] shrink-0" />
+                <span className="text-[13px]">
+                  O'yinchi: <span className="font-semibold text-[#4ADE80]">{order.player_name}</span>
+                  <span className="text-[10px] text-[#5b6f85] ml-1">(kassa API orqali tasdiqlangan)</span>
+                </span>
+              </>
+            ) : (
+              <>
+                <AlertCircle size={15} className="text-[#F4C76A] shrink-0" />
+                <span className="text-[13px] text-[#F4C76A]">O'yinchi ismi tekshirilmagan — ID'ni qo'lda tekshiring.</span>
+              </>
+            )}
+          </div>
+
+          {order.type === "topup" && (
             <div>
-              <span className="text-muted">O'yinchi ismi:</span>{" "}
-              <span className="text-[#4ADE80] font-medium">{order.player_name}</span>
-              <span className="text-[10px] text-[#5b6f85] ml-1">(kassa API orqali tekshirildi)</span>
+              <div className="text-[12px] text-muted mb-1.5">To'lov cheki</div>
+              {order.receipt_path ? (
+                <ReceiptViewer path={order.receipt_path} />
+              ) : (
+                <p className="text-[12px] text-[#FF6B85]">Mijoz chek yuklamagan.</p>
+              )}
             </div>
           )}
-          <div><span className="text-muted">Summa:</span> {Number(order.amount).toLocaleString("ru-RU")}</div>
-          <div><span className="text-muted">To'lov usuli:</span> {order.payment_method}</div>
-          {order.withdraw_code && <div><span className="text-muted">Yechish kodi:</span> {order.withdraw_code}</div>}
-          {order.payout_details && <div><span className="text-muted">Qabul qiluvchi:</span> {order.payout_details}</div>}
+
+          {order.type === "withdraw" && (
+            <div className="flex items-center gap-2">
+              <UserCheck size={15} className="text-accent shrink-0" />
+              <span className="text-[13px]">
+                Qabul qiluvchi: <span className="font-semibold">{order.recipient_name || "—"}</span>
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Order details */}
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
+          <Row label="Mijoz" value={order.customers?.full_name || order.customers?.phone || "—"} />
+          <Row label="Platforma" value={order.platform} />
+          <Row label="Hisob ID" value={order.account_id} />
+          <Row label="To'lov usuli" value={order.payment_method} />
+          {order.withdraw_code && <Row label="Yechish kodi" value={order.withdraw_code} highlight />}
+          {order.payout_details && <Row label="Qabul qiluvchi raqam" value={order.payout_details} highlight />}
+        </div>
+
         <textarea
           rows={2}
           className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3"
@@ -347,7 +430,7 @@ function OrdersTab() {
     setLoading(true);
     let query = supabase
       .from("telegram_orders")
-      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, status, operator_note, player_name, auto_processed, created_at, customers(phone, full_name)")
+      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, player_name, auto_processed, created_at, customers(phone, full_name)")
       .order("created_at", { ascending: false })
       .limit(100);
     if (filter !== "all") query = query.eq("status", filter);
