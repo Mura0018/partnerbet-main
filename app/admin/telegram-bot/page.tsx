@@ -575,6 +575,55 @@ function LimitsEditor() {
   );
 }
 
+function TelegramLinkWidget() {
+  const [linked, setLinked] = useState<boolean | null>(null);
+  const [code, setCode] = useState("");
+  const [generating, setGenerating] = useState(false);
+
+  const checkStatus = () => {
+    fetch("/api/admin/telegram-link")
+      .then((r) => r.json())
+      .then((data) => setLinked(!!data.linked))
+      .catch(() => setLinked(null));
+  };
+
+  useEffect(() => { checkStatus(); }, []);
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/admin/telegram-link", { method: "POST" });
+      const data = await res.json();
+      if (data.code) setCode(data.code);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  if (linked === true) {
+    return (
+      <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80]">
+        ✓ Telegram ulangan — yangi buyurtmalar haqida xabar kelib turadi.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
+      <div className="mb-2">Telegram ulanmagan — yangi buyurtmalar haqida xabar olmaysiz.</div>
+      {code ? (
+        <div className="text-white/90">
+          Botga yuboring: <span className="font-mono font-bold">/link {code}</span> (10 daqiqa amal qiladi)
+        </div>
+      ) : (
+        <button onClick={generate} disabled={generating} className="px-3 py-1.5 rounded-lg bg-[#F4C76A]/20 border border-[#F4C76A]/40 text-[11px] font-semibold">
+          {generating ? "…" : "Kod olish"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -598,6 +647,7 @@ function OrdersTab() {
 
   return (
     <div>
+      <TelegramLinkWidget />
       <Can permission="telegram_operators.manage"><LimitsEditor /></Can>
       <CashdeskBalanceBadge />
       <div className="flex gap-2 mb-4">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
 import { sendTelegramMessage, buildOrderCreatedMessage } from "@/lib/telegram/notify";
+import { notifyOperatorsNewOrder } from "@/lib/telegram/notifyStaff";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
@@ -76,6 +77,15 @@ export async function POST(req: NextRequest) {
   }
 
   const adminForLimits = createAdminClient();
+  const { count: pendingCountExact } = await adminForLimits
+    .from("telegram_orders")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", customer.id)
+    .eq("status", "pending");
+  if ((pendingCountExact ?? 0) >= 3) {
+    return NextResponse.json({ error: "too_many_pending_orders" }, { status: 400 });
+  }
+
   const { data: limitsRow } = await adminForLimits.from("site_settings").select("value").eq("key", "betcore_pay_limits").maybeSingle();
   const limits = (limitsRow?.value as any) ?? {};
   const maxOrderAmount = Number(limits.max_order_amount) || Infinity;
@@ -120,6 +130,7 @@ export async function POST(req: NextRequest) {
   if (error || !order) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
 
   await sendTelegramMessage(customer.telegram_id, buildOrderCreatedMessage(type, amountNum));
+  await notifyOperatorsNewOrder(type, amountNum, playerName ?? String(accountId).trim());
 
   return NextResponse.json({ order });
 }
