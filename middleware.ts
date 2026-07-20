@@ -53,6 +53,16 @@ async function handleAdminRoute(request: NextRequest) {
   } = await supabase.auth.getSession();
   if (!session) return loginRedirect();
 
+  // If this account has 2FA enrolled, the session must actually be at
+  // aal2 (password + TOTP both verified) to reach /admin — a stolen or
+  // reused aal1 cookie alone isn't enough. This is enforcement, not just
+  // a login-page nicety: the login flow sets aal2 itself after a
+  // successful code check, so a legitimate user is never blocked here.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+    return loginRedirect();
+  }
+
   const { data: isAdmin } = await supabase.rpc("is_admin_user");
   if (!isAdmin) {
     const url = new URL("/auth/login", request.url);

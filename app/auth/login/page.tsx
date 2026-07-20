@@ -13,6 +13,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { t } = useLocale();
 
+  const [step, setStep] = useState<"password" | "mfa">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -20,6 +21,11 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [showResend, setShowResend] = useState(false);
   const [resendSent, setResendSent] = useState(false);
+
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaFactorId, setMfaFactorId] = useState("");
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaError, setMfaError] = useState("");
 
   useEffect(() => {
     if (searchParams.get("error") === "not_admin") setError(t("login.notAdmin"));
@@ -56,16 +62,65 @@ function LoginForm() {
       }
 
       // Route handler set the session cookies server-side; refresh the
-      // browser client so it picks them up, then redirect appropriately.
-      const redirectTo = searchParams.get("redirect");
+      // browser client so it picks them up, then check whether this
+      // account has 2FA enrolled — if so, verify the code before
+      // granting access rather than redirecting straight in.
       const supabase = createClient();
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+        const { data: factors } = await supabase.auth.mfa.listFactors();
+        const totpFactor = factors?.totp?.find((f) => f.status === "verified");
+        if (totpFactor) {
+          setMfaFactorId(totpFactor.id);
+          setStep("mfa");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const redirectTo = searchParams.get("redirect");
       const { data: isAdmin } = await supabase.rpc("is_admin_user");
       router.push(redirectTo || (isAdmin ? "/admin/dashboard" : "/"));
       router.refresh();
-    } catch (err) {
-        alert("DEBUG: " + String(err));
+    } catch {
         setError(t("login.genericError"));
         setLoading(false);
+    }
+  };
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMfaError("");
+    if (mfaCode.trim().length !== 6) {
+      setMfaError("6 xonali kodni kiriting.");
+      return;
+    }
+    setMfaLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+      if (challengeError || !challenge) {
+        setMfaError("Xatolik yuz berdi. Qayta urinib ko'ring.");
+        setMfaLoading(false);
+        return;
+      }
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: challenge.id,
+        code: mfaCode.trim(),
+      });
+      if (verifyError) {
+        setMfaError("Kod noto'g'ri. Qayta urinib ko'ring.");
+        setMfaLoading(false);
+        return;
+      }
+      const redirectTo = searchParams.get("redirect");
+      const { data: isAdmin } = await supabase.rpc("is_admin_user");
+      router.push(redirectTo || (isAdmin ? "/admin/dashboard" : "/"));
+      router.refresh();
+    } catch {
+      setMfaError("Xatolik yuz berdi. Qayta urinib ko'ring.");
+      setMfaLoading(false);
     }
   };
 
@@ -74,6 +129,41 @@ function LoginForm() {
     await supabase.auth.resend({ type: "signup", email });
     setResendSent(true);
   };
+
+  if (step === "mfa") {
+    return (
+      <AuthShell title="Ikki bosqichli tasdiqlash" subtitle="Autentifikator ilovangizdagi 6 xonali kodni kiriting">
+        <form onSubmit={handleMfaVerify}>
+          <label className="block text-[12px] text-muted mb-1.5">Tasdiqlash kodi</label>
+          <div className="relative mb-4">
+            <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
+            <input
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              maxLength={6}
+              required
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+              className={`${inputClass} pl-9 tracking-[0.3em] text-center`}
+              placeholder="000000"
+            />
+          </div>
+          <FieldError>{mfaError}</FieldError>
+          <button type="submit" disabled={mfaLoading} className={submitButtonClass}>
+            {mfaLoading ? "Tekshirilmoqda…" : "Tasdiqlash"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setStep("password"); setMfaCode(""); setMfaError(""); }}
+            className="w-full text-center mt-3 text-[12px] text-muted hover:underline"
+          >
+            Orqaga
+          </button>
+        </form>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell title={t("login.title")} subtitle={t("login.subtitle")}>
