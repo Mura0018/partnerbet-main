@@ -334,6 +334,9 @@ type Order = {
   operator_note: string | null;
   operator_id: string | null;
   claimed_by: string | null;
+  payment_operator_id: string | null;
+  received_account_number: string | null;
+  received_holder_name: string | null;
   player_name: string | null;
   auto_processed: boolean;
   created_at: string;
@@ -383,7 +386,7 @@ function ReceiptViewer({ path }: { path: string }) {
   );
 }
 
-function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () => void; onDone: () => void }) {
+function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order; operatorNames: Record<string, string>; onClose: () => void; onDone: () => void }) {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState<"completed" | "rejected" | null>(null);
   const [apiError, setApiError] = useState("");
@@ -456,6 +459,25 @@ function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () =>
               </>
             )}
           </div>
+
+          {order.type === "topup" && (
+            <div className="mb-3 rounded-lg bg-accent/10 border border-accent/25 px-3 py-2.5">
+              <div className="text-[11px] text-accent font-semibold mb-1">💳 To'lov qabul qilingan joy</div>
+              {order.received_account_number ? (
+                <div className="text-[13px]">
+                  <span className="font-semibold">{order.received_account_number}</span>
+                  {order.received_holder_name && <span className="text-muted"> — {order.received_holder_name}</span>}
+                  <div className="text-[11px] text-muted mt-0.5">
+                    Operator: <span className="font-semibold text-white">
+                      {order.payment_operator_id ? (operatorNames[order.payment_operator_id] ?? "noma'lum") : "noma'lum"}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#F4C76A]">Yozib olinmagan (eski buyurtma) — mijozdan so'rang.</p>
+              )}
+            </div>
+          )}
 
           {order.type === "topup" && (
             <div>
@@ -711,7 +733,7 @@ function OrdersTab() {
     setLoading(true);
     let query = supabase
       .from("telegram_orders")
-      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, player_name, auto_processed, created_at, customers(phone, full_name)")
+      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, created_at, customers(phone, full_name)")
       .order("created_at", { ascending: false })
       .limit(200);
     if (filter !== "all") query = query.eq("status", filter);
@@ -848,6 +870,11 @@ function OrdersTab() {
                   <div className="text-[11px] text-muted mt-0.5">
                     {o.customers?.full_name || o.customers?.phone || "—"} · {o.player_name ? `${o.player_name} (ID: ${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
                   </div>
+                  {o.type === "topup" && o.payment_operator_id && (
+                    <div className="text-[10px] text-[#F4C76A] mt-0.5">
+                      💳 {operatorNames[o.payment_operator_id] ?? "noma'lum"} kartasiga to'landi
+                    </div>
+                  )}
                   {ownerName && (
                     <div className="text-[10px] text-accent mt-1">
                       {o.status === "pending" ? `🔵 ${ownerName} ko'rib chiqmoqda` : `${ownerName} bajardi`}
@@ -873,6 +900,7 @@ function OrdersTab() {
       {selected && (
         <ResolveModal
           order={selected}
+          operatorNames={operatorNames}
           onClose={() => setSelected(null)}
           onDone={() => { setSelected(null); load(); }}
         />

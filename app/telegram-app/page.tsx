@@ -35,10 +35,10 @@ type SupportMessage = {
 };
 
 type PaymentInfo = {
-  cardNumber: string; cardHolder: string;
-  clickNumber: string; clickHolder: string;
-  paymeNumber: string; paymeHolder: string;
-  cryptoWallet: string;
+  cardNumber: string; cardHolder: string; cardOperatorId: string | null;
+  clickNumber: string; clickHolder: string; clickOperatorId: string | null;
+  paymeNumber: string; paymeHolder: string; paymeOperatorId: string | null;
+  cryptoWallet: string; cryptoOperatorId: string | null;
 };
 
 const PLATFORMS = ["1xBet", "Melbet", "Betwinner", "Boshqa"];
@@ -437,12 +437,20 @@ export default function TelegramAppPage() {
     }
     setSubmitting(true);
     try {
+      const methodDetails: Record<PaymentMethod, { number: string; holder: string; operatorId: string | null }> = {
+        card: { number: paymentInfo?.cardNumber ?? "", holder: paymentInfo?.cardHolder ?? "", operatorId: paymentInfo?.cardOperatorId ?? null },
+        click: { number: paymentInfo?.clickNumber ?? "", holder: paymentInfo?.clickHolder ?? "", operatorId: paymentInfo?.clickOperatorId ?? null },
+        payme: { number: paymentInfo?.paymeNumber ?? "", holder: paymentInfo?.paymeHolder ?? "", operatorId: paymentInfo?.paymeOperatorId ?? null },
+        crypto: { number: paymentInfo?.cryptoWallet ?? "", holder: "", operatorId: paymentInfo?.cryptoOperatorId ?? null },
+      };
+      const shown = methodDetails[tuMethod];
       const res = await fetch("/api/telegram/miniapp/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           initData: getInitData(), type: "topup", platform, accountId: tuAccountId.trim(),
           amount: Number(tuAmount), paymentMethod: tuMethod,
+          paymentOperatorId: shown.operatorId, receivedAccountNumber: shown.number, receivedHolderName: shown.holder,
         }),
       });
       if (!res.ok) {

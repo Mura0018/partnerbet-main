@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 // why a payment method added after deploy wasn't showing up.
 export const dynamic = "force-dynamic";
 
-type MethodRow = { method_type: string; account_number: string; holder_name: string | null };
+type MethodRow = { operator_id: string; method_type: string; account_number: string; holder_name: string | null };
 
 function pickRandom(rows: MethodRow[], type: string): MethodRow | null {
   const matching = rows.filter((r) => r.method_type === type);
@@ -19,12 +19,15 @@ function pickRandom(rows: MethodRow[], type: string): MethodRow | null {
 // address must be shown to the customer to complete a top-up. One active
 // entry per method type is picked at random among all operators who have
 // that type configured, spreading incoming payments across operators
-// instead of concentrating them on a single account.
+// instead of concentrating them on a single account. Each picked entry's
+// operator_id is returned too — the Mini App sends it back when the order
+// is created so whoever resolves the order later can see exactly whose
+// account the money actually went to (see 0049).
 export async function GET() {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("telegram_operator_payment_methods")
-    .select("method_type, account_number, holder_name")
+    .select("operator_id, method_type, account_number, holder_name")
     .eq("is_active", true);
 
   const rows = (data as MethodRow[]) ?? [];
@@ -37,11 +40,15 @@ export async function GET() {
     {
       cardNumber: card?.account_number ?? "",
       cardHolder: card?.holder_name ?? "",
+      cardOperatorId: card?.operator_id ?? null,
       clickNumber: click?.account_number ?? "",
       clickHolder: click?.holder_name ?? "",
+      clickOperatorId: click?.operator_id ?? null,
       paymeNumber: payme?.account_number ?? "",
       paymeHolder: payme?.holder_name ?? "",
+      paymeOperatorId: payme?.operator_id ?? null,
       cryptoWallet: crypto?.account_number ?? "",
+      cryptoOperatorId: crypto?.operator_id ?? null,
     },
     { headers: { "Cache-Control": "no-store" } }
   );

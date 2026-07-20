@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
-  const { initData, type, platform, accountId, amount, paymentMethod, withdrawCode, payoutDetails, recipientName } = body ?? {};
+  const { initData, type, platform, accountId, amount, paymentMethod, withdrawCode, payoutDetails, recipientName, paymentOperatorId, receivedAccountNumber, receivedHolderName } = body ?? {};
 
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
@@ -121,6 +121,9 @@ export async function POST(req: NextRequest) {
       withdraw_code: type === "withdraw" ? String(withdrawCode).trim().slice(0, 20) : null,
       payout_details: payoutDetails ? String(payoutDetails).trim().slice(0, 500) : null,
       recipient_name: type === "withdraw" ? String(recipientName).trim().slice(0, 150) : null,
+      payment_operator_id: type === "topup" && paymentOperatorId ? String(paymentOperatorId) : null,
+      received_account_number: type === "topup" && receivedAccountNumber ? String(receivedAccountNumber).trim().slice(0, 100) : null,
+      received_holder_name: type === "topup" && receivedHolderName ? String(receivedHolderName).trim().slice(0, 150) : null,
       player_name: playerName,
       currency_id: currencyId,
     })
