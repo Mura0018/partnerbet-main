@@ -368,7 +368,7 @@ function ResolveModal({ order, onClose, onDone }: { order: Order; onClose: () =>
           {order.payout_details && <Row label="Qabul qiluvchi raqam" value={order.payout_details} highlight />}
         </div>
 
-        <div className="flex gap-1.5 mb-2 overflow-x-auto">
+        <div className="flex gap-1.5 mb-2 overflow-x-auto min-w-0">
           {REJECT_REASON_TEMPLATES.map((tpl, i) => (
             <button
               key={i}
@@ -714,8 +714,8 @@ function SupportTab() {
   if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda...</p>;
 
   return (
-    <div className="grid md:grid-cols-[240px_1fr] gap-4 h-[560px]">
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] overflow-y-auto">
+    <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 md:h-[560px] min-w-0">
+      <div className="rounded-xl border border-white/8 bg-white/[0.02] overflow-y-auto max-h-[240px] md:max-h-none min-w-0">
         {threads.length === 0 ? (
           <p className="text-[12px] text-muted text-center p-6">Hozircha murojaat yo'q.</p>
         ) : (
@@ -734,12 +734,12 @@ function SupportTab() {
         )}
       </div>
 
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col">
+      <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col min-w-0 h-[420px] md:h-auto">
         {!activeCustomer ? (
           <div className="flex-1 flex items-center justify-center text-[13px] text-muted">Murojaatni tanlang</div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-end space-y-3 min-w-0">
               {msgs.map((m) => (
                 <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
                   <span className="text-[10px] text-[#5b6f85] mb-0.5 px-1">
@@ -752,7 +752,7 @@ function SupportTab() {
                 </div>
               ))}
             </div>
-            <div className="flex gap-1.5 px-3 pt-2.5 overflow-x-auto">
+            <div className="flex gap-1.5 px-3 pt-2.5 overflow-x-auto min-w-0">
               {REPLY_TEMPLATES.map((tpl, i) => (
                 <button
                   key={i}
