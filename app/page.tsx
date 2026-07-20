@@ -237,6 +237,10 @@ export default function Home() {
             <Link href="/partners" className="hover:text-white transition-colors">Partners</Link>
             <Link href="/apk" className="hover:text-white transition-colors">App</Link>
             <Link href="/support" className="hover:text-white transition-colors">Support</Link>
+            <Link href="/topup" className="flex items-center gap-1.5 hover:text-white transition-colors">
+              Top-Up
+              <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] border border-[#4ADE80]/30">Yangi</span>
+            </Link>
           </nav>
           <div className="flex items-center gap-3">
             <NotificationBell />
@@ -494,6 +498,7 @@ export default function Home() {
               <Link href="/blog" className="hover:text-white transition-colors">News</Link>
               <Link href="/partners" className="hover:text-white transition-colors">Partners</Link>
               <Link href="/apk" className="hover:text-white transition-colors">Download App</Link>
+              <Link href="/topup" className="hover:text-white transition-colors">Top-Up</Link>
               <Link href="/support" className="hover:text-white transition-colors">Support Us</Link>
             </div>
           </div>
