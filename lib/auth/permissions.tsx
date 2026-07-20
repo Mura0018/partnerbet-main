@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase";
 export type Profile = {
   id: string;
   full_name: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   is_active: boolean;
   locale: "uz" | "ru" | "en";
   role_id: string;
@@ -34,7 +36,7 @@ export function useCurrentProfile() {
       }
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, is_active, locale, role_id, roles(key, name)")
+        .select("id, full_name, display_name, avatar_url, is_active, locale, role_id, roles(key, name)")
         .eq("id", user.id)
         .single();
       if (!cancelled) {

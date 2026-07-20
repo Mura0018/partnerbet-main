@@ -2,12 +2,19 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, LogOut } from "lucide-react";
+import { Lock, LogOut, Upload, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { checkPasswordStrength } from "@/lib/auth/password";
 import { PasswordStrengthMeter } from "@/lib/auth/PasswordStrengthMeter";
 import { useCurrentProfile } from "@/lib/auth/permissions";
+import { uploadImage } from "@/lib/media/upload";
+
+const ROLE_COLOR: Record<string, string> = {
+  super_admin: "#F4C76A",
+  admin: "#3D7FFF",
+  operator: "#4ADE80",
+};
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,6 +26,44 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [savingDisplay, setSavingDisplay] = useState(false);
+  const [displaySaved, setDisplaySaved] = useState(false);
+
+  React.useEffect(() => {
+    if (profile) {
+      setDisplayName((profile as any).display_name ?? "");
+      setAvatarUrl((profile as any).avatar_url ?? null);
+    }
+  }, [profile]);
+
+  const roleKey = profile?.roles?.key ?? "user";
+  const roleColor = ROLE_COLOR[roleKey] ?? "#5b6f85";
+
+  const saveDisplay = async () => {
+    if (!profile) return;
+    setSavingDisplay(true);
+    setDisplaySaved(false);
+    const supabase = createClient();
+    await supabase.from("profiles").update({ display_name: displayName.trim() || null, avatar_url: avatarUrl }).eq("id", profile.id);
+    setSavingDisplay(false);
+    setDisplaySaved(true);
+    setTimeout(() => setDisplaySaved(false), 2000);
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    setAvatarUploading(true);
+    try {
+      const media = await uploadImage(file);
+      setAvatarUrl(media.publicUrl);
+    } catch {
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,10 +115,47 @@ export default function ProfilePage() {
 
       {!profileLoading && profile && (
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
-          <div className="text-[14px] font-semibold">{profile.full_name || "—"}</div>
-          <div className="text-[12px] text-muted mt-1">
-            {t(`roles.${profile.roles?.key ?? "user"}` as any)}
+          <div className="flex items-center gap-3 mb-4">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="w-14 h-14 rounded-full object-cover border-2" style={{ borderColor: roleColor }} />
+            ) : (
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center text-[18px] font-bold border-2"
+                style={{ borderColor: roleColor, color: roleColor, background: `${roleColor}1a` }}
+              >
+                {(displayName || profile.full_name || "?").charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <div className="text-[15px] font-bold" style={{ color: roleColor }}>
+                {displayName || profile.full_name || "—"}
+              </div>
+              <div className="text-[12px] text-muted mt-0.5">{t(`roles.${roleKey}` as any)}</div>
+            </div>
           </div>
+
+          <label className="block text-[12px] text-muted mb-1.5">Ko'rinish ismi (masalan: MURA)</label>
+          <input
+            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[14px] outline-none focus:border-accent mb-3"
+            placeholder={profile.full_name ?? ""}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+
+          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5 w-fit mb-3">
+            {avatarUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            Rasm yuklash
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarUploading}
+              onChange={(e) => e.target.files?.[0] && handleAvatarUpload(e.target.files[0])} />
+          </label>
+
+          <button
+            onClick={saveDisplay}
+            disabled={savingDisplay}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[13px] font-semibold disabled:opacity-60"
+          >
+            {savingDisplay ? "Saqlanmoqda..." : displaySaved ? "Saqlandi ✓" : "Saqlash"}
+          </button>
         </div>
       )}
 
@@ -109,11 +191,8 @@ export default function ProfilePage() {
         </button>
       </form>
 
-      <button
-        onClick={logoutEverywhere}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#FF3B5C]/30 text-[#FF6B85] text-[13px] font-semibold hover:bg-[#FF3B5C]/10"
-      >
-        <LogOut size={15} /> Barcha qurilmalardan chiqish
+      <button onClick={logoutEverywhere} className="flex items-center gap-2 text-[13px] text-[#FF6B85] hover:underline">
+        <LogOut size={14} /> Barcha qurilmalardan chiqish
       </button>
     </div>
   );

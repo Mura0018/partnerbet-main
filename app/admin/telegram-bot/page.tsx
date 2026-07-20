@@ -1,9 +1,111 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
+
+const ROLE_COLOR: Record<string, string> = {
+  super_admin: "#F4C76A",
+  admin: "#3D7FFF",
+  operator: "#4ADE80",
+};
+
+type ChatMessage = {
+  id: string;
+  message: string;
+  created_at: string;
+  sender_id: string;
+  profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; roles: { key: string } | null } | null;
+};
+
+function ChatTab() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
+
+  const load = async () => {
+    const { data } = await supabase
+      .from("team_chat_messages")
+      .select("id, message, created_at, sender_id, profiles(full_name, display_name, avatar_url, roles(key))")
+      .order("created_at", { ascending: true })
+      .limit(100);
+    setMessages((data as any[]) ?? []);
+  };
+
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length]);
+
+  const send = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("team_chat_messages").insert({ sender_id: user.id, message: text.trim() });
+      setText("");
+      await load();
+    }
+    setSending(false);
+  };
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col h-[520px]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.length === 0 && (
+          <p className="text-[13px] text-muted text-center mt-8">Hozircha xabar yo'q. Birinchi bo'lib yozing.</p>
+        )}
+        {messages.map((m) => {
+          const roleKey = m.profiles?.roles?.key ?? "user";
+          const color = ROLE_COLOR[roleKey] ?? "#5b6f85";
+          const name = m.profiles?.display_name || m.profiles?.full_name || "?";
+          return (
+            <div key={m.id} className="flex items-start gap-2.5">
+              {m.profiles?.avatar_url ? (
+                <img src={m.profiles.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border shrink-0" style={{ borderColor: color }} />
+              ) : (
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 border"
+                  style={{ borderColor: color, color, background: `${color}1a` }}
+                >
+                  {name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[12px] font-bold" style={{ color }}>{name}</span>
+                  <span className="text-[10px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+                <div className="text-[13px] text-white/90 break-words">{m.message}</div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
+      <div className="flex gap-2 p-3 border-t border-white/8">
+        <input
+          className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+          placeholder="Xabar yozing..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
+        />
+        <button onClick={send} disabled={sending || !text.trim()} className="px-3.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
+          <Send size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 type OperatorRow = {
   id: string;
@@ -100,7 +202,7 @@ function OrdersTab() {
 }
 
 export default function TelegramBotAdminPage() {
-  const [tab, setTab] = useState<"orders" | "operators">("orders");
+  const [tab, setTab] = useState<"orders" | "operators" | "chat">("orders");
 
   return (
     <div className="p-8">
@@ -125,9 +227,19 @@ export default function TelegramBotAdminPage() {
             <UsersIcon size={14} /> Operatorlar
           </button>
         </Can>
+        <Can permission="team_chat.use">
+          <button
+            onClick={() => setTab("chat")}
+            className={`px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px flex items-center gap-1.5 ${tab === "chat" ? "border-accent text-white" : "border-transparent text-muted"}`}
+          >
+            <MessageCircle size={14} /> Chat
+          </button>
+        </Can>
       </div>
 
-      {tab === "orders" ? <OrdersTab /> : <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
+      {tab === "orders" && <OrdersTab />}
+      {tab === "operators" && <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
+      {tab === "chat" && <Can permission="team_chat.use"><ChatTab /></Can>}
     </div>
   );
 }
