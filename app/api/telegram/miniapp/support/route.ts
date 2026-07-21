@@ -3,6 +3,7 @@ import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
+import { reassignStaleThread } from "@/lib/support/staleReassign";
 
 async function resolveCustomerId(initData: string, botToken: string): Promise<string | null> {
   const verified = verifyTelegramInitData(initData, botToken);
@@ -125,5 +126,49 @@ export async function POST(req: NextRequest) {
     threadPayload,
     { onConflict: "customer_id" }
   );
+
+  // 15 daqiqa javobsizlik yoki operator band bo'lsa — jamoaga qaytarish.
+  const wasReassigned = await reassignStaleThread(customerId);
+
+  // Operator holatini tekshirib, band bo'lsa mijozga xabar (bir marta).
+  const { data: freshThread } = await supabase
+    .from("telegram_support_threads")
+    .select("claimed_by")
+    .eq("customer_id", customerId)
+    .maybeSingle();
+  if (freshThread?.claimed_by) {
+    const { data: op } = await supabase
+      .from("profiles")
+      .select("is_online")
+      .eq("id", freshThread.claimed_by)
+      .maybeSingle();
+    if (op && !op.is_online) {
+      await supabase.from("telegram_support_messages").insert({
+        customer_id: customerId,
+        sender: "operator",
+        operator_id: freshThread.claimed_by,
+        message: "Operatoringiz hozir band \ud83d\udd34 Tez orada javob beramiz yoki boshqa operator ulanadi. \ud83d\ude4f",
+      });
+    }
+  } else if (wasReassigned) {
+    // Jamoaga o'tkazildi — mijozga xabar (operator_id yo'q, shuning uchun
+    // customer emas, lekin constraint operator uchun id talab qiladi.
+    // Buning uchun jamoadagi birinchi super_admin id sini olamiz.)
+    const { data: anyAdmin } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+    if (anyAdmin) {
+      await supabase.from("telegram_support_messages").insert({
+        customer_id: customerId,
+        sender: "operator",
+        operator_id: anyAdmin.id,
+        message: "So'rovingiz jamoamizga yo'naltirildi \ud83d\udd04 Tez orada operator javob beradi.",
+      });
+    }
+  }
+
   return NextResponse.json({ message: inserted });
 }
