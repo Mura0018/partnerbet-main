@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { LocaleSwitcher } from "@/lib/i18n/LocaleSwitcher";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
+import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
 
 const NAV = [
@@ -67,33 +68,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const sidebarContent = (
     <>
-      <div className="h-16 flex items-center justify-between gap-2 px-5 border-b border-white/8 shrink-0">
+      <div className="relative h-16 flex items-center justify-between gap-2 px-5 border-b border-white/8 shrink-0">
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
         <div className="flex items-center gap-2">
           {logoUrl ? (
-            <img src={logoUrl} alt={siteName} className="w-7 h-7 rounded-lg object-cover" />
+            <img src={logoUrl} alt={siteName} className="w-7 h-7 rounded-lg object-cover shadow-[0_0_14px_rgba(61,127,255,0.35)]" />
           ) : (
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center shadow-[0_0_14px_rgba(61,127,255,0.35)]">
               <Zap size={14} className="text-white" fill="white" />
             </div>
           )}
-          <span className="font-bold text-[14px]">{siteName} <span className="text-muted font-normal">Admin</span></span>
+          <span className="font-bold text-[14px]"><BrandName name={siteName} /> <span className="text-muted font-normal">Admin</span></span>
         </div>
         <button onClick={() => setMobileOpen(false)} className="md:hidden p-1.5 rounded-lg hover:bg-white/10" aria-label="Menyuni yopish">
           <X size={18} />
         </button>
       </div>
 
-      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
         {NAV.map((item) => {
           const active = pathname.startsWith(item.href);
           const link = (
             <Link
               key={item.href} href={item.href}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition ${
-                active ? "bg-accent/10 text-accent" : "text-muted hover:bg-white/5 hover:text-white"
+              className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition ${
+                active ? "bg-accent/10 text-white" : "text-muted hover:bg-white/5 hover:text-white"
               }`}
             >
-              <item.icon size={16} /> {item.label}
+              {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-accent shadow-[0_0_8px_rgba(61,127,255,0.7)]" />}
+              <item.icon size={16} className={active ? "text-accent" : ""} /> {item.label}
             </Link>
           );
           return item.permission ? (
@@ -145,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Zap size={12} className="text-white" fill="white" />
             </div>
           )}
-          <span className="font-bold text-[13px]">{siteName} Admin</span>
+          <span className="font-bold text-[13px]"><BrandName name={siteName} /> Admin</span>
         </div>
         <div className="w-9" />
       </div>

@@ -162,6 +162,79 @@ function GeneralTab({ settings, updateLocal, saveKey }: TabProps) {
   );
 }
 
+function BrandImageField({
+  currentUrl,
+  uploading,
+  accept,
+  recommendedText,
+  boxClassName,
+  onUpload,
+  onRemove,
+}: {
+  currentUrl: string | null;
+  uploading: boolean;
+  accept: string;
+  recommendedText: string;
+  boxClassName: string;
+  onUpload: (file: File) => void;
+  onRemove?: () => void;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const inputId = React.useId();
+
+  const handleFiles = (files: FileList | null) => {
+    const file = files?.[0];
+    if (file) onUpload(file);
+  };
+
+  return (
+    <div>
+      <label
+        htmlFor={inputId}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+        className={`relative flex items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${boxClassName} ${
+          dragOver ? "border-accent bg-accent/10" : "border-white/15 hover:border-white/30"
+        }`}
+        style={
+          currentUrl
+            ? {
+                backgroundImage:
+                  "linear-gradient(45deg, #1a2740 25%, transparent 25%), linear-gradient(-45deg, #1a2740 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a2740 75%), linear-gradient(-45deg, transparent 75%, #1a2740 75%)",
+                backgroundSize: "12px 12px",
+                backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0px",
+                backgroundColor: "#0e1728",
+              }
+            : undefined
+        }
+      >
+        {uploading ? (
+          <Loader2 size={20} className="animate-spin text-accent" />
+        ) : currentUrl ? (
+          <img src={currentUrl} alt="" className="max-w-full max-h-full object-contain p-2" />
+        ) : (
+          <div className="flex flex-col items-center gap-1.5 text-center px-3">
+            <Upload size={18} className="text-muted" />
+            <span className="text-[11px] text-muted leading-snug">Bosing yoki rasmni shu yerga tashlang</span>
+          </div>
+        )}
+        <input id={inputId} type="file" accept={accept} className="hidden" disabled={uploading}
+          onChange={(e) => handleFiles(e.target.files)} />
+      </label>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-[11px] text-[#5b6f85] leading-snug">{recommendedText}</span>
+        {currentUrl && onRemove && (
+          <button type="button" onClick={onRemove} className="shrink-0 text-[11px] text-muted hover:text-[#FF6B85] transition-colors ml-2">
+            O'chirish
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
   const { saving, saved, run } = useSaveState();
   const branding = settings.branding ?? {};
@@ -223,49 +296,45 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
             <span className="text-[9px] text-muted">Sayt</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {branding.logo_media_id_url && <img src={branding.logo_media_id_url} alt="Logo" className="w-10 h-10 rounded-lg object-cover border border-white/10" />}
-          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5">
-            {logoUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            {branding.logo_media_id_url ? "Almashtirish" : "Yuklash"}
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" disabled={logoUploading}
-              onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "logo_media_id", setLogoUploading)} />
-          </label>
-          {branding.logo_media_id_url && (
-            <button type="button" onClick={removeLogo} className="text-[12px] text-muted hover:text-[#FF6B85] transition-colors">
-              O'chirish
-            </button>
-          )}
+        <div className="max-w-[220px]">
+          <BrandImageField
+            currentUrl={branding.logo_media_id_url ?? null}
+            uploading={logoUploading}
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            recommendedText="Tavsiya: shaffof fon (PNG/SVG), kvadrat shakl"
+            boxClassName="w-full aspect-square"
+            onUpload={(file) => handleUpload(file, "logo_media_id", setLogoUploading)}
+            onRemove={removeLogo}
+          />
         </div>
       </Field>
       <Field label="Favicon">
-        <div className="flex items-center gap-3">
-          {branding.favicon_media_id_url && <img src={branding.favicon_media_id_url} alt="Favicon" className="w-8 h-8 rounded object-cover border border-white/10" />}
-          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5">
-            {faviconUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            Yuklash
-            <input type="file" accept="image/png,image/x-icon,image/svg+xml" className="hidden" disabled={faviconUploading}
-              onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "favicon_media_id", setFaviconUploading)} />
-          </label>
+        <div className="max-w-[140px]">
+          <BrandImageField
+            currentUrl={branding.favicon_media_id_url ?? null}
+            uploading={faviconUploading}
+            accept="image/png,image/x-icon,image/svg+xml"
+            recommendedText="32×32px yoki kattaroq, kvadrat"
+            boxClassName="w-full aspect-square"
+            onUpload={(file) => handleUpload(file, "favicon_media_id", setFaviconUploading)}
+            onRemove={() => updateLocal("branding", { favicon_media_id: null, favicon_media_id_url: null })}
+          />
         </div>
       </Field>
       {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
 
       <Field label="Bosh sahifa hero rasmi">
-        <div className="flex items-center gap-3 mb-2">
-          {branding.hero_image_media_id_url && (
-            <img src={branding.hero_image_media_id_url} alt="Hero" className="w-16 h-20 rounded-lg object-cover border border-white/10 bg-black/20" />
-          )}
-          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5">
-            {heroUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            Yuklash
-            <input type="file" accept="image/png,image/webp" className="hidden" disabled={heroUploading}
-              onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "hero_image_media_id", setHeroUploading)} />
-          </label>
+        <div className="max-w-[220px]">
+          <BrandImageField
+            currentUrl={branding.hero_image_media_id_url ?? null}
+            uploading={heroUploading}
+            accept="image/png,image/webp"
+            recommendedText="Shaffof fonli PNG, taxminan 1200×1600px, 3MB dan kichik. Kompyuter va telefonda avtomatik moslashadi."
+            boxClassName="w-full aspect-[3/4]"
+            onUpload={(file) => handleUpload(file, "hero_image_media_id", setHeroUploading)}
+            onRemove={() => updateLocal("branding", { hero_image_media_id: null, hero_image_media_id_url: null })}
+          />
         </div>
-        <p className="text-[11px] text-[#5b6f85]">
-          Tavsiya: shaffof fonli (PNG) rasm, taxminan 1200×1600px, 3MB dan kichik. Bir xil rasm kompyuter va telefonda avtomatik moslashadi — alohida versiya yuklash shart emas.
-        </p>
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
