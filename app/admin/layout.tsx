@@ -13,26 +13,34 @@ import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
 
-const NAV = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: null },
-  { href: "/admin/affiliates", label: "Affiliates", icon: Handshake, permission: "promotions.manage" },
-  { href: "/admin/banners", label: "Banners", icon: Megaphone, permission: "advertisements.manage" },
-  { href: "/admin/football", label: "Football Center", icon: Trophy, permission: "football.manage" },
-  { href: "/admin/streaming", label: "Live Streaming", icon: Radio, permission: "streaming.manage" },
-  { href: "/admin/donations", label: "Donations", icon: Heart, permission: "donations.manage" },
-  { href: "/admin/telegram-bot", label: "BetCore Pay", icon: Wallet, permission: "telegram_orders.manage" },
-  { href: "/admin/football-news", label: "Football News", icon: Newspaper, permission: "football_news.manage" },
-  { href: "/admin/insights", label: "Insights", icon: Newspaper, permission: "match_insights.manage" },
-  { href: "/admin/blog", label: "Blog", icon: FileText, permission: "posts.manage" },
-  { href: "/admin/categories", label: "Kategoriyalar", icon: FolderTree, permission: "taxonomy.manage" },
-  { href: "/admin/tags", label: "Teglar", icon: Tag, permission: "taxonomy.manage" },
-  { href: "/admin/media", label: "Media Library", icon: ImageIcon, permission: "media.manage" },
-  { href: "/admin/faq", label: "FAQ", icon: HelpCircle, permission: "faqs.manage" },
-  { href: "/admin/apk", label: "APK", icon: Smartphone, permission: "apk.manage" },
-  { href: "/admin/push", label: "Push Notifications", icon: BellRing, permission: "settings.manage" },
-  { href: "/admin/users", label: "Foydalanuvchilar", icon: Users, permission: "users.manage" },
-  { href: "/admin/security-log", label: "Xavfsizlik jurnali", icon: ShieldAlert, permission: "security.manage" },
-  { href: "/admin/settings", label: "Sozlamalar", icon: Settings, permission: "settings.manage" },
+const NAV_GROUPS = [
+  { label: "Asosiy", items: [
+    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: null },
+    { href: "/admin/telegram-bot", label: "BetCore Pay", icon: Wallet, permission: "telegram_orders.manage" },
+  ]},
+  { label: "Kontent", items: [
+    { href: "/admin/football", label: "Football Center", icon: Trophy, permission: "football.manage" },
+    { href: "/admin/football-news", label: "Football News", icon: Newspaper, permission: "football_news.manage" },
+    { href: "/admin/insights", label: "Insights", icon: Newspaper, permission: "match_insights.manage" },
+    { href: "/admin/blog", label: "Blog", icon: FileText, permission: "posts.manage" },
+    { href: "/admin/media", label: "Media", icon: ImageIcon, permission: "media.manage" },
+  ]},
+  { label: "Marketing", items: [
+    { href: "/admin/banners", label: "Banners", icon: Megaphone, permission: "advertisements.manage" },
+    { href: "/admin/affiliates", label: "Affiliates", icon: Handshake, permission: "promotions.manage" },
+    { href: "/admin/donations", label: "Donations", icon: Heart, permission: "donations.manage" },
+    { href: "/admin/streaming", label: "Live Streaming", icon: Radio, permission: "streaming.manage" },
+    { href: "/admin/push", label: "Push", icon: BellRing, permission: "settings.manage" },
+  ]},
+  { label: "Tizim", items: [
+    { href: "/admin/users", label: "Foydalanuvchilar", icon: Users, permission: "users.manage" },
+    { href: "/admin/security-log", label: "Xavfsizlik jurnali", icon: ShieldAlert, permission: "security.manage" },
+    { href: "/admin/categories", label: "Kategoriyalar", icon: FolderTree, permission: "taxonomy.manage" },
+    { href: "/admin/tags", label: "Teglar", icon: Tag, permission: "taxonomy.manage" },
+    { href: "/admin/faq", label: "FAQ", icon: HelpCircle, permission: "faqs.manage" },
+    { href: "/admin/apk", label: "APK", icon: Smartphone, permission: "apk.manage" },
+    { href: "/admin/settings", label: "Sozlamalar", icon: Settings, permission: "settings.manage" },
+  ]},
 ];
 
 function ForbiddenBanner() {
@@ -69,6 +77,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const sidebarContent = (
     <>
+      <span className="pointer-events-none absolute top-0 left-0 right-0 h-[2px] z-10 bg-gradient-to-r from-transparent via-accent/60 to-transparent" style={{ animation: "sidebarScan 5s linear infinite" }} />
+      <style>{`@keyframes sidebarScan { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }`}</style>
       <div className="relative h-16 flex items-center justify-between gap-2 px-5 border-b border-white/8 shrink-0">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
         <div className="flex items-center gap-2">
@@ -86,26 +96,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
       </div>
 
-      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
-        {NAV.map((item) => {
-          const active = pathname.startsWith(item.href);
-          const link = (
-            <Link
-              key={item.href} href={item.href}
-              className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition ${
-                active ? "bg-accent/10 text-white" : "text-muted hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-accent shadow-[0_0_8px_rgba(61,127,255,0.7)]" />}
-              <item.icon size={16} className={active ? "text-accent" : ""} /> {item.label}
-            </Link>
-          );
-          return item.permission ? (
-            <Can key={item.href} permission={item.permission}>{link}</Can>
-          ) : (
-            link
-          );
-        })}
+      <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto relative">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="mb-1">
+            <div className="px-3 pt-3 pb-1.5 text-[9px] font-bold tracking-[0.14em] text-[#4a5f7a] uppercase font-mono">
+              <span className="opacity-50">// </span>{group.label}
+            </div>
+            {group.items.map((item) => {
+              const active = pathname.startsWith(item.href);
+              const link = (
+                <Link
+                  key={item.href} href={item.href}
+                  className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                    active
+                      ? "text-white bg-gradient-to-r from-accent/25 to-accent-dim/10 shadow-[0_4px_16px_rgba(61,127,255,0.18),inset_0_1px_0_rgba(255,255,255,0.08)]"
+                      : "text-muted hover:text-white hover:bg-white/[0.04] hover:translate-x-1"
+                  }`}
+                >
+                  <item.icon size={16} className={`transition-transform group-hover:scale-110 ${active ? "text-[#6ba4ff] drop-shadow-[0_0_6px_rgba(61,127,255,0.7)]" : ""}`} />
+                  {item.label}
+                  {active && <span className="ml-auto w-[7px] h-[7px] rounded-full bg-accent shadow-[0_0_10px_rgba(61,127,255,0.9)] animate-pulse" />}
+                </Link>
+              );
+              return item.permission ? (
+                <Can key={item.href} permission={item.permission}>{link}</Can>
+              ) : (
+                link
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="p-3 border-t border-white/8 space-y-1 shrink-0">
@@ -163,7 +183,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-60 shrink-0 border-r border-white/8 bg-bg-elevated md:bg-panel/40 flex flex-col transition-transform duration-200 ${
+        className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-60 shrink-0 border-r border-white/8 bg-bg-elevated md:bg-panel/40 flex flex-col transition-transform duration-200 relative overflow-hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >

@@ -35,6 +35,8 @@ export function AuthShell({
         }
         .auth-chip { animation: authFloat 15s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) { .auth-chip { animation: none; } }
+        .auth-submit-btn::before { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent); animation:authShimmer 3s infinite; }
+        @keyframes authShimmer { 0%{left:-100%} 60%,100%{left:200%} }
       `}</style>
       <div className="absolute -top-40 -left-40 w-[38rem] h-[38rem] rounded-full bg-accent/10 blur-[120px]" />
       <div className="absolute top-1/3 -right-40 w-[32rem] h-[32rem] rounded-full bg-accent-dim/10 blur-[140px]" />
@@ -98,4 +100,4 @@ export const inputClass =
   "w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] text-white outline-none focus:border-accent transition-colors placeholder:text-[#3d4d5f]";
 
 export const submitButtonClass =
-  "w-full mt-2 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] text-white disabled:opacity-60 disabled:cursor-not-allowed transition hover:brightness-110";
+  "auth-submit-btn relative overflow-hidden w-full mt-2 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] text-white disabled:opacity-60 disabled:cursor-not-allowed transition hover:brightness-110 active:scale-[0.98]";

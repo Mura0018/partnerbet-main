@@ -62,7 +62,7 @@ const STATUS_LABEL: Record<Order["status"], { label: string; color: string; icon
 };
 
 const inputCls =
-  "w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[14px] text-white outline-none placeholder:text-[#5b7089] " +
+  "w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[14px] text-white outline-none placeholder:text-[#5b7089] transition-shadow duration-200 focus:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),0_0_0_2px_rgba(61,127,255,0.5),0_0_16px_rgba(61,127,255,0.35)] " +
   "shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)] " +
   "focus:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.12),0_0_0_2px_rgba(61,127,255,0.4)] transition-shadow";
 
@@ -917,9 +917,11 @@ export default function TelegramAppPage() {
 
           <button
             onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
-            className="w-full text-center mt-5 py-2.5 rounded-lg text-[13px] font-semibold text-[#7db8ff] bg-white/[0.03] border border-[#3D7FFF]/25 active:bg-white/[0.06] transition-colors"
+            className="group relative w-full text-center mt-5 py-3 rounded-xl text-[13px] font-bold text-[#7db8ff] bg-[#3D7FFF]/[0.08] border border-[#3D7FFF]/30 overflow-hidden hover:text-white hover:bg-[#3D7FFF]/[0.16] hover:border-[#3D7FFF]/50 transition-all active:scale-[0.98]"
           >
-            {mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting →" : "Hisobingiz bormi? Kiring →"}
+            <span className="pointer-events-none absolute top-0 -left-full w-3/5 h-full bg-gradient-to-r from-transparent via-white/25 to-transparent" style={{ animation: "loginShimmer 3s infinite" }} />
+            <style>{`@keyframes loginShimmer { 0%{left:-100%} 60%,100%{left:200%} }`}</style>
+            <span className="relative z-10">{mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting →" : "Hisobingiz bormi? Kiring →"}</span>
           </button>
         </div>
       </div>
