@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
+import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkLoginRateLimit, recordLoginAttempt } from "@/lib/auth/rateLimit";
 
 function getClientIp(req: NextRequest): string | null {
@@ -25,6 +26,23 @@ export async function POST(req: NextRequest) {
 
   const ip = getClientIp(req);
   const userAgent = req.headers.get("user-agent");
+
+  // Blocked by a super admin from the security log — reject before even
+  // checking credentials, but still record the attempt for visibility.
+  if (ip) {
+    const admin = createAdminClient();
+    const nowIso = new Date().toISOString();
+    const { data: blocked } = await admin
+      .from("blocked_ips")
+      .select("ip_address")
+      .eq("ip_address", ip)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .maybeSingle();
+    if (blocked) {
+      await recordLoginAttempt(email, ip, userAgent, false);
+      return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
+    }
+  }
 
   // --- Brute-force protection ---
   const rateLimit = await checkLoginRateLimit(email, ip);
