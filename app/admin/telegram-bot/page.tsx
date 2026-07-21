@@ -1239,6 +1239,8 @@ type OperatorPaymentMethod = {
   account_number: string;
   holder_name: string | null;
   is_active: boolean;
+  usage_count: number;
+  usage_limit: number | null;
 };
 
 const METHOD_TYPE_LABELS: Record<OperatorPaymentMethod["method_type"], string> = {
@@ -1253,8 +1255,8 @@ function MyPaymentMethodsTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<{ method_type: OperatorPaymentMethod["method_type"]; account_number: string; holder_name: string }>({
-    method_type: "card", account_number: "", holder_name: "",
+  const [form, setForm] = useState<{ method_type: OperatorPaymentMethod["method_type"]; account_number: string; holder_name: string; usage_limit: string }>({
+    method_type: "card", account_number: "", holder_name: "", usage_limit: "",
   });
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
@@ -1265,7 +1267,7 @@ function MyPaymentMethodsTab() {
     if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("telegram_operator_payment_methods")
-      .select("id, method_type, account_number, holder_name, is_active")
+      .select("id, method_type, account_number, holder_name, is_active, usage_count, usage_limit")
       .eq("operator_id", user.id)
       .order("method_type");
     setMethods((data as OperatorPaymentMethod[]) ?? []);
@@ -1282,6 +1284,7 @@ function MyPaymentMethodsTab() {
         method_type: form.method_type,
         account_number: form.account_number.trim(),
         holder_name: form.holder_name.trim() || null,
+        usage_limit: form.usage_limit.trim() ? Number(form.usage_limit) : null,
       }).eq("id", editingId);
     } else {
       const { data: { user } } = await supabase.auth.getUser();
@@ -1291,24 +1294,25 @@ function MyPaymentMethodsTab() {
           method_type: form.method_type,
           account_number: form.account_number.trim(),
           holder_name: form.holder_name.trim() || null,
+          usage_limit: form.usage_limit.trim() ? Number(form.usage_limit) : null,
         });
       }
     }
     setSaving(false);
-    setForm({ method_type: "card", account_number: "", holder_name: "" });
+    setForm({ method_type: "card", account_number: "", holder_name: "", usage_limit: "" });
     setEditingId(null);
     setShowForm(false);
     load();
   };
 
   const startEdit = (m: OperatorPaymentMethod) => {
-    setForm({ method_type: m.method_type, account_number: m.account_number, holder_name: m.holder_name ?? "" });
+    setForm({ method_type: m.method_type, account_number: m.account_number, holder_name: m.holder_name ?? "", usage_limit: m.usage_limit != null ? String(m.usage_limit) : "" });
     setEditingId(m.id);
     setShowForm(true);
   };
 
   const startAdd = () => {
-    setForm({ method_type: "card", account_number: "", holder_name: "" });
+    setForm({ method_type: "card", account_number: "", holder_name: "", usage_limit: "" });
     setEditingId(null);
     setShowForm(true);
   };
@@ -1342,16 +1346,22 @@ function MyPaymentMethodsTab() {
 
       <div className="flex flex-col gap-5 mb-5">
         {methods.map((m) => (
-          <LuxuryCard
-            key={m.id}
-            typeLabel={METHOD_TYPE_LABELS[m.method_type]}
-            number={m.account_number}
-            holderName={m.holder_name}
-            active={m.is_active}
-            onToggleActive={() => toggleActive(m)}
-            onEdit={() => startEdit(m)}
-            onDelete={() => remove(m.id)}
-          />
+          <div key={m.id}>
+            <LuxuryCard
+              typeLabel={METHOD_TYPE_LABELS[m.method_type]}
+              number={m.account_number}
+              holderName={m.holder_name}
+              active={m.is_active}
+              onToggleActive={() => toggleActive(m)}
+              onEdit={() => startEdit(m)}
+              onDelete={() => remove(m.id)}
+            />
+            {m.usage_limit != null && (
+              <div className="text-[11px] text-muted mt-1.5 max-w-[340px]">
+                Ishlatilgan: <span className={m.usage_count >= m.usage_limit ? "text-[#FF6B85] font-semibold" : "text-white font-semibold"}>{m.usage_count}</span> / {m.usage_limit}
+              </div>
+            )}
+          </div>
         ))}
       </div>
 
@@ -1390,6 +1400,17 @@ function MyPaymentMethodsTab() {
               />
             </div>
           )}
+          <div className="mb-4">
+            <label className="block text-[12px] text-muted mb-1.5">Ishlatilish limiti (ixtiyoriy)</label>
+            <input
+              type="number"
+              min={1}
+              className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+              value={form.usage_limit}
+              onChange={(e) => setForm((prev) => ({ ...prev, usage_limit: e.target.value }))}
+              placeholder="Masalan: 20 — shuncha marta ishlatilgach o'chiriladi"
+            />
+          </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[13px]">
               Bekor qilish

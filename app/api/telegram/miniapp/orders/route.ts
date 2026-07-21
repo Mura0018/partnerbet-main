@@ -3,6 +3,7 @@ import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
 import { sendTelegramMessage, buildOrderCreatedMessage } from "@/lib/telegram/notify";
 import { notifyOperatorsNewOrder } from "@/lib/telegram/notifyStaff";
+import { bumpCardUsage } from "@/lib/payments/cardUsage";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
@@ -134,6 +135,9 @@ export async function POST(req: NextRequest) {
 
   await sendTelegramMessage(customer.telegram_id, buildOrderCreatedMessage(type, amountNum));
   await notifyOperatorsNewOrder(type, amountNum, playerName ?? String(accountId).trim());
+  if (type === "topup" && paymentOperatorId && receivedAccountNumber) {
+    await bumpCardUsage(String(paymentOperatorId), String(receivedAccountNumber).trim());
+  }
 
   return NextResponse.json({ order });
 }
