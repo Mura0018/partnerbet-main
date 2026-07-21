@@ -36,6 +36,7 @@ export async function notifySecurityAlert(opts: {
     .from("profiles")
     .select("telegram_chat_id, roles(key)")
     .eq("is_active", true)
+    .eq("notify_security", true)
     .not("telegram_chat_id", "is", null);
 
   const ipLine = opts.ip ? `\nIP: ${opts.ip}` : "";

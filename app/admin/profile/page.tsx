@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, LogOut, Upload, Loader2 } from "lucide-react";
+import { Lock, LogOut, Upload, Loader2, Pencil, Check, X, ShieldAlert, Mail, Bell, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { checkPasswordStrength } from "@/lib/auth/password";
@@ -173,6 +173,208 @@ function TwoFactorSection() {
 }
 
 
+function StatsSection() {
+  const [stats, setStats] = useState<{ resolvedOrders: number; supportReplies: number } | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/profile/stats")
+      .then((r) => r.json())
+      .then((data) => setStats(data))
+      .catch(() => {});
+  }, []);
+
+  if (!stats) return null;
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+      <h2 className="text-[15px] font-semibold mb-4 flex items-center gap-2"><TrendingUp size={16} className="text-accent" /> Shu oylik statistika</h2>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-lg bg-white/[0.03] p-3.5">
+          <div className="text-[22px] font-extrabold text-accent">{stats.resolvedOrders}</div>
+          <div className="text-[11px] text-muted mt-0.5">Bajarilgan buyurtma</div>
+        </div>
+        <div className="rounded-lg bg-white/[0.03] p-3.5">
+          <div className="text-[22px] font-extrabold text-accent">{stats.supportReplies}</div>
+          <div className="text-[11px] text-muted mt-0.5">Murojaatga javob</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NotificationPrefsSection() {
+  const [notifyOrders, setNotifyOrders] = useState(true);
+  const [notifySecurityPref, setNotifySecurityPref] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  React.useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("notify_orders, notify_security").eq("id", user.id).maybeSingle();
+      if (data) {
+        setNotifyOrders(data.notify_orders ?? true);
+        setNotifySecurityPref(data.notify_security ?? true);
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  const save = async (orders: boolean, security: boolean) => {
+    setSaving(true);
+    try {
+      await fetch("/api/profile/notification-prefs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notifyOrders: orders, notifySecurity: security }),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const Toggle = ({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) => (
+    <button
+      onClick={() => onChange(!checked)}
+      disabled={saving}
+      className="w-full flex items-center justify-between py-2.5 disabled:opacity-60"
+    >
+      <span className="text-[13px]">{label}</span>
+      <span className={`w-10 h-6 rounded-full relative transition-colors ${checked ? "bg-accent" : "bg-white/10"}`}>
+        <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${checked ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+      </span>
+    </button>
+  );
+
+  if (loading) return null;
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+      <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><Bell size={16} className="text-accent" /> Telegram bildirishnomalari</h2>
+      <p className="text-[12px] text-muted mb-2">Botga ulangan bo'lsangiz, qaysi xabarlarni olishni tanlang.</p>
+      <div className="divide-y divide-white/5">
+        <Toggle checked={notifyOrders} onChange={(v) => { setNotifyOrders(v); save(v, notifySecurityPref); }} label="Yangi buyurtma xabarlari" />
+        <Toggle checked={notifySecurityPref} onChange={(v) => { setNotifySecurityPref(v); save(notifyOrders, v); }} label="Xavfsizlik ogohlantirishlari" />
+      </div>
+    </div>
+  );
+}
+
+function EmailChangeSection() {
+  const [currentEmail, setCurrentEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  React.useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setCurrentEmail(user?.email ?? ""));
+  }, []);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    if (!newEmail.trim() || newEmail.trim() === currentEmail) {
+      setError("Yangi email kiriting.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const supabase = createClient();
+      const { error: updateError } = await supabase.auth.updateUser({ email: newEmail.trim() });
+      if (updateError) {
+        setError("Email o'zgartirishda xatolik yuz berdi.");
+        return;
+      }
+      setMessage(`Tasdiqlash havolasi ${newEmail.trim()} manziliga yuborildi. Havolani bosgach email o'zgaradi.`);
+      setEditing(false);
+      setNewEmail("");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+      <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><Mail size={16} className="text-accent" /> Email manzil</h2>
+      {!editing ? (
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] text-muted">{currentEmail}</span>
+          <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">
+            <Pencil size={12} /> O'zgartirish
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={submit}>
+          <input
+            type="email"
+            required
+            autoFocus
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="yangi@email.com"
+            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-3"
+          />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { setEditing(false); setNewEmail(""); setError(""); }} className="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-[13px]">
+              Bekor qilish
+            </button>
+            <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
+              {saving ? "…" : "Yuborish"}
+            </button>
+          </div>
+        </form>
+      )}
+      {error && <p className="text-[12px] text-[#FF6B85] mt-3">{error}</p>}
+      {message && <p className="text-[12px] text-[#4ADE80] mt-3">{message}</p>}
+    </div>
+  );
+}
+
+type LoginHistoryRow = { ip_address: string | null; user_agent: string | null; success: boolean; created_at: string };
+
+function describeDeviceSimple(userAgent: string | null): string {
+  if (!userAgent) return "noma'lum qurilma";
+  const ua = userAgent.toLowerCase();
+  const os = ua.includes("android") ? "Android" : ua.includes("iphone") || ua.includes("ipad") ? "iPhone/iPad" : ua.includes("windows") ? "Windows" : ua.includes("macintosh") ? "Mac" : "noma'lum";
+  const browser = ua.includes("edg/") ? "Edge" : ua.includes("chrome") ? "Chrome" : ua.includes("firefox") ? "Firefox" : ua.includes("safari") ? "Safari" : "brauzer";
+  return `${os}, ${browser}`;
+}
+
+function LoginHistorySection() {
+  const [history, setHistory] = useState<LoginHistoryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    fetch("/api/profile/login-history")
+      .then((r) => r.json())
+      .then((data) => setHistory(data.history ?? []))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading || history.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+      <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><ShieldAlert size={16} className="text-accent" /> Oxirgi kirishlar</h2>
+      <div className="space-y-2">
+        {history.map((h, i) => (
+          <div key={i} className="flex items-center justify-between gap-2 text-[12px] py-1 border-b border-white/5 last:border-0">
+            <span className={h.success ? "text-[#4ADE80] shrink-0" : "text-[#FF6B85] shrink-0"}>{h.success ? "✅" : "❌"}</span>
+            <span className="text-muted flex-1 min-w-0 truncate">{h.ip_address ?? "—"} · {describeDeviceSimple(h.user_agent)}</span>
+            <span className="text-muted shrink-0 text-[11px]">{new Date(h.created_at).toLocaleDateString()}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 export default function ProfilePage() {
   const router = useRouter();
   const { t } = useLocale();
@@ -189,6 +391,7 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [savingDisplay, setSavingDisplay] = useState(false);
   const [displaySaved, setDisplaySaved] = useState(false);
+  const [editingName, setEditingName] = useState(false);
 
   React.useEffect(() => {
     if (profile) {
@@ -208,6 +411,7 @@ export default function ProfilePage() {
     await supabase.from("profiles").update({ display_name: displayName.trim() || null, avatar_url: avatarUrl }).eq("id", profile.id);
     setSavingDisplay(false);
     setDisplaySaved(true);
+    setEditingName(false);
     setTimeout(() => setDisplaySaved(false), 2000);
   };
 
@@ -283,38 +487,51 @@ export default function ProfilePage() {
                 {(displayName || profile.full_name || "?").charAt(0).toUpperCase()}
               </div>
             )}
-            <div>
-              <div className="text-[15px] font-bold" style={{ color: roleColor }}>
-                {displayName || profile.full_name || "—"}
-              </div>
+            <div className="flex-1 min-w-0">
+              {!editingName ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-bold truncate" style={{ color: roleColor }}>
+                    {displayName || profile.full_name || "—"}
+                  </span>
+                  <button onClick={() => setEditingName(true)} className="shrink-0 p-1 rounded-md hover:bg-white/10 text-muted" aria-label="Ismni tahrirlash">
+                    <Pencil size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    autoFocus
+                    className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[14px] outline-none focus:border-accent"
+                    placeholder={profile.full_name ?? ""}
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && saveDisplay()}
+                  />
+                  <button onClick={saveDisplay} disabled={savingDisplay} className="shrink-0 p-1.5 rounded-md bg-accent/20 text-accent" aria-label="Saqlash">
+                    <Check size={13} />
+                  </button>
+                  <button onClick={() => { setEditingName(false); setDisplayName((profile as any).display_name ?? ""); }} className="shrink-0 p-1.5 rounded-md bg-white/5 text-muted" aria-label="Bekor qilish">
+                    <X size={13} />
+                  </button>
+                </div>
+              )}
               <div className="text-[12px] text-muted mt-0.5">{t(`roles.${roleKey}` as any)}</div>
+              {displaySaved && <div className="text-[11px] text-[#4ADE80] mt-0.5">Saqlandi ✓</div>}
             </div>
           </div>
 
-          <label className="block text-[12px] text-muted mb-1.5">Ko'rinish ismi (masalan: MURA)</label>
-          <input
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[14px] outline-none focus:border-accent mb-3"
-            placeholder={profile.full_name ?? ""}
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
-
-          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5 w-fit mb-3">
+          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5 w-fit">
             {avatarUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
             Rasm yuklash
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarUploading}
               onChange={(e) => e.target.files?.[0] && handleAvatarUpload(e.target.files[0])} />
           </label>
-
-          <button
-            onClick={saveDisplay}
-            disabled={savingDisplay}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[13px] font-semibold disabled:opacity-60"
-          >
-            {savingDisplay ? "Saqlanmoqda..." : displaySaved ? "Saqlandi ✓" : "Saqlash"}
-          </button>
         </div>
       )}
+
+      <StatsSection />
+      <NotificationPrefsSection />
+      <EmailChangeSection />
 
       <form onSubmit={handleChangePassword} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
         <h2 className="text-[15px] font-semibold mb-4">{t("changePassword.title")}</h2>
@@ -349,6 +566,7 @@ export default function ProfilePage() {
       </form>
 
       <TwoFactorSection />
+      <LoginHistorySection />
 
       <button onClick={logoutEverywhere} className="flex items-center gap-2 text-[13px] text-[#FF6B85] hover:underline">
         <LogOut size={14} /> Barcha qurilmalardan chiqish

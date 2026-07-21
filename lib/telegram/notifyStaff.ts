@@ -22,6 +22,7 @@ export async function notifyOperatorsNewOrder(type: "topup" | "withdraw", amount
     .select("telegram_chat_id")
     .in("role_id", roleIds)
     .eq("is_active", true)
+    .eq("notify_orders", true)
     .not("telegram_chat_id", "is", null);
 
   const label = type === "topup" ? "Hisob to'ldirish" : "Pul yechish";
