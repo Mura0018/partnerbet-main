@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: messages } = await supabase
     .from("telegram_support_messages")
-    .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, created_at")
+    .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: true })
     .limit(200);
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
-  const { initData, message } = body ?? {};
+  const { initData, message, replyToId } = body ?? {};
   if (!initData || !message || String(message).trim().length === 0) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: inserted, error } = await supabase
     .from("telegram_support_messages")
-    .insert({ customer_id: customerId, sender: "customer", message: String(message).trim().slice(0, 2000) })
+    .insert({ customer_id: customerId, sender: "customer", message: String(message).trim().slice(0, 2000), reply_to_id: replyToId ?? null })
     .select("id, sender, message, created_at")
     .single();
 

@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2 } from "lucide-react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
+import { chatThemeGradient } from "@/lib/ui/chatThemes";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -30,6 +31,7 @@ type ChatMessage = {
   voice_duration_seconds: number | null;
   created_at: string;
   sender_id: string;
+  reply_to_id: string | null;
   profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; roles: { key: string } | null } | null;
 };
 
@@ -40,6 +42,8 @@ function ChatTab() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [myTheme, setMyTheme] = useState<string>("blue");
   const bottomRef = useRef<HTMLDivElement>(null);
   const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
@@ -47,14 +51,20 @@ function ChatTab() {
   const load = async () => {
     const { data } = await supabase
       .from("team_chat_messages")
-      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, profiles(full_name, display_name, avatar_url, roles(key))")
+      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, profiles(full_name, display_name, avatar_url, roles(key))")
       .order("created_at", { ascending: true })
       .limit(100);
     setMessages((data as any[]) ?? []);
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setCurrentUserId(user?.id ?? null);
+      if (user) {
+        const { data } = await supabase.from("profiles").select("chat_theme").eq("id", user.id).maybeSingle();
+        if (data?.chat_theme) setMyTheme(data.chat_theme);
+      }
+    });
     load();
     const interval = setInterval(load, 4000);
     return () => clearInterval(interval);
@@ -69,12 +79,21 @@ function ChatTab() {
     setSending(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await supabase.from("team_chat_messages").insert({ sender_id: user.id, message: text.trim() });
+      await supabase.from("team_chat_messages").insert({ sender_id: user.id, message: text.trim(), reply_to_id: replyTo?.id ?? null });
       setText("");
+      setReplyTo(null);
       await load();
     }
     setSending(false);
   };
+
+  const removeMessage = async (id: string) => {
+    if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
+    await supabase.from("team_chat_messages").delete().eq("id", id);
+    await load();
+  };
+
+  const messageById = (id: string | null) => (id ? messages.find((m) => m.id === id) ?? null : null);
 
   const sendImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,7 +109,8 @@ function ChatTab() {
       const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("team-chat-attachments").upload(path, file, { upsert: false });
       if (!error) {
-        await supabase.from("team_chat_messages").insert({ sender_id: user.id, image_path: path, file_name: file.name });
+        await supabase.from("team_chat_messages").insert({ sender_id: user.id, image_path: path, file_name: file.name, reply_to_id: replyTo?.id ?? null });
+        setReplyTo(null);
         await load();
       }
     } finally {
@@ -109,7 +129,8 @@ function ChatTab() {
       const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("team-chat-attachments").upload(path, recorded.blob, { upsert: false, contentType: recorded.mimeType });
       if (!error) {
-        await supabase.from("team_chat_messages").insert({ sender_id: user.id, voice_path: path, voice_duration_seconds: recorded.durationSeconds });
+        await supabase.from("team_chat_messages").insert({ sender_id: user.id, voice_path: path, voice_duration_seconds: recorded.durationSeconds, reply_to_id: replyTo?.id ?? null });
+        setReplyTo(null);
         await load();
       }
     } finally {
@@ -159,6 +180,8 @@ function ChatTab() {
           const isMe = m.sender_id === currentUserId;
           const imageUrl = m.image_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.image_path).data.publicUrl : null;
           const voiceUrl = m.voice_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.voice_path).data.publicUrl : null;
+          const quoted = messageById(m.reply_to_id);
+          const quotedName = quoted ? (quoted.sender_id === currentUserId ? "Siz" : quoted.profiles?.display_name || quoted.profiles?.full_name || "?") : null;
           return (
             <div key={m.id} className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
               {m.profiles?.avatar_url ? (
@@ -177,10 +200,15 @@ function ChatTab() {
                   <span className="text-[9px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
                 <div
-                  className={`rounded-xl px-3 py-2 text-[12.5px] leading-snug break-words ${
-                    isMe ? "bg-gradient-to-br from-accent to-accent-dim text-white" : "bg-white/[0.08] text-white/90"
-                  }`}
+                  className={`rounded-xl px-3 py-2 text-[12.5px] leading-snug break-words ${isMe ? "text-white" : "bg-white/[0.08] text-white/90"}`}
+                  style={isMe ? { background: chatThemeGradient(myTheme) } : undefined}
                 >
+                  {quoted && (
+                    <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${isMe ? "border-white/50" : "border-accent/50"}`}>
+                      <span className="font-semibold">{quotedName}</span>{" "}
+                      {quoted.message || (quoted.image_path ? "📷 Rasm" : quoted.voice_path ? "🎤 Ovozli xabar" : "")}
+                    </div>
+                  )}
                   {voiceUrl ? (
                     <audio controls src={voiceUrl} className="max-w-[200px] h-8" />
                   ) : imageUrl ? (
@@ -192,12 +220,33 @@ function ChatTab() {
                     m.message
                   )}
                 </div>
+                <div className={`flex items-center gap-2.5 mt-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
+                  <button onClick={() => setReplyTo(m)} className="text-[9px] text-[#5b6f85] hover:text-white flex items-center gap-0.5">
+                    <Reply size={9} /> Javob
+                  </button>
+                  {isMe && (
+                    <button onClick={() => removeMessage(m.id)} className="text-[9px] text-[#5b6f85] hover:text-[#FF6B85] flex items-center gap-0.5">
+                      <Trash2 size={9} /> O'chirish
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
         <div ref={bottomRef} />
       </div>
+      {replyTo && (
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-white/8 bg-white/[0.03]">
+          <Reply size={12} className="text-accent shrink-0" />
+          <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
+            {replyTo.message || (replyTo.image_path ? "📷 Rasm" : replyTo.voice_path ? "🎤 Ovozli xabar" : "")}
+          </div>
+          <button onClick={() => setReplyTo(null)} className="shrink-0 p-1 rounded hover:bg-white/10 text-muted">
+            <X size={12} />
+          </button>
+        </div>
+      )}
       {voiceRecorder.recording ? (
         <div className="flex items-center gap-2.5 px-3 py-2 border-t border-white/8">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
@@ -913,7 +962,7 @@ function OrdersTab() {
 type SupportThread = { customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string };
 type SupportMsg = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
-  file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; created_at: string;
+  file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; reply_to_id: string | null; created_at: string;
 };
 
 const REPLY_TEMPLATES = [
@@ -970,6 +1019,8 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [replyTo, setReplyTo] = useState<SupportMsg | null>(null);
+  const [myTheme, setMyTheme] = useState<string>("blue");
   const bottomRef = useRef<HTMLDivElement>(null);
   const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
@@ -977,7 +1028,7 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
   const loadThread = async () => {
     const { data } = await supabase
       .from("telegram_support_messages")
-      .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, created_at")
+      .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at")
       .eq("customer_id", thread.customer_id)
       .order("created_at", { ascending: true })
       .limit(200);
@@ -991,6 +1042,14 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
   }, [thread.customer_id]);
 
   useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("chat_theme").eq("id", user.id).maybeSingle();
+      if (data?.chat_theme) setMyTheme(data.chat_theme);
+    });
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs.length]);
 
@@ -1001,14 +1060,27 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
       await fetch("/api/admin/telegram-orders/support-reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: thread.customer_id, message: text.trim() }),
+        body: JSON.stringify({ customerId: thread.customer_id, message: text.trim(), replyToId: replyTo?.id ?? null }),
       });
       setText("");
+      setReplyTo(null);
       await loadThread();
     } finally {
       setSending(false);
     }
   };
+
+  const deleteMessage = async (id: string) => {
+    if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
+    await fetch("/api/admin/telegram-orders/support-delete-message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messageId: id }),
+    });
+    await loadThread();
+  };
+
+  const messageById = (id: string | null) => (id ? msgs.find((m) => m.id === id) ?? null : null);
 
   const stopAndSendVoice = async () => {
     const recorded = await voiceRecorder.stop();
@@ -1064,10 +1136,22 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
       >
         {msgs.length === 0 && <p className="text-[12px] text-muted text-center mt-8">Hozircha xabar yo'q.</p>}
-        {msgs.map((m) => (
+        {msgs.map((m) => {
+          const quoted = messageById(m.reply_to_id);
+          const quotedLabel = quoted ? (quoted.sender === "operator" ? "Operator" : "Mijoz") : null;
+          return (
           <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
             <span className="text-[9px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? "Siz (operator)" : "Mijoz"}</span>
-            <div className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "operator" ? "bg-gradient-to-r from-accent to-accent-dim" : "bg-white/[0.08]"}`}>
+            <div
+              className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "operator" ? "text-white" : "bg-white/[0.08]"}`}
+              style={m.sender === "operator" ? { background: chatThemeGradient(myTheme) } : undefined}
+            >
+              {quoted && (
+                <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${m.sender === "operator" ? "border-white/50" : "border-accent/50"}`}>
+                  <span className="font-semibold">{quotedLabel}</span>{" "}
+                  {quoted.message || (quoted.image_path ? "📷 Rasm" : quoted.voice_path ? "🎤 Ovozli xabar" : "")}
+                </div>
+              )}
               {m.voice_path ? (
                 <SupportVoice path={m.voice_path} />
               ) : m.image_path ? (
@@ -1080,8 +1164,19 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
               )}
               <div className="text-[8px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
             </div>
+            <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "operator" ? "flex-row-reverse" : ""}`}>
+              <button onClick={() => setReplyTo(m)} className="text-[9px] text-[#5b6f85] hover:text-white flex items-center gap-0.5">
+                <Reply size={9} /> Javob
+              </button>
+              {m.sender === "operator" && (
+                <button onClick={() => deleteMessage(m.id)} className="text-[9px] text-[#5b6f85] hover:text-[#FF6B85] flex items-center gap-0.5">
+                  <Trash2 size={9} /> O'chirish
+                </button>
+              )}
+            </div>
           </div>
-        ))}
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 
@@ -1096,6 +1191,17 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
           </button>
         ))}
       </div>
+      {replyTo && (
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-white/8 bg-white/[0.03] shrink-0">
+          <Reply size={12} className="text-accent shrink-0" />
+          <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
+            {replyTo.message || (replyTo.image_path ? "📷 Rasm" : replyTo.voice_path ? "🎤 Ovozli xabar" : "")}
+          </div>
+          <button onClick={() => setReplyTo(null)} className="shrink-0 p-1 rounded hover:bg-white/10 text-muted">
+            <X size={12} />
+          </button>
+        </div>
+      )}
       {voiceRecorder.recording ? (
         <div className="flex items-center gap-2.5 px-3 py-2 shrink-0">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />

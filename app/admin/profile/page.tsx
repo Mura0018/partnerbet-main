@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, LogOut, Upload, Loader2, Pencil, Check, X, ShieldAlert, Mail, Bell, TrendingUp } from "lucide-react";
+import { Lock, LogOut, Upload, Loader2, Pencil, Check, X, ShieldAlert, Mail, Bell, TrendingUp, MessageSquare } from "lucide-react";
 import { PasswordInput } from "@/lib/ui/PasswordInput";
+import { ThemePicker } from "@/lib/ui/ThemePicker";
+import type { ChatThemeKey } from "@/lib/ui/chatThemes";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { checkPasswordStrength } from "@/lib/auth/password";
@@ -202,6 +204,44 @@ function StatsSection() {
     </div>
   );
 }
+
+function ChatThemeSection() {
+  const [theme, setTheme] = useState("blue");
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+
+  React.useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setLoading(false); return; }
+      const { data } = await supabase.from("profiles").select("chat_theme").eq("id", user.id).maybeSingle();
+      if (data?.chat_theme) setTheme(data.chat_theme);
+      setLoading(false);
+    });
+  }, []);
+
+  const change = async (next: ChatThemeKey) => {
+    setTheme(next);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("profiles").update({ chat_theme: next }).eq("id", user.id);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+      <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-accent" /> Chat mavzusi</h2>
+      <p className="text-[12px] text-muted mb-3">O'zingiz yozgan xabarlar rangini tanlang — Jamoa chati va Murojaatlarda shu rang ishlatiladi.</p>
+      <ThemePicker value={theme} onChange={change} />
+      {saved && <p className="text-[11px] text-[#4ADE80] mt-2">Saqlandi ✓</p>}
+    </div>
+  );
+}
+
 
 function NotificationPrefsSection() {
   const [notifyOrders, setNotifyOrders] = useState(true);
@@ -531,6 +571,7 @@ export default function ProfilePage() {
       )}
 
       <StatsSection />
+      <ChatThemeSection />
       <NotificationPrefsSection />
       <EmailChangeSection />
 

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip, Mic, Trash2, Check, Home, LogOut,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette,
 } from "lucide-react";
 
 declare global {
@@ -31,10 +31,12 @@ import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useV
 import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { BrandedLoader } from "@/lib/ui/BrandedLoader";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
+import { ThemePicker } from "@/lib/ui/ThemePicker";
+import { chatThemeGradient } from "@/lib/ui/chatThemes";
 
 type SupportMessage = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
-  file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; created_at: string;
+  file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; reply_to_id: string | null; created_at: string;
 };
 
 type PaymentInfo = {
@@ -362,6 +364,9 @@ export default function TelegramAppPage() {
   // Support
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
   const [supportText, setSupportText] = useState("");
+  const [supportReplyTo, setSupportReplyTo] = useState<SupportMessage | null>(null);
+  const [myChatTheme, setMyChatTheme] = useState("blue");
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportSending, setSupportSending] = useState(false);
   const supportBottomRef = useRef<HTMLDivElement>(null);
@@ -695,6 +700,10 @@ export default function TelegramAppPage() {
   const openSupport = async () => {
     setScreen("support");
     await loadSupport();
+    fetch(`/api/telegram/miniapp/theme?initData=${encodeURIComponent(getInitData())}`)
+      .then((r) => r.json())
+      .then((data) => { if (data.theme) setMyChatTheme(data.theme); })
+      .catch(() => {});
   };
 
   useEffect(() => {
@@ -714,15 +723,38 @@ export default function TelegramAppPage() {
       const res = await fetch("/api/telegram/miniapp/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: getInitData(), message: supportText.trim() }),
+        body: JSON.stringify({ initData: getInitData(), message: supportText.trim(), replyToId: supportReplyTo?.id ?? null }),
       });
       if (res.ok) {
         setSupportText("");
+        setSupportReplyTo(null);
         await loadSupport();
       }
     } finally {
       setSupportSending(false);
     }
+  };
+
+  const deleteSupportMessage = async (id: string) => {
+    if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
+    await fetch("/api/telegram/miniapp/support/delete-message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData: getInitData(), messageId: id }),
+    });
+    await loadSupport();
+  };
+
+  const supportMessageById = (id: string | null) => (id ? supportMessages.find((m) => m.id === id) ?? null : null);
+
+  const changeChatTheme = async (next: string) => {
+    setMyChatTheme(next);
+    setShowThemePicker(false);
+    await fetch("/api/telegram/miniapp/theme", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData: getInitData(), theme: next }),
+    });
   };
 
   const sendSupportImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1053,8 +1085,19 @@ export default function TelegramAppPage() {
     return (
       <div className={`${bgCls} flex flex-col h-screen`}>
         <div className="p-5 pb-3">
-          <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+          <div className="flex items-center justify-between -mt-1">
+            <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+            <button onClick={() => setShowThemePicker((v) => !v)} className="p-2 rounded-lg active:bg-white/5 -mt-5" aria-label="Chat mavzusi">
+              <Palette size={17} />
+            </button>
+          </div>
           <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
+          {showThemePicker && (
+            <div className="mt-3 p-3 rounded-xl bg-white/[0.04] border border-white/10">
+              <p className="text-[11px] text-[#93a5ba] mb-2">Xabar rangingizni tanlang</p>
+              <ThemePicker value={myChatTheme} onChange={changeChatTheme} />
+            </div>
+          )}
         </div>
         <div
           className="flex-1 overflow-y-auto px-4 space-y-2 min-h-0"
@@ -1065,14 +1108,22 @@ export default function TelegramAppPage() {
           ) : supportMessages.length === 0 ? (
             <p className="text-[12px] text-[#93a5ba] text-center mt-8">Savolingiz bo'lsa, quyidan yozing — operator tez orada javob beradi.</p>
           ) : (
-            supportMessages.map((m) => (
+            supportMessages.map((m) => {
+              const quoted = supportMessageById(m.reply_to_id);
+              const quotedLabel = quoted ? (quoted.sender === "customer" ? "Siz" : "Operator") : null;
+              return (
               <div key={m.id} className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
                 {m.sender === "operator" && <span className="text-[9px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
                 <div
-                  className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${
-                    m.sender === "customer" ? "bg-gradient-to-br from-[#3D7FFF] to-[#2456c9]" : "bg-white/[0.08]"
-                  }`}
+                  className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "customer" ? "text-white" : "bg-white/[0.08]"}`}
+                  style={m.sender === "customer" ? { background: chatThemeGradient(myChatTheme) } : undefined}
                 >
+                  {quoted && (
+                    <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${m.sender === "customer" ? "border-white/50" : "border-accent/50"}`}>
+                      <span className="font-semibold">{quotedLabel}</span>{" "}
+                      {quoted.message || (quoted.image_path ? "📷 Rasm" : quoted.voice_path ? "🎤 Ovozli xabar" : "")}
+                    </div>
+                  )}
                   {m.voice_path ? (
                     <VoicePlayer path={m.voice_path} getInitData={getInitData} />
                   ) : m.image_path ? (
@@ -1082,11 +1133,33 @@ export default function TelegramAppPage() {
                   )}
                   <div className="text-[8px] text-white/50 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                 </div>
+                <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "customer" ? "flex-row-reverse" : ""}`}>
+                  <button onClick={() => setSupportReplyTo(m)} className="text-[9px] text-[#5b7089] active:text-white flex items-center gap-0.5">
+                    <Reply size={9} /> Javob
+                  </button>
+                  {m.sender === "customer" && (
+                    <button onClick={() => deleteSupportMessage(m.id)} className="text-[9px] text-[#5b7089] active:text-[#FF6B85] flex items-center gap-0.5">
+                      <Trash2 size={9} /> O'chirish
+                    </button>
+                  )}
+                </div>
               </div>
-            ))
+              );
+            })
           )}
           <div ref={supportBottomRef} />
         </div>
+        {supportReplyTo && (
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-[#0e2038]">
+            <Reply size={12} className="text-accent shrink-0" />
+            <div className="flex-1 min-w-0 text-[11px] text-[#93a5ba] truncate">
+              {supportReplyTo.message || (supportReplyTo.image_path ? "📷 Rasm" : supportReplyTo.voice_path ? "🎤 Ovozli xabar" : "")}
+            </div>
+            <button onClick={() => setSupportReplyTo(null)} className="shrink-0 p-1 rounded active:bg-white/10 text-[#93a5ba]">
+              <XCircle size={13} />
+            </button>
+          </div>
+        )}
         {voiceRecorder.recording ? (
           <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[#0e2038]">
             <div className="flex items-center gap-2 flex-1 min-w-0">

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (!check.ok) return NextResponse.json({ error: "forbidden" }, { status: check.status });
 
   const body = await req.json().catch(() => null);
-  const { customerId, message } = body ?? {};
+  const { customerId, message, replyToId } = body ?? {};
   if (!customerId || !message || String(message).trim().length === 0) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   const { data: inserted, error } = await admin
     .from("telegram_support_messages")
-    .insert({ customer_id: customerId, sender: "operator", operator_id: check.userId, message: text })
+    .insert({ customer_id: customerId, sender: "operator", operator_id: check.userId, message: text, reply_to_id: replyToId ?? null })
     .select("id, created_at")
     .single();
 
