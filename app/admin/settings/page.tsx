@@ -186,7 +186,7 @@ function BrandImageField({
   const [dragOver, setDragOver] = useState(false);
   const [panning, setPanning] = useState(false);
   const inputId = React.useId();
-  const boxRef = React.useRef<HTMLDivElement>(null);
+  const boxRef = React.useRef<HTMLLabelElement>(null);
   const pos = position ?? { x: 50, y: 50 };
 
   const handleFiles = (files: FileList | null) => {
@@ -307,7 +307,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
   const [heroUploading, setHeroUploading] = useState(false);
 
   const removeLogo = () => {
-    updateLocal("branding", { logo_media_id: null, logo_media_id_url: null });
+    updateLocal("branding", { logo_media_id: null, logo_media_id_url: null, logo_media_id_position: null });
   };
 
   return (
@@ -349,10 +349,12 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
             currentUrl={branding.logo_media_id_url ?? null}
             uploading={logoUploading}
             accept="image/png,image/jpeg,image/webp,image/svg+xml"
-            recommendedText="Tavsiya: shaffof fon (PNG/SVG), kvadrat shakl"
+            recommendedText="Tavsiya: shaffof fon (PNG/SVG), kvadrat shakl. Surib, kadrni o'zingiz belgilang."
             boxClassName="w-full aspect-square"
             onUpload={(file) => handleUpload(file, "logo_media_id", setLogoUploading)}
             onRemove={removeLogo}
+            position={branding.logo_media_id_position ?? { x: 50, y: 50 }}
+            onPositionChange={(pos) => updateLocal("branding", { logo_media_id_position: pos })}
           />
         </div>
       </Field>
