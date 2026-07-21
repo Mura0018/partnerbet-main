@@ -359,6 +359,7 @@ export default function TelegramAppPage() {
 
   // Orders
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersFilter, setOrdersFilter] = useState<"all" | "pending" | "completed" | "rejected">("all");
 
@@ -700,6 +701,13 @@ export default function TelegramAppPage() {
 
   const openSupport = async () => {
     setScreen("support");
+    setSelectedOrderId(null);
+    // Buyurtma tanlash uchun mijozning buyurtmalarini yuklaymiz.
+    try {
+      const ordRes = await fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`);
+      const ordData = await ordRes.json();
+      setOrders(ordData.orders ?? []);
+    } catch {}
     await loadSupport();
     fetch(`/api/telegram/miniapp/theme?initData=${encodeURIComponent(getInitData())}`)
       .then((r) => r.json())
@@ -735,7 +743,7 @@ export default function TelegramAppPage() {
       const res = await fetch("/api/telegram/miniapp/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: getInitData(), message: supportText.trim(), replyToId: supportReplyTo?.id ?? null }),
+        body: JSON.stringify({ initData: getInitData(), message: supportText.trim(), replyToId: supportReplyTo?.id ?? null, orderId: selectedOrderId }),
       });
       if (res.ok) {
         setSupportText("");
@@ -1105,6 +1113,28 @@ export default function TelegramAppPage() {
             </button>
           </div>
           <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
+          {orders.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[10px] text-[#93a5ba] mb-1.5">Qaysi buyurtma bo'yicha savolingiz bor?</p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
+                <button
+                  onClick={() => setSelectedOrderId(null)}
+                  className={`shrink-0 text-[11px] px-3 py-1.5 rounded-lg border ${selectedOrderId === null ? "bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] border-transparent text-white" : "bg-white/[0.04] border-white/10 text-[#93a5ba]"}`}
+                >
+                  Umumiy savol
+                </button>
+                {orders.slice(0, 5).map((o) => (
+                  <button
+                    key={o.id}
+                    onClick={() => setSelectedOrderId(o.id)}
+                    className={`shrink-0 text-[11px] px-3 py-1.5 rounded-lg border whitespace-nowrap ${selectedOrderId === o.id ? "bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] border-transparent text-white" : "bg-white/[0.04] border-white/10 text-[#93a5ba]"}`}
+                  >
+                    {o.platform} — {Number(o.amount).toLocaleString("ru-RU")} so'm
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {showThemePicker && (
             <div className="mt-3 p-3 rounded-xl bg-white/[0.04] border border-white/10">
               <p className="text-[11px] text-[#93a5ba] mb-2">Xabar rangingizni tanlang</p>
