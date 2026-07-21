@@ -21,6 +21,7 @@ export function AuthShell({
   const settings = useSiteSettings();
   const siteName: string | undefined = settings.site_identity?.site_name;
   const logoUrl: string | null = settings.branding?.logo_media_id_url ?? null;
+  const logoPos: { x: number; y: number } = settings.branding?.logo_media_id_position ?? { x: 50, y: 50 };
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-5 py-12 relative overflow-hidden">
@@ -54,7 +55,7 @@ export function AuthShell({
       <div className="relative w-full max-w-sm">
         <Link href="/" className="flex items-center gap-2.5 mb-8 justify-center">
           {logoUrl ? (
-            <img src={logoUrl} alt={siteName || "Logo"} className="w-9 h-9 rounded-lg object-cover shadow-[0_0_20px_rgba(61,127,255,0.4)]" />
+            <img src={logoUrl} alt={siteName || "Logo"} className="w-9 h-9 rounded-lg object-cover shadow-[0_0_20px_rgba(61,127,255,0.4)]" style={{ objectPosition: `${logoPos.x}% ${logoPos.y}%` }} />
           ) : (
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center shadow-[0_0_20px_rgba(61,127,255,0.5)]">
               <ShieldCheck size={17} className="text-white" />

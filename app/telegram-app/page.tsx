@@ -326,6 +326,7 @@ export default function TelegramAppPage() {
   const [fpSubmitting, setFpSubmitting] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoPos, setLogoPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
 
   // Top-up form
@@ -368,7 +369,7 @@ export default function TelegramAppPage() {
   useEffect(() => {
     fetch("/api/telegram/miniapp/branding")
       .then((r) => r.json())
-      .then((data) => setLogoUrl(data.logoUrl))
+      .then((data) => { setLogoUrl(data.logoUrl); if (data.logoPosition) setLogoPos(data.logoPosition); })
       .catch(() => {});
     fetch("/api/telegram/miniapp/payment-info")
       .then((r) => r.json())
@@ -798,7 +799,7 @@ export default function TelegramAppPage() {
         <div className="max-w-sm mx-auto w-full relative z-10">
           <div className="flex justify-center mb-2">
             {logoUrl ? (
-              <img src={logoUrl} alt="BetCore Pay" className="w-40 h-40 object-contain drop-shadow-[0_8px_20px_rgba(61,127,255,0.4)]" />
+              <img src={logoUrl} alt="BetCore Pay" className="w-40 h-40 object-contain drop-shadow-[0_8px_20px_rgba(61,127,255,0.4)]" style={{ objectPosition: `${logoPos.x}% ${logoPos.y}%` }} />
             ) : (
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center text-[28px] shadow-[7px_7px_18px_rgba(0,0,0,0.5),-4px_-4px_14px_rgba(120,180,255,0.2)]">
                 ⬡

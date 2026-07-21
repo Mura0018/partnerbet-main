@@ -54,6 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const settings = useSiteSettings();
   const siteName: string = settings.site_identity?.site_name?.trim() || "WINORA";
   const logoUrl: string | null = settings.branding?.logo_media_id_url ?? null;
+  const logoPos: { x: number; y: number } = settings.branding?.logo_media_id_position ?? { x: 50, y: 50 };
 
   useEffect(() => {
     setMobileOpen(false);
@@ -72,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
         <div className="flex items-center gap-2">
           {logoUrl ? (
-            <img src={logoUrl} alt={siteName} className="w-7 h-7 rounded-lg object-cover shadow-[0_0_14px_rgba(61,127,255,0.35)]" />
+            <img src={logoUrl} alt={siteName} className="w-7 h-7 rounded-lg object-cover shadow-[0_0_14px_rgba(61,127,255,0.35)]" style={{ objectPosition: `${logoPos.x}% ${logoPos.y}%` }} />
           ) : (
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center shadow-[0_0_14px_rgba(61,127,255,0.35)]">
               <Zap size={14} className="text-white" fill="white" />
@@ -142,7 +143,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
         <div className="flex items-center gap-2">
           {logoUrl ? (
-            <img src={logoUrl} alt={siteName} className="w-6 h-6 rounded-md object-cover" />
+            <img src={logoUrl} alt={siteName} className="w-6 h-6 rounded-md object-cover" style={{ objectPosition: `${logoPos.x}% ${logoPos.y}%` }} />
           ) : (
             <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center">
               <Zap size={12} className="text-white" fill="white" />

@@ -82,7 +82,7 @@ export default function Home() {
   const [liveScores, setLiveScores] = useState<any[]>([]);
   const [loadingLive, setLoadingLive] = useState(true);
   const [siteSettings, setSiteSettings] = useState<{
-    identity: { site_name?: string; branding_logo_url?: string; branding_hero_image_url?: string };
+    identity: { site_name?: string; branding_logo_url?: string; branding_logo_position?: { x: number; y: number }; branding_hero_image_url?: string };
     footer: { description?: string };
     contact: { email?: string };
     social: Record<string, string>;
@@ -140,6 +140,7 @@ export default function Home() {
           identity: {
             site_name: byKey.site_identity?.site_name,
             branding_logo_url: byKey.branding?.logo_media_id_url,
+            branding_logo_position: byKey.branding?.logo_media_id_position,
             branding_hero_image_url: byKey.branding?.hero_image_media_id_url,
           },
           footer: { description: byKey.footer?.description },
@@ -215,7 +216,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between gap-6">
           <div className="flex items-center gap-2.5 shrink-0">
             {siteSettings.identity.branding_logo_url ? (
-              <img src={siteSettings.identity.branding_logo_url} alt={siteSettings.identity.site_name || "Logo"} className="w-8 h-8 rounded-lg object-cover" />
+              <img src={siteSettings.identity.branding_logo_url} alt={siteSettings.identity.site_name || "Logo"} className="w-8 h-8 rounded-lg object-cover" style={{ objectPosition: `${siteSettings.identity.branding_logo_position?.x ?? 50}% ${siteSettings.identity.branding_logo_position?.y ?? 50}%` }} />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center shadow-[0_0_20px_rgba(61,127,255,0.5)]">
                 <Zap size={16} className="text-white" fill="white" />

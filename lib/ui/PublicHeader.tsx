@@ -20,6 +20,7 @@ export function PublicHeader({ active }: { active?: string }) {
   const settings = useSiteSettings();
   const siteName: string | null = settings.site_identity?.site_name ?? null;
   const logoUrl: string | null = settings.branding?.logo_media_id_url ?? null;
+  const logoPos: { x: number; y: number } = settings.branding?.logo_media_id_position ?? { x: 50, y: 50 };
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -27,7 +28,7 @@ export function PublicHeader({ active }: { active?: string }) {
       <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between gap-6">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           {logoUrl ? (
-            <img src={logoUrl} alt={siteName || "Logo"} className="w-8 h-8 rounded-lg object-cover" />
+            <img src={logoUrl} alt={siteName || "Logo"} className="w-8 h-8 rounded-lg object-cover" style={{ objectPosition: `${logoPos.x}% ${logoPos.y}%` }} />
           ) : (
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center shadow-[0_0_20px_rgba(61,127,255,0.45)]">
               <Zap size={16} className="text-white" fill="white" />
