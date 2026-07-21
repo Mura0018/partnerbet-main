@@ -100,6 +100,116 @@ function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => s
   return <audio controls src={url} className="max-w-[220px] h-9" />;
 }
 
+function FloatingAmbience() {
+  return (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+      <style>{`
+        @keyframes miniFloat {
+          0% { transform: translate(0,0) rotate(0deg); }
+          25% { transform: translate(14px,-20px) rotate(2deg); }
+          50% { transform: translate(-8px,-38px) rotate(-1deg); }
+          75% { transform: translate(-18px,-12px) rotate(1.5deg); }
+          100% { transform: translate(0,0) rotate(0deg); }
+        }
+        .mini-chip { animation: miniFloat 15s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .mini-chip { animation: none; } }
+      `}</style>
+      <span className="mini-chip absolute top-[8%] left-[6%] text-[13px] font-bold" style={{ color: "rgba(200,220,255,0.16)", animationDelay: "0s" }}>1xBet</span>
+      <span className="mini-chip absolute top-[16%] right-[8%] text-[11px] font-bold" style={{ color: "rgba(200,220,255,0.13)", animationDelay: "2s" }}>1xBet</span>
+      <span className="mini-chip absolute bottom-[22%] left-[5%] text-[12px] font-bold" style={{ color: "rgba(200,220,255,0.14)", animationDelay: "4s" }}>1xBet</span>
+      <span className="mini-chip absolute bottom-[14%] right-[6%] text-[11px] font-bold" style={{ color: "rgba(200,220,255,0.12)", animationDelay: "1s" }}>1xBet</span>
+    </div>
+  );
+}
+
+function AccountIdVerifyField({
+  accountId,
+  setAccountId,
+  getInitData,
+}: {
+  accountId: string;
+  setAccountId: (v: string) => void;
+  getInitData: () => string;
+}) {
+  const [verifying, setVerifying] = useState(false);
+  const [verifiedName, setVerifiedName] = useState<string | null>(null);
+  const [flipped, setFlipped] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+
+  const verify = async () => {
+    if (!accountId.trim()) return;
+    setVerifying(true);
+    setNotFound(false);
+    try {
+      const res = await fetch("/api/telegram/miniapp/verify-player", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), accountId: accountId.trim() }),
+      });
+      const data = await res.json();
+      if (data.playerName) {
+        setVerifiedName(data.playerName);
+        setFlipped(true);
+      } else {
+        setNotFound(true);
+      }
+    } catch {
+      setNotFound(true);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  return (
+    <div className="mb-3.5">
+      <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID raqami</label>
+      <div style={{ perspective: "1200px" }}>
+        <div
+          className="relative transition-transform duration-500"
+          style={{ transformStyle: "preserve-3d", transform: flipped ? "rotateY(180deg)" : "none", minHeight: "50px" }}
+        >
+          <div className="flex gap-2" style={{ backfaceVisibility: "hidden" }}>
+            <input
+              className={`${inputCls} flex-1`}
+              placeholder="Masalan: 123456789"
+              value={accountId}
+              onChange={(e) => { setAccountId(e.target.value); setNotFound(false); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); verify(); } }}
+            />
+            <button
+              type="button"
+              onClick={verify}
+              disabled={verifying || !accountId.trim()}
+              className="shrink-0 px-4 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#2456c9] text-[13px] font-semibold disabled:opacity-50"
+            >
+              {verifying ? <Loader2 size={15} className="animate-spin" /> : "Tekshirish"}
+            </button>
+          </div>
+          <div
+            className="absolute inset-0 flex items-center gap-3 bg-[#0e2038] rounded-xl px-4 shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]"
+            style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          >
+            <div className="w-9 h-9 rounded-full bg-[#4ADE80]/15 flex items-center justify-center text-[#4ADE80] shrink-0">
+              <CheckCircle2 size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-bold truncate">{verifiedName}</div>
+              <div className="text-[10px] text-[#93a5ba]">ID: {accountId} — tasdiqlangan</div>
+            </div>
+            <button type="button" onClick={() => { setFlipped(false); setVerifiedName(null); }} className="shrink-0 text-[11px] text-[#7db8ff]">
+              O'zgartirish
+            </button>
+          </div>
+        </div>
+      </div>
+      {notFound && (
+        <p className="text-[11px] text-[#F4C76A] mt-1.5">Bu ID bo'yicha ma'lumot topilmadi — to'g'ri kiritganingizga ishonch hosil qiling. Baribir davom etishingiz mumkin.</p>
+      )}
+    </div>
+  );
+}
+
+
 function ScreenHeader({ title, onBack, onHome }: { title: string; onBack: () => void; onHome?: () => void }) {
   return (
     <div className="flex items-center gap-2 mb-5">
@@ -786,14 +896,13 @@ export default function TelegramAppPage() {
 
   if (screen === "topup") {
     return (
-      <div className={`${bgCls} p-5`}>
+      <div className={`${bgCls} p-5 relative`}>
+        <FloatingAmbience />
+        <div className="relative z-10">
         <ScreenHeader title="Hisob to'ldirish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <form onSubmit={submitTopup}>
           <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
-          <div className="mb-3.5">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID raqami</label>
-            <input className={inputCls} placeholder="Masalan: 123456789" value={tuAccountId} onChange={(e) => setTuAccountId(e.target.value)} />
-          </div>
+          <AccountIdVerifyField accountId={tuAccountId} setAccountId={setTuAccountId} getInitData={getInitData} />
           <div className="mb-3.5">
             <label className="block text-[12px] text-[#93a5ba] mb-1.5">Summa</label>
             <input className={inputCls} type="number" min={1} placeholder="Masalan: 50000" value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
@@ -815,20 +924,20 @@ export default function TelegramAppPage() {
             {submitting ? <Loader2 size={16} className="animate-spin" /> : "To'ladim, buyurtma berish"}
           </button>
         </form>
+        </div>
       </div>
     );
   }
 
   if (screen === "withdraw") {
     return (
-      <div className={`${bgCls} p-5`}>
+      <div className={`${bgCls} p-5 relative`}>
+        <FloatingAmbience />
+        <div className="relative z-10">
         <ScreenHeader title="Pul yechish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <form onSubmit={submitWithdraw}>
           <PlatformField platform={wdPlatform} setPlatform={setWdPlatform} customPlatform={wdCustomPlatform} setCustomPlatform={setWdCustomPlatform} />
-          <div className="mb-3.5">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID raqami</label>
-            <input className={inputCls} placeholder="Masalan: 123456789" value={wdAccountId} onChange={(e) => setWdAccountId(e.target.value)} />
-          </div>
+          <AccountIdVerifyField accountId={wdAccountId} setAccountId={setWdAccountId} getInitData={getInitData} />
           <div className="mb-3.5">
             <label className="block text-[12px] text-[#93a5ba] mb-1.5">4 xonali pul yechish kodi</label>
             <input className={inputCls} placeholder="Masalan: 1234" value={wdCode} onChange={(e) => setWdCode(e.target.value)} inputMode="numeric" />
@@ -865,6 +974,7 @@ export default function TelegramAppPage() {
             {submitting ? <Loader2 size={16} className="animate-spin" /> : "Buyurtma berish"}
           </button>
         </form>
+        </div>
       </div>
     );
   }
@@ -1004,7 +1114,9 @@ export default function TelegramAppPage() {
 
   // menu
   return (
-    <div className={`${bgCls} p-5`}>
+    <div className={`${bgCls} p-5 relative`}>
+      <FloatingAmbience />
+      <div className="relative z-10">
       <div className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5 shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -1042,6 +1154,7 @@ export default function TelegramAppPage() {
           </div>
           <div className="text-[13px] font-bold">Operator bilan aloqa</div>
         </button>
+      </div>
       </div>
     </div>
   );
