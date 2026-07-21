@@ -8,6 +8,7 @@ import {
   FileText, ShieldCheck, Cookie, HeartHandshake, AlertTriangle, Copyright,
 } from "lucide-react";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
+import { BrandName } from "@/lib/ui/BrandName";
 
 const BLOCKS = [
   {
@@ -57,11 +58,7 @@ export function PublicFooter() {
         {/* Brand block — full width, sets the tone */}
         <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 mb-5">
           <div className="font-extrabold text-[18px] tracking-tight mb-2">
-            {siteName || (
-              <>
-                PARTNER<span className="text-accent">BET</span>
-              </>
-            )}
+            <BrandName name={siteName} />
           </div>
           <p className="text-muted text-[13px] leading-relaxed max-w-xl">
             {footerDescription || "Premium football media & affiliate platform."}

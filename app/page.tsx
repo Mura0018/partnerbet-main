@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { NotificationBell } from "@/lib/push/NotificationBell";
+import { BrandName } from "@/lib/ui/BrandName";
 import { BannerSlot } from "@/lib/ui/BannerSlot";
 
 type Insight = {
@@ -211,8 +212,8 @@ export default function Home() {
       </div>
 
       <header className="sticky top-0 z-40 glass border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5 shrink-0">
             {siteSettings.identity.branding_logo_url ? (
               <img src={siteSettings.identity.branding_logo_url} alt={siteSettings.identity.site_name || "Logo"} className="w-8 h-8 rounded-lg object-cover" />
             ) : (
@@ -220,11 +221,7 @@ export default function Home() {
                 <Zap size={16} className="text-white" fill="white" />
               </div>
             )}
-            {siteSettings.identity.site_name ? (
-              <span className="font-bold tracking-tight text-[17px]">{siteSettings.identity.site_name}</span>
-            ) : (
-              <span className="font-bold tracking-tight text-[17px]">PARTNER<span className="text-accent">BET</span></span>
-            )}
+            <span className="font-bold tracking-tight text-[17px]"><BrandName name={siteSettings.identity.site_name} /></span>
           </div>
           <nav className="hidden md:flex items-center gap-7 text-[13px] font-medium text-muted">
             {NAV_LIVE.map((item) => (
@@ -482,68 +479,88 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 py-10 grid md:grid-cols-4 gap-8 text-[13px]">
-          <div>
-            {siteSettings.identity.site_name ? (
-              <div className="font-bold text-[15px] mb-3">{siteSettings.identity.site_name}</div>
-            ) : (
-              <div className="font-bold text-[15px] mb-3">PARTNER<span className="text-accent">BET</span></div>
-            )}
-            <p className="text-muted leading-relaxed">
+      <footer className="border-t border-white/8 mt-4 bg-white/[0.015]">
+        <div className="max-w-7xl mx-auto px-5 md:px-8 py-12">
+          <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 mb-5">
+            <div className="font-extrabold text-[18px] tracking-tight mb-2">
+              <BrandName name={siteSettings.identity.site_name} />
+            </div>
+            <p className="text-muted text-[13px] leading-relaxed max-w-xl">
               {siteSettings.footer.description || "Premium football media & affiliate platform."}
             </p>
             {Object.values(siteSettings.social).some(Boolean) && (
-              <div className="flex gap-3 mt-3">
+              <div className="flex flex-wrap gap-2 mt-4">
                 {Object.entries(siteSettings.social).filter(([, url]) => url).map(([platform, url]) => (
-                  <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className="text-muted hover:text-accent transition-colors capitalize">
+                  <a
+                    key={platform}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-full text-[12px] font-medium bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 transition-colors capitalize"
+                  >
                     {platform}
                   </a>
                 ))}
               </div>
             )}
           </div>
-          <div>
-            <div className="font-semibold mb-3 text-muted">Platform</div>
-            <div className="flex flex-col gap-2 text-muted">
-              <button onClick={() => scrollTo("insights")} className="text-left hover:text-white transition-colors">Insights</button>
-              <button onClick={() => scrollTo("live-scores")} className="text-left hover:text-white transition-colors">Live Scores</button>
-              <Link href="/football" className="hover:text-white transition-colors">Football Center</Link>
-              <Link href="/blog" className="hover:text-white transition-colors">News</Link>
-              <Link href="/partners" className="hover:text-white transition-colors">Partners</Link>
-              <Link href="/apk" className="hover:text-white transition-colors">Download App</Link>
-              <Link href="/topup" className="hover:text-white transition-colors">Top-Up</Link>
-              <Link href="/support" className="hover:text-white transition-colors">Support Us</Link>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
+              <div className="font-semibold text-[12px] uppercase tracking-wide text-white/70 mb-3.5">Platform</div>
+              <div className="flex flex-col gap-2.5 text-[13px]">
+                <button onClick={() => scrollTo("insights")} className="text-left text-muted hover:text-white transition-colors">Insights</button>
+                <button onClick={() => scrollTo("live-scores")} className="text-left text-muted hover:text-white transition-colors">Live Scores</button>
+                <Link href="/football" className="text-muted hover:text-white transition-colors">Football Center</Link>
+                <Link href="/blog" className="text-muted hover:text-white transition-colors">News</Link>
+                <Link href="/partners" className="text-muted hover:text-white transition-colors">Partners</Link>
+                <Link href="/apk" className="text-muted hover:text-white transition-colors">Download App</Link>
+                <Link href="/topup" className="flex items-center gap-1.5 text-muted hover:text-white transition-colors">
+                  Top-Up
+                  <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] border border-[#4ADE80]/30">Yangi</span>
+                </Link>
+                <Link href="/support" className="text-muted hover:text-white transition-colors">Support Us</Link>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
+              <div className="font-semibold text-[12px] uppercase tracking-wide text-white/70 mb-3.5">Company</div>
+              <div className="flex flex-col gap-2.5 text-[13px]">
+                <Link href="/about" className="text-muted hover:text-white transition-colors">About Us</Link>
+                <Link href="/faq" className="text-muted hover:text-white transition-colors">FAQ</Link>
+                {siteSettings.contact.email ? (
+                  <Link href="/contact" className="text-muted hover:text-white transition-colors">Contact</Link>
+                ) : (
+                  <span title="Tez orada" className="text-[#3d4d5f] cursor-not-allowed select-none">Contact</span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
+              <div className="font-semibold text-[12px] uppercase tracking-wide text-white/70 mb-3.5">Legal</div>
+              <div className="flex flex-col gap-2.5 text-[13px]">
+                <Link href="/legal/terms" className="text-muted hover:text-white transition-colors">Terms & Conditions</Link>
+                <Link href="/legal/privacy-policy" className="text-muted hover:text-white transition-colors">Privacy Policy</Link>
+                <Link href="/legal/cookie-policy" className="text-muted hover:text-white transition-colors">Cookie Policy</Link>
+                <Link href="/legal/responsible-gaming" className="text-muted hover:text-white transition-colors">Responsible Gaming</Link>
+                <Link href="/legal/disclaimer" className="text-muted hover:text-white transition-colors">Disclaimer</Link>
+                <Link href="/legal/dmca" className="text-muted hover:text-white transition-colors">DMCA</Link>
+              </div>
+            </div>
+
+            <div className="col-span-2 md:col-span-1 rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
+              <div className="font-semibold text-[12px] uppercase tracking-wide text-white/70 mb-3.5">Muhim</div>
+              <p className="text-muted leading-relaxed text-[12px]">
+                18+ only. Gambling can be addictive — please play responsibly.{" "}
+                {siteSettings.identity.site_name || "WINORA"} is a licensed affiliate marketing platform and does not
+                itself accept wagers or hold client funds. Promo codes are issued by third-party licensed operators.
+              </p>
             </div>
           </div>
-          <div>
-            <div className="font-semibold mb-3 text-muted">Company</div>
-            <div className="flex flex-col gap-2 text-muted">
-              <Link href="/about" className="hover:text-white transition-colors">About Us</Link>
-              <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
-              {siteSettings.contact.email ? (
-                <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
-              ) : (
-                <span title="Tez orada" className="cursor-not-allowed select-none text-[#3d4d5f]">Contact</span>
-              )}
-            </div>
-          </div>
-          <div>
-            <div className="font-semibold mb-3 text-muted">Legal</div>
-            <div className="flex flex-col gap-2 text-muted mb-3">
-              <Link href="/legal/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
-              <Link href="/legal/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/legal/cookie-policy" className="hover:text-white transition-colors">Cookie Policy</Link>
-              <Link href="/legal/responsible-gaming" className="hover:text-white transition-colors">Responsible Gaming</Link>
-              <Link href="/legal/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
-              <Link href="/legal/dmca" className="hover:text-white transition-colors">DMCA</Link>
-            </div>
-            <p className="text-muted leading-relaxed text-[12px]">
-              18+ only. Gambling can be addictive — please play responsibly.{" "}
-              {siteSettings.identity.site_name || "WINORA"} is a
-              licensed affiliate marketing platform and does not itself accept wagers or hold
-              client funds. Promo codes are issued by third-party licensed operators.
-            </p>
+
+          <div className="mt-6 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
+            <span>© {new Date().getFullYear()} {siteSettings.identity.site_name || "WINORA"}. Barcha huquqlar himoyalangan.</span>
+            <span>Ishonchli. Xavfsiz. Professional.</span>
           </div>
         </div>
       </footer>

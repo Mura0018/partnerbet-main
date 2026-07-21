@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Zap, Menu, X } from "lucide-react";
 import { NotificationBell } from "@/lib/push/NotificationBell";
 import { Button } from "@/lib/ui/Button";
+import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
 
 const NAV_ITEMS = [
@@ -23,7 +24,7 @@ export function PublicHeader({ active }: { active?: string }) {
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-white/5">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between gap-6">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           {logoUrl ? (
             <img src={logoUrl} alt={siteName || "Logo"} className="w-8 h-8 rounded-lg object-cover" />
@@ -33,9 +34,9 @@ export function PublicHeader({ active }: { active?: string }) {
             </div>
           )}
           {siteName ? (
-            <span className="font-bold tracking-tight text-[17px]">{siteName}</span>
+            <span className="font-bold tracking-tight text-[17px]"><BrandName name={siteName} /></span>
           ) : (
-            <span className="font-bold tracking-tight text-[17px]">PARTNER<span className="text-accent">BET</span></span>
+            <span className="font-bold tracking-tight text-[17px]"><BrandName /></span>
           )}
         </Link>
 
