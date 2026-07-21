@@ -25,14 +25,24 @@ export async function POST(req: NextRequest) {
   const customerId = customer?.id;
   if (!customerId) return NextResponse.json({ error: "not_registered" }, { status: 401 });
 
+  const { data: thr } = await supabase
+    .from("telegram_support_threads")
+    .select("claimed_by")
+    .eq("customer_id", customerId)
+    .maybeSingle();
+  const opId = thr?.claimed_by ?? null;
+
   const nowIso = new Date().toISOString();
 
   if (resolved) {
-    await supabase.from("telegram_support_messages").insert({
-      customer_id: customerId,
-      sender: "operator",
-      message: "Yordamimizdan foydalanganingiz uchun rahmat! Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad!",
-    });
+    if (opId) {
+      await supabase.from("telegram_support_messages").insert({
+        customer_id: customerId,
+        sender: "operator",
+        operator_id: opId,
+        message: "Yordamimizdan foydalanganingiz uchun rahmat! Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad!",
+      });
+    }
     await supabase.from("telegram_support_threads").update({
       status: "ended",
       is_archived: true,

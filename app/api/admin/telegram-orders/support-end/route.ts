@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
   const { error: msgErr } = await admin.from("telegram_support_messages").insert({
     customer_id: customerId,
     sender: "operator",
+    operator_id: user.id,
     message: "__END_CONFIRM__Savolingiz hal bo'ldimi? Agar boshqa savolingiz bo'lmasa, suhbatni yakunlaymiz.",
   });
 
