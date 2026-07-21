@@ -724,7 +724,7 @@ export default function TelegramAppPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initData: getInitData(), resolved }),
       });
-      await loadSupport();
+      await loadSupport(true);
     } catch {}
   };
 
