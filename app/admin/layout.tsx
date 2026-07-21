@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -30,6 +30,7 @@ const NAV = [
   { href: "/admin/apk", label: "APK", icon: Smartphone, permission: "apk.manage" },
   { href: "/admin/push", label: "Push Notifications", icon: BellRing, permission: "settings.manage" },
   { href: "/admin/users", label: "Foydalanuvchilar", icon: Users, permission: "users.manage" },
+  { href: "/admin/security-log", label: "Xavfsizlik jurnali", icon: ShieldAlert, permission: "security.manage" },
   { href: "/admin/settings", label: "Sozlamalar", icon: Settings, permission: "settings.manage" },
 ];
 
