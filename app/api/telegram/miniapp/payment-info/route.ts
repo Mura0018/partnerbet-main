@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 // serving that frozen snapshot in production forever — which is exactly
 // why a payment method added after deploy wasn't showing up.
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 type MethodRow = {
   id: string;
