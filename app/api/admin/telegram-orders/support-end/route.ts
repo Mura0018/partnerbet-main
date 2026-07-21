@@ -22,17 +22,20 @@ export async function POST(req: NextRequest) {
 
   // Mijozga "hal bo'ldimi?" so'rovi (maxsus xabar). Frontend __END_CONFIRM__
   // belgisini tanib, Ha/Yo'q tugmalarini ko'rsatadi.
-  await admin.from("telegram_support_messages").insert({
+  const { error: msgErr } = await admin.from("telegram_support_messages").insert({
     customer_id: customerId,
     sender: "operator",
     message: "__END_CONFIRM__Savolingiz hal bo'ldimi? Agar boshqa savolingiz bo'lmasa, suhbatni yakunlaymiz.",
   });
 
-  // Thread holati "yakunlanish kutilmoqda".
-  await admin.from("telegram_support_threads").update({
+  const { error: thrErr } = await admin.from("telegram_support_threads").update({
     status: "ended_pending",
     updated_at: new Date().toISOString(),
   }).eq("customer_id", customerId);
+
+  if (msgErr || thrErr) {
+    return NextResponse.json({ error: "db_error", msgErr: msgErr?.message, thrErr: thrErr?.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }
