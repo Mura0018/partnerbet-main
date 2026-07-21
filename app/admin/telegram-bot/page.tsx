@@ -1427,7 +1427,7 @@ function SupportTab() {
         .select("customer_id, message, image_path, created_at, customers(phone, full_name)")
         .order("created_at", { ascending: false })
         .limit(300),
-      supabase.from("telegram_support_threads").select("customer_id, is_archived, claimed_by, profiles(display_name, full_name)"),
+      supabase.from("telegram_support_threads").select("customer_id, is_archived, claimed_by, profiles!claimed_by(display_name, full_name)"),
     ]);
     const threadInfo = new Map((threadRows ?? []).map((r: any) => [r.customer_id, r]));
     const grouped = new Map<string, SupportThread>();
