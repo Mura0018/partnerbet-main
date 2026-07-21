@@ -1098,7 +1098,10 @@ function OrdersTab() {
   );
 }
 
-type SupportThread = { customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string };
+type SupportThread = {
+  customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string;
+  claimed_by: string | null; claimed_by_name: string | null;
+};
 type SupportMsg = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
   file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; reply_to_id: string | null; created_at: string;
@@ -1153,11 +1156,13 @@ function SupportVoice({ path }: { path: string }) {
   return <audio controls src={url} className="max-w-[220px] h-9" />;
 }
 
-function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThread; onBack: () => void; onArchived: () => void }) {
+function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thread: SupportThread; currentUserId: string | null; onBack: () => void; onArchived: () => void }) {
   const [msgs, setMsgs] = useState<SupportMsg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [claimedBy, setClaimedBy] = useState(thread.claimed_by);
+  const [claimedByName, setClaimedByName] = useState(thread.claimed_by_name);
   const [replyTo, setReplyTo] = useState<SupportMsg | null>(null);
   const [myTheme, setMyTheme] = useState<string>("blue");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -1252,6 +1257,16 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
     }
   };
 
+  const takeOver = async () => {
+    await supabase.from("telegram_support_threads").upsert(
+      { customer_id: thread.customer_id, claimed_by: currentUserId, claimed_at: new Date().toISOString() },
+      { onConflict: "customer_id" }
+    );
+    const { data } = await supabase.from("profiles").select("display_name, full_name").eq("id", currentUserId).maybeSingle();
+    setClaimedBy(currentUserId);
+    setClaimedByName(data?.display_name || data?.full_name || null);
+  };
+
   return (
     <div className="fixed inset-0 z-40 bg-bg flex flex-col">
       <div className="flex items-center gap-2 px-5 py-4 border-b border-white/8 shrink-0">
@@ -1269,6 +1284,17 @@ function SupportThreadView({ thread, onBack, onArchived }: { thread: SupportThre
           {archiving ? "…" : "Arxivlash"}
         </button>
       </div>
+
+      {claimedBy && claimedBy !== currentUserId ? (
+        <div className="flex items-center justify-between gap-2 px-5 py-2 bg-[#F4C76A]/10 border-b border-[#F4C76A]/20 shrink-0">
+          <span className="text-[11px] text-[#F4C76A]">🔵 {claimedByName || "Boshqa operator"} bu mijozga javob bermoqda</span>
+          <button onClick={takeOver} className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white">O'zimga olish</button>
+        </div>
+      ) : claimedBy === currentUserId ? (
+        <div className="px-5 py-1.5 bg-accent/10 border-b border-accent/15 shrink-0">
+          <span className="text-[10.5px] text-accent">🔵 Siz bu mijozga javob berayapsiz</span>
+        </div>
+      ) : null}
 
       <div
         className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0"
@@ -1380,21 +1406,29 @@ function SupportTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [onlyMine, setOnlyMine] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
+  }, []);
 
   const loadThreads = async (isInitial = false) => {
     if (isInitial) setLoading(true);
-    const [{ data }, { data: archivedRows }] = await Promise.all([
+    const [{ data }, { data: threadRows }] = await Promise.all([
       supabase
         .from("telegram_support_messages")
         .select("customer_id, message, image_path, created_at, customers(phone, full_name)")
         .order("created_at", { ascending: false })
         .limit(300),
-      supabase.from("telegram_support_threads").select("customer_id").eq("is_archived", true),
+      supabase.from("telegram_support_threads").select("customer_id, is_archived, claimed_by, profiles(display_name, full_name)"),
     ]);
+    const threadInfo = new Map((threadRows ?? []).map((r: any) => [r.customer_id, r]));
     const grouped = new Map<string, SupportThread>();
     for (const row of (data as any[]) ?? []) {
       if (!grouped.has(row.customer_id)) {
+        const info = threadInfo.get(row.customer_id);
         grouped.set(row.customer_id, {
           customer_id: row.customer_id,
           phone: row.customers?.phone ?? "—",
@@ -1402,11 +1436,13 @@ function SupportTab() {
           last_message: row.message,
           last_image: !!row.image_path,
           last_at: row.created_at,
+          claimed_by: info?.claimed_by ?? null,
+          claimed_by_name: info?.profiles?.display_name || info?.profiles?.full_name || null,
         });
       }
     }
     setThreads(Array.from(grouped.values()));
-    setArchivedIds(new Set((archivedRows ?? []).map((r) => r.customer_id)));
+    setArchivedIds(new Set((threadRows ?? []).filter((r: any) => r.is_archived).map((r: any) => r.customer_id)));
     if (isInitial) setLoading(false);
   };
 
@@ -1416,10 +1452,25 @@ function SupportTab() {
     return () => clearInterval(interval);
   }, []);
 
+  const openThread = async (t: SupportThread) => {
+    setActiveCustomer(t);
+    // Auto-claims an unclaimed thread the moment an operator opens it —
+    // same pattern as order claiming — so it's immediately clear who's
+    // handling this customer, without requiring an extra tap.
+    if (!t.claimed_by) {
+      await supabase.from("telegram_support_threads").upsert(
+        { customer_id: t.customer_id, claimed_by: currentUserId, claimed_at: new Date().toISOString() },
+        { onConflict: "customer_id" }
+      );
+      loadThreads(false);
+    }
+  };
+
   if (activeCustomer) {
     return (
       <SupportThreadView
         thread={activeCustomer}
+        currentUserId={currentUserId}
         onBack={() => { setActiveCustomer(null); loadThreads(false); }}
         onArchived={() => { setActiveCustomer(null); loadThreads(false); }}
       />
@@ -1428,7 +1479,9 @@ function SupportTab() {
 
   if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda...</p>;
 
-  const visibleThreads = threads.filter((t) => archivedIds.has(t.customer_id) === showArchived);
+  const visibleThreads = threads
+    .filter((t) => archivedIds.has(t.customer_id) === showArchived)
+    .filter((t) => !onlyMine || t.claimed_by === currentUserId);
   const filteredThreads = search.trim()
     ? visibleThreads.filter((t) => `${t.full_name ?? ""} ${t.phone}`.toLowerCase().includes(search.trim().toLowerCase()))
     : visibleThreads;
@@ -1454,6 +1507,12 @@ function SupportTab() {
         >
           Arxiv
         </button>
+        <button
+          onClick={() => setOnlyMine((v) => !v)}
+          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${onlyMine ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+        >
+          Faqat mening
+        </button>
       </div>
 
       {filteredThreads.length === 0 ? (
@@ -1465,10 +1524,19 @@ function SupportTab() {
           {filteredThreads.map((t) => (
             <button
               key={t.customer_id}
-              onClick={() => setActiveCustomer(t)}
+              onClick={() => openThread(t)}
               className="w-full text-left p-3.5 rounded-xl border border-white/8 bg-white/[0.02] hover:border-accent/40"
             >
-              <div className="text-[13px] font-semibold truncate">{t.full_name || t.phone}</div>
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <div className="text-[13px] font-semibold truncate">{t.full_name || t.phone}</div>
+                {t.claimed_by && (
+                  <span className={`shrink-0 text-[9.5px] px-2 py-0.5 rounded-full border ${
+                    t.claimed_by === currentUserId ? "bg-accent/15 border-accent/40 text-accent" : "bg-white/5 border-white/10 text-muted"
+                  }`}>
+                    🔵 {t.claimed_by === currentUserId ? "Siz javob berasiz" : `${t.claimed_by_name || "Operator"} javob bermoqda`}
+                  </span>
+                )}
+              </div>
               <div className="text-[12px] text-muted truncate mt-0.5">{t.last_image ? "📷 Rasm" : t.last_message}</div>
             </button>
           ))}
