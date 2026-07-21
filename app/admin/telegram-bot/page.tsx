@@ -1262,6 +1262,20 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
     }
   };
 
+  const endChat = async () => {
+    if (!confirm("Suhbatni yakunlashni tasdiqlaysizmi? Mijozga tasdiqlash so'rovi yuboriladi.")) return;
+    setArchiving(true);
+    try {
+      await fetch("/api/admin/telegram-orders/support-end", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: thread.customer_id }),
+      });
+    } finally {
+      setArchiving(false);
+    }
+  };
+
   const takeOver = async () => {
     await supabase.from("telegram_support_threads").upsert(
       { customer_id: thread.customer_id, claimed_by: currentUserId, claimed_at: new Date().toISOString() },
@@ -1281,6 +1295,13 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         <div className="flex-1 min-w-0">
           <h1 className="text-[15px] font-bold truncate">{thread.full_name || thread.phone}</h1>
         </div>
+        <button
+          onClick={endChat}
+          disabled={archiving}
+          className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-accent/15 border border-accent/25 text-accent hover:bg-accent/25 disabled:opacity-50"
+        >
+          Yakunlash
+        </button>
         <button
           onClick={archive}
           disabled={archiving}

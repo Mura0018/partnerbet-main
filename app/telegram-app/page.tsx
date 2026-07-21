@@ -717,6 +717,17 @@ export default function TelegramAppPage() {
     if (screen === "support") supportBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [supportMessages.length, screen]);
 
+  const confirmEnd = async (resolved: boolean) => {
+    try {
+      await fetch("/api/telegram/miniapp/support/end-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), resolved }),
+      });
+      await loadSupport();
+    } catch {}
+  };
+
   const sendSupportMessage = async () => {
     if (!supportText.trim()) return;
     setSupportSending(true);
@@ -1130,6 +1141,14 @@ export default function TelegramAppPage() {
                     <VoicePlayer path={m.voice_path} getInitData={getInitData} />
                   ) : m.image_path ? (
                     <div className="flex items-center gap-1.5 text-[#c7d5e6]"><ImageIcon size={13} /> {m.file_name || "Rasm yuborildi"}</div>
+                  ) : m.message?.startsWith("__END_CONFIRM__") ? (
+                    <div>
+                      <div className="mb-2">{m.message.replace("__END_CONFIRM__", "")}</div>
+                      <div className="flex gap-2">
+                        <button onClick={() => confirmEnd(true)} className="flex-1 text-[12px] py-1.5 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] text-white font-medium">Ha, hal bo'ldi</button>
+                        <button onClick={() => confirmEnd(false)} className="flex-1 text-[12px] py-1.5 rounded-lg bg-white/10 text-white font-medium">Yo'q, savolim bor</button>
+                      </div>
+                    </div>
                   ) : (
                     m.message
                   )}
