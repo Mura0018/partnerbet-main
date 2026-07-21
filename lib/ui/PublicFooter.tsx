@@ -82,10 +82,10 @@ export function PublicFooter() {
           )}
         </div>
 
-        {/* Link columns — same 4-in-a-row layout on mobile and desktop, separated by thin rules instead of boxes */}
-        <div className="grid grid-cols-4 gap-3 md:gap-8">
-          {BLOCKS.map((block, i) => (
-            <div key={block.title} className={i > 0 ? "pl-3 md:pl-8 border-l border-white/8" : ""}>
+        {/* Link columns — no divider lines, clean spacing */}
+        <div className="grid grid-cols-3 gap-3 md:gap-8">
+          {BLOCKS.map((block) => (
+            <div key={block.title}>
               <div className="flex items-center gap-1.5 mb-3">
                 <block.icon size={12} className="text-accent hidden md:block" />
                 <span className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70">{block.title}</span>
@@ -115,8 +115,8 @@ export function PublicFooter() {
         </div>
 
         {/* Compliance line */}
-        <p className="text-[11px] text-muted leading-relaxed mt-6 pt-6 border-t border-white/8">
-          <span className="font-semibold text-white/70">18+ only.</span> Gambling can be addictive — please play
+        <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-white/8">
+          <span className="font-semibold text-white/60">18+ only.</span> Gambling can be addictive — please play
           responsibly. {siteName || "WINORA"} is a licensed affiliate marketing platform and does not itself accept
           wagers or hold client funds. Promo codes are issued by third-party licensed operators.
         </p>

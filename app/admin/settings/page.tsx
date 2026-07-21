@@ -170,6 +170,8 @@ function BrandImageField({
   boxClassName,
   onUpload,
   onRemove,
+  position,
+  onPositionChange,
 }: {
   currentUrl: string | null;
   uploading: boolean;
@@ -178,25 +180,56 @@ function BrandImageField({
   boxClassName: string;
   onUpload: (file: File) => void;
   onRemove?: () => void;
+  position?: { x: number; y: number };
+  onPositionChange?: (pos: { x: number; y: number }) => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
+  const [panning, setPanning] = useState(false);
   const inputId = React.useId();
+  const boxRef = React.useRef<HTMLDivElement>(null);
+  const pos = position ?? { x: 50, y: 50 };
 
   const handleFiles = (files: FileList | null) => {
     const file = files?.[0];
     if (file) onUpload(file);
   };
 
+  const updatePositionFromPointer = (clientX: number, clientY: number) => {
+    if (!boxRef.current || !onPositionChange) return;
+    const rect = boxRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+    onPositionChange({ x, y });
+  };
+
   return (
     <div>
       <label
         htmlFor={inputId}
+        ref={boxRef}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
-        className={`relative flex items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${boxClassName} ${
+        onMouseDown={(e) => {
+          if (!currentUrl || !onPositionChange) return;
+          e.preventDefault();
+          setPanning(true);
+          updatePositionFromPointer(e.clientX, e.clientY);
+        }}
+        onMouseMove={(e) => { if (panning) updatePositionFromPointer(e.clientX, e.clientY); }}
+        onMouseUp={() => setPanning(false)}
+        onMouseLeave={() => setPanning(false)}
+        onTouchStart={(e) => {
+          if (!currentUrl || !onPositionChange) return;
+          setPanning(true);
+          const t = e.touches[0];
+          updatePositionFromPointer(t.clientX, t.clientY);
+        }}
+        onTouchMove={(e) => { if (panning) { const t = e.touches[0]; updatePositionFromPointer(t.clientX, t.clientY); } }}
+        onTouchEnd={() => setPanning(false)}
+        className={`relative flex items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden select-none ${boxClassName} ${
           dragOver ? "border-accent bg-accent/10" : "border-white/15 hover:border-white/30"
-        }`}
+        } ${currentUrl && onPositionChange ? "cursor-move" : ""}`}
         style={
           currentUrl
             ? {
@@ -212,11 +245,26 @@ function BrandImageField({
         {uploading ? (
           <Loader2 size={20} className="animate-spin text-accent" />
         ) : currentUrl ? (
-          <img src={currentUrl} alt="" className="max-w-full max-h-full object-contain p-2" />
+          onPositionChange ? (
+            <img
+              src={currentUrl}
+              alt=""
+              draggable={false}
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+            />
+          ) : (
+            <img src={currentUrl} alt="" className="max-w-full max-h-full object-contain p-2" />
+          )
         ) : (
           <div className="flex flex-col items-center gap-1.5 text-center px-3">
             <Upload size={18} className="text-muted" />
             <span className="text-[11px] text-muted leading-snug">Bosing yoki rasmni shu yerga tashlang</span>
+          </div>
+        )}
+        {currentUrl && onPositionChange && !uploading && (
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-black/60 text-[9px] text-white/80 pointer-events-none">
+            Surib joylashtiring
           </div>
         )}
         <input id={inputId} type="file" accept={accept} className="hidden" disabled={uploading}
@@ -329,10 +377,12 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
             currentUrl={branding.hero_image_media_id_url ?? null}
             uploading={heroUploading}
             accept="image/png,image/webp"
-            recommendedText="Shaffof fonli PNG, taxminan 1200×1600px, 3MB dan kichik. Kompyuter va telefonda avtomatik moslashadi."
+            recommendedText="Shaffof fonli PNG, taxminan 1200×1600px, 3MB dan kichik. Surib, rasmning qaysi qismi ko'rinishini o'zingiz belgilang."
             boxClassName="w-full aspect-[3/4]"
             onUpload={(file) => handleUpload(file, "hero_image_media_id", setHeroUploading)}
-            onRemove={() => updateLocal("branding", { hero_image_media_id: null, hero_image_media_id_url: null })}
+            onRemove={() => updateLocal("branding", { hero_image_media_id: null, hero_image_media_id_url: null, hero_image_position: null })}
+            position={branding.hero_image_position ?? { x: 50, y: 50 }}
+            onPositionChange={(pos) => updateLocal("branding", { hero_image_position: pos })}
           />
         </div>
       </Field>

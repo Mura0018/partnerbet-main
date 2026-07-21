@@ -499,7 +499,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="grid grid-cols-4 gap-3 md:gap-8">
+          <div className="grid grid-cols-3 gap-3 md:gap-8">
             <div>
               <div className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70 mb-3">Platform</div>
               <div className="flex flex-col gap-2 md:gap-2.5 text-[11px] md:text-[13px]">
@@ -517,7 +517,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="pl-3 md:pl-8 border-l border-white/8">
+            <div>
               <div className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70 mb-3">Company</div>
               <div className="flex flex-col gap-2 md:gap-2.5 text-[11px] md:text-[13px]">
                 <Link href="/about" className="text-muted hover:text-white transition-colors">About Us</Link>
@@ -530,7 +530,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="pl-3 md:pl-8 border-l border-white/8">
+            <div>
               <div className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70 mb-3">Legal</div>
               <div className="flex flex-col gap-2 md:gap-2.5 text-[11px] md:text-[13px]">
                 <Link href="/legal/terms" className="text-muted hover:text-white transition-colors">Terms & Conditions</Link>
@@ -541,16 +541,13 @@ export default function Home() {
                 <Link href="/legal/dmca" className="text-muted hover:text-white transition-colors">DMCA</Link>
               </div>
             </div>
-
-            <div className="pl-3 md:pl-8 border-l border-white/8">
-              <div className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70 mb-3">Muhim</div>
-              <p className="text-muted leading-relaxed text-[10px] md:text-[12px]">
-                18+ only. Gambling can be addictive — please play responsibly.{" "}
-                {siteSettings.identity.site_name || "WINORA"} is a licensed affiliate marketing platform and does not
-                itself accept wagers or hold client funds. Promo codes are issued by third-party licensed operators.
-              </p>
-            </div>
           </div>
+
+          <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-white/8">
+            <span className="font-semibold text-white/60">18+ only.</span> Gambling can be addictive — please play
+            responsibly. {siteSettings.identity.site_name || "WINORA"} is a licensed affiliate marketing platform and
+            does not itself accept wagers or hold client funds. Promo codes are issued by third-party licensed operators.
+          </p>
 
           <div className="mt-6 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
             <span>© {new Date().getFullYear()} {siteSettings.identity.site_name || "WINORA"}. Barcha huquqlar himoyalangan.</span>
