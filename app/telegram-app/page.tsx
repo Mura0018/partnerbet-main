@@ -27,6 +27,7 @@ type Order = {
   created_at: string;
 };
 
+import { useHistoryNav } from "@/lib/nav/useHistoryNav";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { BrandedLoader } from "@/lib/ui/BrandedLoader";
@@ -315,6 +316,18 @@ function PlatformField({
 
 export default function TelegramAppPage() {
   const [screen, setScreen] = useState<Screen>("loading");
+  // Telefon orqaga tugmasi: ichki ekrandan menyuga qaytaradi.
+  useHistoryNav(
+    screen,
+    screen === "menu" || screen === "auth" || screen === "loading",
+    () => {
+      setScreen((cur) => {
+        if (cur === "topup" || cur === "withdraw" || cur === "orders" || cur === "support" || cur === "order-success") return "menu";
+        if (cur === "forgot-password") return "auth";
+        return cur;
+      });
+    }
+  );
   const [mode, setMode] = useState<"login" | "register">("login");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
