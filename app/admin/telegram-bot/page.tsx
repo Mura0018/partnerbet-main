@@ -121,7 +121,12 @@ function ChatTab() {
     setSending(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await supabase.from("team_chat_messages").insert({ sender_id: user.id, message: text.trim(), reply_to_id: replyTo?.id ?? null });
+      const { error } = await supabase.from("team_chat_messages").insert({ sender_id: user.id, message: text.trim(), reply_to_id: replyTo?.id ?? null });
+      if (error) {
+        alert("Xabar yuborilmadi: " + error.message);
+        setSending(false);
+        return;
+      }
       setText("");
       setReplyTo(null);
       await load();
