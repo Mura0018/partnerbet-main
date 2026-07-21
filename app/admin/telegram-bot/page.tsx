@@ -54,7 +54,7 @@ function ChatTab() {
   const load = async () => {
     const { data } = await supabase
       .from("team_chat_messages")
-      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, is_system, profiles(full_name, display_name, avatar_url, is_online, roles(key))")
+      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, is_system, profiles!sender_id(full_name, display_name, avatar_url, is_online, roles(key))")
       .order("created_at", { ascending: true })
       .limit(100);
     setMessages((data as any[]) ?? []);
