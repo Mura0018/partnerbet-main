@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
+import { useHistoryNav } from "@/lib/nav/useHistoryNav";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
@@ -1435,6 +1436,12 @@ function SupportTab() {
   const [threads, setThreads] = useState<SupportThread[]>([]);
   const [archivedIds, setArchivedIds] = useState<Set<string>>(new Set());
   const [activeCustomer, setActiveCustomer] = useState<SupportThread | null>(null);
+  // Brauzer/telefon orqaga tugmasi: ochiq chatni yopadi (ro'yxatga qaytadi).
+  useHistoryNav(
+    activeCustomer ? "chat-open" : "list",
+    !activeCustomer,
+    () => { setActiveCustomer(null); }
+  );
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
