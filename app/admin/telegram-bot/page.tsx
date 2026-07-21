@@ -1273,7 +1273,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert("Yakunlash xatosi: " + (data.error || res.status));
+        alert("Xato: " + JSON.stringify(data));
       } else {
         alert("Yakunlash so'rovi yuborildi!");
       }
