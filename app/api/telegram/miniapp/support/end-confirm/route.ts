@@ -52,6 +52,15 @@ export async function POST(req: NextRequest) {
       updated_at: nowIso,
     }).eq("customer_id", customerId);
   } else {
+    // Mijoz "Yo'q, savolim bor" bosdi — suhbat davom etadi, tasdiq xabari.
+    if (opId) {
+      await supabase.from("telegram_support_messages").insert({
+        customer_id: customerId,
+        sender: "operator",
+        operator_id: opId,
+        message: "Albatta! Savolingizni yozing, yordam beramiz. \ud83d\udc4d",
+      });
+    }
     await supabase.from("telegram_support_threads").update({
       status: "open",
       updated_at: nowIso,
