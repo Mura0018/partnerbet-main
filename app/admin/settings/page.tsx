@@ -186,7 +186,7 @@ function BrandImageField({
   const [dragOver, setDragOver] = useState(false);
   const [panning, setPanning] = useState(false);
   const inputId = React.useId();
-  const boxRef = React.useRef<HTMLDivElement>(null);
+  const boxRef = React.useRef<HTMLLabelElement>(null);
   const pos = position ?? { x: 50, y: 50 };
 
   const handleFiles = (files: FileList | null) => {
