@@ -185,17 +185,57 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
 
   const [heroUploading, setHeroUploading] = useState(false);
 
+  const removeLogo = () => {
+    updateLocal("branding", { logo_media_id: null, logo_media_id_url: null });
+  };
+
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
       <Field label="Logotip">
+        <p className="text-[12px] text-muted mb-3 leading-relaxed">
+          Bu yerga qo'ygan logotip <span className="text-white font-medium">bir joyda</span> o'zgaradi va{" "}
+          <span className="text-white font-medium">hamma joyda</span> ko'rinadi — admin panelning chap menyusida
+          (barcha xodimlar: operator, admin, super admin — kim bo'lishidan qat'iy nazar) va saytning o'zida (yuqori
+          menyu). Bu — profil rasmingiz emas, butun loyihaning brend logotipi.
+        </p>
+        <div className="flex items-center gap-4 mb-3">
+          {/* Preview: where this logo shows up */}
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-bg-elevated border border-white/10">
+              {branding.logo_media_id_url ? (
+                <img src={branding.logo_media_id_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
+              ) : (
+                <div className="w-5 h-5 rounded bg-gradient-to-br from-accent to-accent-dim" />
+              )}
+              <span className="text-[10px] font-bold">WINORA</span>
+            </div>
+            <span className="text-[9px] text-muted">Admin panel</span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-bg-elevated border border-white/10">
+              {branding.logo_media_id_url ? (
+                <img src={branding.logo_media_id_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
+              ) : (
+                <div className="w-5 h-5 rounded bg-gradient-to-br from-accent to-accent-dim" />
+              )}
+              <span className="text-[10px] font-bold">WINORA</span>
+            </div>
+            <span className="text-[9px] text-muted">Sayt</span>
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           {branding.logo_media_id_url && <img src={branding.logo_media_id_url} alt="Logo" className="w-10 h-10 rounded-lg object-cover border border-white/10" />}
           <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5">
             {logoUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            Yuklash
+            {branding.logo_media_id_url ? "Almashtirish" : "Yuklash"}
             <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" disabled={logoUploading}
               onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "logo_media_id", setLogoUploading)} />
           </label>
+          {branding.logo_media_id_url && (
+            <button type="button" onClick={removeLogo} className="text-[12px] text-muted hover:text-[#FF6B85] transition-colors">
+              O'chirish
+            </button>
+          )}
         </div>
       </Field>
       <Field label="Favicon">
