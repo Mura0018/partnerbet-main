@@ -29,6 +29,7 @@ type Order = {
 
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { PasswordInput } from "@/lib/ui/PasswordInput";
+import { BrandedLoader } from "@/lib/ui/BrandedLoader";
 
 type SupportMessage = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
@@ -781,8 +782,11 @@ export default function TelegramAppPage() {
 
   if (screen === "loading") {
     return (
-      <div className={`${bgCls} flex items-center justify-center`}>
-        <Loader2 size={28} className="text-accent animate-spin" />
+      <div className={`${bgCls} flex items-center justify-center relative`}>
+        <FloatingAmbience />
+        <div className="relative z-10">
+          <BrandedLoader />
+        </div>
       </div>
     );
   }
