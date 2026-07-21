@@ -985,8 +985,8 @@ export default function TelegramAppPage() {
           <PlatformField platform={wdPlatform} setPlatform={setWdPlatform} customPlatform={wdCustomPlatform} setCustomPlatform={setWdCustomPlatform} />
           <AccountIdVerifyField accountId={wdAccountId} setAccountId={setWdAccountId} getInitData={getInitData} />
           <div className="mb-3.5">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">4 xonali pul yechish kodi</label>
-            <input className={inputCls} placeholder="Masalan: 1234" value={wdCode} onChange={(e) => setWdCode(e.target.value)} inputMode="numeric" />
+            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Pul yechish kodi</label>
+            <PasswordInput className={inputCls} placeholder="Masalan: A1b2" value={wdCode} onChange={(e) => setWdCode(e.target.value)} />
           </div>
           <div className="mb-3.5">
             <label className="block text-[12px] text-[#93a5ba] mb-1.5">Summa</label>
