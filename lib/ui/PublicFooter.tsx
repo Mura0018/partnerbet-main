@@ -54,17 +54,17 @@ export function PublicFooter() {
 
   return (
     <footer className="border-t border-white/8 mt-20 bg-white/[0.015]">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 py-12">
-        {/* Brand block — full width, sets the tone */}
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 mb-5">
-          <div className="font-extrabold text-[18px] tracking-tight mb-2">
+      <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
+        {/* Brand strip */}
+        <div className="pb-6 mb-6 border-b border-white/8">
+          <div className="font-extrabold text-[17px] tracking-tight mb-2">
             <BrandName name={siteName} />
           </div>
-          <p className="text-muted text-[13px] leading-relaxed max-w-xl">
+          <p className="text-muted text-[12px] leading-relaxed max-w-xl">
             {footerDescription || "Premium football media & affiliate platform."}
           </p>
           {Object.values(social).some(Boolean) && (
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-wrap gap-2 mt-3">
               {Object.entries(social)
                 .filter(([, url]) => url)
                 .map(([platform, url]) => (
@@ -73,7 +73,7 @@ export function PublicFooter() {
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-full text-[12px] font-medium bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 transition-colors capitalize"
+                    className="text-[11px] font-medium text-muted hover:text-accent transition-colors capitalize"
                   >
                     {platform}
                   </a>
@@ -82,20 +82,20 @@ export function PublicFooter() {
           )}
         </div>
 
-        {/* Link blocks — same 2-up/4-up card grid on mobile and desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          {BLOCKS.map((block) => (
-            <div key={block.title} className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
-              <div className="flex items-center gap-2 mb-3.5">
-                <block.icon size={14} className="text-accent" />
-                <span className="font-semibold text-[12px] uppercase tracking-wide text-white/70">{block.title}</span>
+        {/* Link columns — same 4-in-a-row layout on mobile and desktop, separated by thin rules instead of boxes */}
+        <div className="grid grid-cols-4 gap-3 md:gap-8">
+          {BLOCKS.map((block, i) => (
+            <div key={block.title} className={i > 0 ? "pl-3 md:pl-8 border-l border-white/8" : ""}>
+              <div className="flex items-center gap-1.5 mb-3">
+                <block.icon size={12} className="text-accent hidden md:block" />
+                <span className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70">{block.title}</span>
               </div>
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2 md:gap-2.5">
                 {block.links.map((link) => {
                   if (link.href === "/contact" && !contactEmail) {
                     return (
-                      <span key={link.href} title="Tez orada" className="flex items-center gap-2 text-[13px] text-[#3d4d5f] cursor-not-allowed select-none">
-                        <link.icon size={13} /> {link.label}
+                      <span key={link.href} title="Tez orada" className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-[#3d4d5f] cursor-not-allowed select-none">
+                        <link.icon size={12} className="hidden md:block shrink-0" /> {link.label}
                       </span>
                     );
                   }
@@ -103,25 +103,23 @@ export function PublicFooter() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="flex items-center gap-2 text-[13px] text-muted hover:text-white transition-colors"
+                      className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-muted hover:text-white transition-colors"
                     >
-                      <link.icon size={13} className="shrink-0" /> <span className="leading-tight">{link.label}</span>
+                      <link.icon size={12} className="hidden md:block shrink-0" /> <span className="leading-tight">{link.label}</span>
                     </Link>
                   );
                 })}
               </div>
             </div>
           ))}
-
-          {/* Compliance block — its own card, same grid rhythm as the others */}
-          <div className="col-span-2 md:col-span-4 rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
-            <p className="text-[12px] text-muted leading-relaxed">
-              <span className="font-semibold text-white/70">18+ only.</span> Gambling can be addictive — please play
-              responsibly. {siteName || "WINORA"} is a licensed affiliate marketing platform and does not itself
-              accept wagers or hold client funds. Promo codes are issued by third-party licensed operators.
-            </p>
-          </div>
         </div>
+
+        {/* Compliance line */}
+        <p className="text-[11px] text-muted leading-relaxed mt-6 pt-6 border-t border-white/8">
+          <span className="font-semibold text-white/70">18+ only.</span> Gambling can be addictive — please play
+          responsibly. {siteName || "WINORA"} is a licensed affiliate marketing platform and does not itself accept
+          wagers or hold client funds. Promo codes are issued by third-party licensed operators.
+        </p>
 
         {/* Bottom bar */}
         <div className="mt-6 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">

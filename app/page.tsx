@@ -480,24 +480,18 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-white/8 mt-4 bg-white/[0.015]">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 py-12">
-          <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 mb-5">
-            <div className="font-extrabold text-[18px] tracking-tight mb-2">
+        <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
+          <div className="pb-6 mb-6 border-b border-white/8">
+            <div className="font-extrabold text-[17px] tracking-tight mb-2">
               <BrandName name={siteSettings.identity.site_name} />
             </div>
-            <p className="text-muted text-[13px] leading-relaxed max-w-xl">
+            <p className="text-muted text-[12px] leading-relaxed max-w-xl">
               {siteSettings.footer.description || "Premium football media & affiliate platform."}
             </p>
             {Object.values(siteSettings.social).some(Boolean) && (
-              <div className="flex flex-wrap gap-2 mt-4">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {Object.entries(siteSettings.social).filter(([, url]) => url).map(([platform, url]) => (
-                  <a
-                    key={platform}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-full text-[12px] font-medium bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 transition-colors capitalize"
-                  >
+                  <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-muted hover:text-accent transition-colors capitalize">
                     {platform}
                   </a>
                 ))}
@@ -505,10 +499,10 @@ export default function Home() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
-              <div className="font-semibold text-[12px] uppercase tracking-wide text-white/70 mb-3.5">Platform</div>
-              <div className="flex flex-col gap-2.5 text-[13px]">
+          <div className="grid grid-cols-4 gap-3 md:gap-8">
+            <div>
+              <div className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70 mb-3">Platform</div>
+              <div className="flex flex-col gap-2 md:gap-2.5 text-[11px] md:text-[13px]">
                 <button onClick={() => scrollTo("insights")} className="text-left text-muted hover:text-white transition-colors">Insights</button>
                 <button onClick={() => scrollTo("live-scores")} className="text-left text-muted hover:text-white transition-colors">Live Scores</button>
                 <Link href="/football" className="text-muted hover:text-white transition-colors">Football Center</Link>
@@ -517,15 +511,15 @@ export default function Home() {
                 <Link href="/apk" className="text-muted hover:text-white transition-colors">Download App</Link>
                 <Link href="/topup" className="flex items-center gap-1.5 text-muted hover:text-white transition-colors">
                   Top-Up
-                  <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] border border-[#4ADE80]/30">Yangi</span>
+                  <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] border border-[#4ADE80]/30">Yangi</span>
                 </Link>
                 <Link href="/support" className="text-muted hover:text-white transition-colors">Support Us</Link>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
-              <div className="font-semibold text-[12px] uppercase tracking-wide text-white/70 mb-3.5">Company</div>
-              <div className="flex flex-col gap-2.5 text-[13px]">
+            <div className="pl-3 md:pl-8 border-l border-white/8">
+              <div className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70 mb-3">Company</div>
+              <div className="flex flex-col gap-2 md:gap-2.5 text-[11px] md:text-[13px]">
                 <Link href="/about" className="text-muted hover:text-white transition-colors">About Us</Link>
                 <Link href="/faq" className="text-muted hover:text-white transition-colors">FAQ</Link>
                 {siteSettings.contact.email ? (
@@ -536,9 +530,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
-              <div className="font-semibold text-[12px] uppercase tracking-wide text-white/70 mb-3.5">Legal</div>
-              <div className="flex flex-col gap-2.5 text-[13px]">
+            <div className="pl-3 md:pl-8 border-l border-white/8">
+              <div className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70 mb-3">Legal</div>
+              <div className="flex flex-col gap-2 md:gap-2.5 text-[11px] md:text-[13px]">
                 <Link href="/legal/terms" className="text-muted hover:text-white transition-colors">Terms & Conditions</Link>
                 <Link href="/legal/privacy-policy" className="text-muted hover:text-white transition-colors">Privacy Policy</Link>
                 <Link href="/legal/cookie-policy" className="text-muted hover:text-white transition-colors">Cookie Policy</Link>
@@ -548,9 +542,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="col-span-2 md:col-span-1 rounded-2xl border border-white/8 bg-white/[0.02] p-4 md:p-5">
-              <div className="font-semibold text-[12px] uppercase tracking-wide text-white/70 mb-3.5">Muhim</div>
-              <p className="text-muted leading-relaxed text-[12px]">
+            <div className="pl-3 md:pl-8 border-l border-white/8">
+              <div className="font-semibold text-[10px] md:text-[12px] uppercase tracking-wide text-white/70 mb-3">Muhim</div>
+              <p className="text-muted leading-relaxed text-[10px] md:text-[12px]">
                 18+ only. Gambling can be addictive — please play responsibly.{" "}
                 {siteSettings.identity.site_name || "WINORA"} is a licensed affiliate marketing platform and does not
                 itself accept wagers or hold client funds. Promo codes are issued by third-party licensed operators.
