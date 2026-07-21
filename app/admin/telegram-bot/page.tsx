@@ -1266,11 +1266,17 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
     if (!confirm("Suhbatni yakunlashni tasdiqlaysizmi? Mijozga tasdiqlash so'rovi yuboriladi.")) return;
     setArchiving(true);
     try {
-      await fetch("/api/admin/telegram-orders/support-end", {
+      const res = await fetch("/api/admin/telegram-orders/support-end", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert("Yakunlash xatosi: " + (data.error || res.status));
+      } else {
+        alert("Yakunlash so'rovi yuborildi!");
+      }
     } finally {
       setArchiving(false);
     }
