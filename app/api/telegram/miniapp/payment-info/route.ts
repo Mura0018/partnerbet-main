@@ -53,15 +53,28 @@ function pickFair(rows: MethodRow[], type: string, busyScore: Record<string, num
 export async function GET() {
   const supabase = createAdminClient();
 
-  const [{ data: methodsData }, { data: pendingData }] = await Promise.all([
+  const [{ data: methodsData }, { data: pendingData }, { data: onlineData }] = await Promise.all([
     supabase
       .from("telegram_operator_payment_methods")
       .select("id, operator_id, method_type, account_number, holder_name, usage_count")
       .eq("is_active", true),
     supabase.from("telegram_orders").select("claimed_by").eq("status", "pending").not("claimed_by", "is", null),
+    supabase.from("profiles").select("id, is_online"),
   ]);
 
-  const rows = (methodsData as MethodRow[]) ?? [];
+  const onlineIds = new Set((onlineData ?? []).filter((p) => p.is_online).map((p) => p.id));
+  let rows = (methodsData as MethodRow[]) ?? [];
+
+  // Prefer operators who marked themselves "Faol" — but if that would
+  // leave a method type with zero candidates (e.g. everyone forgot to
+  // toggle back on), fall back to considering everyone rather than
+  // showing the customer nothing at all.
+  for (const type of ["card", "click", "payme", "crypto"]) {
+    const onlineOnly = rows.filter((r) => r.method_type !== type || onlineIds.has(r.operator_id));
+    const hasOnlineCandidate = rows.some((r) => r.method_type === type && onlineIds.has(r.operator_id));
+    if (hasOnlineCandidate) rows = rows.filter((r) => r.method_type !== type || onlineIds.has(r.operator_id));
+  }
+
   const busyScore: Record<string, number> = {};
   for (const row of pendingData ?? []) {
     if (row.claimed_by) busyScore[row.claimed_by] = (busyScore[row.claimed_by] ?? 0) + 1;

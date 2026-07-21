@@ -32,7 +32,8 @@ type ChatMessage = {
   created_at: string;
   sender_id: string;
   reply_to_id: string | null;
-  profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; roles: { key: string } | null } | null;
+  is_system: boolean;
+  profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; is_online: boolean | null; roles: { key: string } | null } | null;
 };
 
 function ChatTab() {
@@ -51,10 +52,42 @@ function ChatTab() {
   const load = async () => {
     const { data } = await supabase
       .from("team_chat_messages")
-      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, profiles(full_name, display_name, avatar_url, roles(key))")
+      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, is_system, profiles(full_name, display_name, avatar_url, is_online, roles(key))")
       .order("created_at", { ascending: true })
       .limit(100);
     setMessages((data as any[]) ?? []);
+    await markSeenAndClearSystemMessages((data as any[]) ?? []);
+  };
+
+  // System notices (operator status changes) are meant to be transient —
+  // once every active staff member has opened the chat and seen one, it
+  // clears itself so the thread doesn't fill up with stale "X went
+  // offline" notes. Marks the current viewer as having seen each system
+  // message present, then — if that brings the seen-count up to the full
+  // active-staff count — deletes it (any staff member's RLS lets them
+  // clear a system message, not just whoever posted it).
+  const markSeenAndClearSystemMessages = async (rows: ChatMessage[]) => {
+    const systemMsgs = rows.filter((m) => m.is_system);
+    if (systemMsgs.length === 0) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    for (const m of systemMsgs) {
+      await supabase.from("team_chat_message_reads").upsert(
+        { message_id: m.id, user_id: user.id },
+        { onConflict: "message_id,user_id" }
+      );
+    }
+
+    const { count: activeStaffCount } = await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_active", true);
+    if (!activeStaffCount) return;
+
+    for (const m of systemMsgs) {
+      const { count: seenCount } = await supabase.from("team_chat_message_reads").select("user_id", { count: "exact", head: true }).eq("message_id", m.id);
+      if ((seenCount ?? 0) >= activeStaffCount) {
+        await supabase.from("team_chat_messages").delete().eq("id", m.id);
+      }
+    }
   };
 
   useEffect(() => {
@@ -149,12 +182,20 @@ function ChatTab() {
           <input
             autoFocus
             className="flex-1 bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-[12px] outline-none focus:border-accent"
-            placeholder="Xabarlarni qidirish..."
+            placeholder="Xabar yoki fayl nomini qidirish..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         ) : (
-          <span className="text-[12px] text-muted flex-1">Jamoa chati</span>
+          <div className="flex-1 flex items-center justify-center gap-2">
+            <span
+              className="w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/15"
+              style={{ background: "linear-gradient(135deg, rgba(61,127,255,0.25), rgba(61,127,255,0.08))" }}
+            >
+              <Lock size={12} className="text-[#7db8ff]" />
+            </span>
+            <span className="text-[13px] font-bold"><span className="text-white">Maxfiy</span> <span className="text-accent">chat</span></span>
+          </div>
         )}
         <button
           onClick={() => { setShowSearch((v) => !v); setSearch(""); }}
@@ -163,7 +204,19 @@ function ChatTab() {
         >
           <Search size={15} />
         </button>
+        <button
+          onClick={() => setShowThemePicker((v) => !v)}
+          className="p-1.5 rounded-md hover:bg-white/10 text-muted shrink-0"
+          aria-label="Mavzu"
+        >
+          <Palette size={15} />
+        </button>
       </div>
+      {showThemePicker && (
+        <div className="px-3 py-2.5 border-b border-white/8">
+          <ThemePicker value={myTheme} onChange={changeMyTheme} />
+        </div>
+      )}
       <div
         className="flex-1 overflow-y-auto p-3 space-y-2 min-w-0 min-h-0"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
@@ -174,6 +227,15 @@ function ChatTab() {
           </p>
         )}
         {filtered.map((m) => {
+          if (m.is_system) {
+            return (
+              <div key={m.id} className="flex justify-center py-1">
+                <span className="text-[10.5px] text-[#93a5ba] bg-white/[0.05] border border-white/8 rounded-full px-3 py-1">
+                  {m.message}
+                </span>
+              </div>
+            );
+          }
           const roleKey = m.profiles?.roles?.key ?? "user";
           const color = ROLE_COLOR[roleKey] ?? "#5b6f85";
           const name = m.profiles?.display_name || m.profiles?.full_name || "?";
@@ -184,16 +246,22 @@ function ChatTab() {
           const quotedName = quoted ? (quoted.sender_id === currentUserId ? "Siz" : quoted.profiles?.display_name || quoted.profiles?.full_name || "?") : null;
           return (
             <div key={m.id} className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
-              {m.profiles?.avatar_url ? (
-                <img src={m.profiles.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover border shrink-0" style={{ borderColor: color }} />
-              ) : (
-                <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border"
-                  style={{ borderColor: color, color, background: `${color}1a` }}
-                >
-                  {name.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <div className="relative shrink-0">
+                {m.profiles?.avatar_url ? (
+                  <img src={m.profiles.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover border" style={{ borderColor: color }} />
+                ) : (
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border"
+                    style={{ borderColor: color, color, background: `${color}1a` }}
+                  >
+                    {name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span
+                  className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#0a1224] ${m.profiles?.is_online ? "bg-[#4ADE80]" : "bg-[#5b6f85]"}`}
+                  title={m.profiles?.is_online ? "Faol" : "Band"}
+                />
+              </div>
               <div className={`min-w-0 max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                 <div className={`flex items-baseline gap-1.5 mb-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
                   <span className="text-[10px] font-bold" style={{ color }}>{isMe ? "Siz" : name}</span>
@@ -288,6 +356,7 @@ type OperatorRow = {
   full_name: string | null;
   is_active: boolean;
   telegram_region: string | null;
+  is_online: boolean;
 };
 
 const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
@@ -302,7 +371,7 @@ function OperatorsTab() {
     setLoading(true);
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, is_active, telegram_region, roles!inner(key)")
+      .select("id, full_name, is_active, telegram_region, is_online, roles!inner(key)")
       .eq("roles.key", "operator")
       .order("full_name");
     setOperators((data as any[]) ?? []);
@@ -341,9 +410,13 @@ function OperatorsTab() {
           {operators.map((op) => (
             <div key={op.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4">
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold">{op.full_name || "(ism kiritilmagan)"}</div>
-                <div className={`text-[11px] mt-0.5 ${op.is_active ? "text-[#4ADE80]" : "text-[#5b6f85]"}`}>
-                  {op.is_active ? "Faol" : "O'chirilgan"}
+                <div className="text-[13px] font-semibold flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${op.is_online ? "bg-[#4ADE80]" : "bg-[#5b6f85]"}`} />
+                  {op.full_name || "(ism kiritilmagan)"}
+                </div>
+                <div className="text-[11px] mt-0.5 text-muted">
+                  Ish holati: <span className={op.is_online ? "text-[#4ADE80]" : "text-[#F4C76A]"}>{op.is_online ? "Faol" : "Band"}</span>
+                  {" · "}Hisob: <span className={op.is_active ? "text-[#4ADE80]" : "text-[#5b6f85]"}>{op.is_active ? "Yoqilgan" : "O'chirilgan"}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -702,6 +775,62 @@ function LimitsEditor() {
   );
 }
 
+function MyStatusToggle() {
+  const [isOnline, setIsOnline] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setLoading(false); return; }
+      const { data } = await supabase.from("profiles").select("is_online, display_name, full_name").eq("id", user.id).maybeSingle();
+      if (data) setIsOnline(data.is_online ?? true);
+      setLoading(false);
+    });
+  }, []);
+
+  const toggle = async () => {
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSaving(false); return; }
+    const next = !isOnline;
+    const { data: profile } = await supabase.from("profiles").select("display_name, full_name").eq("id", user.id).maybeSingle();
+    const name = profile?.display_name || profile?.full_name || "Operator";
+
+    await supabase.from("profiles").update({ is_online: next }).eq("id", user.id);
+    await supabase.from("team_chat_messages").insert({
+      sender_id: user.id,
+      message: next ? `🟢 ${name} endi faol.` : `🔴 ${name} band holatiga o'tdi.`,
+      is_system: true,
+    });
+    setIsOnline(next);
+    setSaving(false);
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className={`mb-4 rounded-lg px-3.5 py-2.5 flex items-center justify-between gap-3 border ${
+      isOnline ? "bg-[#4ADE80]/10 border-[#4ADE80]/25" : "bg-[#F4C76A]/10 border-[#F4C76A]/25"
+    }`}>
+      <div className="flex items-center gap-2">
+        <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-[#4ADE80]" : "bg-[#F4C76A]"}`} />
+        <span className={`text-[12px] ${isOnline ? "text-[#4ADE80]" : "text-[#F4C76A]"}`}>
+          Ish holatingiz: <span className="font-semibold">{isOnline ? "Faol" : "Band"}</span>
+        </span>
+      </div>
+      <button
+        onClick={toggle}
+        disabled={saving}
+        className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
+      >
+        {saving ? "…" : isOnline ? "Band deb belgilash" : "Faol deb belgilash"}
+      </button>
+    </div>
+  );
+}
+
 function TelegramLinkWidget() {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [code, setCode] = useState("");
@@ -842,6 +971,7 @@ function OrdersTab() {
 
   return (
     <div>
+      <MyStatusToggle />
       <TelegramLinkWidget />
       <Can permission="telegram_operators.manage"><LimitsEditor /></Can>
       <CashdeskBalanceBadge />
