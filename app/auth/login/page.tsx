@@ -7,6 +7,7 @@ import { Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { AuthShell, FieldError, FieldSuccess, inputClass, submitButtonClass } from "@/lib/auth/AuthShell";
+import { PasswordInput } from "@/lib/ui/PasswordInput";
 
 function LoginForm() {
   const router = useRouter();
@@ -184,9 +185,8 @@ function LoginForm() {
 
         <label className="block text-[12px] text-muted mb-1.5">{t("common.password")}</label>
         <div className="relative mb-2">
-          <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
-          <input
-            type="password"
+          <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85] z-10" />
+          <PasswordInput
             required
             autoComplete="current-password"
             value={password}
@@ -198,7 +198,12 @@ function LoginForm() {
 
         <div className="flex items-center justify-between mt-3">
           <label className="flex items-center gap-2 text-[12px] text-muted cursor-pointer">
-            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-3.5 h-3.5 rounded accent-accent cursor-pointer"
+            />
             {t("login.rememberMe")}
           </label>
           <Link href="/auth/forgot-password" className="text-[12px] text-accent hover:underline">

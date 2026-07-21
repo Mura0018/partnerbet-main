@@ -8,6 +8,7 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { checkPasswordStrength } from "@/lib/auth/password";
 import { AuthShell, FieldError, FieldSuccess, inputClass, submitButtonClass } from "@/lib/auth/AuthShell";
 import { PasswordStrengthMeter } from "@/lib/auth/PasswordStrengthMeter";
+import { PasswordInput } from "@/lib/ui/PasswordInput";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -84,15 +85,15 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit}>
           <label className="block text-[12px] text-muted mb-1.5">{t("resetPassword.newPassword")}</label>
           <div className="relative">
-            <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
-            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-9`} placeholder="••••••••" />
+            <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85] z-10" />
+            <PasswordInput required value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-9`} placeholder="••••••••" />
           </div>
           <PasswordStrengthMeter password={password} />
 
           <label className="block text-[12px] text-muted mb-1.5 mt-4">{t("common.confirmPassword")}</label>
           <div className="relative">
-            <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
-            <input type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`${inputClass} pl-9`} placeholder="••••••••" />
+            <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85] z-10" />
+            <PasswordInput required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`${inputClass} pl-9`} placeholder="••••••••" />
           </div>
 
           <FieldError>{error}</FieldError>

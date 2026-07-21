@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ShieldCheck, ShieldOff, Pencil, Check, X, Plus, Loader2, Trash2 } from "lucide-react";
+import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
@@ -126,8 +127,7 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
         </div>
         <div className="mb-3">
           <label className="block text-[12px] text-muted mb-1">Parol (kamida 8 belgi)</label>
-          <input
-            type="password"
+          <PasswordInput
             className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
             value={password} onChange={(e) => setPassword(e.target.value)}
           />

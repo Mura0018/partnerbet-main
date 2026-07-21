@@ -28,6 +28,7 @@ type Order = {
 };
 
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
+import { PasswordInput } from "@/lib/ui/PasswordInput";
 
 type SupportMessage = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
@@ -815,7 +816,7 @@ export default function TelegramAppPage() {
               <input className={inputCls} placeholder="Ism-familiya (ixtiyoriy)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             )}
             <input className={inputCls} placeholder="Telefon raqami" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
-            <input className={inputCls} placeholder="Parol" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput className={inputCls} placeholder="Parol" value={password} onChange={(e) => setPassword(e.target.value)} />
 
             {error && <p className="text-[12px] text-[#FF6B85] text-center">{error}</p>}
 
@@ -866,7 +867,7 @@ export default function TelegramAppPage() {
             <form onSubmit={confirmResetPassword} className="space-y-3.5">
               {fpInfo && <p className="text-[12px] text-[#4ADE80] text-center mb-1">{fpInfo}</p>}
               <input className={inputCls} placeholder="Tasdiqlash kodi (6 xonali)" value={fpCode} onChange={(e) => setFpCode(e.target.value)} inputMode="numeric" />
-              <input className={inputCls} placeholder="Yangi parol" type="password" value={fpNewPassword} onChange={(e) => setFpNewPassword(e.target.value)} />
+              <PasswordInput className={inputCls} placeholder="Yangi parol" value={fpNewPassword} onChange={(e) => setFpNewPassword(e.target.value)} />
               {fpError && <p className="text-[12px] text-[#FF6B85] text-center">{fpError}</p>}
               <button type="submit" disabled={fpSubmitting} className={buttonCls}>
                 {fpSubmitting ? <Loader2 size={16} className="animate-spin" /> : "Parolni yangilash"}

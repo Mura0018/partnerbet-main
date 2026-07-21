@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, LogOut, Upload, Loader2, Pencil, Check, X, ShieldAlert, Mail, Bell, TrendingUp } from "lucide-react";
+import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { checkPasswordStrength } from "@/lib/auth/password";
@@ -538,21 +539,21 @@ export default function ProfilePage() {
 
         <label className="block text-[12px] text-muted mb-1.5">{t("changePassword.currentPassword")}</label>
         <div className="relative mb-4">
-          <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
-          <input
-            type="password" required value={currentPassword}
+          <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85] z-10" />
+          <PasswordInput
+            required value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-9 pr-3 text-[14px] outline-none focus:border-accent"
+            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-9 text-[14px] outline-none focus:border-accent"
           />
         </div>
 
         <label className="block text-[12px] text-muted mb-1.5">{t("changePassword.newPassword")}</label>
         <div className="relative">
-          <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
-          <input
-            type="password" required value={newPassword}
+          <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85] z-10" />
+          <PasswordInput
+            required value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-9 pr-3 text-[14px] outline-none focus:border-accent"
+            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-9 text-[14px] outline-none focus:border-accent"
           />
         </div>
         <PasswordStrengthMeter password={newPassword} />
