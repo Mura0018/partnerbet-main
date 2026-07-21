@@ -31,6 +31,7 @@ import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useV
 import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { BrandedLoader } from "@/lib/ui/BrandedLoader";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
+import { WithdrawCodeGuide } from "@/lib/ui/WithdrawCodeGuide";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 
@@ -981,6 +982,7 @@ export default function TelegramAppPage() {
         <FloatingAmbience />
         <div className="relative z-10">
         <ScreenHeader title="Pul yechish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+        <WithdrawCodeGuide />
         <form onSubmit={submitWithdraw}>
           <PlatformField platform={wdPlatform} setPlatform={setWdPlatform} customPlatform={wdCustomPlatform} setCustomPlatform={setWdCustomPlatform} />
           <AccountIdVerifyField accountId={wdAccountId} setAccountId={setWdAccountId} getInitData={getInitData} />
