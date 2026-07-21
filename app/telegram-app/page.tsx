@@ -788,8 +788,9 @@ export default function TelegramAppPage() {
 
   if (screen === "auth") {
     return (
-      <div className={`${bgCls} p-6 flex flex-col justify-center`}>
-        <div className="max-w-sm mx-auto w-full">
+      <div className={`${bgCls} p-6 flex flex-col justify-center relative`}>
+        <FloatingAmbience />
+        <div className="max-w-sm mx-auto w-full relative z-10">
           <div className="flex justify-center mb-2">
             {logoUrl ? (
               <img src={logoUrl} alt="BetCore Pay" className="w-40 h-40 object-contain drop-shadow-[0_8px_20px_rgba(61,127,255,0.4)]" />
@@ -845,8 +846,9 @@ export default function TelegramAppPage() {
 
   if (screen === "forgot-password") {
     return (
-      <div className={`${bgCls} p-6 flex flex-col justify-center`}>
-        <div className="max-w-sm mx-auto w-full">
+      <div className={`${bgCls} p-6 flex flex-col justify-center relative`}>
+        <FloatingAmbience />
+        <div className="max-w-sm mx-auto w-full relative z-10">
           <ScreenHeader title="Parolni tiklash" onBack={() => setScreen("auth")} />
 
           {fpStep === "phone" ? (
@@ -885,11 +887,14 @@ export default function TelegramAppPage() {
 
   if (screen === "order-success") {
     return (
-      <div className={`${bgCls} p-6 flex flex-col items-center justify-center text-center`}>
+      <div className={`${bgCls} p-6 flex flex-col items-center justify-center text-center relative`}>
+        <FloatingAmbience />
+        <div className="relative z-10 flex flex-col items-center">
         <CheckCircle2 size={48} className="text-[#4ADE80] mb-4" />
         <p className="text-[16px] font-bold mb-1.5">{successLabel} buyurtmangiz qabul qilindi</p>
         <p className="text-[13px] text-[#93a5ba] mb-6">Operator tez orada ko'rib chiqadi. Holatni "Buyurtmalarim" bo'limida kuzatishingiz mumkin.</p>
         <button onClick={() => setScreen("menu")} className={`${buttonCls} max-w-[220px]`}>Menyuga qaytish</button>
+        </div>
       </div>
     );
   }
