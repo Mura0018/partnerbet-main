@@ -316,18 +316,26 @@ function PlatformField({
 
 export default function TelegramAppPage() {
   const [screen, setScreen] = useState<Screen>("loading");
-  // Telefon orqaga tugmasi: ichki ekrandan menyuga qaytaradi.
-  useHistoryNav(
-    screen,
-    screen === "menu" || screen === "auth" || screen === "loading",
-    () => {
+  // Telegram Mini App BackButton: ichki ekranda ko'rsatiladi, bosilganda
+  // menyuga qaytaradi (ilovadan chiqmaydi). Menyuda esa yashiriladi.
+  useEffect(() => {
+    const tg = (window as any)?.Telegram?.WebApp;
+    if (!tg?.BackButton) return;
+    const isInner = screen === "topup" || screen === "withdraw" || screen === "orders" || screen === "support" || screen === "order-success" || screen === "forgot-password";
+    const goBack = () => {
       setScreen((cur) => {
-        if (cur === "topup" || cur === "withdraw" || cur === "orders" || cur === "support" || cur === "order-success") return "menu";
         if (cur === "forgot-password") return "auth";
-        return cur;
+        return "menu";
       });
+    };
+    if (isInner) {
+      tg.BackButton.show();
+      tg.BackButton.onClick(goBack);
+    } else {
+      tg.BackButton.hide();
     }
-  );
+    return () => { try { tg.BackButton.offClick(goBack); } catch {} };
+  }, [screen]);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
