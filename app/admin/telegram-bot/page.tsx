@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply } from "lucide-react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
+import { ThemePicker } from "@/lib/ui/ThemePicker";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -45,6 +46,7 @@ function ChatTab() {
   const [showSearch, setShowSearch] = useState(false);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [myTheme, setMyTheme] = useState<string>("blue");
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
@@ -102,6 +104,13 @@ function ChatTab() {
     const interval = setInterval(load, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  const changeMyTheme = async (next: string) => {
+    setMyTheme(next);
+    setShowThemePicker(false);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await supabase.from("profiles").update({ chat_theme: next }).eq("id", user.id);
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
