@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
-  const { initData, message, replyToId } = body ?? {};
+  const { initData, message, replyToId, orderId } = body ?? {};
   if (!initData || !message || String(message).trim().length === 0) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
@@ -62,8 +62,67 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !inserted) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+  // Operatorni aniqlash: mijoz aniq bir buyurtmani tanlagan bo'lsa (orderId),
+  // o'sha buyurtma operatoriga; aks holda oxirgi buyurtmasi operatoriga.
+  let servedBy: string | null = null;
+  let linkedOrderId: string | null = null;
+  if (orderId) {
+    const { data: chosen } = await supabase
+      .from("telegram_orders")
+      .select("id, operator_id, claimed_by")
+      .eq("id", orderId)
+      .eq("customer_id", customerId)
+      .maybeSingle();
+    if (chosen) {
+      servedBy = chosen.operator_id ?? chosen.claimed_by ?? null;
+      linkedOrderId = chosen.id;
+    }
+  }
+  if (!servedBy) {
+    const { data: lastOrder } = await supabase
+      .from("telegram_orders")
+      .select("id, operator_id, claimed_by")
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    servedBy = lastOrder?.operator_id ?? lastOrder?.claimed_by ?? null;
+    if (!linkedOrderId) linkedOrderId = lastOrder?.id ?? null;
+  }
+
+  const { data: existingThread } = await supabase
+    .from("telegram_support_threads")
+    .select("claimed_by, auto_greeted, status")
+    .eq("customer_id", customerId)
+    .maybeSingle();
+
+  const nowIso = new Date().toISOString();
+  const threadPayload: any = {
+    customer_id: customerId,
+    is_archived: false,
+    status: "open",
+    updated_at: nowIso,
+    last_customer_message_at: nowIso,
+  };
+  if (linkedOrderId) threadPayload.linked_order_id = linkedOrderId;
+  if (servedBy && !existingThread?.claimed_by) {
+    threadPayload.claimed_by = servedBy;
+    threadPayload.claimed_at = nowIso;
+  }
+
+  // Suhbat boshida bir marta avto-kirish xabari (operator nomidan).
+  if (!existingThread?.auto_greeted) {
+    threadPayload.auto_greeted = true;
+    const greeting = servedBy
+      ? "Assalomu alaykum! Sizga tegishli operator hozir band bo'lishi mumkin. Savolingizni yozib qoldiring — imkon qadar tez javob beramiz. \ud83d\ude4f"
+      : "Assalomu alaykum! BetCore Pay qo'llab-quvvatlash xizmatiga xush kelibsiz. Savolingizni yozing — operatorlarimiz tez orada javob beradi. \ud83d\ude4f";
+    await supabase
+      .from("telegram_support_messages")
+      .insert({ customer_id: customerId, sender: "operator", message: greeting });
+  }
+
   await supabase.from("telegram_support_threads").upsert(
-    { customer_id: customerId, is_archived: false, updated_at: new Date().toISOString() },
+    threadPayload,
     { onConflict: "customer_id" }
   );
   return NextResponse.json({ message: inserted });
