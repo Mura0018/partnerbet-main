@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip, Mic, Trash2, Check,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip, Mic, Trash2, Check, Home, LogOut,
 } from "lucide-react";
 
 declare global {
@@ -100,13 +100,18 @@ function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => s
   return <audio controls src={url} className="max-w-[220px] h-9" />;
 }
 
-function ScreenHeader({ title, onBack }: { title: string; onBack: () => void }) {
+function ScreenHeader({ title, onBack, onHome }: { title: string; onBack: () => void; onHome?: () => void }) {
   return (
     <div className="flex items-center gap-2 mb-5">
       <button onClick={onBack} className="p-2 -ml-2 rounded-lg active:bg-white/5" aria-label="Orqaga">
         <ChevronLeft size={20} />
       </button>
-      <h1 className="text-[18px] font-bold">{title}</h1>
+      <h1 className="text-[18px] font-bold flex-1">{title}</h1>
+      {onHome && (
+        <button onClick={onHome} className="p-2 rounded-lg active:bg-white/5" aria-label="Bosh sahifa">
+          <Home size={18} />
+        </button>
+      )}
     </div>
   );
 }
@@ -535,6 +540,15 @@ export default function TelegramAppPage() {
     }
   };
 
+  // Resets the local session view. Since this app auto-signs the customer
+  // back in by their Telegram identity (see the session route), reopening
+  // the mini app will log them back in automatically — this just clears
+  // the current screen/state, useful on a shared device.
+  const logout = () => {
+    setCustomer(null);
+    setScreen("auth");
+  };
+
   const openOrders = async () => {
     setScreen("orders");
     setOrdersLoading(true);
@@ -773,7 +787,7 @@ export default function TelegramAppPage() {
   if (screen === "topup") {
     return (
       <div className={`${bgCls} p-5`}>
-        <ScreenHeader title="Hisob to'ldirish" onBack={() => setScreen("menu")} />
+        <ScreenHeader title="Hisob to'ldirish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <form onSubmit={submitTopup}>
           <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
           <div className="mb-3.5">
@@ -808,7 +822,7 @@ export default function TelegramAppPage() {
   if (screen === "withdraw") {
     return (
       <div className={`${bgCls} p-5`}>
-        <ScreenHeader title="Pul yechish" onBack={() => setScreen("menu")} />
+        <ScreenHeader title="Pul yechish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <form onSubmit={submitWithdraw}>
           <PlatformField platform={wdPlatform} setPlatform={setWdPlatform} customPlatform={wdCustomPlatform} setCustomPlatform={setWdCustomPlatform} />
           <div className="mb-3.5">
@@ -865,7 +879,7 @@ export default function TelegramAppPage() {
     const filteredOrders = ordersFilter === "all" ? orders : orders.filter((o) => o.status === ordersFilter);
     return (
       <div className={`${bgCls} p-5`}>
-        <ScreenHeader title="Buyurtmalarim" onBack={() => setScreen("menu")} />
+        <ScreenHeader title="Buyurtmalarim" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <div className="flex gap-2 mb-4 overflow-x-auto">
           {ORDER_FILTERS.map((f) => (
             <button
@@ -915,7 +929,7 @@ export default function TelegramAppPage() {
     return (
       <div className={`${bgCls} flex flex-col h-screen`}>
         <div className="p-5 pb-3">
-          <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} />
+          <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
           <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
         </div>
         <div
@@ -992,8 +1006,15 @@ export default function TelegramAppPage() {
   return (
     <div className={`${bgCls} p-5`}>
       <div className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5 shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]">
-        <p className="text-[11px] text-[#93a5ba] mb-1">Xush kelibsiz</p>
-        <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] text-[#93a5ba] mb-1">Xush kelibsiz</p>
+            <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
+          </div>
+          <button onClick={logout} className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.08] text-[11px] text-[#93a5ba] active:bg-white/[0.14]" aria-label="Chiqish">
+            <LogOut size={13} /> Chiqish
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3.5">
