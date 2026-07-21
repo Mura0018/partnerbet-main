@@ -5,6 +5,7 @@ import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Ch
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
+import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -1251,6 +1252,7 @@ function MyPaymentMethodsTab() {
   const [methods, setMethods] = useState<OperatorPaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<{ method_type: OperatorPaymentMethod["method_type"]; account_number: string; holder_name: string }>({
     method_type: "card", account_number: "", holder_name: "",
   });
@@ -1271,23 +1273,44 @@ function MyPaymentMethodsTab() {
   };
   useEffect(() => { load(); }, []);
 
-  const addMethod = async (e: React.FormEvent) => {
+  const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.account_number.trim()) return;
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from("telegram_operator_payment_methods").insert({
-        operator_id: user.id,
+    if (editingId) {
+      await supabase.from("telegram_operator_payment_methods").update({
         method_type: form.method_type,
         account_number: form.account_number.trim(),
         holder_name: form.holder_name.trim() || null,
-      });
+      }).eq("id", editingId);
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("telegram_operator_payment_methods").insert({
+          operator_id: user.id,
+          method_type: form.method_type,
+          account_number: form.account_number.trim(),
+          holder_name: form.holder_name.trim() || null,
+        });
+      }
     }
     setSaving(false);
     setForm({ method_type: "card", account_number: "", holder_name: "" });
+    setEditingId(null);
     setShowForm(false);
     load();
+  };
+
+  const startEdit = (m: OperatorPaymentMethod) => {
+    setForm({ method_type: m.method_type, account_number: m.account_number, holder_name: m.holder_name ?? "" });
+    setEditingId(m.id);
+    setShowForm(true);
+  };
+
+  const startAdd = () => {
+    setForm({ method_type: "card", account_number: "", holder_name: "" });
+    setEditingId(null);
+    setShowForm(true);
   };
 
   const toggleActive = async (m: OperatorPaymentMethod) => {
@@ -1308,6 +1331,7 @@ function MyPaymentMethodsTab() {
       <p className="text-[12px] text-muted mb-4 leading-relaxed">
         Bu — sizning shaxsiy to'lov rekvizitlaringiz. Mijoz Mini App'da hisob to'ldirishni tanlaganda, faol
         rekvizitlar orasidan tasodifiy biri ko'rsatiladi — shu bilan to'lovlar operatorlar orasida taqsimlanadi.
+        Rekvizitni istalgan vaqt tahrirlab (masalan har kuni boshqa kartaga) almashtira olasiz.
       </p>
 
       {methods.length === 0 && !showForm && (
@@ -1316,29 +1340,24 @@ function MyPaymentMethodsTab() {
         </div>
       )}
 
-      <div className="space-y-2.5 mb-4">
+      <div className="flex flex-col gap-5 mb-5">
         {methods.map((m) => (
-          <div key={m.id} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-3.5">
-            <div className="flex-1 min-w-0">
-              <div className="text-[12px] text-accent font-semibold">{METHOD_TYPE_LABELS[m.method_type]}</div>
-              <div className="text-[13px] font-medium truncate">{m.account_number}</div>
-              {m.holder_name && <div className="text-[11px] text-muted truncate">{m.holder_name}</div>}
-            </div>
-            <button
-              onClick={() => toggleActive(m)}
-              className={`text-[10px] px-2 py-1 rounded-full border shrink-0 ${m.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-white/10"}`}
-            >
-              {m.is_active ? "Faol" : "O'chirilgan"}
-            </button>
-            <button onClick={() => remove(m.id)} className="p-1.5 rounded-md hover:bg-white/10 text-[#FF6B85] shrink-0">
-              <X size={14} />
-            </button>
-          </div>
+          <LuxuryCard
+            key={m.id}
+            typeLabel={METHOD_TYPE_LABELS[m.method_type]}
+            number={m.account_number}
+            holderName={m.holder_name}
+            active={m.is_active}
+            onToggleActive={() => toggleActive(m)}
+            onEdit={() => startEdit(m)}
+            onDelete={() => remove(m.id)}
+          />
         ))}
       </div>
 
       {showForm ? (
-        <form onSubmit={addMethod} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <form onSubmit={submitForm} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="text-[13px] font-semibold mb-3">{editingId ? "Rekvizitni tahrirlash" : "Yangi rekvizit"}</div>
           <div className="mb-3">
             <label className="block text-[12px] text-muted mb-1.5">Turi</label>
             <select
@@ -1372,17 +1391,17 @@ function MyPaymentMethodsTab() {
             </div>
           )}
           <div className="flex gap-2">
-            <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[13px]">
+            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[13px]">
               Bekor qilish
             </button>
             <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
-              {saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Qo'shish"}
+              {saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : editingId ? "Saqlash" : "Qo'shish"}
             </button>
           </div>
         </form>
       ) : (
         <button
-          onClick={() => setShowForm(true)}
+          onClick={startAdd}
           className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]"
         >
           <CreditCard size={15} /> Yangi rekvizit qo'shish

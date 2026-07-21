@@ -30,6 +30,7 @@ type Order = {
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { BrandedLoader } from "@/lib/ui/BrandedLoader";
+import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 
 type SupportMessage = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
@@ -261,10 +262,12 @@ function PaymentMethodPicker({
         ))}
       </div>
       {detail[value] ? (
-        <div className="rounded-lg bg-white/[0.04] border border-white/10 px-3.5 py-2.5 text-[12px] text-[#c7d5e6] space-y-0.5">
-          <div>{detail[value]!.label}: <span className="font-semibold text-white">{detail[value]!.number}</span></div>
-          {detail[value]!.holder && <div className="text-[#93a5ba]">Egasi: {detail[value]!.holder}</div>}
-        </div>
+        <LuxuryCard
+          typeLabel={detail[value]!.label}
+          number={detail[value]!.number}
+          holderName={detail[value]!.holder || null}
+          readOnly
+        />
       ) : (
         <div className="rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
           Bu usul uchun ma'lumot hali kiritilmagan. Boshqa usulni tanlang yoki operator bilan bog'laning.
