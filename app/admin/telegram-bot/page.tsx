@@ -1357,7 +1357,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
                   {m.file_name && <div className="text-[9px] text-white/50 mt-1 truncate max-w-[180px]">{m.file_name}</div>}
                 </div>
               ) : (
-                m.message
+                (m.message ?? "").replace("__END_CONFIRM__", "")
               )}
               <div className="text-[8px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
             </div>

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     customer_id: customerId,
     sender: "operator",
     operator_id: user.id,
-    message: "__END_CONFIRM__Savolingiz hal bo'ldimi? Agar boshqa savolingiz bo'lmasa, suhbatni yakunlaymiz.",
+    message: "__END_CONFIRM__Savolingiz hal bo'ldimi? \ud83e\udd14 Agar boshqa savolingiz bo'lmasa, suhbatni yakunlaymiz.",
   });
 
   const { error: thrErr } = await admin.from("telegram_support_threads").update({

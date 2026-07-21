@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         customer_id: customerId,
         sender: "operator",
         operator_id: opId,
-        message: "Yordamimizdan foydalanganingiz uchun rahmat! Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad!",
+        message: "Yordamimizdan foydalanganingiz uchun rahmat! \ud83d\ude4f Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad! \ud83c\udf89",
       });
     }
     await supabase.from("telegram_support_threads").update({
