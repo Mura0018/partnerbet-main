@@ -32,7 +32,12 @@ export default async function FaqPage() {
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
       <PublicHeader />
       <Container className="py-14 max-w-3xl">
-        <h1 className="text-[28px] md:text-[36px] font-extrabold mb-8">Ko'p so'raladigan savollar</h1>
+        <div className="flex items-center gap-3 mb-8">
+          <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center shrink-0">
+            <HelpCircle size={18} className="text-white" />
+          </span>
+          <h1 className="text-[26px] md:text-[34px] font-extrabold leading-tight">Ko'p so'raladigan savollar</h1>
+        </div>
 
         {faqs.length === 0 ? (
           <EmptyState icon={<HelpCircle size={20} />} message="Hozircha savollar qo'shilmagan." />
