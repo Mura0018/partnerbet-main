@@ -210,6 +210,8 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
           {order.payout_details && <Row label="Qabul qiluvchi raqam" value={order.payout_details} highlight />}
         </div>
 
+        {order.status === "pending" ? (
+        <>
         <div className="flex gap-1.5 mb-2 overflow-x-auto min-w-0">
           {REJECT_REASON_TEMPLATES.map((tpl, i) => (
             <button
@@ -250,6 +252,15 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
             {submitting === "completed" ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Bajarildi"}
           </button>
         </div>
+        </>
+        ) : (
+          <div className="rounded-lg bg-white/[0.03] border border-white/10 px-3.5 py-3 text-[13px]">
+            <span className={`font-semibold ${order.status === "completed" ? "text-[#4ADE80]" : "text-[#FF6B85]"}`}>
+              {order.status === "completed" ? "✓ Bajarilgan buyurtma" : "✕ Rad etilgan buyurtma"}
+            </span>
+            {order.operator_note && <div className="text-[12px] text-muted mt-1.5">Izoh: {order.operator_note}</div>}
+          </div>
+        )}
       </div>
     </div>
   );
