@@ -25,6 +25,8 @@ type Order = {
   status: "pending" | "completed" | "rejected";
   operator_note: string | null;
   created_at: string;
+  // F2b: kartaning orqasida "qaysi operator" ni ko'rsatish uchun.
+  operator_name?: string | null;
 };
 
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
@@ -119,9 +121,8 @@ function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => s
 
 // F2: mijoz chat bubble'ida rasmni ko'rsatadi. Optimistik holatda mahalliy
 // `localUrl` (upload'gача), aks holda `path` bo'yicha himoyalangan media-url.
-function CustomerSupportImage({ localUrl, path, getInitData }: { localUrl?: string; path?: string | null; getInitData: () => string }) {
+function CustomerSupportImage({ localUrl, path, getInitData, onOpen }: { localUrl?: string; path?: string | null; getInitData: () => string; onOpen: (url: string) => void }) {
   const [url, setUrl] = useState<string | null>(localUrl ?? null);
-  const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     if (localUrl) { setUrl(localUrl); return; }
     if (!path) return;
@@ -137,16 +138,8 @@ function CustomerSupportImage({ localUrl, path, getInitData }: { localUrl?: stri
     return () => { alive = false; };
   }, [localUrl, path]);
   if (!url) return <p className="text-[11px] text-white/70">Rasm yuklanmoqda…</p>;
-  return (
-    <>
-      <img src={url} alt="Rasm" onClick={() => setExpanded(true)} className="max-w-[200px] rounded-lg cursor-zoom-in" />
-      {expanded && (
-        <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-[70] p-5" onClick={() => setExpanded(false)}>
-          <img src={url} alt="Rasm" className="max-w-full max-h-full object-contain rounded-lg" />
-        </div>
-      )}
-    </>
-  );
+  // F2b: to'liq ochish sahifa darajasида boshqariladi (BackButton uni yopadi).
+  return <img src={url} alt="Rasm" onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in" />;
 }
 
 function FloatingAmbience() {
@@ -375,6 +368,9 @@ function supportSendErrorMessage(error: unknown, status: number, kind: "message"
 
 export default function TelegramAppPage() {
   const [screen, setScreen] = useState<Screen>("loading");
+  // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
+  // BackButton avval shuni yopadi, keyin ekrandan chiqadi.
+  const overlayCloserRef = useRef<null | (() => void)>(null);
   // Telegram Mini App BackButton: ichki ekranda ko'rsatiladi, bosilganda
   // menyuga qaytaradi (ilovadan chiqmaydi). Menyuda esa yashiriladi.
   useEffect(() => {
@@ -382,6 +378,8 @@ export default function TelegramAppPage() {
     if (!tg?.BackButton) return;
     const isInner = screen === "topup" || screen === "withdraw" || screen === "orders" || screen === "support" || screen === "order-success" || screen === "forgot-password";
     const goBack = () => {
+      // F2b: avval ochiq overlay (to'liq rasm / rasm preview) yopiladi.
+      if (overlayCloserRef.current) { overlayCloserRef.current(); return; }
       setScreen((cur) => {
         if (cur === "forgot-password") return "auth";
         return "menu";
@@ -461,6 +459,12 @@ export default function TelegramAppPage() {
   const [imageCaption, setImageCaption] = useState("");
   // F2: klaviatura ochilgandagi barqaror viewport balandligi (px).
   const [supportViewportH, setSupportViewportH] = useState<number | null>(null);
+  // F2b: to'liq ekran rasm (BackButton uni yopadi, menyuga chiqmaydi).
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  // F2b: "Nusxalandi" bildirishnomasi (long-press copy).
+  const [copiedToast, setCopiedToast] = useState(false);
+  // F2b: biriktirilgan buyurtma kartasi ag'darilganmi (old=buyurtma, orqa=sabab).
+  const [orderCardFlipped, setOrderCardFlipped] = useState(false);
   const [myChatTheme, setMyChatTheme] = useState("blue");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
@@ -878,6 +882,7 @@ export default function TelegramAppPage() {
     // holda javob banneri noto'g'ri kontekstda qolib ketadi.
     setSupportReplyTo(null);
     setShowThemePicker(false);
+    setOrderCardFlipped(false);
     // Har ochilishda birinchi scroll instant bo'lsin; imzoni tozalab, keyingi
     // loadSupport xabarlarni qayta o'rnatib pastga surishini ta'minlaymiz.
     supportFirstScrollRef.current = true;
@@ -889,6 +894,8 @@ export default function TelegramAppPage() {
       setOrders(ordData.orders ?? []);
     } catch {}
     await loadSupport();
+    // F2b: buyurtma orqali kirilganda klaviatura darhol ochiladi (avto-reply).
+    if (orderId) setTimeout(() => supportInputRef.current?.focus(), 150);
     fetch(`/api/telegram/miniapp/theme?initData=${encodeURIComponent(getInitData())}`)
       .then((r) => r.json())
       .then((data) => { if (data.theme) setMyChatTheme(data.theme); })
@@ -917,6 +924,12 @@ export default function TelegramAppPage() {
     if (list && list.scrollHeight - list.scrollTop - list.clientHeight >= 80) return;
     bottom.scrollIntoView({ behavior: "smooth" });
   }, [supportMessages, screen]);
+
+  // F2b: klaviatura ochilganda (viewport o'zgarsa) oxirgi xabarga tushiramiz.
+  useEffect(() => {
+    if (screen !== "support" || supportViewportH == null) return;
+    supportBottomRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [supportViewportH, screen]);
 
   const confirmEnd = async (resolved: boolean) => {
     try {
@@ -1016,6 +1029,55 @@ export default function TelegramAppPage() {
     const inflight = inflightRef.current;
     return () => { inflight.forEach((c) => c.abort()); inflight.clear(); };
   }, []);
+
+  // F2b: BackButton uchun ochiq overlay yopuvchisini sinxronlaymiz —
+  // to'liq rasm avvalroq, so'ng rasm preview composer.
+  useEffect(() => {
+    overlayCloserRef.current = fullscreenImage
+      ? () => setFullscreenImage(null)
+      : imageDraft
+      ? () => { URL.revokeObjectURL(imageDraft.previewUrl); setImageDraft(null); setImageCaption(""); }
+      : null;
+  }, [fullscreenImage, imageDraft]);
+
+  // F2b: long-press orqali xabar matnini nusxalash.
+  const copyMessageText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Fallback: eski usul (clipboard API bo'lmasa).
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+      } catch {}
+    }
+    setCopiedToast(true);
+    setTimeout(() => setCopiedToast(false), 1400);
+  };
+
+  // F2b: bubble'ni bosib-ushlab (long-press ~450ms) nusxalash. Scroll/siljish
+  // bo'lsa bekor bo'ladi. Matnни brauzer belgilashini oldini olish uchun
+  // bubble'ga select-none qo'yiladi.
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
+  const cancelLongPress = () => {
+    if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+    longPressStartRef.current = null;
+  };
+  const bindLongPress = (onLong: () => void) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      longPressStartRef.current = { x: e.clientX, y: e.clientY };
+      longPressTimerRef.current = setTimeout(() => { onLong(); cancelLongPress(); }, 450);
+    },
+    onPointerUp: cancelLongPress,
+    onPointerLeave: cancelLongPress,
+    onPointerCancel: cancelLongPress,
+    onPointerMove: (e: React.PointerEvent) => {
+      const s = longPressStartRef.current;
+      if (s && (Math.abs(e.clientX - s.x) > 10 || Math.abs(e.clientY - s.y) > 10)) cancelLongPress();
+    },
+  });
 
   // F1c: xato xabarni asl payload bilan qayta yuborish.
   const retrySupportMessage = (clientId: string) => {
@@ -1473,17 +1535,8 @@ export default function TelegramAppPage() {
   }
 
   if (screen === "support") {
-    // Chip qatorida oxirgi 5 buyurtma ko'rsatiladi; agar tanlangan buyurtma
-    // (masalan kartadan ochilgan eski buyurtma) shu 5 talikda bo'lmasa, uni
-    // ham boshiga qo'shamiz — aks holda tanlangani ko'rinmay qoladi.
-    const chipOrders = (() => {
-      const top = orders.slice(0, 5);
-      if (selectedOrderId && !top.some((o) => o.id === selectedOrderId)) {
-        const sel = orders.find((o) => o.id === selectedOrderId);
-        if (sel) return [sel, ...top];
-      }
-      return top;
-    })();
+    // F2b: buyurtma orqali kirilganda composer ustida biriktirilgan karta.
+    const selectedOrder = selectedOrderId ? orders.find((o) => o.id === selectedOrderId) ?? null : null;
     return (
       <div className={`${bgCls} flex flex-col`} style={{ height: supportViewportH ? `${supportViewportH}px` : "100dvh" }}>
         {imageDraft && (
@@ -1510,38 +1563,15 @@ export default function TelegramAppPage() {
             </div>
           </div>
         )}
-        <div className="p-5 pb-3">
+        <div className="p-4 pb-2 shrink-0">
           <div className="flex items-center justify-between -mt-1">
             <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
             <button onClick={() => setShowThemePicker((v) => !v)} className="p-2 rounded-lg active:bg-white/5 -mt-5" aria-label="Chat mavzusi">
               <Palette size={17} />
             </button>
           </div>
-          <p className="text-[11px] text-[#93a5ba] -mt-3">Savolingizga operator tez orada javob beradi.</p>
-          {orders.length > 0 && (
-            <div className="mt-3">
-              <p className="text-[10px] text-[#93a5ba] mb-1.5">Qaysi buyurtma bo'yicha savolingiz bor?</p>
-              <div className="flex gap-1.5 overflow-x-auto pb-1">
-                <button
-                  onClick={() => setSelectedOrderId(null)}
-                  className={`shrink-0 text-[11px] px-3 py-1.5 rounded-lg border ${selectedOrderId === null ? "bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] border-transparent text-white" : "bg-white/[0.04] border-white/10 text-[#93a5ba]"}`}
-                >
-                  Umumiy savol
-                </button>
-                {chipOrders.map((o) => (
-                  <button
-                    key={o.id}
-                    onClick={() => setSelectedOrderId(o.id)}
-                    className={`shrink-0 text-[11px] px-3 py-1.5 rounded-lg border whitespace-nowrap ${selectedOrderId === o.id ? "bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] border-transparent text-white" : "bg-white/[0.04] border-white/10 text-[#93a5ba]"}`}
-                  >
-                    {o.platform} — {Number(o.amount).toLocaleString("ru-RU")} so'm
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
           {showThemePicker && (
-            <div className="mt-3 p-3 rounded-xl bg-white/[0.04] border border-white/10">
+            <div className="mt-2 p-3 rounded-xl bg-white/[0.04] border border-white/10">
               <p className="text-[11px] text-[#93a5ba] mb-2">Xabar rangingizni tanlang</p>
               <ThemePicker value={myChatTheme} onChange={changeChatTheme} />
             </div>
@@ -1565,7 +1595,8 @@ export default function TelegramAppPage() {
                 {m.sender === "operator" && <span className="text-[9px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
                 <div
                   onClick={m.sender === "customer" && m.status === "failed" ? () => setFailedMenuFor((f) => (f === m.clientId ? null : m.clientId ?? null)) : undefined}
-                  className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "customer" ? "text-white" : "bg-white/[0.08]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
+                  {...(m.message && !m.message.startsWith("__END_CONFIRM__") ? bindLongPress(() => copyMessageText(m.message!)) : {})}
+                  className={`max-w-[78%] rounded-2xl px-3 py-1.5 text-[12.5px] leading-snug select-none transition-transform active:scale-[0.97] ${m.sender === "customer" ? "text-white" : "bg-white/[0.06]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
                   style={m.sender === "customer" ? { background: chatThemeGradient(myChatTheme) } : undefined}
                 >
                   {quoted && (
@@ -1578,7 +1609,7 @@ export default function TelegramAppPage() {
                     <VoicePlayer path={m.voice_path} getInitData={getInitData} />
                   ) : (m.image_path || m._localImageUrl) ? (
                     <div>
-                      <CustomerSupportImage localUrl={m._localImageUrl} path={m.image_path} getInitData={getInitData} />
+                      <CustomerSupportImage localUrl={m._localImageUrl} path={m.image_path} getInitData={getInitData} onOpen={setFullscreenImage} />
                       {m.message && <div className="text-[12px] mt-1 whitespace-pre-wrap break-words">{m.message}</div>}
                     </div>
                   ) : m.message?.startsWith("__END_CONFIRM__") ? (
@@ -1631,6 +1662,46 @@ export default function TelegramAppPage() {
           )}
           <div ref={supportBottomRef} />
         </div>
+
+        {/* F2b: to'liq ekran rasm — BackButton buni yopadi (menyuga chiqmaydi). */}
+        {fullscreenImage && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[75] p-4" onClick={() => setFullscreenImage(null)}>
+            <img src={fullscreenImage} alt="Rasm" className="max-w-full max-h-full object-contain rounded-lg" />
+          </div>
+        )}
+        {/* F2b: "Nusxalandi" bildirishnomasi. */}
+        {copiedToast && (
+          <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[80] px-3 py-1.5 rounded-full bg-black/80 text-white text-[12px] shadow-lg">
+            Nusxalandi ✓
+          </div>
+        )}
+
+        {/* F2b: buyurtma orqali kirilganda biriktirilgan flip-karta. */}
+        {selectedOrder && (
+          <div className="px-3 pt-2 shrink-0" style={{ perspective: "1000px" }}>
+            <div className="relative transition-transform duration-500" style={{ transformStyle: "preserve-3d", transform: orderCardFlipped ? "rotateY(180deg)" : "none", minHeight: "52px" }}>
+              <div className="rounded-xl bg-[#0e2038] border border-white/10 px-3 py-2 flex items-center gap-2" style={{ backfaceVisibility: "hidden" }}>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-semibold text-white truncate">
+                    {selectedOrder.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {Number(selectedOrder.amount).toLocaleString("ru-RU")} so'm
+                  </div>
+                  <div className="text-[10px] text-[#93a5ba] truncate">{selectedOrder.platform} · ID {selectedOrder.account_id} · {STATUS_LABEL[selectedOrder.status].label}</div>
+                </div>
+                {(selectedOrder.operator_note || selectedOrder.operator_name) && (
+                  <button onClick={() => setOrderCardFlipped(true)} className="shrink-0 text-[10px] text-[#7db8ff] px-2 py-1 rounded-lg bg-white/5 active:bg-white/10">Sabab</button>
+                )}
+                <button onClick={() => { setSelectedOrderId(null); setOrderCardFlipped(false); }} className="shrink-0 p-1 rounded active:bg-white/10 text-[#93a5ba]" aria-label="Olib tashlash"><XCircle size={14} /></button>
+              </div>
+              <div className="absolute inset-0 rounded-xl bg-[#0e2038] border border-[#F4C76A]/30 px-3 py-2 flex items-center gap-2" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] text-[#F4C76A] mb-0.5 truncate">{selectedOrder.operator_name ? `Operator: ${selectedOrder.operator_name}` : "Operator izohi"}</div>
+                  <div className="text-[11px] text-white/90 truncate">{selectedOrder.operator_note || "Izoh yo'q"}</div>
+                </div>
+                <button onClick={() => setOrderCardFlipped(false)} className="shrink-0 text-[10px] text-[#7db8ff] px-2 py-1 rounded-lg bg-white/5 active:bg-white/10">Ortga</button>
+              </div>
+            </div>
+          </div>
+        )}
         {supportReplyTo && (
           <div className="flex items-center gap-2 px-4 py-1.5 bg-[#0e2038]">
             <Reply size={12} className="text-accent shrink-0" />

@@ -155,10 +155,26 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: orders } = await supabase
     .from("telegram_orders")
-    .select("id, type, platform, account_id, amount, payment_method, status, operator_note, created_at")
+    .select("id, type, platform, account_id, amount, payment_method, status, operator_note, created_at, operator_id, claimed_by")
     .eq("customer_id", customer.id)
     .order("created_at", { ascending: false })
     .limit(50);
 
-  return NextResponse.json({ orders: orders ?? [] });
+  // F2b: kartaning orqa tomonida "qaysi operator" ko'rsatish uchun operator
+  // ismini qo'shamiz (operator_id, aks holda claimed_by bo'yicha).
+  const opIds = Array.from(
+    new Set((orders ?? []).map((o: any) => o.operator_id ?? o.claimed_by).filter(Boolean))
+  );
+  const nameById = new Map<string, string>();
+  if (opIds.length) {
+    const { data: profs } = await supabase.from("profiles").select("id, display_name, full_name").in("id", opIds);
+    for (const p of profs ?? []) nameById.set(p.id, p.display_name || p.full_name || "Operator");
+  }
+  const withNames = (orders ?? []).map((o: any) => {
+    const opId = o.operator_id ?? o.claimed_by;
+    const { operator_id, claimed_by, ...rest } = o;
+    return { ...rest, operator_name: opId ? nameById.get(opId) ?? null : null };
+  });
+
+  return NextResponse.json({ orders: withNames });
 }
