@@ -393,6 +393,12 @@ export default function TelegramAppPage() {
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportSending, setSupportSending] = useState(false);
   const supportBottomRef = useRef<HTMLDivElement>(null);
+  const supportListRef = useRef<HTMLDivElement>(null);
+  // Xabarlar haqiqatan o'zgarganini yengil aniqlash uchun imzo (soni + oxirgi
+  // xabar id + created_at) — o'zgarmasa state yangilanmaydi.
+  const supportSigRef = useRef<string>("");
+  // Support ekrani ochilgandagi birinchi scroll animatsiyasiz bo'lsin.
+  const supportFirstScrollRef = useRef(true);
   const voiceRecorder = useVoiceRecorder();
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
@@ -712,9 +718,20 @@ export default function TelegramAppPage() {
     try {
       const res = await fetch(`/api/telegram/miniapp/support?initData=${encodeURIComponent(getInitData())}`);
       const data = await res.json();
-      setSupportMessages(data.messages ?? []);
+      const msgs: SupportMessage[] = data.messages ?? [];
+      // O'zgarmasa state'ni yangilamaymiz — idle holatda har 4s'da butun
+      // xabarlar ro'yxatining qayta render bo'lishining oldini oladi.
+      const last = msgs[msgs.length - 1];
+      const sig = `${msgs.length}:${last?.id ?? ""}:${last?.created_at ?? ""}`;
+      if (sig !== supportSigRef.current) {
+        supportSigRef.current = sig;
+        setSupportMessages(msgs);
+      }
     } catch {
-      if (!silent) setSupportMessages([]);
+      if (!silent) {
+        supportSigRef.current = "";
+        setSupportMessages([]);
+      }
     } finally {
       if (!silent) setSupportLoading(false);
     }
@@ -723,6 +740,10 @@ export default function TelegramAppPage() {
   const openSupport = async () => {
     setScreen("support");
     setSelectedOrderId(null);
+    // Har ochilishda birinchi scroll instant bo'lsin; imzoni tozalab, keyingi
+    // loadSupport xabarlarni qayta o'rnatib pastga surishini ta'minlaymiz.
+    supportFirstScrollRef.current = true;
+    supportSigRef.current = "";
     // Buyurtma tanlash uchun mijozning buyurtmalarini yuklaymiz.
     try {
       const ordRes = await fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`);
@@ -743,8 +764,21 @@ export default function TelegramAppPage() {
   }, [screen]);
 
   useEffect(() => {
-    if (screen === "support") supportBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [supportMessages.length, screen]);
+    if (screen !== "support") return;
+    const bottom = supportBottomRef.current;
+    if (!bottom) return;
+    // Birinchi ochilishda darhol (animatsiyasiz) pastga tush.
+    if (supportFirstScrollRef.current) {
+      supportFirstScrollRef.current = false;
+      bottom.scrollIntoView({ behavior: "auto" });
+      return;
+    }
+    // Keyingi yangi xabarlarda: faqat foydalanuvchi allaqachon pastga yaqin
+    // bo'lsa sur (tepada eski xabarlarni o'qiyotgan bo'lsa uzmaymiz).
+    const list = supportListRef.current;
+    if (list && list.scrollHeight - list.scrollTop - list.clientHeight >= 80) return;
+    bottom.scrollIntoView({ behavior: "smooth" });
+  }, [supportMessages, screen]);
 
   const confirmEnd = async (resolved: boolean) => {
     try {
@@ -1166,6 +1200,7 @@ export default function TelegramAppPage() {
           )}
         </div>
         <div
+          ref={supportListRef}
           className="flex-1 overflow-y-auto px-4 space-y-2 min-h-0"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
         >
