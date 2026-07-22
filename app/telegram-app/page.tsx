@@ -379,8 +379,11 @@ export default function TelegramAppPage() {
   const [successLabel, setSuccessLabel] = useState("");
   // Buyurtma yaratildi, lekin chek yuklanmadi kabi qisman-xato holati —
   // umumiy `error`dan ajratilgan, shunda success ekranida ko'rsatiladi va
-  // boshqa ekranlarga sizib o'tmaydi.
+  // boshqa ekranlarga sizib o'tmaydi. (F4-01)
   const [successWarning, setSuccessWarning] = useState<string | null>(null);
+  // Auth ekranidagi ijobiy/info xabar (yashil) — masalan "Parol yangilandi".
+  // Umumiy `error` (qizil) bilan aralashmasligi uchun alohida. (F4-07)
+  const [authInfo, setAuthInfo] = useState("");
 
   // Orders
   const [orders, setOrders] = useState<Order[]>([]);
@@ -458,6 +461,7 @@ export default function TelegramAppPage() {
   const submitAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setAuthInfo("");
     if (!phone.trim() || !password.trim()) {
       setError("Telefon raqami va parolni kiriting.");
       return;
@@ -548,7 +552,8 @@ export default function TelegramAppPage() {
       setFpStep("phone");
       setFpPhone(""); setFpCode(""); setFpNewPassword(""); setFpInfo(""); setFpError("");
       setMode("login");
-      setError("Parol yangilandi — endi yangi parolingiz bilan kiring.");
+      setError("");
+      setAuthInfo("Parol yangilandi — endi yangi parolingiz bilan kiring.");
       setScreen("auth");
     } catch {
       setFpError("Ulanishda xatolik. Qayta urinib ko'ring.");
@@ -943,6 +948,7 @@ export default function TelegramAppPage() {
             <PasswordInput className={inputCls} placeholder="Parol" value={password} onChange={(e) => setPassword(e.target.value)} />
 
             {error && <p className="text-[12px] text-[#FF6B85] text-center">{error}</p>}
+            {authInfo && <p className="text-[12px] text-[#4ADE80] text-center">{authInfo}</p>}
 
             <button type="submit" disabled={submitting} className={buttonCls}>
               {submitting ? <Loader2 size={16} className="animate-spin" /> : mode === "login" ? "Kirish" : "Ro'yxatdan o'tish"}
@@ -959,7 +965,7 @@ export default function TelegramAppPage() {
           )}
 
           <button
-            onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
+            onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); setAuthInfo(""); }}
             className="group relative w-full text-center mt-5 py-3 rounded-xl text-[13px] font-bold text-[#7db8ff] bg-[#3D7FFF]/[0.08] border border-[#3D7FFF]/30 overflow-hidden hover:text-white hover:bg-[#3D7FFF]/[0.16] hover:border-[#3D7FFF]/50 transition-all active:scale-[0.98]"
           >
             <span className="pointer-events-none absolute top-0 -left-full w-3/5 h-full bg-gradient-to-r from-transparent via-white/25 to-transparent" style={{ animation: "loginShimmer 3s infinite" }} />
