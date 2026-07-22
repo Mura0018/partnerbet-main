@@ -36,6 +36,7 @@ export function MyPaymentMethodsTab() {
     method_type: "card", account_number: "", holder_name: "", usage_limit: "",
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
   const load = async () => {
@@ -56,26 +57,37 @@ export function MyPaymentMethodsTab() {
     e.preventDefault();
     if (!form.account_number.trim()) return;
     setSaving(true);
+    setError(null);
+    let opError: unknown = null;
     if (editingId) {
-      await supabase.from("telegram_operator_payment_methods").update({
+      const { error } = await supabase.from("telegram_operator_payment_methods").update({
         method_type: form.method_type,
         account_number: form.account_number.trim(),
         holder_name: form.holder_name.trim() || null,
         usage_limit: form.usage_limit.trim() ? Number(form.usage_limit) : null,
       }).eq("id", editingId);
+      opError = error;
     } else {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("telegram_operator_payment_methods").insert({
+        const { error } = await supabase.from("telegram_operator_payment_methods").insert({
           operator_id: user.id,
           method_type: form.method_type,
           account_number: form.account_number.trim(),
           holder_name: form.holder_name.trim() || null,
           usage_limit: form.usage_limit.trim() ? Number(form.usage_limit) : null,
         });
+        opError = error;
+      } else {
+        opError = new Error("no_user");
       }
     }
     setSaving(false);
+    if (opError) {
+      // Xato bo'lsa formani ochiq qoldiramiz — operator soxta "saqlandi" ko'rmasin.
+      setError("Saqlashda xatolik yuz berdi. Qayta urinib ko'ring.");
+      return;
+    }
     setForm({ method_type: "card", account_number: "", holder_name: "", usage_limit: "" });
     setEditingId(null);
     setShowForm(false);
@@ -95,13 +107,17 @@ export function MyPaymentMethodsTab() {
   };
 
   const toggleActive = async (m: OperatorPaymentMethod) => {
-    await supabase.from("telegram_operator_payment_methods").update({ is_active: !m.is_active }).eq("id", m.id);
+    setError(null);
+    const { error } = await supabase.from("telegram_operator_payment_methods").update({ is_active: !m.is_active }).eq("id", m.id);
+    if (error) { setError("Holatni o'zgartirib bo'lmadi. Qayta urinib ko'ring."); return; }
     load();
   };
 
   const remove = async (id: string) => {
     if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
-    await supabase.from("telegram_operator_payment_methods").delete().eq("id", id);
+    setError(null);
+    const { error } = await supabase.from("telegram_operator_payment_methods").delete().eq("id", id);
+    if (error) { setError("O'chirib bo'lmadi. Qayta urinib ko'ring."); return; }
     load();
   };
 
@@ -114,6 +130,10 @@ export function MyPaymentMethodsTab() {
         rekvizitlar orasidan tasodifiy biri ko'rsatiladi — shu bilan to'lovlar operatorlar orasida taqsimlanadi.
         Rekvizitni istalgan vaqt tahrirlab (masalan har kuni boshqa kartaga) almashtira olasiz.
       </p>
+
+      {error && (
+        <p className="text-[12px] text-[#FF6B85] bg-[#FF6B85]/10 border border-[#FF6B85]/30 rounded-lg px-3 py-2 mb-3">{error}</p>
+      )}
 
       {methods.length === 0 && !showForm && (
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-6 text-center text-[13px] text-muted mb-4">
