@@ -1,5 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { getApiCredential } from "@/lib/auth/apiCredentials";
+import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { checkAndRecordRateLimit } from "@/lib/security/rateLimit";
 
 // Without this, Next.js can statically render this GET handler once at
 // build time (no Request/cookies/headers usage triggers that) and keep
@@ -52,7 +55,21 @@ function pickFair(rows: MethodRow[], type: string, busyScore: Record<string, num
 // back when the order is created so whoever resolves the order later
 // can see exactly whose account the money actually went to (see 0049),
 // and so /api/telegram/miniapp/orders can bump that card's usage_count.
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // Himoya: bu endpoint ilgari to'liq ochiq edi (operator karta raqamlari,
+  // egasi ismi, Click/Payme, kripto hamyoni anonim chiqardi). Endi yaroqli
+  // Telegram initData imzosini talab qiladi — anonim scrape to'xtaydi.
+  const botToken = await getApiCredential("telegram_bot_token");
+  if (!botToken) return NextResponse.json({ error: "not_configured" }, { status: 500 });
+
+  const initData = req.nextUrl.searchParams.get("initData");
+  const verified = initData ? verifyTelegramInitData(initData, botToken) : null;
+  if (!verified) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // Yaroqli initData bilan ham ommaviy so'rovni cheklaymiz (per-telegramId).
+  const { allowed } = await checkAndRecordRateLimit(`payment-info:${verified.telegramId}`, 60, 60);
+  if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+
   const supabase = createAdminClient();
 
   const [{ data: methodsData }, { data: pendingData }, { data: onlineData }] = await Promise.all([

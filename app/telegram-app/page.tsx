@@ -408,10 +408,8 @@ export default function TelegramAppPage() {
       .then((r) => r.json())
       .then((data) => { setLogoUrl(data.logoUrl); if (data.logoPosition) setLogoPos(data.logoPosition); })
       .catch(() => {});
-    fetch("/api/telegram/miniapp/payment-info")
-      .then((r) => r.json())
-      .then((data) => setPaymentInfo(data))
-      .catch(() => {});
+    // payment-info endi himoyalangan (initData talab qiladi) — u faqat
+    // Telegram WebApp initData tayyor bo'lgach, script.onload ichida yuklanadi.
   }, []);
 
   useEffect(() => {
@@ -427,6 +425,11 @@ export default function TelegramAppPage() {
         setScreen("auth");
         return;
       }
+      // initData tayyor — endi himoyalangan payment-info'ni yuklaymiz.
+      fetch(`/api/telegram/miniapp/payment-info?initData=${encodeURIComponent(initData)}`)
+        .then((r) => r.json())
+        .then((data) => setPaymentInfo(data))
+        .catch(() => {});
       try {
         const res = await fetch("/api/telegram/miniapp/session", {
           method: "POST",
