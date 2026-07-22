@@ -1844,3 +1844,639 @@ create index idx_rate_limit_events_bucket on rate_limit_events(bucket, created_a
 alter table rate_limit_events enable row level security;
 -- Intentionally no policies — server-only via service-role client.
 
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0033_telegram_customers.sql
+-- ///////////////////////////////////////////////////////////
+create table customers (
+  id uuid primary key default gen_random_uuid(),
+  phone text not null unique,
+  password_hash text not null,
+  full_name text,
+  telegram_id bigint unique,
+  created_at timestamptz not null default now()
+);
+
+create index customers_telegram_id_idx on customers (telegram_id);
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0034_telegram_pay_operators.sql
+-- ///////////////////////////////////////////////////////////
+insert into permissions (key, description) values
+  ('telegram_orders.manage',    'View and process BetCore Pay topup/withdraw orders'),
+  ('telegram_operators.manage', 'Create/edit operator accounts and their regional kassa assignment');
+
+insert into role_permissions (role_id, permission_id)
+select r.id, p.id from roles r, permissions p
+where r.key = 'super_admin' and p.key in ('telegram_orders.manage', 'telegram_operators.manage');
+
+insert into role_permissions (role_id, permission_id)
+select r.id, p.id from roles r, permissions p
+where r.key = 'admin' and p.key in ('telegram_orders.manage', 'telegram_operators.manage');
+
+insert into roles (key, name, description) values
+  ('operator', 'Operator', 'Handles BetCore Pay orders for their assigned region only');
+
+insert into role_permissions (role_id, permission_id)
+select r.id, p.id from roles r, permissions p
+where r.key = 'operator' and p.key = 'telegram_orders.manage';
+
+alter table profiles add column telegram_region text;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0035_team_chat.sql
+-- ///////////////////////////////////////////////////////////
+alter table profiles add column display_name text;
+alter table profiles add column avatar_url text;
+
+insert into permissions (key, description) values
+  ('team_chat.use', 'Read and post in the shared staff/operator chat');
+
+insert into role_permissions (role_id, permission_id)
+select r.id, p.id from roles r, permissions p
+where r.key in ('super_admin', 'admin', 'operator') and p.key = 'team_chat.use';
+
+create table team_chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid not null references profiles(id) on delete cascade,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+create index team_chat_messages_created_at_idx on team_chat_messages (created_at);
+
+alter table team_chat_messages enable row level security;
+
+create policy "team_chat_select" on team_chat_messages
+  for select using (has_permission('team_chat.use'));
+
+create policy "team_chat_insert" on team_chat_messages
+  for insert with check (has_permission('team_chat.use') and sender_id = auth.uid());
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0036_telegram_pay_orders.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0036 — BETCORE PAY: TOP-UP/WITHDRAW ORDERS + SUPPORT CHAT
+-- 1xBet (and other platforms) have no public API yet, so this is a fully
+-- manual/operator-mediated flow: the customer submits an order in the
+-- Mini App, an operator verifies the payment/withdrawal off-platform
+-- (Click/Payme/card/crypto transfer, or the platform's own cashier), then
+-- marks the order completed or rejected here. The customer is notified
+-- via the Telegram bot either way.
+--
+-- Region-based operator routing (`region` column) is stored but NOT yet
+-- enforced by RLS — today there is a single operator, so any staff
+-- account with `telegram_orders.manage` sees every order. When multiple
+-- regional kassas are introduced, tighten the SELECT policy below to also
+-- match profiles.telegram_region for non-admin roles.
+-- =========================================================
+
+-- ---------------------------------------------------------------
+-- SECURITY FIX: `customers` (0033) was created with RLS never enabled —
+-- meaning phone numbers and password_hash were reachable by anon/
+-- authenticated PostgREST requests with no policy blocking them at all.
+-- Every customer read/write already goes through service-role API routes
+-- (register/login/session), so locking this down breaks nothing.
+-- ---------------------------------------------------------------
+alter table customers enable row level security;
+-- Staff with telegram_orders.manage need to see who an order/support
+-- thread belongs to (phone, name) — this is the one exception to "service
+-- role only". It's read-only and row-level (no insert/update/delete for
+-- anyone but service role), same trust boundary staff already have via
+-- Foydalanuvchilar/Donations/etc.
+create policy "telegram_orders.manage read customers" on customers
+  for select using (has_permission('telegram_orders.manage'));
+
+create table telegram_orders (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid not null references customers(id) on delete cascade,
+  type text not null check (type in ('topup', 'withdraw')),
+  platform text not null check (char_length(platform) between 1 and 50),
+  account_id text not null check (char_length(account_id) between 1 and 50),
+  amount numeric(14,2) not null check (amount > 0),
+  payment_method text not null check (payment_method in ('click', 'payme', 'card', 'crypto')),
+  withdraw_code text check (withdraw_code is null or char_length(withdraw_code) <= 20),
+  payout_details text check (payout_details is null or char_length(payout_details) <= 500),
+  status text not null default 'pending' check (status in ('pending', 'completed', 'rejected')),
+  operator_id uuid references profiles(id) on delete set null,
+  operator_note text check (operator_note is null or char_length(operator_note) <= 500),
+  region text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  constraint chk_withdraw_code_required check (
+    (type = 'withdraw' and withdraw_code is not null) or type = 'topup'
+  )
+);
+create index idx_telegram_orders_customer on telegram_orders(customer_id);
+create index idx_telegram_orders_status on telegram_orders(status);
+create index idx_telegram_orders_created on telegram_orders(created_at desc);
+
+create trigger trg_telegram_orders_updated_at before update on telegram_orders
+  for each row execute function public.set_updated_at();
+create trigger trg_audit_telegram_orders
+  after insert or update or delete on telegram_orders
+  for each row execute function public.audit_trigger();
+
+alter table telegram_orders enable row level security;
+-- No public policy at all: every customer-facing read/write goes through
+-- /api/telegram/miniapp/orders (service-role client, initData-verified),
+-- same pattern as the customers table itself.
+create policy "telegram_orders.manage full access" on telegram_orders
+  for all using (has_permission('telegram_orders.manage')) with check (has_permission('telegram_orders.manage'));
+
+-- ---------------------------------------------------------------
+-- SUPPORT CHAT (customer <-> operator, inside the Mini App)
+-- ---------------------------------------------------------------
+create table telegram_support_messages (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid not null references customers(id) on delete cascade,
+  sender text not null check (sender in ('customer', 'operator')),
+  operator_id uuid references profiles(id) on delete set null,
+  message text not null check (char_length(message) between 1 and 2000),
+  created_at timestamptz not null default now(),
+
+  constraint chk_operator_id_shape check (
+    (sender = 'operator' and operator_id is not null) or sender = 'customer'
+  )
+);
+create index idx_telegram_support_customer on telegram_support_messages(customer_id, created_at);
+
+alter table telegram_support_messages enable row level security;
+-- Customer side goes through /api/telegram/miniapp/support/* (service-role,
+-- initData-verified). Staff read everything and reply as themselves.
+create policy "telegram_orders.manage read support messages" on telegram_support_messages
+  for select using (has_permission('telegram_orders.manage'));
+create policy "telegram_orders.manage reply as operator" on telegram_support_messages
+  for insert with check (
+    has_permission('telegram_orders.manage') and sender = 'operator' and operator_id = auth.uid()
+  );
+
+-- ---------------------------------------------------------------
+-- PAYMENT DETAILS shown to the customer when they pick a top-up method
+-- (Click/Payme/card/crypto). Public read like every other site_settings
+-- row (see 0014) — these are meant to be seen, not secret. Edited from
+-- Admin > BetCore Pay > To'lov ma'lumotlari (settings.manage).
+-- ---------------------------------------------------------------
+insert into site_settings (key, value) values
+  ('betcore_pay_payment_info', '{"card_number": "", "click_number": "", "payme_number": "", "crypto_wallet": ""}');
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0037_customer_password_reset.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0037 — BETCORE PAY: PASSWORD RESET VIA TELEGRAM CODE
+-- Customers have no email, so "forgot password" works by sending a
+-- one-time numeric code to the customer's linked Telegram chat instead
+-- of an email link. The code is bcrypt-hashed at rest (same standard as
+-- password_hash) and expires after 10 minutes.
+-- =========================================================
+alter table customers add column if not exists reset_code_hash text;
+alter table customers add column if not exists reset_code_expires_at timestamptz;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0038_cashdesk_integration.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0038 — CASHDESK API INTEGRATION (1xBet partner API)
+-- Adds columns to cache the player name/currency looked up at order
+-- creation time (so operators see who they're paying without a second
+-- lookup), and flags whether an order was auto-processed by the real
+-- Deposit/Payout API vs handled manually (credentials not configured).
+-- =========================================================
+alter table telegram_orders add column if not exists player_name text;
+alter table telegram_orders add column if not exists currency_id text;
+alter table telegram_orders add column if not exists auto_processed boolean not null default false;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0039_receipts_and_recipient_name.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0039 — TOP-UP RECEIPTS + WITHDRAW RECIPIENT NAME
+-- Top-up orders now require a payment receipt screenshot (uploaded to a
+-- PRIVATE bucket — these are financial screenshots, not public media).
+-- No RLS policy is added for anon/authenticated: upload happens via the
+-- service-role client in /api/telegram/miniapp/orders/receipt, and staff
+-- view happens via a short-lived signed URL generated server-side in
+-- /api/admin/telegram-orders/receipt-url — neither path needs a client-
+-- facing policy, same "service role only" trust boundary as `customers`.
+-- =========================================================
+alter table telegram_orders add column if not exists receipt_path text;
+alter table telegram_orders add column if not exists recipient_name text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('receipts', 'receipts', false, 5242880, array['image/png','image/jpeg','image/webp'])
+on conflict (id) do nothing;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0040_operator_payment_methods.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0040 — PER-OPERATOR PAYMENT METHODS
+-- Replaces the single global "betcore_pay_payment_info" site_settings row:
+-- each operator now maintains their OWN card/Click/Payme/crypto details
+-- (with the account holder's full name). When a customer opens the
+-- top-up screen, one active entry per method type is picked at random
+-- among all operators who have that type configured — this is what
+-- spreads incoming payments across operators instead of concentrating
+-- them on one person's account.
+-- =========================================================
+create table telegram_operator_payment_methods (
+  id uuid primary key default gen_random_uuid(),
+  operator_id uuid not null references profiles(id) on delete cascade,
+  method_type text not null check (method_type in ('card', 'click', 'payme', 'crypto')),
+  account_number text not null check (char_length(account_number) between 1 and 100),
+  holder_name text check (holder_name is null or char_length(holder_name) <= 150),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index idx_operator_payment_methods_active on telegram_operator_payment_methods(method_type) where is_active = true;
+
+create trigger trg_operator_payment_methods_updated_at before update on telegram_operator_payment_methods
+  for each row execute function public.set_updated_at();
+
+alter table telegram_operator_payment_methods enable row level security;
+-- Every operator manages only their own rows.
+create policy "operators manage own payment methods" on telegram_operator_payment_methods
+  for all
+  using (operator_id = auth.uid() and has_permission('telegram_orders.manage'))
+  with check (operator_id = auth.uid() and has_permission('telegram_orders.manage'));
+-- Admin/super_admin can see everyone's for oversight (read-only — they
+-- don't edit someone else's payment details).
+create policy "telegram_operators.manage read all payment methods" on telegram_operator_payment_methods
+  for select using (has_permission('telegram_operators.manage'));
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0041_support_chat_images.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0041 — SUPPORT CHAT IMAGE ATTACHMENTS
+-- Customers can now attach a screenshot to a support message (e.g. an
+-- unclear payment issue). Same private-bucket pattern as receipts —
+-- upload via service-role only, staff view via short-lived signed URL.
+-- =========================================================
+alter table telegram_support_messages alter column message drop not null;
+alter table telegram_support_messages drop constraint if exists telegram_support_messages_message_check;
+alter table telegram_support_messages add constraint chk_message_length check (message is null or char_length(message) <= 2000);
+alter table telegram_support_messages add column if not exists image_path text;
+alter table telegram_support_messages add constraint chk_message_or_image check (
+  (message is not null and char_length(message) > 0) or image_path is not null
+);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('support-attachments', 'support-attachments', false, 5242880, array['image/png','image/jpeg','image/webp'])
+on conflict (id) do nothing;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0042_betcore_pay_limits.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0042 — BETCORE PAY: ORDER/DAILY LIMITS
+-- Prevents a single mistaken or malicious order from moving an unbounded
+-- amount, and caps how much one customer can move through the system per
+-- day. Values are admin-editable (Admin > BetCore Pay), defaults below
+-- are a starting point, not a business decision baked into code.
+-- =========================================================
+insert into site_settings (key, value) values
+  ('betcore_pay_limits', '{"max_order_amount": 5000000, "daily_customer_limit": 10000000}')
+on conflict (key) do nothing;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0043_team_chat_images.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0043 — TEAM CHAT IMAGE ATTACHMENTS
+-- Staff can attach an image to a team chat message. Unlike receipts/
+-- support-attachments (customer financial screenshots, kept private),
+-- team chat photos are low-sensitivity internal content, so this bucket
+-- is public — same trust level as the "media" bucket already is.
+-- =========================================================
+alter table team_chat_messages alter column message drop not null;
+alter table team_chat_messages add constraint chk_message_length check (message is null or char_length(message) <= 2000);
+alter table team_chat_messages add column if not exists image_path text;
+alter table team_chat_messages add constraint chk_message_or_image check (
+  (message is not null and char_length(message) > 0) or image_path is not null
+);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('team-chat-attachments', 'team-chat-attachments', true, 5242880, array['image/png','image/jpeg','image/webp'])
+on conflict (id) do nothing;
+
+create policy "public read team-chat-attachments" on storage.objects
+  for select using (bucket_id = 'team-chat-attachments');
+create policy "team_chat.use upload team-chat-attachments" on storage.objects
+  for insert with check (bucket_id = 'team-chat-attachments' and has_permission('team_chat.use'));
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0044_operator_telegram_link.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0044 — OPERATOR TELEGRAM NOTIFICATIONS
+-- Staff (operators/admins) can link their own Telegram chat so the bot
+-- can ping them the moment a new order needs attention, instead of them
+-- having to keep the admin panel open and refresh it manually.
+-- Linking flow: staff generates a one-time code in the admin panel, then
+-- sends "/link <code>" to the bot from their own Telegram account — the
+-- webhook matches the code to their profile and stores the chat id.
+-- =========================================================
+alter table profiles add column if not exists telegram_chat_id bigint;
+alter table profiles add column if not exists telegram_link_code text;
+alter table profiles add column if not exists telegram_link_code_expires_at timestamptz;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0045_order_claiming.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0045 — ORDER CLAIMING (who's handling what, live)
+-- When an operator opens a pending order, it's "claimed" by them so
+-- other operators see it's being worked on instead of all piling onto
+-- the same order. This is informational/soft — the actual outcome-of-
+-- record is still `operator_id` (set on resolve in 0036), which is what
+-- gives each operator their permanent history of completed/rejected
+-- orders. Claiming just reduces collisions while orders are pending.
+-- =========================================================
+alter table telegram_orders add column if not exists claimed_by uuid references profiles(id) on delete set null;
+alter table telegram_orders add column if not exists claimed_at timestamptz;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0046_chat_file_names.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0046 — CHAT ATTACHMENT FILE NAMES
+-- So a search for "chek.jpg" (or the start of it) can find the message
+-- that has that file attached, not just messages with matching text.
+-- =========================================================
+alter table team_chat_messages add column if not exists file_name text;
+alter table telegram_support_messages add column if not exists file_name text;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0047_support_thread_archive.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0047 — SUPPORT THREAD ARCHIVE
+-- Once an operator has handled a customer's support thread, they archive
+-- it — it disappears from the main (active) list and moves to a separate
+-- "Arxiv" view for later reference. If the customer sends a new message
+-- after that, the thread automatically un-archives (see the customer-
+-- facing support POST route), so nothing genuinely new gets missed.
+-- =========================================================
+create table telegram_support_threads (
+  customer_id uuid primary key references customers(id) on delete cascade,
+  is_archived boolean not null default false,
+  archived_by uuid references profiles(id) on delete set null,
+  archived_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+alter table telegram_support_threads enable row level security;
+create policy "telegram_orders.manage manage support threads" on telegram_support_threads
+  for all
+  using (has_permission('telegram_orders.manage'))
+  with check (has_permission('telegram_orders.manage'));
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0048_voice_messages.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0048 — VOICE MESSAGES
+-- Adds voice attachments to both chats, same private/public bucket split
+-- as images (support-attachments stays private, team-chat-attachments
+-- stays public). Browser-recorded audio (webm/ogg/mp4) is stored as-is —
+-- no transcoding — so playback is via the web UI's <audio> element, not
+-- forwarded as a native Telegram voice message (format compatibility);
+-- the Telegram push for an operator's voice reply is a text fallback
+-- telling the customer to open the app and listen.
+-- =========================================================
+alter table team_chat_messages add column if not exists voice_path text;
+alter table team_chat_messages add column if not exists voice_duration_seconds int;
+alter table team_chat_messages drop constraint if exists chk_message_or_image;
+alter table team_chat_messages add constraint chk_message_or_image check (
+  (message is not null and char_length(message) > 0) or image_path is not null or voice_path is not null
+);
+
+alter table telegram_support_messages add column if not exists voice_path text;
+alter table telegram_support_messages add column if not exists voice_duration_seconds int;
+alter table telegram_support_messages drop constraint if exists chk_message_or_image;
+alter table telegram_support_messages add constraint chk_message_or_image check (
+  (message is not null and char_length(message) > 0) or image_path is not null or voice_path is not null
+);
+
+update storage.buckets
+set allowed_mime_types = array['image/png','image/jpeg','image/webp','audio/webm','audio/ogg','audio/mp4','audio/mpeg']
+where id in ('support-attachments', 'team-chat-attachments');
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0049_track_payment_operator.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0049 — TRACK WHICH OPERATOR'S PAYMENT DETAILS A TOPUP WENT TO
+-- Fixes a real gap: multiple operators can each have their own card/
+-- Click/Payme, and one is picked at random to show the customer — but
+-- until now nothing recorded WHICH one, so whoever resolves the order
+-- (not necessarily the operator who owns that card) had no way to know
+-- where the money actually landed.
+-- =========================================================
+alter table telegram_orders add column if not exists payment_operator_id uuid references profiles(id) on delete set null;
+alter table telegram_orders add column if not exists received_account_number text;
+alter table telegram_orders add column if not exists received_holder_name text;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0050_security_log.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0050 — SECURITY LOG (super admin)
+-- Builds on the login_attempts table that already exists (0022) for
+-- brute-force rate limiting — this adds the ability to actually act on
+-- what it records: block an IP outright, and gates a new admin page
+-- (plain-language security log, not raw rows) to super_admin only.
+-- Written defensively (if not exists / conditional insert) in case this
+-- was already applied in an earlier session.
+-- =========================================================
+create table if not exists blocked_ips (
+  ip_address text primary key,
+  reason text,
+  blocked_by uuid references profiles(id) on delete set null,
+  blocked_at timestamptz not null default now()
+);
+alter table blocked_ips enable row level security;
+-- Intentionally no policies — same pattern as login_attempts (0022):
+-- only the service-role client (used by the login route and the admin
+-- security-log API) can read or write this table.
+
+insert into permissions (key, description)
+select 'security.manage', 'View the security log and block suspicious IPs — super admin only'
+where not exists (select 1 from permissions where key = 'security.manage');
+
+insert into role_permissions (role_id, permission_id)
+select r.id, p.id from roles r, permissions p
+where r.key = 'super_admin' and p.key = 'security.manage'
+and not exists (
+  select 1 from role_permissions rp
+  join roles r2 on r2.id = rp.role_id
+  join permissions p2 on p2.id = rp.permission_id
+  where r2.key = 'super_admin' and p2.key = 'security.manage'
+);
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0051_auto_block_and_alerts.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0051 — AUTOMATIC BLOCKING + TEAM SECURITY ALERTS
+-- expires_at lets an auto-block self-expire (24h) while a manual block
+-- from the security log stays permanent (expires_at null) until someone
+-- unblocks it. security_alert_state is a tiny dedup table so a
+-- sustained attack sends one Telegram alert per cooldown window instead
+-- of one per failed request.
+-- =========================================================
+alter table blocked_ips add column if not exists expires_at timestamptz;
+
+create table security_alert_state (
+  alert_key text primary key,
+  last_sent_at timestamptz not null default now()
+);
+alter table security_alert_state enable row level security;
+-- Intentionally no policies — service-role only, same pattern as
+-- login_attempts / blocked_ips.
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0052_notification_preferences.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0052 — NOTIFICATION PREFERENCES
+-- Lets each staff member toggle order/security Telegram alerts
+-- independently, without unlinking Telegram entirely.
+-- =========================================================
+alter table profiles add column if not exists notify_orders boolean not null default true;
+alter table profiles add column if not exists notify_security boolean not null default true;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0053_fair_rotation_and_alerts.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0053 — FAIR CARD ROTATION, USAGE LIMITS, STALE-CLAIM ALERTS
+-- Three related fairness mechanisms for BetCore Pay:
+-- 1. usage_count lets payment selection prefer the least-recently-used
+--    card instead of pure random, spreading load evenly over time.
+-- 2. usage_limit lets an operator cap how many times a card gets shown
+--    before the system retires it and asks them to add a replacement.
+-- 3. claim_escalated_at prevents the stale-claim cron (see
+--    /api/cron/check-stale-claims) from posting the same "operator
+--    isn't responding" nudge to the team chat more than once per order.
+-- =========================================================
+alter table telegram_operator_payment_methods add column if not exists usage_count int not null default 0;
+alter table telegram_operator_payment_methods add column if not exists usage_limit int;
+
+alter table telegram_orders add column if not exists claim_escalated_at timestamptz;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0054_chat_reply_delete_theme.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0054 — CHAT REPLIES, SELF-DELETE, PER-USER THEMES
+-- =========================================================
+
+-- Team chat: reply threading + letting someone delete their own message.
+alter table team_chat_messages add column if not exists reply_to_id uuid references team_chat_messages(id) on delete set null;
+
+create policy "team_chat_delete_own" on team_chat_messages
+  for delete using (sender_id = auth.uid());
+
+-- Support chat: reply threading (customer <-> operator). Deletes for this
+-- table go through the existing service-role API routes, not direct
+-- client RLS, so no delete policy is needed here.
+alter table telegram_support_messages add column if not exists reply_to_id uuid references telegram_support_messages(id) on delete set null;
+
+-- Per-user chat theme — staff and customers each pick their own bubble
+-- color scheme independently; a plain key like 'blue' | 'green' |
+-- 'purple' | 'sunset', applied client-side.
+alter table profiles add column if not exists chat_theme text not null default 'blue';
+alter table customers add column if not exists chat_theme text not null default 'blue';
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0055_operator_status_system_notices.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0055 — OPERATOR ONLINE STATUS + SELF-CLEARING SYSTEM NOTICES
+-- Written defensively (checks pg_policies before creating) in case an
+-- earlier draft of this migration was already partially applied.
+-- =========================================================
+
+-- Operator-controlled "on duty" flag. While false, this operator's
+-- payment methods are skipped by the fair-rotation pick in
+-- /api/telegram/miniapp/payment-info, and their status dot shows red
+-- everywhere their name appears in the admin panel.
+alter table profiles add column if not exists is_online boolean not null default true;
+
+-- System notices (e.g. "X went offline") posted into team chat. These
+-- are distinct from normal messages: any staff member can clear one
+-- once everyone has seen it, not just whoever posted it. Seen-tracking
+-- lives in its own table (team_chat_message_reads) rather than an array
+-- column, so "has everyone seen it" is a simple count comparison.
+alter table team_chat_messages add column if not exists is_system boolean not null default false;
+
+create table if not exists team_chat_message_reads (
+  message_id uuid not null references team_chat_messages(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  seen_at timestamptz not null default now(),
+  primary key (message_id, user_id)
+);
+alter table team_chat_message_reads enable row level security;
+
+do $$
+begin
+  if not exists (select 1 from pg_policies where tablename = 'team_chat_message_reads' and policyname = 'team_chat_reads_select') then
+    create policy "team_chat_reads_select" on team_chat_message_reads
+      for select using (has_permission('team_chat.use'));
+  end if;
+
+  if not exists (select 1 from pg_policies where tablename = 'team_chat_message_reads' and policyname = 'team_chat_reads_insert') then
+    create policy "team_chat_reads_insert" on team_chat_message_reads
+      for insert with check (has_permission('team_chat.use') and user_id = auth.uid());
+  end if;
+
+  if not exists (select 1 from pg_policies where tablename = 'team_chat_messages' and policyname = 'team_chat_delete_system') then
+    create policy "team_chat_delete_system" on team_chat_messages
+      for delete using (is_system = true and has_permission('team_chat.use'));
+  end if;
+end $$;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0056_support_thread_claiming.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0056 — SUPPORT THREAD CLAIMING
+-- Mirrors order claiming (0045): whoever opens/replies to a customer's
+-- support thread first "claims" it, so it's always clear which operator
+-- is handling that conversation — no more than one person answering the
+-- same customer at once, and no confusion about whose job it is.
+-- =========================================================
+alter table telegram_support_threads add column if not exists claimed_by uuid references profiles(id) on delete set null;
+alter table telegram_support_threads add column if not exists claimed_at timestamptz;
+
+-- ///////////////////////////////////////////////////////////
+-- FILE: migrations/0057_support_flow.sql
+-- ///////////////////////////////////////////////////////////
+-- =========================================================
+-- 0057 — SUPPORT FLOW: holat, avto-javob, buyurtmaga bog'lash
+-- Mijoz-operator suhbatini professional oqimga o'tkazish uchun
+-- thread'ga holat va kuzatuv maydonlari qo'shiladi.
+-- =========================================================
+
+-- Suhbat holati: 'open' (ochiq/faol), 'ended' (yakunlangan)
+alter table telegram_support_threads add column if not exists status text not null default 'open';
+
+-- Kirish avto-xabari yuborildimi (bir marta yuboriladi)
+alter table telegram_support_threads add column if not exists auto_greeted boolean not null default false;
+
+-- Suhbat qaysi buyurtmaga bog'langan (mijoz tanlagan buyurtma)
+alter table telegram_support_threads add column if not exists linked_order_id uuid references telegram_orders(id) on delete set null;
+
+-- Operator oxirgi marta qachon javob bergani (band/javobsizlikni kuzatish uchun)
+alter table telegram_support_threads add column if not exists last_operator_reply_at timestamptz;
+
+-- Mijoz oxirgi marta qachon yozgani
+alter table telegram_support_threads add column if not exists last_customer_message_at timestamptz;
+
+-- Suhbat qachon yakunlangani
+alter table telegram_support_threads add column if not exists ended_at timestamptz;
+

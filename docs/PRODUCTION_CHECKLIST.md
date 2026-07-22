@@ -47,7 +47,7 @@
 ## 4. Deploy oldidan tekshirish (Vercel)
 
 - [ ] `.env.local` barcha maydonlari to'ldirilgan (`SUPABASE_*`, `NEXT_PUBLIC_SITE_URL`, `CRON_SECRET`)
-- [ ] `supabase/schema.sql` Supabase SQL Editor'da ishga tushirilgan (28 migratsiya)
+- [ ] `supabase/schema.sql` Supabase SQL Editor'da ishga tushirilgan (57 migratsiya)
 - [ ] Birinchi Super Admin yaratilgan (README, "Birinchi admin" bo'limi)
 - [ ] Supabase Dashboard > Authentication > URL Configuration'ga
       `/auth/reset-password`, `/auth/verify-email` qo'shilgan
