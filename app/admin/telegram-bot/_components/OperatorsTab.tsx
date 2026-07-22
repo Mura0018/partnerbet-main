@@ -24,6 +24,7 @@ export function OperatorsTab() {
   const [operators, setOperators] = useState<OperatorRow[]>([]);
   const [regionDrafts, setRegionDrafts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
   const load = async () => {
@@ -41,12 +42,22 @@ export function OperatorsTab() {
   const saveRegion = async (id: string) => {
     const region = regionDrafts[id];
     if (region === undefined) return;
-    await supabase.from("profiles").update({ telegram_region: region }).eq("id", id);
+    setError(null);
+    const { error } = await supabase.from("profiles").update({ telegram_region: region }).eq("id", id);
+    if (error) { setError("Mintaqani saqlab bo'lmadi. Qayta urinib ko'ring."); return; }
+    // Muvaffaqiyatli saqlangach draftni tozalaymiz — eski draftlar to'planmasin.
+    setRegionDrafts((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     load();
   };
 
   const toggleActive = async (op: OperatorRow) => {
-    await supabase.from("profiles").update({ is_active: !op.is_active }).eq("id", op.id);
+    setError(null);
+    const { error } = await supabase.from("profiles").update({ is_active: !op.is_active }).eq("id", op.id);
+    if (error) { setError("Holatni o'zgartirib bo'lmadi. Qayta urinib ko'ring."); return; }
     load();
   };
 
@@ -57,6 +68,10 @@ export function OperatorsTab() {
         shaxsning rolini <span className="text-white font-medium">Operator</span> qilib belgilang — u shu ro'yxatda
         avtomatik paydo bo'ladi, so'ng mintaqasini shu yerda kiriting.
       </div>
+
+      {error && (
+        <p className="text-[12px] text-[#FF6B85] bg-[#FF6B85]/10 border border-[#FF6B85]/30 rounded-lg px-3 py-2 mb-3">{error}</p>
+      )}
 
       {loading ? (
         <p className="text-[13px] text-muted">Yuklanmoqda...</p>
