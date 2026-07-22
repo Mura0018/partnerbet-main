@@ -377,6 +377,10 @@ export default function TelegramAppPage() {
   const [wdRecipientName, setWdRecipientName] = useState("");
 
   const [successLabel, setSuccessLabel] = useState("");
+  // Buyurtma yaratildi, lekin chek yuklanmadi kabi qisman-xato holati —
+  // umumiy `error`dan ajratilgan, shunda success ekranida ko'rsatiladi va
+  // boshqa ekranlarga sizib o'tmaydi.
+  const [successWarning, setSuccessWarning] = useState<string | null>(null);
 
   // Orders
   const [orders, setOrders] = useState<Order[]>([]);
@@ -584,6 +588,7 @@ export default function TelegramAppPage() {
   const submitTopup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessWarning(null);
     const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
     if (!platform || !tuAccountId.trim() || !tuAmount || Number(tuAmount) <= 0) {
       setError("Barcha maydonlarni to'ldiring.");
@@ -636,7 +641,7 @@ export default function TelegramAppPage() {
         }),
       });
       if (!receiptRes.ok) {
-        setError("Buyurtma yaratildi, lekin chek yuklanmadi. \"Operator bilan aloqa\" orqali chekni yuboring.");
+        setSuccessWarning("Buyurtma yaratildi, lekin chek yuklanmadi. \"Operator bilan aloqa\" orqali chekni yuboring.");
       }
 
       setSuccessLabel("Hisob to'ldirish");
@@ -652,6 +657,7 @@ export default function TelegramAppPage() {
   const submitWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessWarning(null);
     const platform = wdPlatform === "Boshqa" ? wdCustomPlatform.trim() : wdPlatform;
     if (!platform || !wdAccountId.trim() || !wdCode.trim() || !wdAmount || Number(wdAmount) <= 0 || !wdPayoutDetails.trim() || !wdRecipientName.trim()) {
       setError("Barcha maydonlarni to'ldiring.");
@@ -1014,6 +1020,9 @@ export default function TelegramAppPage() {
         <CheckCircle2 size={48} className="text-[#4ADE80] mb-4" />
         <p className="text-[16px] font-bold mb-1.5">{successLabel} buyurtmangiz qabul qilindi</p>
         <p className="text-[13px] text-[#93a5ba] mb-6">Operator tez orada ko'rib chiqadi. Holatni "Buyurtmalarim" bo'limida kuzatishingiz mumkin.</p>
+        {successWarning && (
+          <p className="text-[12px] text-[#F4C76A] bg-[#F4C76A]/10 border border-[#F4C76A]/30 rounded-lg px-3 py-2 mb-5 max-w-[300px]">{successWarning}</p>
+        )}
         <button onClick={() => setScreen("menu")} className={`${buttonCls} max-w-[220px]`}>Menyuga qaytish</button>
         </div>
       </div>
