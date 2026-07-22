@@ -759,6 +759,10 @@ export default function TelegramAppPage() {
     setScreen("support");
     setSelectedOrderId(orderId);
     setSupportError("");
+    // Har ochilishda eski javob-nishoni va tema-tanlagichni tozalaymiz, aks
+    // holda javob banneri noto'g'ri kontekstda qolib ketadi.
+    setSupportReplyTo(null);
+    setShowThemePicker(false);
     // Har ochilishda birinchi scroll instant bo'lsin; imzoni tozalab, keyingi
     // loadSupport xabarlarni qayta o'rnatib pastga surishini ta'minlaymiz.
     supportFirstScrollRef.current = true;
