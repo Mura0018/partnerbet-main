@@ -28,10 +28,27 @@ export async function GET(req: NextRequest) {
   if (!customerId) return NextResponse.json({ error: "not_registered" }, { status: 401 });
 
   const supabase = createAdminClient();
-  const { data: messages } = await supabase
+
+  // Yakunlangan suhbat mijoz tomonida ko'rinmasligi kerak. Suhbat oxirgi marta
+  // yakunlanganda (mijoz "Ha" tasdig'i orqali) thread.ended_at o'rnatiladi.
+  // Shu sababli mijozga faqat oxirgi yakunlashdan keyingi (yangi sessiya)
+  // xabarlarni qaytaramiz. ended_at bo'lmasa (hech yakunlanmagan) — hammasi
+  // ko'rinadi, regressiya yo'q. Operator paneli to'liq tarixni alohida
+  // (support-archive) endpoint orqali o'qiydi — bu filtr faqat mijoz GET'iga.
+  const { data: thread } = await supabase
+    .from("telegram_support_threads")
+    .select("ended_at")
+    .eq("customer_id", customerId)
+    .maybeSingle();
+
+  let query = supabase
     .from("telegram_support_messages")
     .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at")
-    .eq("customer_id", customerId)
+    .eq("customer_id", customerId);
+  if (thread?.ended_at) {
+    query = query.gt("created_at", thread.ended_at);
+  }
+  const { data: messages } = await query
     .order("created_at", { ascending: true })
     .limit(200);
 
