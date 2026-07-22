@@ -112,7 +112,7 @@ export function ChatTab() {
   }, [messages.length]);
 
   const send = async () => {
-    if (!text.trim()) return;
+    if (sending || !text.trim()) return;
     setSending(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {

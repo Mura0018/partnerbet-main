@@ -801,7 +801,7 @@ export default function TelegramAppPage() {
   };
 
   const sendSupportMessage = async () => {
-    if (!supportText.trim()) return;
+    if (supportSending || !supportText.trim()) return;
     setSupportSending(true);
     try {
       const res = await fetch("/api/telegram/miniapp/support", {

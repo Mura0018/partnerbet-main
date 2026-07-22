@@ -110,7 +110,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   }, [msgs.length]);
 
   const reply = async () => {
-    if (!text.trim()) return;
+    if (sending || !text.trim()) return;
     setSending(true);
     try {
       await fetch("/api/admin/telegram-orders/support-reply", {
