@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil,
 } from "lucide-react";
 
 declare global {
@@ -42,6 +42,8 @@ type SupportMessage = {
   // F1: optimistik yuborish uchun — faqat client tomonда (DB emas). `clientId`
   // server id kelгунcha vaqtинча id; `status` yetkazish holati.
   clientId?: string; status?: "sending" | "sent" | "failed";
+  // F1c: xato bo'lganda "Qayta yuborish" / "Tahrirlash" uchun asl payload.
+  _draft?: { message: string; replyToId: string | null; orderId: string | null };
 };
 
 type PaymentInfo = {
@@ -415,6 +417,8 @@ export default function TelegramAppPage() {
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
   const [supportText, setSupportText] = useState("");
   const [supportReplyTo, setSupportReplyTo] = useState<SupportMessage | null>(null);
+  // F1c: qaysi failed xabar uchun retry/edit menyusи ochiq (clientId).
+  const [failedMenuFor, setFailedMenuFor] = useState<string | null>(null);
   const [myChatTheme, setMyChatTheme] = useState("blue");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
@@ -925,6 +929,7 @@ export default function TelegramAppPage() {
       sender: "customer", message: text,
       image_path: null, file_name: null, voice_path: null, voice_duration_seconds: null,
       reply_to_id: replyToId, created_at: new Date().toISOString(),
+      _draft: { message: text, replyToId, orderId },
     };
     setSupportMessages((prev) => [...prev, optimistic]);
     setSupportText("");
@@ -938,6 +943,32 @@ export default function TelegramAppPage() {
     const inflight = inflightRef.current;
     return () => { inflight.forEach((c) => c.abort()); inflight.clear(); };
   }, []);
+
+  // F1c: xato xabarni asl payload bilan qayta yuborish.
+  const retrySupportMessage = (clientId: string) => {
+    const msg = supportMessages.find((m) => m.clientId === clientId);
+    if (!msg?._draft) return;
+    setFailedMenuFor(null);
+    setSupportError("");
+    setMsgStatus(clientId, "sending");
+    void deliverSupportMessage(clientId, msg._draft);
+  };
+
+  // F1c: xato xabarni tahrirlash — matn/reply/order composerга qaytadi,
+  // failed bubble ro'yxatдан olib tashlanadi (dublikат bo'lmasin).
+  const editSupportMessage = (clientId: string) => {
+    const msg = supportMessages.find((m) => m.clientId === clientId);
+    if (!msg?._draft) return;
+    setFailedMenuFor(null);
+    setSupportError("");
+    setSupportText(msg._draft.message);
+    setSelectedOrderId(msg._draft.orderId);
+    const quoted = msg._draft.replyToId
+      ? supportMessages.find((x) => x.id === msg._draft!.replyToId) ?? null
+      : null;
+    setSupportReplyTo(quoted);
+    setSupportMessages((prev) => prev.filter((m) => m.clientId !== clientId));
+  };
 
   const deleteSupportMessage = async (id: string) => {
     if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
@@ -1375,7 +1406,8 @@ export default function TelegramAppPage() {
               <div key={m.id} className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
                 {m.sender === "operator" && <span className="text-[9px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
                 <div
-                  className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "customer" ? "text-white" : "bg-white/[0.08]"}`}
+                  onClick={m.sender === "customer" && m.status === "failed" ? () => setFailedMenuFor((f) => (f === m.clientId ? null : m.clientId ?? null)) : undefined}
+                  className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "customer" ? "text-white" : "bg-white/[0.08]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
                   style={m.sender === "customer" ? { background: chatThemeGradient(myChatTheme) } : undefined}
                 >
                   {quoted && (
@@ -1406,13 +1438,30 @@ export default function TelegramAppPage() {
                   </div>
                 </div>
                 <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "customer" ? "flex-row-reverse" : ""}`}>
-                  <button onClick={() => { setSupportReplyTo(m); setSupportError(""); }} className="text-[9px] text-[#5b7089] active:text-white flex items-center gap-0.5">
-                    <Reply size={9} /> Javob
-                  </button>
-                  {m.sender === "customer" && (
-                    <button onClick={() => deleteSupportMessage(m.id)} className="text-[9px] text-[#5b7089] active:text-[#FF6B85] flex items-center gap-0.5">
-                      <Trash2 size={9} /> O'chirish
-                    </button>
+                  {m.sender === "customer" && m.status === "failed" ? (
+                    failedMenuFor === m.clientId ? (
+                      <>
+                        <button onClick={() => retrySupportMessage(m.clientId!)} className="text-[10px] text-[#7db8ff] active:text-white flex items-center gap-0.5 font-medium">
+                          <RotateCcw size={10} /> Qayta yuborish
+                        </button>
+                        <button onClick={() => editSupportMessage(m.clientId!)} className="text-[10px] text-[#F4C76A] active:text-white flex items-center gap-0.5 font-medium">
+                          <Pencil size={10} /> Tahrirlash
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-[9px] text-[#FF6B85]/70">Yuborilmadi — tanlash uchun bosing</span>
+                    )
+                  ) : (
+                    <>
+                      <button onClick={() => { setSupportReplyTo(m); setSupportError(""); }} className="text-[9px] text-[#5b7089] active:text-white flex items-center gap-0.5">
+                        <Reply size={9} /> Javob
+                      </button>
+                      {m.sender === "customer" && (
+                        <button onClick={() => deleteSupportMessage(m.id)} className="text-[9px] text-[#5b7089] active:text-[#FF6B85] flex items-center gap-0.5">
+                          <Trash2 size={9} /> O'chirish
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
