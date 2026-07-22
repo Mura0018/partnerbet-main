@@ -43,6 +43,8 @@ export function ChatTab() {
   const [myTheme, setMyTheme] = useState<string>("blue");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const firstScrollRef = useRef(true);
   const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
 
@@ -108,7 +110,19 @@ export function ChatTab() {
   };
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const bottom = bottomRef.current;
+    if (!bottom) return;
+    // Birinchi ochilishda darhol (animatsiyasiz) pastga.
+    if (firstScrollRef.current) {
+      firstScrollRef.current = false;
+      bottom.scrollIntoView({ behavior: "auto" });
+      return;
+    }
+    // Keyingi yangi xabarlarda: faqat foydalanuvchi pastga yaqin bo'lsa sur
+    // (tepada eski xabarlarni o'qiyotgan bo'lsa polling uni tortmaydi).
+    const list = listRef.current;
+    if (list && list.scrollHeight - list.scrollTop - list.clientHeight >= 80) return;
+    bottom.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
   const send = async () => {
@@ -227,6 +241,7 @@ export function ChatTab() {
         </div>
       )}
       <div
+        ref={listRef}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-w-0 min-h-0"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
       >
