@@ -28,6 +28,15 @@ const REPLY_TEMPLATES = [
   "Kechirasiz, kutish uchun rahmat — operator tez orada javob beradi.",
 ];
 
+// H1: operator javobi/ovozi yuborishda API xatosini do'stona matnga aylantiradi
+// (xom JSON emas). Faqat javob/ovoz yuborish uchun.
+function replyErrorMessage(error: unknown, status: number): string {
+  if (status === 401 || status === 403 || error === "forbidden") {
+    return "Ruxsat yo'q yoki sessiya tugagan. Sahifani yangilab, qayta kiring.";
+  }
+  return "Xabar yuborilmadi. Qayta urinib ko'ring.";
+}
+
 function SupportImage({ path }: { path: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -76,6 +85,10 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   const [claimedBy, setClaimedBy] = useState(thread.claimed_by);
   const [claimedByName, setClaimedByName] = useState(thread.claimed_by_name);
   const [replyTo, setReplyTo] = useState<SupportMsg | null>(null);
+  // H1: javob/ovoz yuborish muvaffaqiyatsiz bo'lganda composer ustida
+  // ko'rsatiladigan inline xato. Muvaffaqiyatda, matn o'zgarganда va
+  // javob-nishoni o'zgarganda tozalanadi — eski xato keyingi urinishga o'tmaydi.
+  const [sendError, setSendError] = useState<string | null>(null);
   const [myTheme, setMyTheme] = useState<string>("blue");
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -126,15 +139,26 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   const reply = async () => {
     if (sending || !text.trim()) return;
     setSending(true);
+    setSendError(null);
     try {
-      await fetch("/api/admin/telegram-orders/support-reply", {
+      const res = await fetch("/api/admin/telegram-orders/support-reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id, message: text.trim(), replyToId: replyTo?.id ?? null }),
       });
+      if (!res.ok) {
+        // Xato: matn va javob-nishoni SAQLANADI, muvaffaqiyat ko'rsatilmaydi,
+        // loadThread chaqirilmaydi. Operator matnni o'zgartirmasdan qayta yubora oladi.
+        const data = await res.json().catch(() => ({}));
+        setSendError(replyErrorMessage((data as any)?.error, res.status));
+        return;
+      }
       setText("");
       setReplyTo(null);
+      setSendError(null);
       await loadThread();
+    } catch {
+      setSendError("Tarmoq xatosi. Xabar yuborilmadi — qayta urinib ko'ring.");
     } finally {
       setSending(false);
     }
@@ -156,14 +180,24 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
     const recorded = await voiceRecorder.stop();
     if (!recorded || recorded.durationSeconds < 1) return;
     setSending(true);
+    setSendError(null);
     try {
       const audioBase64 = await blobToBase64(recorded.blob);
-      await fetch("/api/admin/telegram-orders/support-reply-voice", {
+      const res = await fetch("/api/admin/telegram-orders/support-reply-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id, audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
       });
+      if (!res.ok) {
+        // Ovoz blob'i stop()dan keyin yo'qoladi — qayta yuborish = qayta yozib
+        // yuborish. Muvaffaqiyat ko'rsatilmaydi, loadThread chaqirilmaydi.
+        setSendError("Ovozli xabar yuborilmadi. Qayta yozib, qayta urinib ko'ring.");
+        return;
+      }
+      setSendError(null);
       await loadThread();
+    } catch {
+      setSendError("Ovozli xabar yuborilmadi. Qayta yozib, qayta urinib ko'ring.");
     } finally {
       setSending(false);
     }
@@ -284,7 +318,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
               <div className="text-[8px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
             </div>
             <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "operator" ? "flex-row-reverse" : ""}`}>
-              <button onClick={() => setReplyTo(m)} className="text-[9px] text-[#5b6f85] hover:text-white flex items-center gap-0.5">
+              <button onClick={() => { setReplyTo(m); setSendError(null); }} className="text-[9px] text-[#5b6f85] hover:text-white flex items-center gap-0.5">
                 <Reply size={9} /> Javob
               </button>
               {m.sender === "operator" && (
@@ -316,9 +350,14 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
             {replyTo.message || (replyTo.image_path ? "📷 Rasm" : replyTo.voice_path ? "🎤 Ovozli xabar" : "")}
           </div>
-          <button onClick={() => setReplyTo(null)} className="shrink-0 p-1 rounded hover:bg-white/10 text-muted">
+          <button onClick={() => { setReplyTo(null); setSendError(null); }} className="shrink-0 p-1 rounded hover:bg-white/10 text-muted">
             <X size={12} />
           </button>
+        </div>
+      )}
+      {sendError && (
+        <div role="alert" aria-live="assertive" className="px-3 pt-1.5 shrink-0">
+          <p className="text-[11px] text-[#FF6B85]">{sendError}</p>
         </div>
       )}
       {voiceRecorder.recording ? (
@@ -341,7 +380,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
           placeholder="Javob yozing..."
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); setSendError(null); }}
           onKeyDown={(e) => e.key === "Enter" && reply()}
         />
         <button onClick={reply} disabled={sending || !text.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
