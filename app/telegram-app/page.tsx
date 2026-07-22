@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
 } from "lucide-react";
 
 declare global {
@@ -116,7 +116,7 @@ function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => s
 
   if (loading) return <p className="text-[12px] text-white/70">Yuklanmoqda…</p>;
   if (!url) return <p className="text-[12px] text-[#FF6B85]">Ovozli xabarni yuklab bo'lmadi.</p>;
-  return <audio controls src={url} className="max-w-[220px] h-9" />;
+  return <audio controls src={url} className="max-w-[190px] h-8" />;
 }
 
 // F2: mijoz chat bubble'ida rasmni ko'rsatadi. Optimistik holatda mahalliy
@@ -366,6 +366,17 @@ function supportSendErrorMessage(error: unknown, status: number, kind: "message"
     : "Xabar yuborilmadi. Qayta urinib ko'ring.";
 }
 
+// Part I: kun ajratgichi yorlig'i (Telegram uslubi: Bugun / Kecha / sana).
+function dayLabel(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diffDays = Math.round((startOf(now) - startOf(d)) / 86400000);
+  if (diffDays === 0) return "Bugun";
+  if (diffDays === 1) return "Kecha";
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
+}
+
 export default function TelegramAppPage() {
   const [screen, setScreen] = useState<Screen>("loading");
   // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
@@ -465,6 +476,10 @@ export default function TelegramAppPage() {
   const [copiedToast, setCopiedToast] = useState(false);
   // F2b: biriktirilgan buyurtma kartasi ag'darilganmi (old=buyurtma, orqa=sabab).
   const [orderCardFlipped, setOrderCardFlipped] = useState(false);
+  // Part I: pastga qaytish tugmasi (faqat tepaga scroll qilinganda ko'rinadi).
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  // Part I: long-press ochgan xabar menyusi (id) — Nusxalash / O'chirish.
+  const [msgMenuFor, setMsgMenuFor] = useState<SupportMessage | null>(null);
   const [myChatTheme, setMyChatTheme] = useState("blue");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
@@ -912,8 +927,11 @@ export default function TelegramAppPage() {
     if (screen !== "support") return;
     const bottom = supportBottomRef.current;
     if (!bottom) return;
-    // Birinchi ochilishda darhol (animatsiyasiz) pastga tush.
+    // Birinchi ochilishda darhol (animatsiyasiz) pastga tush — LEKIN bayroqni
+    // faqat haqiqiy xabarlar render bo'lgach iste'mol qilamiz, aks holda u
+    // bo'sh/yuklanayotgan ro'yxatda sarflanib, chat tepada qolib ketadi.
     if (supportFirstScrollRef.current) {
+      if (supportLoading || supportMessages.length === 0) return;
       supportFirstScrollRef.current = false;
       bottom.scrollIntoView({ behavior: "auto" });
       return;
@@ -1563,7 +1581,7 @@ export default function TelegramAppPage() {
             </div>
           </div>
         )}
-        <div className="p-4 pb-2 shrink-0">
+        <div className="p-4 pb-2 shrink-0 bg-white/[0.04] backdrop-blur-xl border-b border-white/10 z-10">
           <div className="flex items-center justify-between -mt-1">
             <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
             <button onClick={() => setShowThemePicker((v) => !v)} className="p-2 rounded-lg active:bg-white/5 -mt-5" aria-label="Chat mavzusi">
@@ -1579,6 +1597,7 @@ export default function TelegramAppPage() {
         </div>
         <div
           ref={supportListRef}
+          onScroll={(e) => { const el = e.currentTarget; setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240); }}
           className="flex-1 overflow-y-auto px-4 space-y-2 min-h-0"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
         >
@@ -1587,16 +1606,24 @@ export default function TelegramAppPage() {
           ) : supportMessages.length === 0 ? (
             <p className="text-[12px] text-[#93a5ba] text-center mt-8">Savolingiz bo'lsa, quyidan yozing — operator tez orada javob beradi.</p>
           ) : (
-            supportMessages.map((m) => {
+            supportMessages.map((m, i) => {
+              const prev = i > 0 ? supportMessages[i - 1] : null;
+              const showDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString();
               const quoted = supportMessageById(m.reply_to_id);
               const quotedLabel = quoted ? (quoted.sender === "customer" ? "Siz" : "Operator") : null;
               return (
-              <div key={m.id} className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
+              <React.Fragment key={m.id}>
+                {showDay && (
+                  <div className="flex justify-center my-2">
+                    <span className="text-[10px] text-white/75 bg-black/30 px-2.5 py-0.5 rounded-full backdrop-blur-sm">{dayLabel(m.created_at)}</span>
+                  </div>
+                )}
+              <div className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
                 {m.sender === "operator" && <span className="text-[9px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
                 <div
                   onClick={m.sender === "customer" && m.status === "failed" ? () => setFailedMenuFor((f) => (f === m.clientId ? null : m.clientId ?? null)) : undefined}
-                  {...(m.message && !m.message.startsWith("__END_CONFIRM__") ? bindLongPress(() => copyMessageText(m.message!)) : {})}
-                  className={`max-w-[78%] rounded-2xl px-3 py-1.5 text-[12.5px] leading-snug select-none transition-transform active:scale-[0.97] ${m.sender === "customer" ? "text-white" : "bg-white/[0.06]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
+                  {...(!m.message?.startsWith("__END_CONFIRM__") && m.status !== "sending" ? bindLongPress(() => setMsgMenuFor(m)) : {})}
+                  className={`max-w-[78%] rounded-2xl ${(m.image_path || m._localImageUrl) ? "p-1" : "px-3 py-1.5"} text-[12.5px] leading-snug select-none transition-transform active:scale-[0.97] ${m.sender === "customer" ? "text-white" : "bg-white/[0.06]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
                   style={m.sender === "customer" ? { background: chatThemeGradient(myChatTheme) } : undefined}
                 >
                   {quoted && (
@@ -1629,9 +1656,11 @@ export default function TelegramAppPage() {
                     {m.sender === "customer" && m.status === "failed" && <span className="text-[9px] font-bold text-[#FF6B85]" aria-label="Yuborilmadi" title="Yuborilmadi">!</span>}
                   </div>
                 </div>
-                <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "customer" ? "flex-row-reverse" : ""}`}>
-                  {m.sender === "customer" && m.status === "failed" ? (
-                    failedMenuFor === m.clientId ? (
+                {/* Part I: oddiy xabar amallari long-press menyusида; bu yerda
+                    faqat "failed" uchun Qayta yuborish/Tahrirlash. */}
+                {m.sender === "customer" && m.status === "failed" && (
+                  <div className="flex items-center gap-2.5 mt-0.5 px-1 flex-row-reverse">
+                    {failedMenuFor === m.clientId ? (
                       <>
                         <button onClick={() => retrySupportMessage(m.clientId!)} className="text-[10px] text-[#7db8ff] active:text-white flex items-center gap-0.5 font-medium">
                           <RotateCcw size={10} /> Qayta yuborish
@@ -1642,26 +1671,50 @@ export default function TelegramAppPage() {
                       </>
                     ) : (
                       <span className="text-[9px] text-[#FF6B85]/70">Yuborilmadi — tanlash uchun bosing</span>
-                    )
-                  ) : (
-                    <>
-                      <button onClick={() => { setSupportReplyTo(m); setSupportError(""); }} className="text-[9px] text-[#5b7089] active:text-white flex items-center gap-0.5">
-                        <Reply size={9} /> Javob
-                      </button>
-                      {m.sender === "customer" && (
-                        <button onClick={() => deleteSupportMessage(m.id)} className="text-[9px] text-[#5b7089] active:text-[#FF6B85] flex items-center gap-0.5">
-                          <Trash2 size={9} /> O'chirish
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
+              </React.Fragment>
               );
             })
           )}
           <div ref={supportBottomRef} />
         </div>
+
+        {/* Part I: pastga qaytish tugmasi — faqat tepaga scroll qilinganda. */}
+        {showScrollDown && (
+          <button
+            onClick={() => { supportBottomRef.current?.scrollIntoView({ behavior: "smooth" }); setShowScrollDown(false); }}
+            className="fixed right-3 bottom-20 z-[60] w-10 h-10 rounded-full bg-[#0e2038]/90 backdrop-blur border border-white/10 flex items-center justify-center shadow-lg active:scale-95"
+            aria-label="Pastga"
+          >
+            <ChevronDown size={20} className="text-white" />
+          </button>
+        )}
+
+        {/* Part I: xabar amallari (long-press) — Nusxalash / Javob / O'chirish. */}
+        {msgMenuFor && (
+          <div className="fixed inset-0 z-[85] flex items-end" onClick={() => setMsgMenuFor(null)}>
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="relative w-full bg-[#0e2038] rounded-t-2xl p-2 pb-6 space-y-1" onClick={(e) => e.stopPropagation()}>
+              {msgMenuFor.message && !msgMenuFor.message.startsWith("__END_CONFIRM__") && (
+                <button onClick={() => { copyMessageText(msgMenuFor.message!); setMsgMenuFor(null); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl active:bg-white/5 text-[14px] text-white">
+                  <Copy size={16} className="text-[#7db8ff]" /> Nusxalash
+                </button>
+              )}
+              <button onClick={() => { setSupportReplyTo(msgMenuFor); setSupportError(""); setMsgMenuFor(null); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl active:bg-white/5 text-[14px] text-white">
+                <Reply size={16} className="text-[#7db8ff]" /> Javob
+              </button>
+              {msgMenuFor.sender === "customer" && !msgMenuFor.clientId && (
+                <button onClick={() => { const id = msgMenuFor.id; setMsgMenuFor(null); deleteSupportMessage(id); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl active:bg-white/5 text-[14px] text-[#FF6B85]">
+                  <Trash2 size={16} /> O'chirish
+                </button>
+              )}
+              <button onClick={() => setMsgMenuFor(null)} className="w-full px-4 py-3 rounded-xl active:bg-white/5 text-[14px] text-[#93a5ba] mt-1">Bekor</button>
+            </div>
+          </div>
+        )}
 
         {/* F2b: to'liq ekran rasm — BackButton buni yopadi (menyuga chiqmaydi). */}
         {fullscreenImage && (
@@ -1676,29 +1729,19 @@ export default function TelegramAppPage() {
           </div>
         )}
 
-        {/* F2b: buyurtma orqali kirilganda biriktirilgan flip-karta. */}
+        {/* Part I: buyurtma orqali kirilganda biriktirilgan karta (faqat old
+            tomon — sabab/operator faqat operator panelida ko'rinadi). */}
         {selectedOrder && (
-          <div className="px-3 pt-2 shrink-0" style={{ perspective: "1000px" }}>
-            <div className="relative transition-transform duration-500" style={{ transformStyle: "preserve-3d", transform: orderCardFlipped ? "rotateY(180deg)" : "none", minHeight: "52px" }}>
-              <div className="rounded-xl bg-[#0e2038] border border-white/10 px-3 py-2 flex items-center gap-2" style={{ backfaceVisibility: "hidden" }}>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-semibold text-white truncate">
-                    {selectedOrder.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {Number(selectedOrder.amount).toLocaleString("ru-RU")} so'm
-                  </div>
-                  <div className="text-[10px] text-[#93a5ba] truncate">{selectedOrder.platform} · ID {selectedOrder.account_id} · {STATUS_LABEL[selectedOrder.status].label}</div>
+          <div className="px-3 pt-2 shrink-0">
+            <div className="rounded-xl bg-white/[0.05] border border-white/10 px-3 py-2 flex items-center gap-2">
+              <ListOrdered size={15} className="text-[#7db8ff] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-semibold text-white truncate">
+                  {selectedOrder.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {Number(selectedOrder.amount).toLocaleString("ru-RU")} so'm
                 </div>
-                {(selectedOrder.operator_note || selectedOrder.operator_name) && (
-                  <button onClick={() => setOrderCardFlipped(true)} className="shrink-0 text-[10px] text-[#7db8ff] px-2 py-1 rounded-lg bg-white/5 active:bg-white/10">Sabab</button>
-                )}
-                <button onClick={() => { setSelectedOrderId(null); setOrderCardFlipped(false); }} className="shrink-0 p-1 rounded active:bg-white/10 text-[#93a5ba]" aria-label="Olib tashlash"><XCircle size={14} /></button>
+                <div className="text-[10px] text-[#93a5ba] truncate">{selectedOrder.platform} · ID {selectedOrder.account_id} · {STATUS_LABEL[selectedOrder.status].label}</div>
               </div>
-              <div className="absolute inset-0 rounded-xl bg-[#0e2038] border border-[#F4C76A]/30 px-3 py-2 flex items-center gap-2" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] text-[#F4C76A] mb-0.5 truncate">{selectedOrder.operator_name ? `Operator: ${selectedOrder.operator_name}` : "Operator izohi"}</div>
-                  <div className="text-[11px] text-white/90 truncate">{selectedOrder.operator_note || "Izoh yo'q"}</div>
-                </div>
-                <button onClick={() => setOrderCardFlipped(false)} className="shrink-0 text-[10px] text-[#7db8ff] px-2 py-1 rounded-lg bg-white/5 active:bg-white/10">Ortga</button>
-              </div>
+              <button onClick={() => setSelectedOrderId(null)} className="shrink-0 p-1 rounded active:bg-white/10 text-[#93a5ba]" aria-label="Olib tashlash"><XCircle size={14} /></button>
             </div>
           </div>
         )}
