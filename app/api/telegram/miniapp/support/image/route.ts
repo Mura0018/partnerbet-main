@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
-  const { initData, imageBase64, mimeType, fileName } = body ?? {};
+  const { initData, imageBase64, mimeType, fileName, caption } = body ?? {};
   if (!initData || !imageBase64 || !mimeType) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
@@ -55,9 +55,12 @@ export async function POST(req: NextRequest) {
   });
   if (uploadError) return NextResponse.json({ error: "upload_failed" }, { status: 500 });
 
+  // F2: ixtiyoriy caption `message` maydonига yoziladi (chk_message_or_image
+  // image_path bo'lganда message + image birga bo'lishига ruxsat beradi).
+  const captionText = typeof caption === "string" ? caption.trim().slice(0, 2000) : "";
   const { data: inserted, error } = await supabase
     .from("telegram_support_messages")
-    .insert({ customer_id: customer.id, sender: "customer", image_path: path, file_name: fileName ? String(fileName).slice(0, 200) : null })
+    .insert({ customer_id: customer.id, sender: "customer", image_path: path, file_name: fileName ? String(fileName).slice(0, 200) : null, message: captionText || null })
     .select("id, sender, message, image_path, file_name, created_at")
     .single();
 

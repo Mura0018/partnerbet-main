@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Image as ImageIcon, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil,
 } from "lucide-react";
 
 declare global {
@@ -42,8 +42,13 @@ type SupportMessage = {
   // F1: optimistik yuborish uchun — faqat client tomonда (DB emas). `clientId`
   // server id kelгунcha vaqtинча id; `status` yetkazish holati.
   clientId?: string; status?: "sending" | "sent" | "failed";
-  // F1c: xato bo'lganda "Qayta yuborish" / "Tahrirlash" uchun asl payload.
-  _draft?: { message: string; replyToId: string | null; orderId: string | null };
+  // F1c/F2: xato bo'lganda "Qayta yuborish" / "Tahrirlash" uchun asl payload
+  // (matn yoki rasm).
+  _draft?:
+    | { kind: "text"; message: string; replyToId: string | null; orderId: string | null }
+    | { kind: "image"; imageBase64: string; mimeType: string; fileName: string; caption: string | null };
+  // F2: optimistik rasmni upload tugaguncha darhol ko'rsatish uchun mahalliy URL.
+  _localImageUrl?: string;
 };
 
 type PaymentInfo = {
@@ -110,6 +115,38 @@ function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => s
   if (loading) return <p className="text-[12px] text-white/70">Yuklanmoqda…</p>;
   if (!url) return <p className="text-[12px] text-[#FF6B85]">Ovozli xabarni yuklab bo'lmadi.</p>;
   return <audio controls src={url} className="max-w-[220px] h-9" />;
+}
+
+// F2: mijoz chat bubble'ida rasmni ko'rsatadi. Optimistik holatda mahalliy
+// `localUrl` (upload'gача), aks holda `path` bo'yicha himoyalangan media-url.
+function CustomerSupportImage({ localUrl, path, getInitData }: { localUrl?: string; path?: string | null; getInitData: () => string }) {
+  const [url, setUrl] = useState<string | null>(localUrl ?? null);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (localUrl) { setUrl(localUrl); return; }
+    if (!path) return;
+    let alive = true;
+    fetch("/api/telegram/miniapp/support/media-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData: getInitData(), path }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (alive) setUrl(d.url ?? null); })
+      .catch(() => { if (alive) setUrl(null); });
+    return () => { alive = false; };
+  }, [localUrl, path]);
+  if (!url) return <p className="text-[11px] text-white/70">Rasm yuklanmoqda…</p>;
+  return (
+    <>
+      <img src={url} alt="Rasm" onClick={() => setExpanded(true)} className="max-w-[200px] rounded-lg cursor-zoom-in" />
+      {expanded && (
+        <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-[70] p-5" onClick={() => setExpanded(false)}>
+          <img src={url} alt="Rasm" className="max-w-full max-h-full object-contain rounded-lg" />
+        </div>
+      )}
+    </>
+  );
 }
 
 function FloatingAmbience() {
@@ -419,6 +456,11 @@ export default function TelegramAppPage() {
   const [supportReplyTo, setSupportReplyTo] = useState<SupportMessage | null>(null);
   // F1c: qaysi failed xabar uchun retry/edit menyusи ochiq (clientId).
   const [failedMenuFor, setFailedMenuFor] = useState<string | null>(null);
+  // F2: rasm composer draft (preview'да, hali yuborilmagan) va caption.
+  const [imageDraft, setImageDraft] = useState<{ previewUrl: string; imageBase64: string; mimeType: string; fileName: string } | null>(null);
+  const [imageCaption, setImageCaption] = useState("");
+  // F2: klaviatura ochilgandagi barqaror viewport balandligi (px).
+  const [supportViewportH, setSupportViewportH] = useState<number | null>(null);
   const [myChatTheme, setMyChatTheme] = useState("blue");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
@@ -439,6 +481,8 @@ export default function TelegramAppPage() {
   // fire-and-forget yetkazishlarning AbortControllerlari (unmount'да bekor).
   const sendLockRef = useRef(false);
   const inflightRef = useRef<Set<AbortController>>(new Set());
+  // F2: matn input'iga fokusni saqlash uchun (Send'да klaviatura yopilmasin).
+  const supportInputRef = useRef<HTMLInputElement>(null);
   const voiceRecorder = useVoiceRecorder();
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
@@ -452,6 +496,31 @@ export default function TelegramAppPage() {
     // Telegram WebApp initData tayyor bo'lgach, script.onload ichida yuklanadi.
   }, []);
 
+  // F2: keyboard ochilganda chat sakramasin/kichraymasin — ko'rinadigan
+  // (visible) balandlikni kuzatib, support ekranini shu balandlikка moslaymiz.
+  // Telegram WebApp `viewportChanged` + brauzer `visualViewport` birga.
+  useEffect(() => {
+    const apply = () => {
+      const tg = (window as any)?.Telegram?.WebApp;
+      const vv = (window as any).visualViewport;
+      const h = vv?.height || tg?.viewportHeight || window.innerHeight;
+      setSupportViewportH(h ? Math.round(h) : null);
+    };
+    apply();
+    const vv = (window as any).visualViewport;
+    vv?.addEventListener?.("resize", apply);
+    vv?.addEventListener?.("scroll", apply);
+    const tg = (window as any)?.Telegram?.WebApp;
+    tg?.onEvent?.("viewportChanged", apply);
+    window.addEventListener("resize", apply);
+    return () => {
+      vv?.removeEventListener?.("resize", apply);
+      vv?.removeEventListener?.("scroll", apply);
+      tg?.offEvent?.("viewportChanged", apply);
+      window.removeEventListener("resize", apply);
+    };
+  }, []);
+
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-web-app.js";
@@ -459,6 +528,8 @@ export default function TelegramAppPage() {
     script.onload = async () => {
       window.Telegram?.WebApp?.ready?.();
       window.Telegram?.WebApp?.expand?.();
+      // F2: mini app'ni pastga surib yopishни o'chirамиз — chat barqaror qoladi.
+      (window as any)?.Telegram?.WebApp?.disableVerticalSwipes?.();
       const initData = getInitData();
       if (!initData) {
         setError("Bu ilova faqat Telegram ichida ochilishi kerak.");
@@ -929,13 +1000,15 @@ export default function TelegramAppPage() {
       sender: "customer", message: text,
       image_path: null, file_name: null, voice_path: null, voice_duration_seconds: null,
       reply_to_id: replyToId, created_at: new Date().toISOString(),
-      _draft: { message: text, replyToId, orderId },
+      _draft: { kind: "text", message: text, replyToId, orderId },
     };
     setSupportMessages((prev) => [...prev, optimistic]);
     setSupportText("");
     setSupportReplyTo(null);
     setSupportError("");
     void deliverSupportMessage(clientId, { message: text, replyToId, orderId });
+    // F2: input fokusда qolsin — klaviatura yopilmasin (ketma-ket yozish).
+    supportInputRef.current?.focus();
   };
 
   // F1b: sahifa yopilganda (unmount) in-flight yetkazishlarni bekor qilamiz.
@@ -951,22 +1024,31 @@ export default function TelegramAppPage() {
     setFailedMenuFor(null);
     setSupportError("");
     setMsgStatus(clientId, "sending");
-    void deliverSupportMessage(clientId, msg._draft);
+    if (msg._draft.kind === "image") {
+      void deliverImageMessage(clientId, msg._draft);
+    } else {
+      void deliverSupportMessage(clientId, { message: msg._draft.message, replyToId: msg._draft.replyToId, orderId: msg._draft.orderId });
+    }
   };
 
-  // F1c: xato xabarni tahrirlash — matn/reply/order composerга qaytadi,
-  // failed bubble ro'yxatдан olib tashlanadi (dublikат bo'lmasin).
+  // F1c/F2: xato xabarni tahrirlash — matn/reply/order yoki rasm+caption
+  // composer'ga qaytadi; failed bubble ro'yxatдан olib tashlanadi.
   const editSupportMessage = (clientId: string) => {
     const msg = supportMessages.find((m) => m.clientId === clientId);
     if (!msg?._draft) return;
     setFailedMenuFor(null);
     setSupportError("");
-    setSupportText(msg._draft.message);
-    setSelectedOrderId(msg._draft.orderId);
-    const quoted = msg._draft.replyToId
-      ? supportMessages.find((x) => x.id === msg._draft!.replyToId) ?? null
-      : null;
-    setSupportReplyTo(quoted);
+    if (msg._draft.kind === "image") {
+      const d = msg._draft;
+      setImageDraft({ previewUrl: `data:${d.mimeType};base64,${d.imageBase64}`, imageBase64: d.imageBase64, mimeType: d.mimeType, fileName: d.fileName });
+      setImageCaption(d.caption ?? "");
+    } else {
+      const d = msg._draft;
+      setSupportText(d.message);
+      setSelectedOrderId(d.orderId);
+      const quoted = d.replyToId ? supportMessages.find((x) => x.id === d.replyToId) ?? null : null;
+      setSupportReplyTo(quoted);
+    }
     setSupportMessages((prev) => prev.filter((m) => m.clientId !== clientId));
   };
 
@@ -992,7 +1074,8 @@ export default function TelegramAppPage() {
     });
   };
 
-  const sendSupportImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // F2: rasm tanlanганда DARHOL yubormaydi — preview composer ochadi.
+  const sendSupportImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     setSupportError("");
@@ -1006,30 +1089,81 @@ export default function TelegramAppPage() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = async () => {
+    reader.onload = () => {
       const result = reader.result as string;
       const imageBase64 = result.split(",")[1] ?? "";
-      setSupportSending(true);
-      try {
-        const res = await fetch("/api/telegram/miniapp/support/image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ initData: getInitData(), imageBase64, mimeType: file.type, fileName: file.name }),
-        });
-        if (!res.ok) {
-          // Xato: muvaffaqiyat ko'rsatilmaydi, loadSupport chaqirilmaydi.
-          const data = await res.json().catch(() => ({}));
-          setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "image"));
-          return;
-        }
-        await loadSupport(true);
-      } catch {
-        setSupportError("Tarmoq xatosi. Rasm yuborilmadi — qayta urinib ko'ring.");
-      } finally {
-        setSupportSending(false);
-      }
+      setImageDraft({ previewUrl: URL.createObjectURL(file), imageBase64, mimeType: file.type, fileName: file.name });
+      setImageCaption("");
     };
     reader.readAsDataURL(file);
+  };
+
+  // F2: rasmni bekor qilish (preview'ni yopib, mahalliy URL'ni tozalash).
+  const cancelImageDraft = () => {
+    if (imageDraft) URL.revokeObjectURL(imageDraft.previewUrl);
+    setImageDraft(null);
+    setImageCaption("");
+  };
+
+  // F2: optimistik rasm bubble + fire-and-forget upload (12s timeout).
+  const deliverImageMessage = async (
+    clientId: string,
+    imgDraft: { imageBase64: string; mimeType: string; fileName: string; caption: string | null }
+  ) => {
+    const controller = new AbortController();
+    inflightRef.current.add(controller);
+    const timer = setTimeout(() => controller.abort(), 12000);
+    try {
+      const res = await fetch("/api/telegram/miniapp/support/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), imageBase64: imgDraft.imageBase64, mimeType: imgDraft.mimeType, fileName: imgDraft.fileName, caption: imgDraft.caption }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        setMsgStatus(clientId, "failed");
+        const data = await res.json().catch(() => ({}));
+        setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "image"));
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      const inserted = (data as any)?.message;
+      setSupportMessages((prev) =>
+        prev.map((m) =>
+          m.clientId === clientId
+            ? { ...m, id: inserted?.id ?? m.id, image_path: inserted?.image_path ?? m.image_path, message: inserted?.message ?? m.message, clientId: undefined, status: "sent" }
+            : m
+        )
+      );
+    } catch {
+      setMsgStatus(clientId, "failed");
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      setSupportError(offline ? "Internet yo'q. Rasm yuborilmadi — ulanish tiklangach qayta urinib ko'ring." : "Rasm yuborilmadi. Qayta urinib ko'ring.");
+    } finally {
+      clearTimeout(timer);
+      inflightRef.current.delete(controller);
+    }
+  };
+
+  // F2: preview'даги rasmni optimistik bubble bilan yuborish.
+  const confirmSendImage = () => {
+    if (!imageDraft) return;
+    const draft = imageDraft;
+    const caption = imageCaption.trim() || null;
+    const clientId = `tmp-${Date.now()}-${optimisticSeqRef.current++}`;
+    const optimistic: SupportMessage = {
+      id: clientId, clientId, status: "sending",
+      sender: "customer", message: caption,
+      image_path: null, file_name: draft.fileName, voice_path: null, voice_duration_seconds: null,
+      reply_to_id: null, created_at: new Date().toISOString(),
+      _localImageUrl: draft.previewUrl,
+      _draft: { kind: "image", imageBase64: draft.imageBase64, mimeType: draft.mimeType, fileName: draft.fileName, caption },
+    };
+    setSupportMessages((prev) => [...prev, optimistic]);
+    setImageDraft(null);
+    setImageCaption("");
+    setSupportError("");
+    void deliverImageMessage(clientId, { imageBase64: draft.imageBase64, mimeType: draft.mimeType, fileName: draft.fileName, caption });
   };
 
   const startVoiceRecording = async () => {
@@ -1351,7 +1485,31 @@ export default function TelegramAppPage() {
       return top;
     })();
     return (
-      <div className={`${bgCls} flex flex-col h-screen`}>
+      <div className={`${bgCls} flex flex-col`} style={{ height: supportViewportH ? `${supportViewportH}px` : "100dvh" }}>
+        {imageDraft && (
+          <div className="fixed inset-0 z-[65] bg-black/85 flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 shrink-0">
+              <button onClick={cancelImageDraft} className="text-[13px] text-white/80 active:text-white">Bekor</button>
+              <span className="text-[13px] font-semibold">Rasm yuborish</span>
+              <span className="w-12" />
+            </div>
+            <div className="flex-1 flex items-center justify-center p-4 min-h-0">
+              <img src={imageDraft.previewUrl} alt="Preview" className="max-w-full max-h-full object-contain rounded-lg" />
+            </div>
+            <div className="flex items-center gap-2 p-3 shrink-0">
+              <input
+                value={imageCaption}
+                onChange={(e) => setImageCaption(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmSendImage(); }}
+                placeholder="Izoh (ixtiyoriy)..."
+                className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2.5 px-3 text-[13px] text-white outline-none placeholder:text-[#5b7089]"
+              />
+              <button onMouseDown={(e) => e.preventDefault()} onClick={confirmSendImage} className="shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center" aria-label="Yuborish">
+                <Send size={18} />
+              </button>
+            </div>
+          </div>
+        )}
         <div className="p-5 pb-3">
           <div className="flex items-center justify-between -mt-1">
             <ScreenHeader title="Operator bilan aloqa" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
@@ -1418,8 +1576,11 @@ export default function TelegramAppPage() {
                   )}
                   {m.voice_path ? (
                     <VoicePlayer path={m.voice_path} getInitData={getInitData} />
-                  ) : m.image_path ? (
-                    <div className="flex items-center gap-1.5 text-[#c7d5e6]"><ImageIcon size={13} /> {m.file_name || "Rasm yuborildi"}</div>
+                  ) : (m.image_path || m._localImageUrl) ? (
+                    <div>
+                      <CustomerSupportImage localUrl={m._localImageUrl} path={m.image_path} getInitData={getInitData} />
+                      {m.message && <div className="text-[12px] mt-1 whitespace-pre-wrap break-words">{m.message}</div>}
+                    </div>
                   ) : m.message?.startsWith("__END_CONFIRM__") ? (
                     <div>
                       <div className="mb-2">{m.message.replace("__END_CONFIRM__", "")}</div>
@@ -1508,13 +1669,14 @@ export default function TelegramAppPage() {
             <Mic size={14} className="text-[#7db8ff]" />
           </button>
           <input
+            ref={supportInputRef}
             className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2 px-3 text-[12.5px] text-white outline-none placeholder:text-[#5b7089]"
             placeholder="Xabar yozing..."
             value={supportText}
             onChange={(e) => { setSupportText(e.target.value); setSupportError(""); }}
             onKeyDown={(e) => e.key === "Enter" && sendSupportMessage()}
           />
-          <button onClick={sendSupportMessage} disabled={!supportText.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] disabled:opacity-50">
+          <button onMouseDown={(e) => e.preventDefault()} onClick={sendSupportMessage} disabled={!supportText.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] disabled:opacity-50">
             <Send size={14} />
           </button>
         </div>
