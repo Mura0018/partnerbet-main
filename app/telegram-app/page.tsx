@@ -480,6 +480,7 @@ export default function TelegramAppPage() {
   const [showScrollDown, setShowScrollDown] = useState(false);
   // Part I: long-press ochgan xabar menyusi (id) — Nusxalash / O'chirish.
   const [msgMenuFor, setMsgMenuFor] = useState<SupportMessage | null>(null);
+  const [msgMenuPos, setMsgMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [myChatTheme, setMyChatTheme] = useState("blue");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
@@ -949,6 +950,22 @@ export default function TelegramAppPage() {
     supportBottomRef.current?.scrollIntoView({ behavior: "auto" });
   }, [supportViewportH, screen]);
 
+  // Chatdan chiqilganda (screen "support"dan boshqasiga o'tsa) mijoz ko'rinishini
+  // tozalaymiz -> keyingi kirishda bo'sh chat. Operator tarixni saqlaydi.
+  useEffect(() => {
+    if (screen !== "support") return;
+    return () => {
+      const initData = getInitData();
+      if (!initData) return;
+      fetch("/api/telegram/miniapp/support/clear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+  }, [screen]);
+
   const confirmEnd = async (resolved: boolean) => {
     try {
       await fetch("/api/telegram/miniapp/support/end-confirm", {
@@ -1083,10 +1100,11 @@ export default function TelegramAppPage() {
     if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
     longPressStartRef.current = null;
   };
-  const bindLongPress = (onLong: () => void) => ({
+  const bindLongPress = (onLong: (pos: { x: number; y: number }) => void) => ({
     onPointerDown: (e: React.PointerEvent) => {
-      longPressStartRef.current = { x: e.clientX, y: e.clientY };
-      longPressTimerRef.current = setTimeout(() => { onLong(); cancelLongPress(); }, 450);
+      const pos = { x: e.clientX, y: e.clientY };
+      longPressStartRef.current = pos;
+      longPressTimerRef.current = setTimeout(() => { onLong(pos); cancelLongPress(); }, 450);
     },
     onPointerUp: cancelLongPress,
     onPointerLeave: cancelLongPress,
@@ -1257,9 +1275,10 @@ export default function TelegramAppPage() {
 
   const stopAndSendVoice = async () => {
     const recorded = await voiceRecorder.stop();
-    if (!recorded) return;
-    if (recorded.durationSeconds < 1) return;
+    if (!recorded) { setSupportError("Ovoz yozib olinmadi. Mikrofonga ruxsat bering."); return; }
+    if (recorded.durationSeconds < 1) { setSupportError("Ovozli xabar juda qisqa."); return; }
     setSupportSending(true);
+    setSupportError("");
     try {
       const audioBase64 = await blobToBase64(recorded.blob);
       const res = await fetch("/api/telegram/miniapp/support/voice", {
@@ -1267,8 +1286,22 @@ export default function TelegramAppPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initData: getInitData(), audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
       });
-      if (res.ok) await loadSupport(true);
-      else setSupportError("Ovozli xabar yuborishda xatolik. Qayta urinib ko'ring.");
+      if (res.ok) { await loadSupport(true); return; }
+      // Aniq sabab (diagnostika): qurilma formati / o'lcham / boshqa.
+      const data = await res.json().catch(() => ({}));
+      const err = (data as any)?.error;
+      const map: Record<string, string> = {
+        invalid_mime: "Ovoz formati qo'llab-quvvatlanmaydi (qurilma). Boshqa qurilmada urinib ko'ring.",
+        invalid_audio: "Ovoz fayli buzuq.",
+        invalid_audio_size: "Ovoz hajmi juda katta yoki bo'sh.",
+        invalid_duration: "Ovoz davomiyligi noto'g'ri.",
+        rate_limited: "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.",
+        upload_failed: "Ovozni yuklab bo'lmadi. Qayta urinib ko'ring.",
+        insert_failed: "Ovozni saqlab bo'lmadi. Qayta urinib ko'ring.",
+      };
+      setSupportError(map[err] ?? `Ovozli xabar yuborilmadi${err ? ` (${err})` : ""}. Qayta urinib ko'ring.`);
+    } catch {
+      setSupportError("Tarmoq xatosi. Ovozli xabar yuborilmadi.");
     } finally {
       setSupportSending(false);
     }
@@ -1598,8 +1631,13 @@ export default function TelegramAppPage() {
         <div
           ref={supportListRef}
           onScroll={(e) => { const el = e.currentTarget; setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240); }}
-          className="flex-1 overflow-y-auto px-4 space-y-2 min-h-0"
-          style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
+          className="flex-1 overflow-y-auto px-4 pt-2 space-y-2 min-h-0"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)",
+            backgroundSize: "18px 18px",
+            WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 22px, black calc(100% - 8px), transparent 100%)",
+            maskImage: "linear-gradient(to bottom, transparent 0, black 22px, black calc(100% - 8px), transparent 100%)",
+          }}
         >
           {supportLoading ? (
             <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
@@ -1622,9 +1660,8 @@ export default function TelegramAppPage() {
                 {m.sender === "operator" && <span className="text-[9px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
                 <div
                   onClick={m.sender === "customer" && m.status === "failed" ? () => setFailedMenuFor((f) => (f === m.clientId ? null : m.clientId ?? null)) : undefined}
-                  {...(!m.message?.startsWith("__END_CONFIRM__") && m.status !== "sending" ? bindLongPress(() => setMsgMenuFor(m)) : {})}
-                  className={`max-w-[78%] rounded-2xl ${(m.image_path || m._localImageUrl) ? "p-1" : "px-3 py-1.5"} text-[12.5px] leading-snug select-none transition-transform active:scale-[0.97] ${m.sender === "customer" ? "text-white" : "bg-white/[0.06]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
-                  style={m.sender === "customer" ? { background: chatThemeGradient(myChatTheme) } : undefined}
+                  {...(!m.message?.startsWith("__END_CONFIRM__") && m.status !== "sending" ? bindLongPress((pos) => { setMsgMenuFor(m); setMsgMenuPos(pos); }) : {})}
+                  className={`max-w-[78%] rounded-2xl ${(m.image_path || m._localImageUrl) ? "p-1" : "px-3 py-1.5"} text-[12.5px] leading-snug select-none transition-transform active:scale-[0.97] text-white bg-[#0f2137]/80 backdrop-blur-md border ${m.sender === "customer" ? "border-[#3D7FFF]/30 shadow-[0_2px_16px_rgba(61,127,255,0.20)]" : "border-white/12 shadow-[0_2px_14px_rgba(120,180,255,0.12)]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
                 >
                   {quoted && (
                     <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${m.sender === "customer" ? "border-white/50" : "border-accent/50"}`}>
@@ -1693,25 +1730,31 @@ export default function TelegramAppPage() {
           </button>
         )}
 
-        {/* Part I: xabar amallari (long-press) — Nusxalash / Javob / O'chirish. */}
-        {msgMenuFor && (
-          <div className="fixed inset-0 z-[85] flex items-end" onClick={() => setMsgMenuFor(null)}>
-            <div className="absolute inset-0 bg-black/40" />
-            <div className="relative w-full bg-[#0e2038] rounded-t-2xl p-2 pb-6 space-y-1" onClick={(e) => e.stopPropagation()}>
+        {/* Xabar amallari (long-press) — xabar ustida popover (Telegram uslubi).
+            Ekranning istalgan joyiga tegsa yopiladi. */}
+        {msgMenuFor && msgMenuPos && (
+          <div className="fixed inset-0 z-[85]" onClick={() => setMsgMenuFor(null)}>
+            <div
+              className="absolute w-44 bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1"
+              style={{
+                left: Math.max(8, Math.min(msgMenuPos.x - 88, (typeof window !== "undefined" ? window.innerWidth : 360) - 184)),
+                top: Math.max(8, Math.min(msgMenuPos.y, (typeof window !== "undefined" ? window.innerHeight : 640) - 170)),
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               {msgMenuFor.message && !msgMenuFor.message.startsWith("__END_CONFIRM__") && (
-                <button onClick={() => { copyMessageText(msgMenuFor.message!); setMsgMenuFor(null); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl active:bg-white/5 text-[14px] text-white">
-                  <Copy size={16} className="text-[#7db8ff]" /> Nusxalash
+                <button onClick={() => { copyMessageText(msgMenuFor.message!); setMsgMenuFor(null); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl active:bg-white/10 text-[13.5px] text-white">
+                  <Copy size={15} className="text-[#7db8ff]" /> Nusxalash
                 </button>
               )}
-              <button onClick={() => { setSupportReplyTo(msgMenuFor); setSupportError(""); setMsgMenuFor(null); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl active:bg-white/5 text-[14px] text-white">
-                <Reply size={16} className="text-[#7db8ff]" /> Javob
+              <button onClick={() => { setSupportReplyTo(msgMenuFor); setSupportError(""); setMsgMenuFor(null); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl active:bg-white/10 text-[13.5px] text-white">
+                <Reply size={15} className="text-[#7db8ff]" /> Javob
               </button>
               {msgMenuFor.sender === "customer" && !msgMenuFor.clientId && (
-                <button onClick={() => { const id = msgMenuFor.id; setMsgMenuFor(null); deleteSupportMessage(id); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl active:bg-white/5 text-[14px] text-[#FF6B85]">
-                  <Trash2 size={16} /> O'chirish
+                <button onClick={() => { const id = msgMenuFor.id; setMsgMenuFor(null); deleteSupportMessage(id); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl active:bg-white/10 text-[13.5px] text-[#FF6B85]">
+                  <Trash2 size={15} /> O'chirish
                 </button>
               )}
-              <button onClick={() => setMsgMenuFor(null)} className="w-full px-4 py-3 rounded-xl active:bg-white/5 text-[14px] text-[#93a5ba] mt-1">Bekor</button>
             </div>
           </div>
         )}
