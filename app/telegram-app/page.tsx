@@ -431,6 +431,10 @@ export default function TelegramAppPage() {
   const supportFirstScrollRef = useRef(true);
   // F1: optimistik xabarларга noyob vaqtинча id berish uchun.
   const optimisticSeqRef = useRef(0);
+  // F1b: sinxron dedup guard (bir xil xabar ikki marta ketmasin) va
+  // fire-and-forget yetkazishlarning AbortControllerlari (unmount'да bekor).
+  const sendLockRef = useRef(false);
+  const inflightRef = useRef<Set<AbortController>>(new Set());
   const voiceRecorder = useVoiceRecorder();
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
@@ -855,15 +859,67 @@ export default function TelegramAppPage() {
     setSupportMessages((prev) => prev.map((m) => (m.clientId === clientId ? { ...m, status } : m)));
   };
 
-  const sendSupportMessage = async () => {
-    if (supportSending || !supportText.trim()) return;
+  // F1b: fire-and-forget yetkazish. Optimistik xabarni serverga yuboradi,
+  // 12s AbortController timeout bilan; natijaga qarab clientId holatini
+  // "sent"/"failed" qiladi. Composer buni KUTMAYDI — Send darhol qayta ishlaydi.
+  const deliverSupportMessage = async (
+    clientId: string,
+    payload: { message: string; replyToId: string | null; orderId: string | null }
+  ) => {
+    const controller = new AbortController();
+    inflightRef.current.add(controller);
+    const timer = setTimeout(() => controller.abort(), 12000);
+    try {
+      const res = await fetch("/api/telegram/miniapp/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), message: payload.message, replyToId: payload.replyToId, orderId: payload.orderId }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        setMsgStatus(clientId, "failed");
+        const data = await res.json().catch(() => ({}));
+        setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "message"));
+        return;
+      }
+      // Muvaffaqiyat: optimistik nusxани server id + "sent" ga reconcile.
+      // clientId olib tashlanadi — keyingi poll merge dublikat yaratmaydi.
+      const data = await res.json().catch(() => ({}));
+      const serverId = (data as any)?.message?.id;
+      setSupportMessages((prev) =>
+        prev.map((m) =>
+          m.clientId === clientId ? { ...m, id: serverId ?? m.id, clientId: undefined, status: "sent" } : m
+        )
+      );
+    } catch {
+      // AbortController timeout yoki tarmoq xatosi → failed. navigator.onLine
+      // faqat xabar matnini aniqlashtiradi (asosiy mezon — fetch/abort natijasi).
+      setMsgStatus(clientId, "failed");
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      setSupportError(
+        offline
+          ? "Internet yo'q. Xabar yuborilmadi — ulanish tiklangach qayta urinib ko'ring."
+          : "Xabar yuborilmadi. Qayta urinib ko'ring."
+      );
+    } finally {
+      clearTimeout(timer);
+      inflightRef.current.delete(controller);
+    }
+  };
+
+  // F1b: sinxron (async EMAS) — composer serverni KUTMAYDI (fire-and-forget).
+  const sendSupportMessage = () => {
+    if (sendLockRef.current) return; // sinxron dedup (Enter-repeat / ikki tap)
     const text = supportText.trim();
+    if (!text) return;
+    sendLockRef.current = true;
+    setTimeout(() => { sendLockRef.current = false; }, 0);
+
     const replyToId = supportReplyTo?.id ?? null;
     const orderId = selectedOrderId;
     const clientId = `tmp-${Date.now()}-${optimisticSeqRef.current++}`;
-
     // Optimistik: xabar darhol bubble sifatida ko'rinadi, composer darhol
-    // tozalanadi (Telegram/WhatsApp xulqi). Xato bo'lса bubble "failed" bo'ladi.
+    // tozalanadi. Yetkazish orqada ishlaydi; xato bo'lса bubble "failed".
     const optimistic: SupportMessage = {
       id: clientId, clientId, status: "sending",
       sender: "customer", message: text,
@@ -874,35 +930,14 @@ export default function TelegramAppPage() {
     setSupportText("");
     setSupportReplyTo(null);
     setSupportError("");
-    setSupportSending(true);
-    try {
-      const res = await fetch("/api/telegram/miniapp/support", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: getInitData(), message: text, replyToId, orderId }),
-      });
-      if (!res.ok) {
-        setMsgStatus(clientId, "failed");
-        const data = await res.json().catch(() => ({}));
-        setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "message"));
-        return;
-      }
-      // Muvaffaqiyat: optimistik nusxани server id + "sent" ga reconcile qilamiz.
-      // clientId olib tashlanadi — keyingi poll merge dublikat yaratmaydi.
-      const data = await res.json().catch(() => ({}));
-      const serverId = (data as any)?.message?.id;
-      setSupportMessages((prev) =>
-        prev.map((m) =>
-          m.clientId === clientId ? { ...m, id: serverId ?? m.id, clientId: undefined, status: "sent" } : m
-        )
-      );
-    } catch {
-      setMsgStatus(clientId, "failed");
-      setSupportError("Tarmoq xatosi. Xabar yuborilmadi — qayta urinib ko'ring.");
-    } finally {
-      setSupportSending(false);
-    }
+    void deliverSupportMessage(clientId, { message: text, replyToId, orderId });
   };
+
+  // F1b: sahifa yopilganda (unmount) in-flight yetkazishlarni bekor qilamiz.
+  useEffect(() => {
+    const inflight = inflightRef.current;
+    return () => { inflight.forEach((c) => c.abort()); inflight.clear(); };
+  }, []);
 
   const deleteSupportMessage = async (id: string) => {
     if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
@@ -1430,7 +1465,7 @@ export default function TelegramAppPage() {
             onChange={(e) => { setSupportText(e.target.value); setSupportError(""); }}
             onKeyDown={(e) => e.key === "Enter" && sendSupportMessage()}
           />
-          <button onClick={sendSupportMessage} disabled={supportSending || !supportText.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] disabled:opacity-50">
+          <button onClick={sendSupportMessage} disabled={!supportText.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] disabled:opacity-50">
             <Send size={14} />
           </button>
         </div>
