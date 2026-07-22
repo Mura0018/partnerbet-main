@@ -526,7 +526,7 @@ export default function TelegramAppPage() {
       const res = await fetch("/api/telegram/miniapp/forgot-password/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: fpPhone.trim(), code: fpCode.trim(), newPassword: fpNewPassword }),
+        body: JSON.stringify({ initData: getInitData(), phone: fpPhone.trim(), code: fpCode.trim(), newPassword: fpNewPassword }),
       });
       const data = await res.json();
       if (!res.ok) {
