@@ -286,6 +286,7 @@ function LimitsEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -302,8 +303,9 @@ function LimitsEditor() {
 
   const save = async () => {
     setSaving(true);
+    setSaveError(false);
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase
+    const { error } = await supabase
       .from("site_settings")
       .update({
         value: { max_order_amount: Number(values.max_order_amount) || 0, daily_customer_limit: Number(values.daily_customer_limit) || 0 },
@@ -312,6 +314,10 @@ function LimitsEditor() {
       })
       .eq("key", "betcore_pay_limits");
     setSaving(false);
+    if (error) {
+      setSaveError(true);
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -347,6 +353,7 @@ function LimitsEditor() {
         >
           {saving ? "…" : saved ? "Saqlandi ✓" : "Saqlash"}
         </button>
+        {saveError && <span className="text-[11px] text-[#FF6B85] self-center">Saqlanmadi. Qayta urinib ko'ring.</span>}
       </div>
     </div>
   );
