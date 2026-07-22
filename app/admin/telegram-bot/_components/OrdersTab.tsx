@@ -410,15 +410,17 @@ function MyStatusToggle() {
 
 function TelegramLinkWidget() {
   const [linked, setLinked] = useState<boolean | null>(null);
+  const [statusError, setStatusError] = useState(false);
   const [code, setCode] = useState("");
   const [generating, setGenerating] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
 
   const checkStatus = () => {
+    setStatusError(false);
     fetch("/api/admin/telegram-link")
       .then((r) => r.json())
       .then((data) => setLinked(!!data.linked))
-      .catch(() => setLinked(null));
+      .catch(() => { setLinked(null); setStatusError(true); });
   };
 
   useEffect(() => { checkStatus(); }, []);
@@ -452,6 +454,22 @@ function TelegramLinkWidget() {
         <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">
           {unlinking ? "…" : "Uzish"}
         </button>
+      </div>
+    );
+  }
+
+  if (statusError) {
+    return (
+      <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2.5 text-[12px] text-muted">
+        Telegram ulanish holatini tekshirib bo'lmadi.
+      </div>
+    );
+  }
+
+  if (linked === null) {
+    return (
+      <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2.5 text-[12px] text-muted">
+        Telegram ulanish holati tekshirilmoqda…
       </div>
     );
   }
