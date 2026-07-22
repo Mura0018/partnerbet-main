@@ -720,9 +720,9 @@ export default function TelegramAppPage() {
     }
   };
 
-  const openSupport = async () => {
+  const openSupport = async (orderId: string | null = null) => {
     setScreen("support");
-    setSelectedOrderId(null);
+    setSelectedOrderId(orderId);
     // Buyurtma tanlash uchun mijozning buyurtmalarini yuklaymiz.
     try {
       const ordRes = await fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`);
@@ -1116,6 +1116,12 @@ export default function TelegramAppPage() {
                   <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} so'm</div>
                   {o.operator_note && <div className="text-[11px] text-[#93a5ba] mt-1.5 italic">{o.operator_note}</div>}
                   <div className="text-[10px] text-[#5b7089] mt-2">{new Date(o.created_at).toLocaleString()}</div>
+                  <button
+                    onClick={() => openSupport(o.id)}
+                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold py-2 rounded-lg bg-white/[0.04] border border-white/10 text-[#93a5ba] active:bg-white/[0.08]"
+                  >
+                    <Headset size={13} /> Shu buyurtma bo'yicha yozish
+                  </button>
                 </div>
               );
             })}
@@ -1126,6 +1132,17 @@ export default function TelegramAppPage() {
   }
 
   if (screen === "support") {
+    // Chip qatorida oxirgi 5 buyurtma ko'rsatiladi; agar tanlangan buyurtma
+    // (masalan kartadan ochilgan eski buyurtma) shu 5 talikda bo'lmasa, uni
+    // ham boshiga qo'shamiz — aks holda tanlangani ko'rinmay qoladi.
+    const chipOrders = (() => {
+      const top = orders.slice(0, 5);
+      if (selectedOrderId && !top.some((o) => o.id === selectedOrderId)) {
+        const sel = orders.find((o) => o.id === selectedOrderId);
+        if (sel) return [sel, ...top];
+      }
+      return top;
+    })();
     return (
       <div className={`${bgCls} flex flex-col h-screen`}>
         <div className="p-5 pb-3">
@@ -1146,7 +1163,7 @@ export default function TelegramAppPage() {
                 >
                   Umumiy savol
                 </button>
-                {orders.slice(0, 5).map((o) => (
+                {chipOrders.map((o) => (
                   <button
                     key={o.id}
                     onClick={() => setSelectedOrderId(o.id)}
@@ -1309,7 +1326,7 @@ export default function TelegramAppPage() {
           </div>
           <div className="text-[13px] font-bold">Buyurtmalarim</div>
         </button>
-        <button onClick={openSupport} className={menuCardCls}>
+        <button onClick={() => openSupport()} className={menuCardCls}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f2d9c] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <Headset size={17} className="text-white" />
           </div>
