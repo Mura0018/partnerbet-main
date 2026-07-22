@@ -314,6 +314,23 @@ function PlatformField({
   );
 }
 
+// H2: mijoz tomonда matn/rasm yuborishda API xatosini do'stona matnga
+// aylantiradi (xom JSON emas). `kind` umumiy fallback matnini tanlaydi.
+function supportSendErrorMessage(error: unknown, status: number, kind: "message" | "image"): string {
+  if (status === 429 || error === "rate_limited") {
+    return "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.";
+  }
+  if (status === 401 || error === "not_registered" || error === "invalid_signature" || error === "not_configured") {
+    return "Sessiya tugagan. Ilovani qayta oching.";
+  }
+  if (kind === "image" && error === "invalid_image_size") {
+    return "Rasm hajmi juda katta.";
+  }
+  return kind === "image"
+    ? "Rasm yuborilmadi. Qayta urinib ko'ring."
+    : "Xabar yuborilmadi. Qayta urinib ko'ring.";
+}
+
 export default function TelegramAppPage() {
   const [screen, setScreen] = useState<Screen>("loading");
   // Telegram Mini App BackButton: ichki ekranda ko'rsatiladi, bosilganda
@@ -817,17 +834,26 @@ export default function TelegramAppPage() {
   const sendSupportMessage = async () => {
     if (supportSending || !supportText.trim()) return;
     setSupportSending(true);
+    setSupportError("");
     try {
       const res = await fetch("/api/telegram/miniapp/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initData: getInitData(), message: supportText.trim(), replyToId: supportReplyTo?.id ?? null, orderId: selectedOrderId }),
       });
-      if (res.ok) {
-        setSupportText("");
-        setSupportReplyTo(null);
-        await loadSupport(true);
+      if (!res.ok) {
+        // Xato: matn va javob-nishoni SAQLANADI, muvaffaqiyat ko'rsatilmaydi,
+        // loadSupport chaqirilmaydi. Matnni o'zgartirmasdan qayta yuborish mumkin.
+        const data = await res.json().catch(() => ({}));
+        setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "message"));
+        return;
       }
+      setSupportText("");
+      setSupportReplyTo(null);
+      setSupportError("");
+      await loadSupport(true);
+    } catch {
+      setSupportError("Tarmoq xatosi. Xabar yuborilmadi — qayta urinib ko'ring.");
     } finally {
       setSupportSending(false);
     }
@@ -879,7 +905,15 @@ export default function TelegramAppPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ initData: getInitData(), imageBase64, mimeType: file.type, fileName: file.name }),
         });
-        if (res.ok) await loadSupport(true);
+        if (!res.ok) {
+          // Xato: muvaffaqiyat ko'rsatilmaydi, loadSupport chaqirilmaydi.
+          const data = await res.json().catch(() => ({}));
+          setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "image"));
+          return;
+        }
+        await loadSupport(true);
+      } catch {
+        setSupportError("Tarmoq xatosi. Rasm yuborilmadi — qayta urinib ko'ring.");
       } finally {
         setSupportSending(false);
       }
@@ -1288,7 +1322,7 @@ export default function TelegramAppPage() {
                   <div className="text-[8px] text-white/50 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                 </div>
                 <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "customer" ? "flex-row-reverse" : ""}`}>
-                  <button onClick={() => setSupportReplyTo(m)} className="text-[9px] text-[#5b7089] active:text-white flex items-center gap-0.5">
+                  <button onClick={() => { setSupportReplyTo(m); setSupportError(""); }} className="text-[9px] text-[#5b7089] active:text-white flex items-center gap-0.5">
                     <Reply size={9} /> Javob
                   </button>
                   {m.sender === "customer" && (
@@ -1309,7 +1343,7 @@ export default function TelegramAppPage() {
             <div className="flex-1 min-w-0 text-[11px] text-[#93a5ba] truncate">
               {supportReplyTo.message || (supportReplyTo.image_path ? "📷 Rasm" : supportReplyTo.voice_path ? "🎤 Ovozli xabar" : "")}
             </div>
-            <button onClick={() => setSupportReplyTo(null)} className="shrink-0 p-1 rounded active:bg-white/10 text-[#93a5ba]">
+            <button onClick={() => { setSupportReplyTo(null); setSupportError(""); }} className="shrink-0 p-1 rounded active:bg-white/10 text-[#93a5ba]">
               <XCircle size={13} />
             </button>
           </div>
@@ -1344,7 +1378,7 @@ export default function TelegramAppPage() {
             className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2 px-3 text-[12.5px] text-white outline-none placeholder:text-[#5b7089]"
             placeholder="Xabar yozing..."
             value={supportText}
-            onChange={(e) => setSupportText(e.target.value)}
+            onChange={(e) => { setSupportText(e.target.value); setSupportError(""); }}
             onKeyDown={(e) => e.key === "Enter" && sendSupportMessage()}
           />
           <button onClick={sendSupportMessage} disabled={supportSending || !supportText.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] disabled:opacity-50">
