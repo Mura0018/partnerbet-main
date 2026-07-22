@@ -399,6 +399,9 @@ export default function TelegramAppPage() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportSending, setSupportSending] = useState(false);
+  // Support ekraniga xos xato (rasm/ovoz) — umumiy `error`dan ajratilgan,
+  // shunda support ekranida ko'rsatiladi va boshqa ekranlarga sizmaydi.
+  const [supportError, setSupportError] = useState("");
   const supportBottomRef = useRef<HTMLDivElement>(null);
   const supportListRef = useRef<HTMLDivElement>(null);
   // Xabarlar haqiqatan o'zgarganini yengil aniqlash uchun imzo (soni + oxirgi
@@ -754,6 +757,7 @@ export default function TelegramAppPage() {
   const openSupport = async (orderId: string | null = null) => {
     setScreen("support");
     setSelectedOrderId(orderId);
+    setSupportError("");
     // Har ochilishda birinchi scroll instant bo'lsin; imzoni tozalab, keyingi
     // loadSupport xabarlarni qayta o'rnatib pastga surishini ta'minlaymiz.
     supportFirstScrollRef.current = true;
@@ -849,13 +853,14 @@ export default function TelegramAppPage() {
   const sendSupportImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
+    setSupportError("");
     if (!file) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      setError("Faqat rasm fayli (PNG/JPEG/WEBP) yuklash mumkin.");
+      setSupportError("Faqat rasm fayli (PNG/JPEG/WEBP) yuklash mumkin.");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Rasm hajmi 5MB dan oshmasligi kerak.");
+      setSupportError("Rasm hajmi 5MB dan oshmasligi kerak.");
       return;
     }
     const reader = new FileReader();
@@ -878,7 +883,7 @@ export default function TelegramAppPage() {
   };
 
   const startVoiceRecording = async () => {
-    setError("");
+    setSupportError("");
     await voiceRecorder.start();
   };
 
@@ -899,7 +904,7 @@ export default function TelegramAppPage() {
         body: JSON.stringify({ initData: getInitData(), audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
       });
       if (res.ok) await loadSupport(true);
-      else setError("Ovozli xabar yuborishda xatolik. Qayta urinib ko'ring.");
+      else setSupportError("Ovozli xabar yuborishda xatolik. Qayta urinib ko'ring.");
     } finally {
       setSupportSending(false);
     }
@@ -1303,6 +1308,9 @@ export default function TelegramAppPage() {
               <XCircle size={13} />
             </button>
           </div>
+        )}
+        {supportError && (
+          <p className="px-4 py-1.5 text-[11px] text-[#FF6B85] bg-[#0e2038]">{supportError}</p>
         )}
         {voiceRecorder.recording ? (
           <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[#0e2038]">
