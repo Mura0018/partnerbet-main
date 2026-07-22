@@ -39,6 +39,9 @@ import { chatThemeGradient } from "@/lib/ui/chatThemes";
 type SupportMessage = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
   file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; reply_to_id: string | null; created_at: string;
+  // F1: optimistik yuborish uchun — faqat client tomonда (DB emas). `clientId`
+  // server id kelгунcha vaqtинча id; `status` yetkazish holati.
+  clientId?: string; status?: "sending" | "sent" | "failed";
 };
 
 type PaymentInfo = {
@@ -426,6 +429,8 @@ export default function TelegramAppPage() {
   const supportSigRef = useRef<string>("");
   // Support ekrani ochilgandagi birinchi scroll animatsiyasiz bo'lsin.
   const supportFirstScrollRef = useRef(true);
+  // F1: optimistik xabarларга noyob vaqtинча id berish uchun.
+  const optimisticSeqRef = useRef(0);
   const voiceRecorder = useVoiceRecorder();
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
@@ -754,18 +759,32 @@ export default function TelegramAppPage() {
       const res = await fetch(`/api/telegram/miniapp/support?initData=${encodeURIComponent(getInitData())}`);
       const data = await res.json();
       const msgs: SupportMessage[] = data.messages ?? [];
-      // O'zgarmasa state'ni yangilamaymiz — idle holatda har 4s'da butun
-      // xabarlar ro'yxatining qayta render bo'lishining oldini oladi.
-      const last = msgs[msgs.length - 1];
-      const sig = `${msgs.length}:${last?.id ?? ""}:${last?.created_at ?? ""}`;
-      if (sig !== supportSigRef.current) {
+      // F1 merge-reconcile: hali serverда yo'q optimistik (sending/failed)
+      // xabarlarni saqlab qolamiz, aks holda 4s poll ularni o'chirib yuboradi.
+      // Server versiyasi (real id) paydo bo'lса, optimistik nusxa tushib qoladi
+      // (dublikat bo'lmaydi). Imzoga pending holati ham kiritiladi —
+      // o'zgarmasa idle render bo'lmaydi. (Imzo yangilash prod build'да xavfsiz;
+      // StrictMode dev double-invoke'да ham natija bir xil idempotent bo'ladi.)
+      setSupportMessages((prev) => {
+        const serverIds = new Set(msgs.map((m) => m.id));
+        const pending = prev.filter(
+          (m) => m.clientId && (m.status === "sending" || m.status === "failed") && !serverIds.has(m.id)
+        );
+        const last = msgs[msgs.length - 1];
+        const sig = `${msgs.length}:${last?.id ?? ""}:${last?.created_at ?? ""}|${pending
+          .map((p) => `${p.clientId}:${p.status}`)
+          .join(",")}`;
+        if (sig === supportSigRef.current) return prev;
         supportSigRef.current = sig;
-        setSupportMessages(msgs);
-      }
+        return pending.length ? [...msgs, ...pending] : msgs;
+      });
     } catch {
       if (!silent) {
         supportSigRef.current = "";
-        setSupportMessages([]);
+        // Xatoда server qismini bo'shatamiz, optimistik pendingni saqlaymiz.
+        setSupportMessages((prev) =>
+          prev.filter((m) => m.clientId && (m.status === "sending" || m.status === "failed"))
+        );
       }
     } finally {
       if (!silent) setSupportLoading(false);
@@ -831,28 +850,54 @@ export default function TelegramAppPage() {
     } catch {}
   };
 
+  // F1: optimistik xabarning holatini clientId bo'yicha yangilaydi.
+  const setMsgStatus = (clientId: string, status: "sending" | "sent" | "failed") => {
+    setSupportMessages((prev) => prev.map((m) => (m.clientId === clientId ? { ...m, status } : m)));
+  };
+
   const sendSupportMessage = async () => {
     if (supportSending || !supportText.trim()) return;
-    setSupportSending(true);
+    const text = supportText.trim();
+    const replyToId = supportReplyTo?.id ?? null;
+    const orderId = selectedOrderId;
+    const clientId = `tmp-${Date.now()}-${optimisticSeqRef.current++}`;
+
+    // Optimistik: xabar darhol bubble sifatida ko'rinadi, composer darhol
+    // tozalanadi (Telegram/WhatsApp xulqi). Xato bo'lса bubble "failed" bo'ladi.
+    const optimistic: SupportMessage = {
+      id: clientId, clientId, status: "sending",
+      sender: "customer", message: text,
+      image_path: null, file_name: null, voice_path: null, voice_duration_seconds: null,
+      reply_to_id: replyToId, created_at: new Date().toISOString(),
+    };
+    setSupportMessages((prev) => [...prev, optimistic]);
+    setSupportText("");
+    setSupportReplyTo(null);
     setSupportError("");
+    setSupportSending(true);
     try {
       const res = await fetch("/api/telegram/miniapp/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: getInitData(), message: supportText.trim(), replyToId: supportReplyTo?.id ?? null, orderId: selectedOrderId }),
+        body: JSON.stringify({ initData: getInitData(), message: text, replyToId, orderId }),
       });
       if (!res.ok) {
-        // Xato: matn va javob-nishoni SAQLANADI, muvaffaqiyat ko'rsatilmaydi,
-        // loadSupport chaqirilmaydi. Matnni o'zgartirmasdan qayta yuborish mumkin.
+        setMsgStatus(clientId, "failed");
         const data = await res.json().catch(() => ({}));
         setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "message"));
         return;
       }
-      setSupportText("");
-      setSupportReplyTo(null);
-      setSupportError("");
-      await loadSupport(true);
+      // Muvaffaqiyat: optimistik nusxани server id + "sent" ga reconcile qilamiz.
+      // clientId olib tashlanadi — keyingi poll merge dublikat yaratmaydi.
+      const data = await res.json().catch(() => ({}));
+      const serverId = (data as any)?.message?.id;
+      setSupportMessages((prev) =>
+        prev.map((m) =>
+          m.clientId === clientId ? { ...m, id: serverId ?? m.id, clientId: undefined, status: "sent" } : m
+        )
+      );
     } catch {
+      setMsgStatus(clientId, "failed");
       setSupportError("Tarmoq xatosi. Xabar yuborilmadi — qayta urinib ko'ring.");
     } finally {
       setSupportSending(false);
@@ -1319,7 +1364,11 @@ export default function TelegramAppPage() {
                   ) : (
                     m.message
                   )}
-                  <div className="text-[8px] text-white/50 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                  <div className="flex items-center justify-end gap-1 mt-1">
+                    <span className="text-[8px] text-white/50">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                    {m.sender === "customer" && m.status === "sending" && <Loader2 size={9} className="animate-spin text-white/60" aria-label="Yuborilyapti" />}
+                    {m.sender === "customer" && m.status === "failed" && <span className="text-[9px] font-bold text-[#FF6B85]" aria-label="Yuborilmadi" title="Yuborilmadi">!</span>}
+                  </div>
                 </div>
                 <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "customer" ? "flex-row-reverse" : ""}`}>
                   <button onClick={() => { setSupportReplyTo(m); setSupportError(""); }} className="text-[9px] text-[#5b7089] active:text-white flex items-center gap-0.5">
