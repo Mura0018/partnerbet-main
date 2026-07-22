@@ -806,7 +806,7 @@ export default function TelegramAppPage() {
       if (res.ok) {
         setSupportText("");
         setSupportReplyTo(null);
-        await loadSupport();
+        await loadSupport(true);
       }
     } finally {
       setSupportSending(false);
@@ -820,7 +820,7 @@ export default function TelegramAppPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ initData: getInitData(), messageId: id }),
     });
-    await loadSupport();
+    await loadSupport(true);
   };
 
   const supportMessageById = (id: string | null) => (id ? supportMessages.find((m) => m.id === id) ?? null : null);
@@ -858,7 +858,7 @@ export default function TelegramAppPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ initData: getInitData(), imageBase64, mimeType: file.type, fileName: file.name }),
         });
-        if (res.ok) await loadSupport();
+        if (res.ok) await loadSupport(true);
       } finally {
         setSupportSending(false);
       }
@@ -887,7 +887,7 @@ export default function TelegramAppPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initData: getInitData(), audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
       });
-      if (res.ok) await loadSupport();
+      if (res.ok) await loadSupport(true);
       else setError("Ovozli xabar yuborishda xatolik. Qayta urinib ko'ring.");
     } finally {
       setSupportSending(false);
