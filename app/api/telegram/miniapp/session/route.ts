@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   // Kirish qoidasi: begona mijoz (denied) yoki ro'yxatdan o'tmagan => registered:false.
   // (Hamkor app'iga faqat o'z mijozi kiradi; rad etish jim.)
   if (cc.denied || !cc.customer) {
-    return NextResponse.json({ registered: false, partnerId: cc.partnerId, theme });
+    return NextResponse.json({ registered: false, denied: cc.denied, partnerId: cc.partnerId, theme });
   }
   return NextResponse.json({
     registered: true,

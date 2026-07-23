@@ -14,7 +14,7 @@ declare global {
 }
 
 type Customer = { id: string; full_name: string | null; phone: string };
-type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success" | "forgot-password" | "hamkorlik";
+type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success" | "forgot-password" | "hamkorlik" | "blocked";
 type PaymentMethod = "click" | "payme" | "card" | "crypto";
 
 type Order = {
@@ -701,7 +701,10 @@ export default function TelegramAppPage() {
         const data = await res.json();
         setPartnerId(data.partnerId ?? null);
         applyAppTheme(data.theme);
-        if (data.registered) {
+        if (data.denied) {
+          // Begona mijoz: bu bot uning "uyi" emas — bloklaymiz (neytral xabar).
+          setScreen("blocked");
+        } else if (data.registered) {
           setCustomer(data.customer);
           setScreen("menu");
         } else {
@@ -1477,6 +1480,23 @@ export default function TelegramAppPage() {
         <FloatingAmbience />
         <div className="relative z-10">
           <BrandedLoader />
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "blocked") {
+    return (
+      <div className={`${bgCls} p-6 flex flex-col items-center justify-center text-center relative`}>
+        <FloatingAmbience />
+        <div className="relative z-10 flex flex-col items-center max-w-[320px]">
+          <div className="w-16 h-16 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center mb-5">
+            <ShieldCheck size={30} className="text-[#93a5ba]" />
+          </div>
+          <h1 className="text-[18px] font-extrabold mb-2" style={titleShadow}>Bu xizmat siz uchun emas</h1>
+          <p className="text-[13px] text-[#93a5ba] leading-relaxed">
+            Siz boshqa xizmat ko'rsatuvchiga biriktirilgansiz. Iltimos, o'z xizmatchingiz orqali davom eting.
+          </p>
         </div>
       </div>
     );
