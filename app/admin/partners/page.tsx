@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight, SlidersHorizontal, Bot, Palette, Users } from "lucide-react";
+import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight, SlidersHorizontal, Bot, Palette, Users, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { GlobalChat } from "@/lib/chat/GlobalChat";
 
 type Partner = {
   id: string;
@@ -337,7 +338,7 @@ const LEAD_STATUS: Record<string, { label: string; cls: string }> = {
 type ModalState = { open: boolean; partner: Partner | null; prefill?: { name?: string; company?: string }; leadId?: string };
 
 export default function PartnersManager() {
-  const [view, setView] = useState<"partners" | "leads">("partners");
+  const [view, setView] = useState<"partners" | "leads" | "chat">("partners");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [leads, setLeads] = useState<PartnerLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -403,9 +404,16 @@ export default function PartnersManager() {
           <Inbox size={14} /> So'rovlar
           {newLeadsCount > 0 && <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FF6B85] text-white text-[10px] font-bold flex items-center justify-center">{newLeadsCount}</span>}
         </button>
+        <button onClick={() => setView("chat")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium transition-all ${view === "chat" ? "bg-accent/20 text-white" : "text-muted hover:text-white"}`}>
+          <MessageCircle size={14} /> Global chat
+        </button>
       </div>
 
-      {loading ? (
+      {view === "chat" ? (
+        <div className="h-[calc(100svh-260px)] min-h-[380px]">
+          <GlobalChat />
+        </div>
+      ) : loading ? (
         <p className="text-[13px] text-muted">Yuklanmoqda...</p>
       ) : view === "partners" ? (
         partners.length === 0 ? (

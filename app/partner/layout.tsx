@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Bot, Palette, Users, Receipt, LogOut, Menu, X, Building2 } from "lucide-react";
+import { LayoutDashboard, Bot, Palette, Users, Receipt, LogOut, Menu, X, Building2, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
 const NAV = [
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/partner/theme", label: "Tema", icon: Palette },
   { href: "/partner/team", label: "Jamoa", icon: Users },
   { href: "/partner/billing", label: "Hisob", icon: Receipt },
+  { href: "/partner/chat", label: "Global chat", icon: MessageCircle },
 ];
 
 export default function PartnerLayout({ children }: { children: React.ReactNode }) {
@@ -39,7 +40,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
   const logout = async () => { await supabase.auth.signOut(); router.push("/auth/login"); router.refresh(); };
 
   const isStaff = partner?.role === "staff";
-  const nav = isStaff ? NAV.filter((n) => ["/partner", "/partner/billing"].includes(n.href)) : NAV;
+  const nav = isStaff ? NAV.filter((n) => ["/partner", "/partner/billing", "/partner/chat"].includes(n.href)) : NAV;
 
   const sidebar = (
     <>
