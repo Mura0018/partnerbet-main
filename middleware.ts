@@ -19,6 +19,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: string }[] = [
   { prefix: "/admin/affiliates", permission: "promotions.manage" },
   { prefix: "/admin/football", permission: "football.manage" },
   { prefix: "/admin/users", permission: "users.manage" },
+  { prefix: "/admin/roles", permission: "roles.manage" },
   { prefix: "/admin/settings", permission: "settings.manage" },
   { prefix: "/admin/telegram-bot", permission: "telegram_orders.manage" },
   { prefix: "/admin/partners", permission: "partners.manage" },

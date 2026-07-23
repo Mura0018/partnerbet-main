@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -37,6 +37,7 @@ const NAV_GROUPS = [
   ]},
   { label: "Tizim", items: [
     { href: "/admin/users", label: "Foydalanuvchilar", icon: Users, permission: "users.manage" },
+    { href: "/admin/roles", label: "Rollar", icon: KeyRound, permission: "roles.manage" },
     { href: "/admin/security-log", label: "Xavfsizlik jurnali", icon: ShieldAlert, permission: "security.manage" },
     { href: "/admin/categories", label: "Kategoriyalar", icon: FolderTree, permission: "taxonomy.manage" },
     { href: "/admin/tags", label: "Teglar", icon: Tag, permission: "taxonomy.manage" },
