@@ -83,6 +83,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "not_found_or_already_resolved" }, { status: 409 });
   }
 
+  // 2-BOSQICH: mijoz egaligini birinchi BAJARILGAN buyurtmada o'rnatish.
+  // Faqat completed va faqat egasi BO'SH bo'lsa (.is(...,null) bilan atomik) —
+  // birinchi egasi doim qoladi. Best-effort: bu yerdagi xato resolve oqimini
+  // buzmaydi (pul allaqachon ko'chgan bo'lishi mumkin).
+  if (status === "completed" && (order as any).customer_id) {
+    try {
+      await admin
+        .from("customers")
+        .update({ owner_operator_id: check.userId })
+        .eq("id", (order as any).customer_id)
+        .is("owner_operator_id", null);
+    } catch {
+      /* egalik biriktirish best-effort */
+    }
+  }
+
   const telegramId = (order as any).customers?.telegram_id;
   if (telegramId) {
     await sendTelegramMessage(telegramId, buildOrderResolvedMessage(order.type, Number(order.amount), status, note));

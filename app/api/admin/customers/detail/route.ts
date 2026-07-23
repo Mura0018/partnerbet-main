@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
   const { data: c } = await admin
     .from("customers")
-    .select("id, full_name, phone, created_at, partner_id, telegram_id")
+    .select("id, full_name, phone, created_at, partner_id, telegram_id, owner_operator_id")
     .eq("id", id)
     .maybeSingle();
   if (!c) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -25,6 +25,17 @@ export async function GET(req: NextRequest) {
   if ((c as any).partner_id) {
     const { data: p } = await admin.from("partners").select("name").eq("id", (c as any).partner_id).maybeSingle();
     partnerName = (p?.name as string) ?? null;
+  }
+
+  // 2-BOSQICH: mijoz egasi (owner operator) nomi.
+  let ownerName: string | null = null;
+  if ((c as any).owner_operator_id) {
+    const { data: op } = await admin
+      .from("profiles")
+      .select("display_name, full_name")
+      .eq("id", (c as any).owner_operator_id)
+      .maybeSingle();
+    ownerName = (op as any)?.display_name || (op as any)?.full_name || null;
   }
 
   const { data: orders } = await admin
@@ -42,6 +53,7 @@ export async function GET(req: NextRequest) {
       created_at: (c as any).created_at,
       telegram_id: (c as any).telegram_id,
       partnerName,
+      ownerName,
     },
     orders: (orders as any[]) ?? [],
   });
