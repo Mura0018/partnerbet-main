@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
+import { resolveCustomerContext } from "@/lib/telegram/resolveCustomer";
 import { sendTelegramMessage, buildOrderCreatedMessage } from "@/lib/telegram/notify";
 import { notifyOperatorsNewOrder } from "@/lib/telegram/notifyStaff";
 import { bumpCardUsage } from "@/lib/payments/cardUsage";
@@ -10,17 +10,6 @@ import { findCashdeskPlayer } from "@/lib/cashdesk/client";
 
 const PAYMENT_METHODS = ["click", "payme", "card", "crypto"] as const;
 
-async function resolveCustomer(initData: string) {
-  const verified = await resolveMiniApp(initData);
-  if (!verified) return null;
-  const supabase = createAdminClient();
-  const { data: customer } = await supabase
-    .from("customers")
-    .select("id, telegram_id")
-    .eq("telegram_id", verified.telegramId)
-    .maybeSingle();
-  return customer;
-}
 
 export async function POST(req: NextRequest) {
   const botToken = await getApiCredential("telegram_bot_token");
@@ -35,8 +24,9 @@ export async function POST(req: NextRequest) {
 
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const customer = await resolveCustomer(initData);
-  if (!customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
+  const cc = await resolveCustomerContext(initData);
+  if (!cc || cc.denied || !cc.customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
+  const customer = cc.customer;
 
   if (type !== "topup" && type !== "withdraw") {
     return NextResponse.json({ error: "invalid_type" }, { status: 400 });
@@ -127,6 +117,7 @@ export async function POST(req: NextRequest) {
       received_holder_name: type === "topup" && receivedHolderName ? String(receivedHolderName).trim().slice(0, 150) : null,
       player_name: playerName,
       currency_id: currencyId,
+      partner_id: cc.partnerId,
     })
     .select("id, type, platform, account_id, amount, payment_method, status, created_at")
     .single();
@@ -149,8 +140,9 @@ export async function GET(req: NextRequest) {
   const initData = req.nextUrl.searchParams.get("initData");
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const customer = await resolveCustomer(initData);
-  if (!customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
+  const cc = await resolveCustomerContext(initData);
+  if (!cc || cc.denied || !cc.customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
+  const customer = cc.customer;
 
   const supabase = createAdminClient();
   const { data: orders } = await supabase

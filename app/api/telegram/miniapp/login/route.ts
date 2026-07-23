@@ -21,11 +21,16 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: customer } = await supabase
     .from("customers")
-    .select("id, full_name, phone, password_hash, telegram_id")
+    .select("id, full_name, phone, password_hash, telegram_id, partner_id")
     .eq("phone", phone)
     .maybeSingle();
 
   if (!customer) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+  // Kirish qoidasi: hamkor app'iga faqat o'sha hamkor mijozi. Begona => jim rad (not_found).
+  if (verified.partnerId && (customer as any).partner_id !== verified.partnerId) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
 
   const passwordOk = await bcrypt.compare(password, customer.password_hash);
   if (!passwordOk) return NextResponse.json({ error: "wrong_password" }, { status: 401 });

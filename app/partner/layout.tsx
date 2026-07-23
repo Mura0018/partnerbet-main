@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Bot, Palette, Users, Receipt, LogOut, Menu, X, Building2, MessageCircle, CreditCard } from "lucide-react";
+import { LayoutDashboard, Bot, Palette, Users, Receipt, LogOut, Menu, X, Building2, MessageCircle, CreditCard, ListOrdered } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Toaster } from "@/lib/ui/toast";
 
 const NAV = [
   { href: "/partner", label: "Boshqaruv", icon: LayoutDashboard },
+  { href: "/partner/orders", label: "Buyurtmalar", icon: ListOrdered },
   { href: "/partner/bot", label: "Bot", icon: Bot },
   { href: "/partner/theme", label: "Tema", icon: Palette },
   { href: "/partner/payments", label: "To'lov usullari", icon: CreditCard },
@@ -42,7 +43,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
   const logout = async () => { await supabase.auth.signOut(); router.push("/auth/login"); router.refresh(); };
 
   const isStaff = partner?.role === "staff";
-  const nav = isStaff ? NAV.filter((n) => ["/partner", "/partner/billing", "/partner/chat"].includes(n.href)) : NAV;
+  const nav = isStaff ? NAV.filter((n) => ["/partner", "/partner/orders", "/partner/billing", "/partner/chat"].includes(n.href)) : NAV;
 
   const sidebar = (
     <>

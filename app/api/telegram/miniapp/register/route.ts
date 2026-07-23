@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const passwordHash = await bcrypt.hash(password, 10);
   const { data: customer, error } = await supabase
     .from("customers")
-    .insert({ phone, password_hash: passwordHash, full_name: fullName ?? null, telegram_id: verified.telegramId })
+    .insert({ phone, password_hash: passwordHash, full_name: fullName ?? null, telegram_id: verified.telegramId, partner_id: verified.partnerId })
     .select("id, full_name, phone")
     .single();
 
