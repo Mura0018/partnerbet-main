@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 
 export async function POST(req: NextRequest) {
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   // initData imzosini tekshirish — confirm endi Telegram kontekstisiz
   // chaqirilmaydi (ilgari faqat phone+code+newPassword yetardi).
-  const verified = verifyTelegramInitData(initData, botToken);
+  const verified = await resolveMiniApp(initData);
   if (!verified) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   // Per-telefon rate-limit — IPdan qat'iy nazar taqsimlangan (botnet)

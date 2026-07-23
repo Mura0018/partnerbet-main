@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { checkAndRecordRateLimit } from "@/lib/security/rateLimit";
 
 // Without this, Next.js can statically render this GET handler once at
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
   if (!botToken) return NextResponse.json({ error: "not_configured" }, { status: 500 });
 
   const initData = req.nextUrl.searchParams.get("initData");
-  const verified = initData ? verifyTelegramInitData(initData, botToken) : null;
+  const verified = initData ? await resolveMiniApp(initData) : null;
   if (!verified) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   // Yaroqli initData bilan ham ommaviy so'rovni cheklaymiz (per-telegramId).

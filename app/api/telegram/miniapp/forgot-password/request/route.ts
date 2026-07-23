@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { sendTelegramMessage } from "@/lib/telegram/notify";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const { initData, phone } = body ?? {};
   if (!initData || !phone) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const verified = verifyTelegramInitData(initData, botToken);
+  const verified = await resolveMiniApp(initData);
   if (!verified) return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
 
   const supabase = createAdminClient();

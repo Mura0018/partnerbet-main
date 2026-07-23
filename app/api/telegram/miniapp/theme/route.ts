@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 
-async function resolveCustomerId(initData: string, botToken: string): Promise<string | null> {
-  const verified = verifyTelegramInitData(initData, botToken);
+async function resolveCustomerId(initData: string): Promise<string | null> {
+  const verified = await resolveMiniApp(initData);
   if (!verified) return null;
   const supabase = createAdminClient();
   const { data: customer } = await supabase.from("customers").select("id").eq("telegram_id", verified.telegramId).maybeSingle();
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const initData = req.nextUrl.searchParams.get("initData");
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const customerId = await resolveCustomerId(initData, botToken);
+  const customerId = await resolveCustomerId(initData);
   if (!customerId) return NextResponse.json({ error: "not_registered" }, { status: 401 });
 
   const supabase = createAdminClient();
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const { initData, theme } = body ?? {};
   if (!initData || !theme) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const customerId = await resolveCustomerId(initData, botToken);
+  const customerId = await resolveCustomerId(initData);
   if (!customerId) return NextResponse.json({ error: "not_registered" }, { status: 401 });
 
   const supabase = createAdminClient();

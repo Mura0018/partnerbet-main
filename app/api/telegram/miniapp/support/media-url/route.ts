@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 
 // Customer-facing signed URL — only for a path that actually belongs to
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const { initData, path } = body ?? {};
   if (!initData || !path) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const verified = verifyTelegramInitData(initData, botToken);
+  const verified = await resolveMiniApp(initData);
   if (!verified) return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
 
   const supabase = createAdminClient();

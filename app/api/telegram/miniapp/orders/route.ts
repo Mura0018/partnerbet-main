@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { sendTelegramMessage, buildOrderCreatedMessage } from "@/lib/telegram/notify";
 import { notifyOperatorsNewOrder } from "@/lib/telegram/notifyStaff";
 import { bumpCardUsage } from "@/lib/payments/cardUsage";
@@ -10,8 +10,8 @@ import { findCashdeskPlayer } from "@/lib/cashdesk/client";
 
 const PAYMENT_METHODS = ["click", "payme", "card", "crypto"] as const;
 
-async function resolveCustomer(initData: string, botToken: string) {
-  const verified = verifyTelegramInitData(initData, botToken);
+async function resolveCustomer(initData: string) {
+  const verified = await resolveMiniApp(initData);
   if (!verified) return null;
   const supabase = createAdminClient();
   const { data: customer } = await supabase
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const customer = await resolveCustomer(initData, botToken);
+  const customer = await resolveCustomer(initData);
   if (!customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
 
   if (type !== "topup" && type !== "withdraw") {
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
   const initData = req.nextUrl.searchParams.get("initData");
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const customer = await resolveCustomer(initData, botToken);
+  const customer = await resolveCustomer(initData);
   if (!customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
 
   const supabase = createAdminClient();

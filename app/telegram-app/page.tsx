@@ -581,6 +581,8 @@ export default function TelegramAppPage() {
   const [plSubmitting, setPlSubmitting] = useState(false);
   const [plDone, setPlDone] = useState(false);
   const [plError, setPlError] = useState("");
+  // Hamkor app'i bo'lsa (partner boti orqali ochilgan) — partnerId to'ldiriladi.
+  const [partnerId, setPartnerId] = useState<string | null>(null);
 
   const submitPartnerLead = async () => {
     setPlError("");
@@ -667,6 +669,7 @@ export default function TelegramAppPage() {
           body: JSON.stringify({ initData }),
         });
         const data = await res.json();
+        setPartnerId(data.partnerId ?? null);
         if (data.registered) {
           setCustomer(data.customer);
           setScreen("menu");
@@ -2105,7 +2108,8 @@ export default function TelegramAppPage() {
         </button>
       </div>
 
-      {/* Hamkorlik — marketing banner */}
+      {/* Hamkorlik — marketing banner (faqat bizning app'da; hamkor app'da yashiriladi) */}
+      {!partnerId && (
       <button
         onClick={() => { setError(""); setScreen("hamkorlik"); }}
         className="group relative w-full mt-3.5 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)] active:translate-y-[2px] transition-all"
@@ -2122,6 +2126,7 @@ export default function TelegramAppPage() {
           <ArrowRight size={18} className="shrink-0 text-[#93a5ba] group-active:translate-x-0.5 transition-transform" />
         </div>
       </button>
+      )}
 
       <style>{`
         @keyframes hkShimmer { 0%{background-position:0% 0} 100%{background-position:300% 0} }

@@ -16,6 +16,6 @@ export async function POST(req: NextRequest) {
     .eq("telegram_id", verified.telegramId)
     .maybeSingle();
 
-  if (!customer) return NextResponse.json({ registered: false });
-  return NextResponse.json({ registered: true, customer });
+  if (!customer) return NextResponse.json({ registered: false, partnerId: verified.partnerId });
+  return NextResponse.json({ registered: true, customer, partnerId: verified.partnerId });
 }

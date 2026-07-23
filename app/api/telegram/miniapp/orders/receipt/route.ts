@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const ext = ALLOWED_MIME[mimeType];
   if (!ext) return NextResponse.json({ error: "invalid_mime" }, { status: 400 });
 
-  const verified = verifyTelegramInitData(initData, botToken);
+  const verified = await resolveMiniApp(initData);
   if (!verified) return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
 
   const supabase = createAdminClient();
