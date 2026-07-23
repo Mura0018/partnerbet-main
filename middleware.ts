@@ -25,6 +25,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: string }[] = [
   { prefix: "/admin/partners", permission: "partners.manage" },
   { prefix: "/admin/tariffs", permission: "partners.manage" },
   { prefix: "/admin/customers", permission: "customers.manage" },
+  { prefix: "/admin/cashdesks", permission: "cashdesks.manage" },
   { prefix: "/admin/reports", permission: "reports.view" },
 ];
 

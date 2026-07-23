@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { getApiCredential } from "@/lib/auth/apiCredentials";
+import { getDefaultCashdeskCreds, type Creds } from "@/lib/cashdesk/store";
 
 // =========================================================
 // CashdeskBotAPI client (partners.servcul.com) — the real 1xBet-family
@@ -39,17 +39,13 @@ function formatDt(date: Date): string {
   );
 }
 
-type Creds = { login: string; pass: string; hash: string; cashdeskId: string };
-
-async function getCreds(): Promise<Creds | null> {
-  const [login, pass, hash, cashdeskId] = await Promise.all([
-    getApiCredential("cashdesk_login"),
-    getApiCredential("cashdesk_pass"),
-    getApiCredential("cashdesk_hash"),
-    getApiCredential("cashdesk_id"),
-  ]);
-  if (!login || !pass || !hash || !cashdeskId) return null;
-  return { login, pass, hash, cashdeskId };
+// Kassa kalitlari (creds) endi PARAMETR orqali keladi — har kassa o'z
+// kaliti bilan imzolaydi. creds berilmasa standart kassa olinadi (store.ts:
+// yangi cashdesks jadvali -> birinchi active, yoki eski api_credentials
+// fallback). MUHIM: pastdagi imzo mantig'i AYNAN oldingidek — faqat
+// kalitlar manbai endi argument.
+async function resolveCreds(creds?: Creds): Promise<Creds | null> {
+  return creds ?? (await getDefaultCashdeskCreds());
 }
 
 export type CashdeskResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -75,11 +71,11 @@ async function call<T>(url: string, sign: string, login: string, init?: RequestI
 }
 
 export async function isCashdeskConfigured(): Promise<boolean> {
-  return (await getCreds()) !== null;
+  return (await getDefaultCashdeskCreds()) !== null;
 }
 
-export async function getCashdeskBalance(): Promise<CashdeskResult<{ Balance: number | null; Limit: number | null }>> {
-  const creds = await getCreds();
+export async function getCashdeskBalance(cd?: Creds): Promise<CashdeskResult<{ Balance: number | null; Limit: number | null }>> {
+  const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
 
   const dt = formatDt(new Date());
@@ -93,9 +89,10 @@ export async function getCashdeskBalance(): Promise<CashdeskResult<{ Balance: nu
 }
 
 export async function findCashdeskPlayer(
-  userId: string
+  userId: string,
+  cd?: Creds
 ): Promise<CashdeskResult<{ currencyId: number; userId: number; name: string }>> {
-  const creds = await getCreds();
+  const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
 
   const a = sha256(`hash=${creds.hash}&userid=${userId}&cashdeskid=${creds.cashdeskId}`);
@@ -109,9 +106,10 @@ export async function findCashdeskPlayer(
 
 export async function cashdeskDeposit(
   userId: string,
-  summa: number
+  summa: number,
+  cd?: Creds
 ): Promise<CashdeskResult<{ summa: number; success: boolean; messageId: number | null; message: string | null }>> {
-  const creds = await getCreds();
+  const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
 
   const a = sha256(`hash=${creds.hash}&lng=${LNG}&UserId=${userId}`);
@@ -128,9 +126,10 @@ export async function cashdeskDeposit(
 
 export async function cashdeskPayout(
   userId: string,
-  code: string
+  code: string,
+  cd?: Creds
 ): Promise<CashdeskResult<{ summa: number; success: boolean; messageId: number | null; message: string | null }>> {
-  const creds = await getCreds();
+  const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
 
   const a = sha256(`hash=${creds.hash}&lng=${LNG}&UserId=${userId}`);
