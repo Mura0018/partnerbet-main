@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -17,6 +17,7 @@ import { Toaster } from "@/lib/ui/toast";
 const NAV_GROUPS = [
   { label: "Asosiy", items: [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: null },
+    { href: "/admin/reports", label: "Hisobotlar", icon: BarChart3, permission: "reports.view" },
     { href: "/admin/telegram-bot", label: "BetCore Pay", icon: Wallet, permission: "telegram_orders.manage" },
     { href: "/admin/partners", label: "Hamkorlar", icon: Building2, permission: "partners.manage" },
     { href: "/admin/tariffs", label: "Tariflar", icon: Receipt, permission: "partners.manage" },
