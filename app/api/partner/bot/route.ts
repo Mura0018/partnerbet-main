@@ -52,8 +52,9 @@ export async function POST(req: NextRequest) {
   // Best-effort: agar o'rnatilmasa ham bot ulangan holatда qoladi.
   let menuSet = false;
   try {
-    const origin = new URL(req.url).origin;
-    const appUrl = `${origin}/telegram-app`;
+    // Bizning o'z botimiz bilan bir xil, kafolatlangan (200) URL — req.url origin
+    // proksi/www tufayli noto'g'ri (404) chiqishi mumkin edi.
+    const appUrl = "https://www.couponbet.org/telegram-app";
     const r = await fetch(`https://api.telegram.org/bot${token}/setChatMenuButton`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
