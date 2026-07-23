@@ -430,10 +430,13 @@ export default function PartnersManager() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: pData }, { data: lData }] = await Promise.all([
+    const [{ data: pData, error: pErr }, { data: lData }] = await Promise.all([
       supabase.from("partners").select("*").order("created_at", { ascending: false }),
       supabase.from("partner_leads").select("id, name, phone, company, message, status, created_at").order("created_at", { ascending: false }),
     ]);
+    // Vaqtinchalik debug — muammoni aniqlash uchun
+    if (pErr) toast.error("DEBUG xato: " + (pErr.message || pErr.code || "noma'lum"));
+    else toast.info("DEBUG: bazadan " + (pData?.length ?? 0) + " ta hamkor keldi");
     setPartners((pData as Partner[]) ?? []);
     setLeads((lData as PartnerLead[]) ?? []);
     setLoading(false);
