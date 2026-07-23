@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getSlaMinutes } from "@/lib/cashdesk/sla";
+import { getDebtSettings } from "@/lib/cashdesk/debt";
+import { sendTelegramMessage } from "@/lib/telegram/notify";
 
 // Ikki bosqichli tekshiruv (tashqi scheduler har 10-15 daqiqada uradi;
 // CRON_CHECK_SECRET ?secret= bilan mos kelishi shart):
@@ -26,7 +28,7 @@ export async function GET(req: NextRequest) {
   // Tizim xabarini kimning nomidan yozamiz (super_admin) + operator ismlari + band ro'yxati.
   const { data: profiles } = await admin
     .from("profiles")
-    .select("id, full_name, display_name, is_busy, roles(key)")
+    .select("id, full_name, display_name, is_busy, telegram_chat_id, roles(key)")
     .eq("is_active", true);
   const superAdmin = (profiles ?? []).find((p: any) => p.roles?.key === "super_admin");
   if (!superAdmin) return NextResponse.json({ handoff: 0, nudged: 0, error: "no_super_admin_to_post_as" });
@@ -97,5 +99,37 @@ export async function GET(req: NextRequest) {
     nudged++;
   }
 
-  return NextResponse.json({ handoff: handoffCount, nudged });
+  // ---------- 3) 6-BOSQICH QARZ ESKALATSIYASI ----------
+  // Ochiq (paid emas) qarz escalation_hours dan uzoq to'lanmasa -> adminга
+  // (jamoa chati + super_admin Telegram). escalated_at bilan bir marta.
+  let debtEscalated = 0;
+  try {
+    const { escalationHours } = await getDebtSettings();
+    const cutoff = new Date(now - escalationHours * 60 * 60 * 1000).toISOString();
+    const { data: staleDebts } = await admin
+      .from("operator_debts")
+      .select("id, debtor_operator_id, creditor_operator_id, amount")
+      .neq("status", "paid")
+      .is("escalated_at", null)
+      .lt("created_at", cutoff);
+
+    const superAdminChats = (profiles ?? [])
+      .filter((p: any) => p.roles?.key === "super_admin" && p.telegram_chat_id)
+      .map((p: any) => p.telegram_chat_id);
+
+    for (const d of (staleDebts ?? []) as any[]) {
+      const debtorName = nameById.get(d.debtor_operator_id) ?? "Operator";
+      const creditorName = nameById.get(d.creditor_operator_id) ?? "Operator";
+      const text = `⏰ Qarz to'lanmadi: ${debtorName} → ${creditorName}: ${Number(d.amount || 0).toLocaleString("ru-RU")} so'm (${escalationHours} soatdan oshdi).`;
+
+      await admin.from("team_chat_messages").insert({ sender_id: superAdmin.id, is_system: true, message: `🟥 Tizim: ${text}` });
+      await Promise.all(superAdminChats.map((c: number) => sendTelegramMessage(c, `🟥 BETCORE PAY\n\n${text}`, undefined)));
+      await admin.from("operator_debts").update({ escalated_at: new Date().toISOString() }).eq("id", d.id);
+      debtEscalated++;
+    }
+  } catch {
+    /* operator_debts ustuni/jadval yo'q -> o'tkazib yuboriladi */
+  }
+
+  return NextResponse.json({ handoff: handoffCount, nudged, debtEscalated });
 }
