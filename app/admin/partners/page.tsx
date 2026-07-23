@@ -128,8 +128,8 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
             <>
               <div>
                 <div className="flex items-center gap-2 mb-2"><Bot size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Bot</h3></div>
-                <div className={`rounded-lg px-3 py-2.5 text-[12.5px] border ${partner.bot_connected ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/[0.03] border-white/10 text-muted"}`}>
-                  {partner.bot_connected ? `✅ Ulangan${partner.bot_username ? ` — @${partner.bot_username}` : ""}` : "Hali ulanmagan — hamkor o'z panelidan ulaydi"}
+                <div className={`rounded-lg px-3 py-2.5 text-[12.5px] border ${partner.bot_username ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/[0.03] border-white/10 text-muted"}`}>
+                  {partner.bot_username ? `✅ Ulangan${partner.bot_username ? ` — @${partner.bot_username}` : ""}` : "Hali ulanmagan — hamkor o'z panelidan ulaydi"}
                 </div>
               </div>
 

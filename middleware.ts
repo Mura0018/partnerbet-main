@@ -91,6 +91,31 @@ async function handleAdminRoute(request: NextRequest) {
   return response;
 }
 
+async function handlePartnerRoute(request: NextRequest) {
+  const response = NextResponse.next();
+  const loginRedirect = () => {
+    const url = new URL("/auth/login", request.url);
+    url.searchParams.set("redirect", request.nextUrl.pathname);
+    return NextResponse.redirect(url);
+  };
+
+  const supabase = buildSupabaseClient(request, response);
+  if (!supabase) return loginRedirect();
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return loginRedirect();
+
+  // Faqat hamkor a'zolari (partner_members) kiradi.
+  const { data: partnerId } = await supabase.rpc("current_partner_id");
+  if (!partnerId) {
+    const url = new URL("/auth/login", request.url);
+    url.searchParams.set("error", "not_partner");
+    return NextResponse.redirect(url);
+  }
+
+  return response;
+}
+
 async function handlePublicRoute(request: NextRequest) {
   const response = NextResponse.next();
   const supabase = buildSupabaseClient(request, response);
@@ -122,12 +147,16 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/admin")) {
     return handleAdminRoute(request);
   }
+  if (request.nextUrl.pathname.startsWith("/partner")) {
+    return handlePartnerRoute(request);
+  }
   return handlePublicRoute(request);
 }
 
 export const config = {
   matcher: [
     "/admin/:path*",
-    "/((?!_next/static|_next/image|favicon.ico|icon|sw.js|admin|auth|api|go|maintenance).*)",
+    "/partner/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|icon|sw.js|admin|partner|auth|api|go|maintenance).*)",
   ],
 };

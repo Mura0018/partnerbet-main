@@ -81,7 +81,16 @@ function LoginForm() {
 
       const redirectTo = searchParams.get("redirect");
       const { data: isAdmin } = await supabase.rpc("is_admin_user");
-      router.push(redirectTo || (isAdmin ? "/admin/dashboard" : "/"));
+      let dest = redirectTo;
+      if (!dest) {
+        if (isAdmin) {
+          dest = "/admin/dashboard";
+        } else {
+          const { data: partnerId } = await supabase.rpc("current_partner_id");
+          dest = partnerId ? "/partner" : "/";
+        }
+      }
+      router.push(dest);
       router.refresh();
     } catch {
         setError(t("login.genericError"));
@@ -117,7 +126,16 @@ function LoginForm() {
       }
       const redirectTo = searchParams.get("redirect");
       const { data: isAdmin } = await supabase.rpc("is_admin_user");
-      router.push(redirectTo || (isAdmin ? "/admin/dashboard" : "/"));
+      let dest = redirectTo;
+      if (!dest) {
+        if (isAdmin) {
+          dest = "/admin/dashboard";
+        } else {
+          const { data: partnerId } = await supabase.rpc("current_partner_id");
+          dest = partnerId ? "/partner" : "/";
+        }
+      }
+      router.push(dest);
       router.refresh();
     } catch {
       setMfaError("Xatolik yuz berdi. Qayta urinib ko'ring.");
