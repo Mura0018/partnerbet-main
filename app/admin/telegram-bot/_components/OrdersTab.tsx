@@ -88,6 +88,106 @@ function ReceiptViewer({ path }: { path: string }) {
   );
 }
 
+// 5-BOSQICH: telefon tasdiqi. Operator mijozга qo'ng'iroq qilib "shuncha
+// summa qabul qildingizmi?" deб so'raganда javobни qayd qiladi (Ha/Yo'q +
+// summa + izoh). Qaydlar tarix (dalil) — o'chirilmaydi. Ixtiyoriy: buyurtma
+// bajarilishini bloklamaydi, alohida bo'lim.
+function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorNames: Record<string, string> }) {
+  const supabase = createClient();
+  const [rows, setRows] = useState<{ id: string; operator_id: string | null; confirmed: boolean; amount: number | null; note: string | null; created_at: string }[]>([]);
+  const [amount, setAmount] = useState(String(order.amount));
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState<"yes" | "no" | null>(null);
+  const [err, setErr] = useState("");
+
+  const load = async () => {
+    const { data } = await supabase
+      .from("order_confirmations")
+      .select("id, operator_id, confirmed, amount, note, created_at")
+      .eq("order_id", order.id)
+      .order("created_at", { ascending: false });
+    setRows((data as any[]) ?? []);
+  };
+  useEffect(() => { load(); }, [order.id]);
+
+  const submit = async (confirmed: boolean) => {
+    setErr("");
+    setSubmitting(confirmed ? "yes" : "no");
+    try {
+      const res = await fetch("/api/admin/telegram-orders/confirm-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, confirmed, amount: confirmed ? Number(amount) || null : null, note: note.trim() || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setErr(data.error === "not_responsible" ? "Faqat mas'ul operator yoki admin qayd qiladi." : "Qayd qilinmadi. Qayta urinib ko'ring.");
+        return;
+      }
+      setNote("");
+      load();
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
+      <div className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-2.5">📞 Telefon tasdiqi</div>
+      <div className="flex items-center gap-2 mb-2">
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="Summa"
+          className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
+        />
+        <span className="text-[11px] text-muted">so'm — mijoz qabul qildimi?</span>
+      </div>
+      <textarea
+        rows={2}
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Izoh (ixtiyoriy)"
+        className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[12px] outline-none focus:border-accent mb-2"
+      />
+      {err && <div className="rounded-lg bg-[#FF6B85]/10 border border-[#FF6B85]/30 text-[#FF6B85] text-[11px] px-3 py-2 mb-2">{err}</div>}
+      <div className="flex gap-2">
+        <button
+          onClick={() => submit(true)}
+          disabled={submitting !== null}
+          className="flex-1 py-2 rounded-lg bg-[#4ADE80]/15 border border-[#4ADE80]/40 text-[#4ADE80] font-semibold text-[12px] disabled:opacity-50"
+        >
+          {submitting === "yes" ? <Loader2 size={13} className="animate-spin mx-auto" /> : "✅ Ha — qabul qilindi"}
+        </button>
+        <button
+          onClick={() => submit(false)}
+          disabled={submitting !== null}
+          className="flex-1 py-2 rounded-lg bg-[#FF6B85]/15 border border-[#FF6B85]/40 text-[#FF6B85] font-semibold text-[12px] disabled:opacity-50"
+        >
+          {submitting === "no" ? <Loader2 size={13} className="animate-spin mx-auto" /> : "❌ Yo'q"}
+        </button>
+      </div>
+      {rows.length > 0 && (
+        <div className="mt-3 space-y-1.5 border-t border-white/5 pt-2.5">
+          {rows.map((r) => (
+            <div key={r.id} className="text-[11px] text-muted">
+              <span className={r.confirmed ? "text-[#4ADE80]" : "text-[#FF6B85]"}>
+                {r.confirmed ? `✅ Ha${r.amount != null ? `, ${Number(r.amount).toLocaleString("ru-RU")} so'm` : ""}` : "❌ Yo'q"}
+              </span>
+              {" · "}
+              {r.operator_id ? (operatorNames[r.operator_id] ?? "Operator") : "Operator"}
+              {" · "}
+              {new Date(r.created_at).toLocaleString("ru-RU")}
+              {r.note ? ` · ${r.note}` : ""}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order; operatorNames: Record<string, string>; onClose: () => void; onDone: () => void }) {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState<"completed" | "rejected" | null>(null);
@@ -211,6 +311,9 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
           {order.withdraw_code && <Row label="Yechish kodi" value={order.withdraw_code} highlight />}
           {order.payout_details && <Row label="Qabul qiluvchi raqam" value={order.payout_details} highlight />}
         </div>
+
+        {/* 5-BOSQICH: telefon tasdiqi — pending va hal qilingan buyurtmalar uchun ham (dalil) */}
+        <PhoneConfirmSection order={order} operatorNames={operatorNames} />
 
         {order.status === "pending" ? (
         <>
