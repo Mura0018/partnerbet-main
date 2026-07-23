@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { encryptSecret } from "@/lib/security/encryption";
 
 // Hamkor o'z Telegram botini ulaydi. Faqat partner_admin.
 // Token Telegram getMe orqali tekshiriladi va MAXFIY saqlanadi
@@ -40,7 +41,9 @@ export async function POST(req: NextRequest) {
   const { error: insErr } = await admin.from("partner_api_credentials").insert({
     partner_id: check.partnerId,
     provider: "telegram_bot",
-    credentials: { token, username },
+    // Token AES-256-GCM bilan shifrlab saqlanadi (platforma sirlari kabi) —
+    // DB dump/service-role sizsa ham ochiq matn ko'rinmaydi. username maxfiy emas.
+    credentials: { token: encryptSecret(token), username },
     is_active: true,
   });
   if (insErr) return NextResponse.json({ error: "store_failed", detail: insErr.message }, { status: 500 });
