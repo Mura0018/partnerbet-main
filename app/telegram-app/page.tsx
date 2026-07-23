@@ -1178,20 +1178,25 @@ export default function TelegramAppPage() {
   };
 
   // Xabar gesture'lari: long-press -> menyu (faqat matn xabar), yon-surish -> javob.
-  const gestureRef = useRef<{ x: number; y: number; lp: ReturnType<typeof setTimeout> | null; swiped: boolean } | null>(null);
+  const gestureRef = useRef<{ x: number; y: number; lp: ReturnType<typeof setTimeout> | null; swiped: boolean; captured: boolean } | null>(null);
   const bindMessageGestures = (m: SupportMessage, allowMenu: boolean) => ({
     onPointerDown: (e: React.PointerEvent) => {
       const pos = { x: e.clientX, y: e.clientY };
       const lp = allowMenu ? setTimeout(() => { openMsgMenu(m, pos); if (gestureRef.current) gestureRef.current.lp = null; }, 450) : null;
-      gestureRef.current = { x: e.clientX, y: e.clientY, lp, swiped: false };
+      gestureRef.current = { x: e.clientX, y: e.clientY, lp, swiped: false, captured: false };
     },
     onPointerMove: (e: React.PointerEvent) => {
       const g = gestureRef.current;
       if (!g) return;
       const dx = e.clientX - g.x, dy = e.clientY - g.y;
       if ((Math.abs(dx) > 8 || Math.abs(dy) > 8) && g.lp) { clearTimeout(g.lp); g.lp = null; }
-      // Telegram uslubi: yon (chap/o'ng) surish -> javob.
-      if (!g.swiped && !m.message?.startsWith("__END_CONFIRM__") && Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      // Gorizontal niyat aniq bo'lsa — pointerni ushlaymiz (vertikal scroll
+      // buzilmasligi uchun faqat shu holatda), so'ng swipe-to-reply.
+      if (!g.captured && Math.abs(dx) > 16 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        g.captured = true;
+        try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch {}
+      }
+      if (!g.swiped && g.captured && !m.message?.startsWith("__END_CONFIRM__") && Math.abs(dx) > 42) {
         g.swiped = true;
         setSupportReplyTo(m);
         setSupportError("");
@@ -1831,7 +1836,7 @@ export default function TelegramAppPage() {
         {msgMenuFor && msgMenuPos && (
           <div className="fixed inset-0 z-[85]" onClick={() => setMsgMenuFor(null)}>
             <div
-              className={`absolute w-40 bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
+              className={`absolute w-40 select-none bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
               style={{
                 left: Math.max(8, Math.min(msgMenuPos.x - 80, (typeof window !== "undefined" ? window.innerWidth : 360) - 168)),
                 top: Math.max(8, msgMenuPos.y - 104),
