@@ -28,7 +28,7 @@ export default function TelegramBotAdminPage() {
           <MessageCircle size={18} className="text-accent" />
           <h1 className="text-[16px] font-bold">Jamoa chati</h1>
         </div>
-        <div className="flex-1 p-4 min-h-0">
+        <div className="flex-1 p-4 min-h-0 w-full max-w-4xl mx-auto">
           <Can permission="team_chat.use"><ChatTab /></Can>
         </div>
       </div>
@@ -36,7 +36,7 @@ export default function TelegramBotAdminPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8">
+    <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto">
       <div className="flex items-center gap-2 mb-1">
         <Wallet size={20} className="text-accent" />
         <h1 className="text-[22px] font-bold">BetCore Pay</h1>

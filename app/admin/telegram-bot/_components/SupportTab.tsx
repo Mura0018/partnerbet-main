@@ -249,6 +249,8 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         </div>
       ) : null}
 
+      {/* Desktopda xabar ustuni cheksiz cho'zilmasin — markazlashgan ustun. */}
+      <div className="flex-1 flex flex-col min-h-0 w-full max-w-3xl mx-auto">
       <div
         ref={listRef}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0"
@@ -349,6 +351,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         </button>
       </div>
       )}
+      </div>
     </div>
   );
 }
