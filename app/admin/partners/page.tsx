@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight } from "lucide-react";
+import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight, SlidersHorizontal, Bot, Palette } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
 type Partner = {
@@ -15,7 +15,116 @@ type Partner = {
   currency: string;
   contact: string | null;
   created_at: string;
+  bot_connected?: boolean;
+  bot_username?: string | null;
+  plan?: string;
+  theme_key?: string;
 };
+
+function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () => void }) {
+  const supabase = createClient();
+  const [services, setServices] = useState<any[]>([]);
+  const [assign, setAssign] = useState<Record<string, boolean>>({});
+  const [themes, setThemes] = useState<any[]>([]);
+  const [themeAccess, setThemeAccess] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [missing, setMissing] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const [sv, sa, th, ta] = await Promise.all([
+        supabase.from("partner_services").select("id, key, name, description").order("name"),
+        supabase.from("partner_service_assignments").select("service_id, enabled").eq("partner_id", partner.id),
+        supabase.from("app_themes").select("id, key, name, is_premium, accent").order("sort"),
+        supabase.from("partner_theme_access").select("theme_id, enabled").eq("partner_id", partner.id),
+      ]);
+      if (sv.error || th.error) { setMissing(true); setLoading(false); return; }
+      setMissing(false);
+      setServices(sv.data ?? []);
+      setThemes(th.data ?? []);
+      const am: Record<string, boolean> = {};
+      for (const r of (sa.data ?? []) as any[]) am[r.service_id] = r.enabled;
+      setAssign(am);
+      const tm: Record<string, boolean> = {};
+      for (const r of (ta.data ?? []) as any[]) tm[r.theme_id] = r.enabled;
+      setThemeAccess(tm);
+      setLoading(false);
+    })();
+  }, [partner.id]);
+
+  const toggleService = async (id: string) => {
+    const next = !assign[id];
+    setAssign((p) => ({ ...p, [id]: next }));
+    await supabase.from("partner_service_assignments").upsert({ partner_id: partner.id, service_id: id, enabled: next }, { onConflict: "partner_id,service_id" });
+  };
+  const toggleTheme = async (id: string) => {
+    const next = !themeAccess[id];
+    setThemeAccess((p) => ({ ...p, [id]: next }));
+    await supabase.from("partner_theme_access").upsert({ partner_id: partner.id, theme_id: id, enabled: next }, { onConflict: "partner_id,theme_id" });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-y-0 right-0 w-full sm:w-[440px] bg-bg border-l border-white/10 flex flex-col shadow-2xl">
+        <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/8 shrink-0">
+          <SlidersHorizontal size={18} className="text-accent" />
+          <h2 className="text-[15px] font-bold flex-1 truncate">Sozlash — {partner.name}</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10" aria-label="Yopish"><X size={18} /></button>
+        </div>
+        <div className="p-4 space-y-6 overflow-y-auto">
+          {loading ? (
+            <p className="text-[13px] text-muted">Yuklanmoqda...</p>
+          ) : missing ? (
+            <div className="rounded-xl border border-[#F4C76A]/30 bg-[#F4C76A]/10 p-4 text-[13px]">
+              <div className="font-semibold text-[#F4C76A] mb-1">Jadvallar topilmadi</div>
+              <div className="text-muted">0059 va 0060 migratsiyalarini Supabase'da ishga tushiring.</div>
+            </div>
+          ) : (
+            <>
+              <div>
+                <div className="flex items-center gap-2 mb-2"><Bot size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Bot</h3></div>
+                <div className={`rounded-lg px-3 py-2.5 text-[12.5px] border ${partner.bot_connected ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/[0.03] border-white/10 text-muted"}`}>
+                  {partner.bot_connected ? `✅ Ulangan${partner.bot_username ? ` — @${partner.bot_username}` : ""}` : "Hali ulanmagan — hamkor o'z panelidan ulaydi"}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2"><Check size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Xizmatlar</h3></div>
+                <div className="space-y-1.5">
+                  {services.map((s) => (
+                    <label key={s.id} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2.5 cursor-pointer">
+                      <input type="checkbox" checked={!!assign[s.id]} onChange={() => toggleService(s.id)} className="accent-accent" />
+                      <div className="min-w-0"><div className="text-[13px] font-medium">{s.name}</div>{s.description && <div className="text-[11px] text-muted truncate">{s.description}</div>}</div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2"><Palette size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Temalar</h3></div>
+                <div className="space-y-1.5">
+                  {themes.map((t) => (
+                    <div key={t.id} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2.5">
+                      <span className="w-4 h-4 rounded-full shrink-0" style={{ background: t.accent || "#3D7FFF" }} />
+                      <div className="flex-1 min-w-0"><span className="text-[13px] font-medium">{t.name}</span></div>
+                      {t.is_premium ? (
+                        <label className="flex items-center gap-1.5 text-[11.5px] text-muted cursor-pointer">
+                          <input type="checkbox" checked={!!themeAccess[t.id]} onChange={() => toggleTheme(t.id)} className="accent-accent" /> Yoqilgan
+                        </label>
+                      ) : <span className="text-[11px] text-[#4ADE80]">Bepul</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const CURRENCIES = ["UZS", "USD", "RUB", "EUR", "KZT", "TRY"];
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -155,6 +264,7 @@ export default function PartnersManager() {
   const [leads, setLeads] = useState<PartnerLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>({ open: false, partner: null });
+  const [provisionFor, setProvisionFor] = useState<Partner | null>(null);
   const supabase = createClient();
 
   const load = async () => {
@@ -247,6 +357,9 @@ export default function PartnersManager() {
                     <span>{p.currency}</span>
                   </div>
                   <div className="mt-auto flex items-center gap-1.5 pt-2 border-t border-white/5">
+                    <button onClick={() => setProvisionFor(p)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
+                      <SlidersHorizontal size={13} /> Sozlash
+                    </button>
                     <button onClick={() => setModal({ open: true, partner: p })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/10 text-[11.5px] text-muted hover:text-white">
                       <Pencil size={13} /> Tahrirlash
                     </button>
@@ -301,6 +414,7 @@ export default function PartnersManager() {
       )}
 
       {modal.open && <PartnerModal partner={modal.partner} prefill={modal.prefill} onClose={closeModal} onSaved={onModalSaved} />}
+      {provisionFor && <ProvisionDrawer partner={provisionFor} onClose={() => setProvisionFor(null)} />}
     </div>
   );
 }
