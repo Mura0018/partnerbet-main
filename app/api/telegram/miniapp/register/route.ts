@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getApiCredential } from "@/lib/auth/apiCredentials";
-import { verifyTelegramInitData } from "@/lib/telegram/verifyInitData";
+import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 
 export async function POST(req: NextRequest) {
-  const botToken = await getApiCredential("telegram_bot_token");
-  if (!botToken) return NextResponse.json({ error: "not_configured" }, { status: 500 });
-
   const ip = getClientIp(req.headers);
   const { allowed } = await checkAndRecordRateLimit(`telegram-register:${ip}`, 60, 10);
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
@@ -22,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "weak_password" }, { status: 400 });
   }
 
-  const verified = verifyTelegramInitData(initData, botToken);
+  const verified = await resolveMiniApp(initData);
   if (!verified) return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
 
   const supabase = createAdminClient();
