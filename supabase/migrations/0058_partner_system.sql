@@ -74,13 +74,16 @@ create index if not exists idx_global_chat_time on global_chat_messages(created_
 -- =====================================================================
 --  YORDAMCHI FUNKSIYALAR (RLS uchun)
 -- =====================================================================
+-- security definer: bu funksiyalar partner_members'dan o'qiydi, va partner_members'ning
+-- o'z RLS siyosati ham shu funksiyalarni chaqiradi — definer bo'lmasa cheksiz rekursiya
+-- (stack depth limit exceeded) yuz beradi.
 create or replace function public.current_partner_id()
-returns uuid language sql stable as $$
+returns uuid language sql stable security definer set search_path = public as $$
   select partner_id from partner_members where profile_id = auth.uid() limit 1;
 $$;
 
 create or replace function public.is_partner_admin()
-returns boolean language sql stable as $$
+returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from partner_members
     where profile_id = auth.uid() and partner_role = 'partner_admin'
