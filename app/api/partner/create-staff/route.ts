@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { isPartnerActive } from "@/lib/partner/status";
 
 // Partner admin o'z hamkoriga xodim (staff) qo'shadi.
 async function resolvePartnerAdmin() {
@@ -11,6 +12,7 @@ async function resolvePartnerAdmin() {
   if (!isAdmin) return { ok: false as const, status: 403 };
   const { data: partnerId } = await supabase.rpc("current_partner_id");
   if (!partnerId) return { ok: false as const, status: 403 };
+  if (!(await isPartnerActive(partnerId as string))) return { ok: false as const, status: 403 };
   return { ok: true as const, partnerId: partnerId as string };
 }
 

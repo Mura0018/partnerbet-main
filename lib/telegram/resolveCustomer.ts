@@ -15,17 +15,29 @@ export type CustomerContext = {
 };
 
 export async function resolveCustomerContext(initData: string): Promise<CustomerContext | null> {
-  const ctx = await resolveMiniApp(initData);
+  // enforceActive:false -> suspended hamkorda ham partnerId olamiz, so'ng bu yerda
+  // "bloklangan" (denied) ekranini beramiz (jimgina xato emas, tushunarli).
+  const ctx = await resolveMiniApp(initData, { enforceActive: false });
   if (!ctx) return null;
 
   const admin = createAdminClient();
+
+  // Hamkor bo'lsa statusni tekshiramiz — faqat 'active' xizmat qiladi.
+  let partnerActive = true;
+  if (ctx.partnerId) {
+    const { data: p } = await admin.from("partners").select("status").eq("id", ctx.partnerId).maybeSingle();
+    partnerActive = (p as any)?.status === "active";
+  }
+
   const { data: customer } = await admin
     .from("customers")
     .select("id, telegram_id, partner_id, full_name, phone")
     .eq("telegram_id", ctx.telegramId)
     .maybeSingle();
 
-  const denied = !!(ctx.partnerId && customer && (customer as any).partner_id !== ctx.partnerId);
+  // Hamkor app'ida bloklanadi: (a) hamkor faol emas (suspended/pending), yoki
+  // (b) begona mijoz (boshqa "uy"ga tegishli).
+  const denied = !!(ctx.partnerId && (!partnerActive || (customer && (customer as any).partner_id !== ctx.partnerId)));
 
   return {
     telegramId: ctx.telegramId,

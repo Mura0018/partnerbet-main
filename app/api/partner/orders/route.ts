@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { isPartnerActive } from "@/lib/partner/status";
 
 // Hamkor a'zolari uchun O'Z buyurtmalari (partner_id bo'yicha).
 export async function GET() {
@@ -10,6 +11,7 @@ export async function GET() {
 
   const { data: partnerId } = await supabase.rpc("current_partner_id");
   if (!partnerId) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  if (!(await isPartnerActive(partnerId as string))) return NextResponse.json({ error: "partner_suspended" }, { status: 403 });
 
   const admin = createAdminClient();
   const { data: orders } = await admin

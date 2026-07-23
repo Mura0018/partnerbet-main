@@ -20,8 +20,13 @@ function readPartnerToken(stored: string | undefined): { token: string; wasPlain
   }
 }
 
-export async function resolveMiniApp(initData: string): Promise<MiniAppContext | null> {
+// enforceActive (default TRUE): hamkor topilganda partners.status='active'
+// bo'lmasa (suspended/pending) null qaytaradi — ya'ni to'xtatilgan hamkor boti
+// mijozlarni autentifikatsiya qilmaydi. Nice "bloklangan" ekran uchun
+// resolveCustomerContext enforceActive:false bilan chaqirib, o'zi denied beradi.
+export async function resolveMiniApp(initData: string, opts?: { enforceActive?: boolean }): Promise<MiniAppContext | null> {
   if (!initData) return null;
+  const enforceActive = opts?.enforceActive !== false;
 
   // 1) Bizning bot
   const ourToken = await getApiCredential("telegram_bot_token");
@@ -44,6 +49,11 @@ export async function resolveMiniApp(initData: string): Promise<MiniAppContext |
 
     const v = verifyTelegramInitData(initData, parsed.token);
     if (v) {
+      // Status majburlash: faqat 'active' hamkor xizmat qiladi.
+      if (enforceActive) {
+        const { data: p } = await admin.from("partners").select("status").eq("id", row.partner_id).maybeSingle();
+        if ((p as any)?.status !== "active") return null; // suspended/pending -> bloklangan
+      }
       // Lazy migratsiya: mos kelgan eski OCHIQ tokenni shifrlab qayta yozamiz
       // (bir marta). O'qish baribir muvaffaqiyatli bo'ldi — migratsiya xato
       // bersa ham oqim buzilmaydi.

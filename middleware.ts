@@ -116,6 +116,14 @@ async function handlePartnerRoute(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Faqat 'active' hamkor panelga kiradi — suspended/pending bloklangan.
+  const { data: partner } = await supabase.from("partners").select("status").eq("id", partnerId).maybeSingle();
+  if ((partner as any)?.status !== "active") {
+    const url = new URL("/auth/login", request.url);
+    url.searchParams.set("error", "partner_suspended");
+    return NextResponse.redirect(url);
+  }
+
   return response;
 }
 
