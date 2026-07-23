@@ -313,18 +313,22 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
         commission_pct: billing === "commission" ? Number(commission) || 0 : 0,
         subscription_amount: billing === "subscription" ? Number(subscription) || 0 : 0,
       };
-      let errMsg: string | null = null;
+      let opError: any = null;
+      let row: any = null;
       if (editing) {
-        const { error } = await supabase.from("partners").update(payload).eq("id", partner!.id);
-        errMsg = error?.message ?? null;
+        const { data, error } = await supabase.from("partners").update(payload).eq("id", partner!.id).select().single();
+        opError = error; row = data;
       } else {
         const { data: { user } } = await supabase.auth.getUser();
-        const { error } = await supabase.from("partners").insert({ ...payload, created_by: user?.id ?? null });
-        errMsg = error?.message ?? null;
+        const { data, error } = await supabase.from("partners").insert({ ...payload, created_by: user?.id ?? null }).select().single();
+        opError = error; row = data;
       }
-      if (errMsg) {
-        setError("Saqlashda xatolik: " + errMsg);
-        toast.error("Saqlanmadi: " + errMsg + ". SQL (0058) va ruxsatni tekshiring.");
+      // Xatoni OBYEKT bo'yicha tekshiramiz (bo'sh message'li xato ham ushlanadi) +
+      // qator haqiqatan yozildi va o'qildi (row) — shundagina muvaffaqiyat.
+      if (opError || !row) {
+        const msg = opError?.message || opError?.hint || opError?.code || "Noma'lum xatolik (ehtimol ruxsat/RLS yoki ulanish/token).";
+        setError("Saqlashda xatolik: " + msg);
+        toast.error("Saqlanmadi: " + msg);
         return;
       }
       toast.success(editing ? "Hamkor yangilandi ✅" : "Hamkor muvaffaqiyatli yaratildi ✅");
