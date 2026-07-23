@@ -39,6 +39,8 @@ type Order = {
   received_holder_name: string | null;
   player_name: string | null;
   auto_processed: boolean;
+  handoff_open: boolean;
+  sla_deadline: string | null;
   created_at: string;
   customers: { phone: string; full_name: string | null } | null;
 };
@@ -426,6 +428,77 @@ function MyStatusToggle() {
   );
 }
 
+// 4-BOSQICH: operator band holati (is_busy + sabab). is_online dan alohida.
+// Band bo'lganда — buyurtmalari SLA/cron orqali boshqa operatorga o'tishi mumkin.
+function MyBusyToggle() {
+  const [isBusy, setIsBusy] = useState(false);
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setLoading(false); return; }
+      const { data } = await supabase.from("profiles").select("is_busy, busy_reason").eq("id", user.id).maybeSingle();
+      if (data) { setIsBusy((data as any).is_busy ?? false); setReason((data as any).busy_reason ?? ""); }
+      setLoading(false);
+    });
+  }, []);
+
+  const toggle = async () => {
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSaving(false); return; }
+    const next = !isBusy;
+    const { data: profile } = await supabase.from("profiles").select("display_name, full_name").eq("id", user.id).maybeSingle();
+    const name = profile?.display_name || profile?.full_name || "Operator";
+    const nextReason = next ? reason.trim() : "";
+
+    await supabase.from("profiles").update({ is_busy: next, busy_reason: nextReason || null }).eq("id", user.id);
+    await supabase.from("team_chat_messages").insert({
+      sender_id: user.id,
+      is_system: true,
+      message: next
+        ? `⛔ ${name} bandman deb belgiladi${nextReason ? ` (${nextReason})` : ""} — buyurtmalari boshqa operatorga o'tishi mumkin.`
+        : `✅ ${name} yana bo'sh.`,
+    });
+    setIsBusy(next);
+    setSaving(false);
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className={`mb-4 rounded-lg px-3.5 py-2.5 border ${isBusy ? "bg-[#FF6B85]/10 border-[#FF6B85]/25" : "bg-white/[0.02] border-white/8"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className={`w-2.5 h-2.5 rounded-full ${isBusy ? "bg-[#FF6B85]" : "bg-[#4ADE80]"}`} />
+          <span className={`text-[12px] ${isBusy ? "text-[#FF6B85]" : "text-muted"}`}>
+            Bandlik: <span className="font-semibold">{isBusy ? "Bandman" : "Bo'shman"}</span>
+            {isBusy && reason ? <span className="text-[11px]"> — {reason}</span> : null}
+          </span>
+        </div>
+        <button
+          onClick={toggle}
+          disabled={saving}
+          className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
+        >
+          {saving ? "…" : isBusy ? "Bo'shman deb belgilash" : "Bandman deb belgilash"}
+        </button>
+      </div>
+      {!isBusy && (
+        <input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Band sababi (ixtiyoriy) — masalan: tushlik, boshqa ish"
+          className="mt-2 w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
+        />
+      )}
+    </div>
+  );
+}
+
 function TelegramLinkWidget() {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [statusError, setStatusError] = useState(false);
@@ -527,7 +600,7 @@ export function OrdersTab() {
     setLoading(true);
     let query = supabase
       .from("telegram_orders")
-      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, created_at, customers(phone, full_name)")
+      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, handoff_open, sla_deadline, created_at, customers(phone, full_name)")
       .order("created_at", { ascending: false })
       .limit(200);
     if (filter !== "all") query = query.eq("status", filter);
@@ -566,6 +639,24 @@ export function OrdersTab() {
     } catch {}
   };
 
+  // 4-BOSQICH: handoff'ga chiqqan buyurtmani atomik "Olaman". Server WHERE
+  // handoff_open=true bilan lock qiladi — ikki operator bosса bittasi yutadi.
+  const takeover = async (o: Order) => {
+    try {
+      const res = await fetch("/api/admin/telegram-orders/takeover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: o.id }),
+      });
+      const data = await res.json();
+      if (!data.ok) alert("Boshqa operator ulgurdi yoki buyurtma allaqachon hal qilingan.");
+    } catch {
+      /* tarmoq xatosi — jim */
+    } finally {
+      load();
+    }
+  };
+
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -588,6 +679,7 @@ export function OrdersTab() {
     <div>
       {/* Ish holati va Telegram xabarnomasi — faqat xodimlar uchun (super admin buyurtma qayta ishlamaydi) */}
       {!isSuperAdmin && <MyStatusToggle />}
+      {!isSuperAdmin && <MyBusyToggle />}
       {!isSuperAdmin && <TelegramLinkWidget />}
       <Can permission="telegram_operators.manage"><LimitsEditor /></Can>
       <CashdeskBalanceBadge />
@@ -681,6 +773,16 @@ export function OrdersTab() {
                     <div className="text-[10px] text-accent mt-1">
                       {o.status === "pending" ? `🔵 ${ownerName} ko'rib chiqmoqda` : `${ownerName} bajardi`}
                     </div>
+                  )}
+                  {o.status === "pending" && o.handoff_open && o.claimed_by !== currentUserId && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); takeover(o); }}
+                      className="inline-flex items-center gap-1 mt-1.5 text-[11px] px-2.5 py-1 rounded-lg bg-[#F4C76A]/15 border border-[#F4C76A]/40 text-[#F4C76A] font-semibold cursor-pointer hover:bg-[#F4C76A]/25"
+                    >
+                      ⚠️ Javob yo'q — Olaman
+                    </span>
                   )}
                 </div>
                 <div className="text-right shrink-0">

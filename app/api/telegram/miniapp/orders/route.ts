@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
 import { resolveOrderCashdesk } from "@/lib/cashdesk/pickCashdesk";
+import { getSlaMinutes } from "@/lib/cashdesk/sla";
 
 const PAYMENT_METHODS = ["click", "payme", "card", "crypto"] as const;
 
@@ -150,6 +151,22 @@ export async function POST(req: NextRequest) {
     }
   } catch {
     /* kassa biriktirish best-effort */
+  }
+
+  // 4-BOSQICH: egasi bор mijoz buyurtmasiga SLA (javob berish muddati).
+  // Owner operator shu muddatда javob bermasa/band bo'lsa -> cron handoff
+  // ochadi. Egasiz buyurtmaда SLA yo'q (u umumiy navbatда). Alohida
+  // best-effort update: sla_deadline ustuni yo'q bo'lsa oqim buzilmaydi.
+  if (ownerOperatorId) {
+    try {
+      const slaMin = await getSlaMinutes();
+      await supabase
+        .from("telegram_orders")
+        .update({ sla_deadline: new Date(Date.now() + slaMin * 60000).toISOString() })
+        .eq("id", order.id);
+    } catch {
+      /* SLA best-effort */
+    }
   }
 
   await sendTelegramMessage(customer.telegram_id, buildOrderCreatedMessage(type, amountNum));
