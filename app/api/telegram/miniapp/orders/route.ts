@@ -77,6 +77,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "too_many_pending_orders" }, { status: 400 });
   }
 
+  // 2-BOSQICH: egasi bор mijoz -> buyurtma AVTOMATIK o'z operatoriga
+  // (mavjud claimed_by yumshoq-biriktirish mexanizmi orqali). SLA/handoff/lock
+  // YO'Q (u 4-bosqichda). Egasi YO'Q (yangi mijoz) -> claimed_by=null, ya'ni
+  // hozirgi mavjud oqim aynan avvalgidek.
+  const { data: ownerRow } = await adminForLimits
+    .from("customers")
+    .select("owner_operator_id")
+    .eq("id", customer.id)
+    .maybeSingle();
+  const ownerOperatorId = (ownerRow as any)?.owner_operator_id ?? null;
+
   const { data: limitsRow } = await adminForLimits.from("site_settings").select("value").eq("key", "betcore_pay_limits").maybeSingle();
   const limits = (limitsRow?.value as any) ?? {};
   const maxOrderAmount = Number(limits.max_order_amount) || Infinity;
@@ -118,6 +129,8 @@ export async function POST(req: NextRequest) {
       player_name: playerName,
       currency_id: currencyId,
       partner_id: cc.partnerId,
+      claimed_by: ownerOperatorId,
+      claimed_at: ownerOperatorId ? new Date().toISOString() : null,
     })
     .select("id, type, platform, account_id, amount, payment_method, status, created_at")
     .single();

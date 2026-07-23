@@ -7,7 +7,7 @@ import { toast } from "@/lib/ui/toast";
 type Row = { id: string; full_name: string | null; phone: string; created_at: string; partnerName: string | null; orderCount: number };
 type Partner = { id: string; name: string };
 type Order = { id: string; type: string; amount: number; status: string; platform: string; created_at: string };
-type Detail = { customer: { id: string; full_name: string | null; phone: string; created_at: string; telegram_id: number | null; partnerName: string | null }; orders: Order[] };
+type Detail = { customer: { id: string; full_name: string | null; phone: string; created_at: string; telegram_id: number | null; partnerName: string | null; ownerName: string | null }; orders: Order[] };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   pending: { label: "Kutilmoqda", cls: "text-[#F4C76A]" },
@@ -62,7 +62,7 @@ export default function CustomersManager() {
 
   const openDetail = async (id: string) => {
     setDetailLoading(true);
-    setDetail({ customer: { id, full_name: null, phone: "", created_at: "", telegram_id: null, partnerName: null }, orders: [] });
+    setDetail({ customer: { id, full_name: null, phone: "", created_at: "", telegram_id: null, partnerName: null, ownerName: null }, orders: [] });
     try {
       const res = await fetch(`/api/admin/customers/detail?id=${id}`);
       const data = await res.json();
@@ -200,6 +200,7 @@ export default function CustomersManager() {
                   <div className="text-[13px] text-muted mt-0.5">{detail.customer.phone}</div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[12px] text-muted">
                     <span>Tegishli: <span className="text-white">{detail.customer.partnerName || "Platforma"}</span></span>
+                    <span>Egasi: <span className="text-white">{detail.customer.ownerName || "biriktirilmagan"}</span></span>
                     <span>Ro'yxatdan: <span className="text-white">{detail.customer.created_at ? fmtDate(detail.customer.created_at) : "—"}</span></span>
                     {detail.customer.telegram_id != null && <span>Telegram ID: <span className="text-white font-mono">{detail.customer.telegram_id}</span></span>}
                   </div>
