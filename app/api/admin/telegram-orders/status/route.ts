@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { sendTelegramMessage, buildOrderResolvedMessage } from "@/lib/telegram/notify";
 import { cashdeskDeposit, cashdeskPayout, isCashdeskConfigured } from "@/lib/cashdesk/client";
+import { getCashdeskCredsById, type Creds } from "@/lib/cashdesk/store";
 
 async function requireOrdersManage() {
   const supabase = await createServerSupabaseClient();
@@ -49,11 +50,26 @@ export async function POST(req: NextRequest) {
   let autoProcessed = false;
   let operatorNote = note ? String(note).trim().slice(0, 500) : null;
 
+  // 3-BOSQICH: buyurtmaga biriktirilgan kassa kalitlari bilan bajarish.
+  // cashdesk_id bo'sh (eski buyurtma) / ustun yo'q / kassa topilmasa ->
+  // orderCreds undefined -> client default kassaga tushadi (orqaga moslik).
+  let orderCreds: Creds | undefined = undefined;
+  try {
+    const { data: cdRow } = await admin.from("telegram_orders").select("cashdesk_id").eq("id", orderId).maybeSingle();
+    const cid = (cdRow as any)?.cashdesk_id;
+    if (cid) {
+      const c = await getCashdeskCredsById(cid);
+      if (c) orderCreds = c;
+    }
+  } catch {
+    /* default kassa */
+  }
+
   if (status === "completed" && (await isCashdeskConfigured())) {
     const result =
       pendingOrder.type === "topup"
-        ? await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount))
-        : await cashdeskPayout(pendingOrder.account_id, pendingOrder.withdraw_code ?? "");
+        ? await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds)
+        : await cashdeskPayout(pendingOrder.account_id, pendingOrder.withdraw_code ?? "", orderCreds);
 
     if (!result.ok) {
       // Do NOT mark the order completed if the real money movement
