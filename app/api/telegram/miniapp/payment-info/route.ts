@@ -72,6 +72,43 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  // HAMKOR mijozi (white-label): hamkorning O'Z to'lov usullaridan foydalanamiz.
+  // Platformaga JIMGINA o'tib ketmaymiz — hamkorda faol usul bo'lmasa aniq xato.
+  if (verified.partnerId) {
+    const { data: pm } = await supabase
+      .from("partner_payment_methods")
+      .select("id, kind, number, holder")
+      .eq("partner_id", verified.partnerId)
+      .eq("is_active", true);
+    const methods = (pm as any[]) ?? [];
+    const emptyPayload = {
+      cardNumber: "", cardHolder: "", cardOperatorId: null,
+      clickNumber: "", clickHolder: "", clickOperatorId: null,
+      paymeNumber: "", paymeHolder: "", paymeOperatorId: null,
+      cryptoWallet: "", cryptoOperatorId: null,
+      partner: true,
+    };
+    if (methods.length === 0) {
+      return NextResponse.json({ ...emptyPayload, error: "partner_no_payment_methods" }, { headers: { "Cache-Control": "no-store" } });
+    }
+    const pick = (kind: string) => {
+      const m = methods.filter((x) => x.kind === kind);
+      return m.length ? m[Math.floor(Math.random() * m.length)] : null;
+    };
+    const pc = pick("card"), pcl = pick("click"), ppm = pick("payme"), pcr = pick("crypto");
+    return NextResponse.json(
+      {
+        cardNumber: pc?.number ?? "", cardHolder: pc?.holder ?? "", cardOperatorId: null,
+        clickNumber: pcl?.number ?? "", clickHolder: pcl?.holder ?? "", clickOperatorId: null,
+        paymeNumber: ppm?.number ?? "", paymeHolder: ppm?.holder ?? "", paymeOperatorId: null,
+        cryptoWallet: pcr?.number ?? "", cryptoOperatorId: null,
+        partner: true,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
+  // PLATFORMA mijozi (partnerId=null): eski mantiq AYNAN o'zgarmagan.
   const [{ data: methodsData }, { data: pendingData }, { data: onlineData }] = await Promise.all([
     supabase
       .from("telegram_operator_payment_methods")
