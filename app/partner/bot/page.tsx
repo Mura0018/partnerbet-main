@@ -41,6 +41,7 @@ export default function PartnerBotPage() {
       setToken("");
       setUsername(data.username || "");
       toast.success(`Bot ulandi ✅ @${data.username || ""}`);
+      if (data.menuSet === false) toast.info("Bot ulandi, lekin menyu tugmasi o'rnatilmadi — qayta ulashga urinib ko'ring.");
     } catch { setError("Ulanishda xatolik."); toast.error("Ulanishda xatolik. Internetni tekshiring."); }
     finally { setBusy(false); }
   };
@@ -76,7 +77,16 @@ export default function PartnerBotPage() {
           </div>
           {isAdmin && <button onClick={disconnect} disabled={busy} className="shrink-0 text-[12px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">Uzish</button>}
         </div>
-      ) : (
+      ) : null}
+
+      {username && (
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 mb-5 text-[12.5px] text-muted">
+          Mijozlaringiz botingizni ochib, pastdagi <span className="text-white font-medium">menyu (☰)</span> tugmasi orqali BetCore Pay app'ini ochadi.
+          <div className="text-[11px] text-[#5b6f85] mt-1.5">Eslatma: app'ning hamkor ko'rinishi (tema/to'lov) keyingi bosqichda to'liq ulanadi.</div>
+        </div>
+      )}
+
+      {!username && (
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-5">
           {isAdmin ? (
             <>

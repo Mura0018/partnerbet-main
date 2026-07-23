@@ -47,7 +47,23 @@ export async function POST(req: NextRequest) {
 
   await admin.from("partners").update({ bot_username: username, bot_connected: true }).eq("id", check.partnerId);
 
-  return NextResponse.json({ ok: true, username });
+  // Bosqich 7.1: hamkor botining menyu tugmasini bizning mini-app'ga yo'naltiramiz.
+  // Mijoz botni ochib menyuni bosganda BetCore Pay mini-app ochiladi.
+  // Best-effort: agar o'rnatilmasa ham bot ulangan holatда qoladi.
+  let menuSet = false;
+  try {
+    const origin = new URL(req.url).origin;
+    const appUrl = `${origin}/telegram-app`;
+    const r = await fetch(`https://api.telegram.org/bot${token}/setChatMenuButton`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ menu_button: { type: "web_app", text: "BetCore Pay", web_app: { url: appUrl } } }),
+    });
+    const j = await r.json();
+    menuSet = !!j.ok;
+  } catch { /* best-effort */ }
+
+  return NextResponse.json({ ok: true, username, menuSet });
 }
 
 export async function DELETE() {
