@@ -976,6 +976,18 @@ export default function TelegramAppPage() {
       const ordData = await ordRes.json();
       setOrders(ordData.orders ?? []);
     } catch {}
+    // Mijoz 5 daqiqadan ko'p tashqarida bo'lgan bo'lsa — eski suhbatni tozalaymiz.
+    try {
+      const leftRaw = localStorage.getItem("supportLeftAt");
+      if (leftRaw && Date.now() - Number(leftRaw) > 5 * 60 * 1000) {
+        await fetch("/api/telegram/miniapp/support/clear", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initData: getInitData() }),
+        }).catch(() => {});
+      }
+      localStorage.removeItem("supportLeftAt");
+    } catch {}
     await loadSupport();
     // F2b: buyurtma orqali kirilganda klaviatura darhol ochiladi (avto-reply).
     if (orderId) setTimeout(() => supportInputRef.current?.focus(), 150);
@@ -1017,19 +1029,13 @@ export default function TelegramAppPage() {
     supportBottomRef.current?.scrollIntoView({ behavior: "auto" });
   }, [supportViewportH, screen]);
 
-  // Chatdan chiqilganda (screen "support"dan boshqasiga o'tsa) mijoz ko'rinishini
-  // tozalaymiz -> keyingi kirishda bo'sh chat. Operator tarixni saqlaydi.
+  // Chatdan chiqilganda faqat VAQTNI belgilaymiz (darhol tozalamaymiz).
+  // Suhbat operator/mijoz yakunlaguncha saqlanadi; agar mijoz chiqib ketib
+  // 5 daqiqadan ko'p qaytmasa -> keyingi kirishda tozalanadi (openSupport).
   useEffect(() => {
     if (screen !== "support") return;
     return () => {
-      const initData = getInitData();
-      if (!initData) return;
-      fetch("/api/telegram/miniapp/support/clear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData }),
-        keepalive: true,
-      }).catch(() => {});
+      try { localStorage.setItem("supportLeftAt", String(Date.now())); } catch {}
     };
   }, [screen]);
 
