@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, Download, Copy, MousePointerClick, TrendingUp, Wallet, Clock, CheckCircle2, Banknote, Headset } from "lucide-react";
+import { Users, Download, Copy, MousePointerClick, TrendingUp, Wallet, Clock, CheckCircle2, XCircle, Banknote, Headset, UserCog, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
@@ -46,6 +46,10 @@ export default function Dashboard() {
 
       <Can permission="telegram_orders.manage">
         <BetCorePayMetrics period={period} />
+      </Can>
+
+      <Can permission="telegram_orders.manage">
+        <StaffActivity period={period} />
       </Can>
 
       <WebAnalytics period={period} />
@@ -108,7 +112,7 @@ function WebAnalytics({ period }: { period: Period }) {
 }
 
 function BetCorePayMetrics({ period }: { period: Period }) {
-  const [m, setM] = useState({ pending: 0, completed: 0, volume: 0, customers: 0, openSupport: 0 });
+  const [m, setM] = useState({ pending: 0, completed: 0, rejected: 0, volume: 0, topup: 0, withdraw: 0, customers: 0, openSupport: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -120,52 +124,127 @@ function BetCorePayMetrics({ period }: { period: Period }) {
       // Snapshot (davrga bog'liq emas — "hozirgi" holat)
       const pendingQ = supabase.from("telegram_orders").select("id", { count: "exact", head: true }).eq("status", "pending");
       const openQ = supabase.from("telegram_support_threads").select("customer_id", { count: "exact", head: true }).eq("is_archived", false);
-
-      // Davr bo'yicha (real)
-      let completedQ = supabase.from("telegram_orders").select("id", { count: "exact", head: true }).eq("status", "completed");
-      let volQ = supabase.from("telegram_orders").select("amount").eq("status", "completed").limit(10000);
+      // Davr bo'yicha
       let custQ = supabase.from("customers").select("id", { count: "exact", head: true });
-      if (start) {
-        completedQ = completedQ.gte("created_at", start);
-        volQ = volQ.gte("created_at", start);
-        custQ = custQ.gte("created_at", start);
-      }
+      let ordersQ = supabase.from("telegram_orders").select("type, status, amount").limit(20000);
+      if (start) { custQ = custQ.gte("created_at", start); ordersQ = ordersQ.gte("created_at", start); }
 
-      const [pend, open, comp, vol, cust] = await Promise.all([pendingQ, openQ, completedQ, volQ, custQ]);
-      const volume = (vol.data ?? []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
-      setM({
-        pending: pend.count ?? 0,
-        openSupport: open.count ?? 0,
-        completed: comp.count ?? 0,
-        volume,
-        customers: cust.count ?? 0,
-      });
+      const [pend, open, cust, orders] = await Promise.all([pendingQ, openQ, custQ, ordersQ]);
+      let completed = 0, rejected = 0, volume = 0, topup = 0, withdraw = 0;
+      for (const o of (orders.data ?? []) as any[]) {
+        if (o.status === "completed") { completed++; volume += Number(o.amount || 0); if (o.type === "topup") topup++; else withdraw++; }
+        else if (o.status === "rejected") rejected++;
+      }
+      setM({ pending: pend.count ?? 0, openSupport: open.count ?? 0, customers: cust.count ?? 0, completed, rejected, volume, topup, withdraw });
       setLoading(false);
     })();
   }, [period]);
 
   const cards = [
-    { label: "Kutilayotgan buyurtmalar", value: m.pending.toLocaleString("ru-RU"), icon: Clock },
-    { label: "Bajarilgan (davr)", value: m.completed.toLocaleString("ru-RU"), icon: CheckCircle2 },
-    { label: "Hajm (davr)", value: fmtSom(m.volume), icon: Banknote },
-    { label: period === "all" ? "Jami mijozlar" : "Yangi mijozlar (davr)", value: m.customers.toLocaleString("ru-RU"), icon: Users },
-    { label: "Ochiq murojaatlar", value: m.openSupport.toLocaleString("ru-RU"), icon: Headset },
+    { label: "Kutilayotgan", value: m.pending.toLocaleString("ru-RU"), icon: Clock, color: "#F4C76A" },
+    { label: "Bajarilgan", value: m.completed.toLocaleString("ru-RU"), icon: CheckCircle2, color: "#4ADE80" },
+    { label: "Rad etilgan", value: m.rejected.toLocaleString("ru-RU"), icon: XCircle, color: "#FF6B85" },
+    { label: "Hajm (so'm)", value: fmtSom(m.volume), icon: Banknote, color: "#7db8ff" },
+    { label: period === "all" ? "Jami mijozlar" : "Yangi mijozlar", value: m.customers.toLocaleString("ru-RU"), icon: Users, color: "#7db8ff" },
+    { label: "Ochiq murojaatlar", value: m.openSupport.toLocaleString("ru-RU"), icon: Headset, color: "#7db8ff" },
   ];
 
   return (
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-3">
         <Wallet size={16} className="text-accent" />
-        <h2 className="text-[15px] font-bold">BetCore Pay</h2>
+        <h2 className="text-[15px] font-bold">BetCore Pay — buyurtmalar oqimi</h2>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-4 mb-3">
         {cards.map((c) => (
           <div key={c.label} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-            <c.icon size={17} className="text-accent mb-2.5" />
-            <div className="text-[18px] sm:text-[20px] font-bold leading-tight">{loading ? "…" : c.value}</div>
+            <c.icon size={17} className="mb-2.5" style={{ color: c.color }} />
+            <div className="text-[16px] sm:text-[19px] font-bold leading-tight">{loading ? "…" : c.value}</div>
             <div className="text-[11px] text-muted mt-1">{c.label}</div>
           </div>
         ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex items-center gap-3">
+          <ArrowDownToLine size={18} className="text-[#4ADE80] shrink-0" />
+          <div><div className="text-[16px] font-bold">{loading ? "…" : m.topup.toLocaleString("ru-RU")}</div><div className="text-[11px] text-muted">To'ldirish (bajarilgan)</div></div>
+        </div>
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex items-center gap-3">
+          <ArrowUpFromLine size={18} className="text-[#F4C76A] shrink-0" />
+          <div><div className="text-[16px] font-bold">{loading ? "…" : m.withdraw.toLocaleString("ru-RU")}</div><div className="text-[11px] text-muted">Yechish (bajarilgan)</div></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StaffActivity({ period }: { period: Period }) {
+  const [rows, setRows] = useState<{ id: string; name: string; completed: number; volume: number; replies: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const supabase = createClient();
+      const start = periodStart(period);
+
+      let ordersQ = supabase.from("telegram_orders").select("operator_id, amount").eq("status", "completed").limit(20000);
+      let msgsQ = supabase.from("telegram_support_messages").select("operator_id").eq("sender", "operator").limit(30000);
+      if (start) { ordersQ = ordersQ.gte("created_at", start); msgsQ = msgsQ.gte("created_at", start); }
+
+      const [profRes, ordRes, msgRes] = await Promise.all([
+        supabase.from("profiles").select("id, display_name, full_name"),
+        ordersQ,
+        msgsQ,
+      ]);
+      const nameById = new Map<string, string>();
+      for (const p of (profRes.data ?? []) as any[]) nameById.set(p.id, p.display_name || p.full_name || "—");
+
+      const agg = new Map<string, { completed: number; volume: number; replies: number }>();
+      const get = (id: string) => { let a = agg.get(id); if (!a) { a = { completed: 0, volume: 0, replies: 0 }; agg.set(id, a); } return a; };
+      for (const o of (ordRes.data ?? []) as any[]) if (o.operator_id) { const a = get(o.operator_id); a.completed++; a.volume += Number(o.amount || 0); }
+      for (const msg of (msgRes.data ?? []) as any[]) if (msg.operator_id) get(msg.operator_id).replies++;
+
+      setRows(
+        Array.from(agg.entries())
+          .map(([id, a]) => ({ id, name: nameById.get(id) ?? "—", ...a }))
+          .sort((x, y) => y.completed - x.completed || y.replies - x.replies)
+      );
+      setLoading(false);
+    })();
+  }, [period]);
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <UserCog size={16} className="text-accent" />
+        <h2 className="text-[15px] font-bold">Xodimlar faoliyati (operatorlar)</h2>
+      </div>
+      <div className="rounded-xl border border-white/8 overflow-x-auto">
+        <table className="w-full min-w-[520px] text-[13px]">
+          <thead className="bg-white/[0.03] text-[11px] text-muted uppercase tracking-wide">
+            <tr>
+              <th className="text-left px-4 py-3 font-medium">Operator</th>
+              <th className="text-right px-4 py-3 font-medium">Bajarilgan</th>
+              <th className="text-right px-4 py-3 font-medium">Hajm</th>
+              <th className="text-right px-4 py-3 font-medium">Support javob</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">Yuklanmoqda…</td></tr>
+            ) : rows.length === 0 ? (
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">Bu davrda faoliyat yo'q.</td></tr>
+            ) : rows.map((r) => (
+              <tr key={r.id} className="border-t border-white/5">
+                <td className="px-4 py-3 font-medium">{r.name}</td>
+                <td className="px-4 py-3 text-right">{r.completed.toLocaleString("ru-RU")}</td>
+                <td className="px-4 py-3 text-right text-muted">{fmtSom(r.volume)}</td>
+                <td className="px-4 py-3 text-right">{r.replies.toLocaleString("ru-RU")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
