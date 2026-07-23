@@ -584,6 +584,35 @@ export default function TelegramAppPage() {
   const [plError, setPlError] = useState("");
   // Hamkor app'i bo'lsa (partner boti orqali ochilgan) — partnerId to'ldiriladi.
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  // "Allaqachon hamkormisiz?" — email orqali parol havolasi
+  const [pmEmail, setPmEmail] = useState("");
+  const [pmBusy, setPmBusy] = useState(false);
+  const [pmLink, setPmLink] = useState<string | null>(null);
+  const [pmError, setPmError] = useState("");
+  const [pmOpen, setPmOpen] = useState(false);
+
+  const requestPartnerInvite = async () => {
+    setPmError("");
+    if (!pmEmail.trim()) { setPmError("Emailingizni kiriting."); return; }
+    setPmBusy(true);
+    try {
+      const res = await fetch("/api/partner/request-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pmEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPmError(data.error === "not_partner" ? "Bu email hamkor sifatida topilmadi. Admin bilan bog'laning." : "Xatolik. Qayta urining.");
+        return;
+      }
+      setPmLink(data.inviteUrl);
+    } catch {
+      setPmError("Ulanishda xatolik.");
+    } finally {
+      setPmBusy(false);
+    }
+  };
 
   const submitPartnerLead = async () => {
     setPlError("");
@@ -1672,6 +1701,32 @@ export default function TelegramAppPage() {
               </button>
             </div>
           )}
+
+          {/* Allaqachon hamkormisiz? — email orqali parol havolasi */}
+          <div className="mt-6 text-center">
+            <button onClick={() => setPmOpen((v) => !v)} className="text-[12px] text-[#93a5ba] underline">Allaqachon hamkormisiz? Kirish havolasini oling</button>
+            {pmOpen && (
+              <div className="mt-3 rounded-2xl bg-white/[0.04] border border-white/8 p-4 text-left">
+                {pmLink ? (
+                  <div className="text-center" style={{ animation: "hkRise .4s ease both" }}>
+                    <CheckCircle2 size={32} className="text-[#4ADE80] mx-auto mb-2" />
+                    <div className="text-[13px] font-bold mb-3">Havolangiz tayyor</div>
+                    <button onClick={() => { const w = window as any; if (w?.Telegram?.WebApp?.openLink) w.Telegram.WebApp.openLink(pmLink); else window.open(pmLink, "_blank"); }} className={buttonCls}>
+                      <span className="flex items-center justify-center gap-2"><Rocket size={16} /> Parol o'rnatish</span>
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input value={pmEmail} onChange={(e) => setPmEmail(e.target.value)} type="email" placeholder="Emailingiz (admin bergan)" className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5" />
+                    {pmError && <p className="text-[12px] text-[#FF6B85] mb-2.5">{pmError}</p>}
+                    <button onClick={requestPartnerInvite} disabled={pmBusy} className={buttonCls}>
+                      <span className="flex items-center justify-center gap-2">{pmBusy ? <Loader2 size={16} className="animate-spin" /> : "Havola olish"}</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );

@@ -28,7 +28,7 @@ function SetPasswordInner() {
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = {
-          invalid_or_expired: "Havola yaroqsiz yoki muddati tugagan. Super admindan yangi havola so'rang.",
+          invalid_or_expired: "Havola yaroqsiz yoki muddati tugagan. Admindan yangi havola so'rang.",
           weak_password: "Parol kamida 8 belgi bo'lsin.",
           rate_limited: "Juda ko'p urinish. Birozdan so'ng qayta urining.",
         };
@@ -65,7 +65,7 @@ function SetPasswordInner() {
               <h1 className="text-[18px] font-extrabold mb-1.5">Parol o'rnatildi ✅</h1>
               <div className="rounded-xl bg-[#F4C76A]/10 border border-[#F4C76A]/30 text-[#F4C76A] text-[12.5px] px-3.5 py-3 my-4 flex items-start gap-2 text-left">
                 <KeyRound size={16} className="shrink-0 mt-0.5" />
-                <span><b>Parolingizni saqlab qo'ying!</b> Uni hech kimga bermang. Unutsangiz — super admin yangi havola beradi.</span>
+                <span><b>Parolingizni saqlab qo'ying!</b> Uni hech kimga bermang. Unutsangiz — admin yangi havola beradi.</span>
               </div>
               <Link href="/partner" className="inline-block w-full py-3 rounded-xl bg-gradient-to-r from-accent to-accent-dim font-bold text-[14px]">Panelга kirish</Link>
             </div>
