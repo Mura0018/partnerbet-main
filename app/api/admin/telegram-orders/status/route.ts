@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 import { sendTelegramMessage, buildOrderResolvedMessage } from "@/lib/telegram/notify";
 import { cashdeskDeposit, cashdeskPayout, isCashdeskConfigured } from "@/lib/cashdesk/client";
 import { getCashdeskCredsById, type Creds } from "@/lib/cashdesk/store";
+import { enforceDebtLimit } from "@/lib/cashdesk/debt";
 
 async function requireOrdersManage() {
   const supabase = await createServerSupabaseClient();
@@ -54,15 +55,22 @@ export async function POST(req: NextRequest) {
   // cashdesk_id bo'sh (eski buyurtma) / ustun yo'q / kassa topilmasa ->
   // orderCreds undefined -> client default kassaga tushadi (orqaga moslik).
   let orderCreds: Creds | undefined = undefined;
+  let orderCashdeskId: string | null = null;
+  let handoffFrom: string | null = null; // 6-BOSQICH: takeover bo'lган bo'lsa asl owner
   try {
-    const { data: cdRow } = await admin.from("telegram_orders").select("cashdesk_id").eq("id", orderId).maybeSingle();
-    const cid = (cdRow as any)?.cashdesk_id;
-    if (cid) {
-      const c = await getCashdeskCredsById(cid);
+    const { data: cdRow } = await admin
+      .from("telegram_orders")
+      .select("cashdesk_id, handoff_from_operator_id")
+      .eq("id", orderId)
+      .maybeSingle();
+    orderCashdeskId = (cdRow as any)?.cashdesk_id ?? null;
+    handoffFrom = (cdRow as any)?.handoff_from_operator_id ?? null;
+    if (orderCashdeskId) {
+      const c = await getCashdeskCredsById(orderCashdeskId);
       if (c) orderCreds = c;
     }
   } catch {
-    /* default kassa */
+    /* default kassa / ustun yo'q */
   }
 
   if (status === "completed" && (await isCashdeskConfigured())) {
@@ -112,6 +120,27 @@ export async function POST(req: NextRequest) {
         .is("owner_operator_id", null);
     } catch {
       /* egalik biriktirish best-effort */
+    }
+  }
+
+  // 6-BOSQICH: QARZ. Buyurtma takeover bilan olingan (handoffFrom bор) VA uni
+  // bajargan operator (check.userId) asl owner'dan boshqa bo'lsa -> pul
+  // bajargan operator (creditor) kassasidan ketdi -> asl owner (debtor)
+  // qarzdor. Owner o'zi bajarsa handoffFrom bo'sh -> qarz yo'q. Avtomatik,
+  // best-effort (asosiy oqimni buzmaydi). order_id unique -> dublikat bo'lmaydi.
+  if (status === "completed" && handoffFrom && handoffFrom !== check.userId) {
+    try {
+      await admin.from("operator_debts").insert({
+        debtor_operator_id: handoffFrom,
+        creditor_operator_id: check.userId,
+        order_id: orderId,
+        amount: Number(pendingOrder.amount),
+        cashdesk_id: orderCashdeskId,
+        status: "open",
+      });
+      await enforceDebtLimit(admin, handoffFrom);
+    } catch {
+      /* qarz yozish best-effort */
     }
   }
 

@@ -602,6 +602,104 @@ function MyBusyToggle() {
   );
 }
 
+// 6-BOSQICH: qarzlar. Operator o'z qarzlarini ko'radi (menga haq / men
+// qarzdor / sof balans) va ikki tomon tasdig'i (To'ladim / Oldim). Qarz
+// bo'lmasa umuman ko'rinmaydi.
+function DebtsSection() {
+  const [data, setData] = useState<{ me: string; debts: any[]; summary: { iOwe: number; owedToMe: number; net: number } } | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [announcing, setAnnouncing] = useState(false);
+
+  const load = async () => {
+    try {
+      const res = await fetch("/api/admin/operator-debts");
+      const d = await res.json();
+      if (res.ok) setData(d);
+    } catch {
+      /* jim */
+    }
+  };
+  useEffect(() => { load(); }, []);
+
+  const confirm = async (debtId: string) => {
+    setBusyId(debtId);
+    try {
+      await fetch("/api/admin/operator-debts/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ debtId }),
+      });
+      await load();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const announce = async () => {
+    setAnnouncing(true);
+    try {
+      await fetch("/api/admin/operator-debts/announce", { method: "POST" });
+    } finally {
+      setAnnouncing(false);
+    }
+  };
+
+  if (!data || data.debts.length === 0) return null;
+  const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
+
+  return (
+    <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[12px] font-semibold">💳 Qarzlar</div>
+        <button onClick={announce} disabled={announcing} className="text-[11px] px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-50">
+          {announcing ? "…" : "Smenani yakunlash"}
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-4 text-[11px] mb-2.5">
+        <span className="text-[#4ADE80]">Menga haq: {fmt(data.summary.owedToMe)}</span>
+        <span className="text-[#FF6B85]">Men qarzdorman: {fmt(data.summary.iOwe)}</span>
+        <span className={data.summary.net >= 0 ? "text-[#4ADE80]" : "text-[#FF6B85]"}>Sof: {fmt(data.summary.net)}</span>
+      </div>
+      <div className="space-y-1.5">
+        {data.debts.map((d: any) => {
+          const paid = d.status === "paid";
+          const canPay = d.i_am_debtor && !d.debtor_confirmed_at && !paid;
+          const canReceive = d.i_am_creditor && !d.creditor_confirmed_at && !paid;
+          const statusLabel = paid
+            ? "✅ Yopilgan"
+            : d.status === "debtor_confirmed"
+            ? "Qarzdor tasdiqladi"
+            : d.status === "creditor_confirmed"
+            ? "Haqdor tasdiqladi"
+            : "Ochiq";
+          return (
+            <div key={d.id} className="flex items-center justify-between gap-2 text-[11px] border-b border-white/5 pb-1.5 last:border-0">
+              <div className="min-w-0">
+                <span className={d.i_am_debtor ? "text-[#FF6B85]" : "text-[#4ADE80]"}>
+                  {d.i_am_debtor ? `${d.creditor_name}ga ${fmt(d.amount)} so'm` : `${d.debtor_name}dan ${fmt(d.amount)} so'm`}
+                </span>
+                <span className="text-muted"> · {statusLabel}</span>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                {canPay && (
+                  <button onClick={() => confirm(d.id)} disabled={busyId === d.id} className="px-2 py-1 rounded-lg bg-[#4ADE80]/15 border border-[#4ADE80]/40 text-[#4ADE80] disabled:opacity-50">
+                    To'ladim
+                  </button>
+                )}
+                {canReceive && (
+                  <button onClick={() => confirm(d.id)} disabled={busyId === d.id} className="px-2 py-1 rounded-lg bg-[#4ADE80]/15 border border-[#4ADE80]/40 text-[#4ADE80] disabled:opacity-50">
+                    Oldim
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function TelegramLinkWidget() {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [statusError, setStatusError] = useState(false);
@@ -783,6 +881,7 @@ export function OrdersTab() {
       {/* Ish holati va Telegram xabarnomasi — faqat xodimlar uchun (super admin buyurtma qayta ishlamaydi) */}
       {!isSuperAdmin && <MyStatusToggle />}
       {!isSuperAdmin && <MyBusyToggle />}
+      {!isSuperAdmin && <DebtsSection />}
       {!isSuperAdmin && <TelegramLinkWidget />}
       <Can permission="telegram_operators.manage"><LimitsEditor /></Can>
       <CashdeskBalanceBadge />
