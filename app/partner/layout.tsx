@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Bot, Palette, Users, Receipt, LogOut, Menu, X, Building2, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Bot, Palette, Users, Receipt, LogOut, Menu, X, Building2, MessageCircle, CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Toaster } from "@/lib/ui/toast";
 
@@ -11,6 +11,7 @@ const NAV = [
   { href: "/partner", label: "Boshqaruv", icon: LayoutDashboard },
   { href: "/partner/bot", label: "Bot", icon: Bot },
   { href: "/partner/theme", label: "Tema", icon: Palette },
+  { href: "/partner/payments", label: "To'lov usullari", icon: CreditCard },
   { href: "/partner/team", label: "Jamoa", icon: Users },
   { href: "/partner/billing", label: "Hisob", icon: Receipt },
   { href: "/partner/chat", label: "Global chat", icon: MessageCircle },

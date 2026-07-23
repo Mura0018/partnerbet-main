@@ -34,12 +34,19 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const [mForm, setMForm] = useState({ fullName: "", email: "", password: "", partnerRole: "partner_admin" });
   const [mSaving, setMSaving] = useState(false);
   const [mError, setMError] = useState("");
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invForm, setInvForm] = useState({ period: "", model: "subscription", amount: "" });
+  const [invSaving, setInvSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
 
   const loadMembers = async () => {
     const { data } = await supabase.from("partner_members").select("id, partner_role, profiles(full_name)").eq("partner_id", partner.id);
     setMembers((data as any[]) ?? []);
+  };
+  const loadInvoices = async () => {
+    const { data } = await supabase.from("partner_invoices").select("id, period, model, amount, currency, status").eq("partner_id", partner.id).order("period", { ascending: false });
+    setInvoices((data as any[]) ?? []);
   };
 
   useEffect(() => {
@@ -62,6 +69,8 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       for (const r of (ta.data ?? []) as any[]) tm[r.theme_id] = r.enabled;
       setThemeAccess(tm);
       await loadMembers();
+      await loadInvoices();
+      setInvForm((p) => ({ ...p, period: new Date().toISOString().slice(0, 7) }));
       setLoading(false);
     })();
   }, [partner.id]);
@@ -102,6 +111,27 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
     if (error) toast.error("Chiqarilmadi: " + error.message);
     else toast.success("A'zo chiqarildi");
     loadMembers();
+  };
+
+  const createInvoice = async () => {
+    if (!invForm.period.trim() || !(Number(invForm.amount) > 0)) { toast.error("Davr (YYYY-MM) va summani to'g'ri kiriting."); return; }
+    setInvSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("partner_invoices").insert({
+      partner_id: partner.id, period: invForm.period.trim(), model: invForm.model,
+      amount: Number(invForm.amount) || 0, currency: partner.currency, status: "unpaid", created_by: user?.id ?? null,
+    });
+    setInvSaving(false);
+    if (error) { toast.error("Invoice yaratilmadi: " + error.message); return; }
+    toast.success("Invoice yaratildi ✅");
+    setInvForm((p) => ({ ...p, amount: "" }));
+    loadInvoices();
+  };
+  const toggleInvoicePaid = async (inv: any) => {
+    const next = inv.status === "paid" ? "unpaid" : "paid";
+    const { error } = await supabase.from("partner_invoices").update({ status: next, paid_at: next === "paid" ? new Date().toISOString() : null }).eq("id", inv.id);
+    if (error) toast.error("O'zgartirilmadi: " + error.message);
+    else { toast.success(next === "paid" ? "To'langan deb belgilandi ✅" : "To'lanmagan"); loadInvoices(); }
   };
 
   const toggleService = async (id: string) => {
@@ -202,6 +232,34 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                         <span className="text-[10.5px] text-muted"> · {m.partner_role === "partner_admin" ? "Admin" : "Xodim"}</span>
                       </div>
                       <button onClick={() => removeMember(m.id)} className="p-1 rounded hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label="Chiqarish"><Trash2 size={13} /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2"><CalendarClock size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Hisob-kitob</h3></div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 mb-2.5 space-y-2">
+                  <div className="flex gap-2">
+                    <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
+                    <select value={invForm.model} onChange={(e) => setInvForm((p) => ({ ...p, model: e.target.value }))} className="bg-white/5 border border-white/10 rounded-lg py-2 px-2 text-[12px] outline-none focus:border-accent">
+                      <option value="subscription">Obuna</option>
+                      <option value="commission">Komissiya</option>
+                    </select>
+                    <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={`Summa (${partner.currency})`} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
+                  </div>
+                  <button onClick={createInvoice} disabled={invSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[12.5px] disabled:opacity-50">{invSaving ? <Loader2 size={13} className="animate-spin mx-auto" /> : "Invoice yaratish"}</button>
+                </div>
+                <div className="space-y-1.5">
+                  {invoices.length === 0 ? (
+                    <p className="text-[12px] text-muted">Hozircha invoice yo'q.</p>
+                  ) : invoices.map((inv) => (
+                    <div key={inv.id} className="flex items-center gap-2 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[12.5px] font-medium">{inv.period}</span>
+                        <span className="text-[10.5px] text-muted"> · {inv.model === "commission" ? "Komissiya" : "Obuna"} · {Math.round(inv.amount).toLocaleString("ru-RU")} {inv.currency}</span>
+                      </div>
+                      <button onClick={() => toggleInvoicePaid(inv)} className={`shrink-0 text-[10.5px] px-2 py-1 rounded-md ${inv.status === "paid" ? "bg-[#4ADE80]/15 text-[#4ADE80]" : "bg-[#F4C76A]/15 text-[#F4C76A]"}`}>{inv.status === "paid" ? "To'langan" : "To'lanmagan"}</button>
                     </div>
                   ))}
                 </div>
