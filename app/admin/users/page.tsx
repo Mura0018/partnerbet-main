@@ -174,7 +174,19 @@ export default function UsersManager() {
   useEffect(() => { load(); }, []);
 
   const changeRole = async (userId: string, roleId: string) => {
-    await supabase.from("profiles").update({ role_id: roleId }).eq("id", userId);
+    const res = await fetch("/api/admin/users/change-role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, roleId }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(
+        data.error === "forbidden_role_assignment"
+          ? "Bu rolni berish uchun ruxsatingiz yetarli emas — o'zingizdan teng yoki yuqori kuchli rol bera olmaysiz."
+          : "Rolni o'zgartirishda xatolik yuz berdi."
+      );
+    }
     load();
   };
 

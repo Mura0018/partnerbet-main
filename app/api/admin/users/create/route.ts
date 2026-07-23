@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { canAssignRole } from "@/lib/auth/roleAssign";
 
 async function requireUsersManage() {
   const supabase = await createServerSupabaseClient();
@@ -12,7 +13,7 @@ async function requireUsersManage() {
   const { data: allowed } = await supabase.rpc("has_permission", { perm_key: "users.manage" });
   if (!allowed) return { ok: false as const, status: 403 };
 
-  return { ok: true as const };
+  return { ok: true as const, userId: user.id };
 }
 
 export async function POST(req: NextRequest) {
@@ -26,6 +27,12 @@ export async function POST(req: NextRequest) {
   }
   if (String(password).length < 8) {
     return NextResponse.json({ error: "weak_password" }, { status: 400 });
+  }
+
+  // Imtiyoz eskalatsiyasini oldini olish: chaqiruvchi o'zidan teng yoki yuqori
+  // kuchli rol bera olmaydi (ruxsat-asosli tekshiruv, serverda majburiy).
+  if (!(await canAssignRole(check.userId, roleId))) {
+    return NextResponse.json({ error: "forbidden_role_assignment" }, { status: 403 });
   }
 
   const admin = createAdminClient();
