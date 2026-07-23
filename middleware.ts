@@ -148,6 +148,8 @@ export async function middleware(request: NextRequest) {
     return handleAdminRoute(request);
   }
   if (request.nextUrl.pathname.startsWith("/partner")) {
+    // Parol o'rnatish sahifasi login talab qilmaydi (taklif havolasi orqali).
+    if (request.nextUrl.pathname === "/partner/set-password") return NextResponse.next();
     return handlePartnerRoute(request);
   }
   return handlePublicRoute(request);

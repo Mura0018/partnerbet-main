@@ -31,9 +31,10 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const [themeAccess, setThemeAccess] = useState<Record<string, boolean>>({});
   const [members, setMembers] = useState<any[]>([]);
   const [showAddMember, setShowAddMember] = useState(false);
-  const [mForm, setMForm] = useState({ fullName: "", email: "", password: "", partnerRole: "partner_admin" });
+  const [mForm, setMForm] = useState({ fullName: "", email: "", partnerRole: "partner_admin" });
   const [mSaving, setMSaving] = useState(false);
   const [mError, setMError] = useState("");
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [invForm, setInvForm] = useState({ period: "", model: "subscription", amount: "" });
   const [invSaving, setInvSaving] = useState(false);
@@ -41,7 +42,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const [missing, setMissing] = useState(false);
 
   const loadMembers = async () => {
-    const { data } = await supabase.from("partner_members").select("id, partner_role, profiles(full_name)").eq("partner_id", partner.id);
+    const { data } = await supabase.from("partner_members").select("id, profile_id, partner_role, profiles(full_name)").eq("partner_id", partner.id);
     setMembers((data as any[]) ?? []);
   };
   const loadInvoices = async () => {
@@ -77,26 +78,27 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 
   const createMember = async () => {
     setMError("");
-    if (!mForm.fullName.trim() || !mForm.email.trim() || mForm.password.length < 8) { setMError("Barcha maydonlarni to'ldiring — parol kamida 8 belgi."); return; }
+    if (!mForm.fullName.trim() || !mForm.email.trim()) { setMError("Ism va emailni kiriting."); return; }
     setMSaving(true);
     try {
       const res = await fetch("/api/admin/partners/create-member", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ partnerId: partner.id, fullName: mForm.fullName.trim(), email: mForm.email.trim(), password: mForm.password, partnerRole: mForm.partnerRole }),
+        body: JSON.stringify({ partnerId: partner.id, fullName: mForm.fullName.trim(), email: mForm.email.trim(), partnerRole: mForm.partnerRole }),
       });
       const data = await res.json();
       if (!res.ok) {
-        const map: Record<string, string> = { email_taken: "Bu email allaqachon ro'yxatdan o'tgan.", weak_password: "Parol kamida 8 belgi.", forbidden: "Ruxsatingiz yo'q." };
+        const map: Record<string, string> = { email_taken: "Bu email allaqachon ro'yxatdan o'tgan.", forbidden: "Ruxsatingiz yo'q." };
         const msg = map[data.error] ?? "Xatolik yuz berdi.";
         setMError(msg);
         toast.error("A'zo yaratilmadi: " + msg);
         return;
       }
       setShowAddMember(false);
-      setMForm({ fullName: "", email: "", password: "", partnerRole: "partner_admin" });
+      setMForm({ fullName: "", email: "", partnerRole: "partner_admin" });
       loadMembers();
-      toast.success("A'zo (login) muvaffaqiyatli yaratildi ✅");
+      if (data.inviteUrl) { setInviteLink(data.inviteUrl); toast.success("A'zo yaratildi ✅ Havolani hamkorga bering."); }
+      else toast.success("A'zo yaratildi (havola hosil bo'lmadi — 0064 SQL qo'yilganmi?).");
     } catch {
       setMError("Ulanishda xatolik. Qayta urinib ko'ring.");
       toast.error("Ulanishda xatolik. Internetni tekshiring.");
@@ -104,6 +106,17 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       setMSaving(false);
     }
   };
+
+  const resetInvite = async (profileId: string) => {
+    try {
+      const res = await fetch("/api/admin/partners/reset-invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profileId }) });
+      const data = await res.json();
+      if (res.ok && data.inviteUrl) { setInviteLink(data.inviteUrl); toast.success("Yangi havola hosil bo'ldi ✅"); }
+      else toast.error("Havola hosil bo'lmadi (0064 SQL?).");
+    } catch { toast.error("Ulanishda xatolik."); }
+  };
+
+  const copyInvite = () => { if (inviteLink) { navigator.clipboard?.writeText(inviteLink); toast.success("Havola nusxalandi"); } };
 
   const removeMember = async (id: string) => {
     if (!confirm("A'zoni hamkordan chiqarishni tasdiqlaysizmi?")) return;
@@ -211,7 +224,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                   <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 mb-2.5 space-y-2">
                     <input placeholder="Ism familiya" value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <input placeholder="Email" type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-                    <input placeholder="Parol (kamida 8 belgi)" type="text" value={mForm.password} onChange={(e) => setMForm((p) => ({ ...p, password: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <p className="text-[11px] text-muted">Parol qo'yilmaydi — yaratilgach havola chiqadi, hamkor o'zi o'rnatadi.</p>
                     <select value={mForm.partnerRole} onChange={(e) => setMForm((p) => ({ ...p, partnerRole: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
                       <option value="partner_admin">Partner admin (kattasi)</option>
                       <option value="staff">Xodim</option>
@@ -220,6 +233,16 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                     <button onClick={createMember} disabled={mSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
                       {mSaving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Yaratish"}
                     </button>
+                  </div>
+                )}
+                {inviteLink && (
+                  <div className="rounded-lg border border-[#4ADE80]/30 bg-[#4ADE80]/10 p-3 mb-2.5">
+                    <div className="text-[11px] text-[#4ADE80] font-semibold mb-1.5">Parol o'rnatish havolasi — hamkorga bering (7 kun amal qiladi):</div>
+                    <div className="flex items-center gap-2">
+                      <input readOnly value={inviteLink} onFocus={(e) => e.target.select()} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-md py-1.5 px-2 text-[11px] font-mono" />
+                      <button onClick={copyInvite} className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-md bg-accent/20 text-[#7db8ff] font-medium">Nusxa</button>
+                      <button onClick={() => setInviteLink(null)} className="shrink-0 p-1.5 rounded-md hover:bg-white/10 text-muted"><X size={13} /></button>
+                    </div>
                   </div>
                 )}
                 <div className="space-y-1.5">
@@ -231,6 +254,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                         <span className="text-[13px] font-medium">{m.profiles?.full_name || "—"}</span>
                         <span className="text-[10.5px] text-muted"> · {m.partner_role === "partner_admin" ? "Admin" : "Xodim"}</span>
                       </div>
+                      <button onClick={() => resetInvite(m.profile_id)} className="text-[10.5px] px-2 py-1 rounded-md bg-white/5 text-muted hover:text-white" title="Parol havolasi (tiklash)">Havola</button>
                       <button onClick={() => removeMember(m.id)} className="p-1 rounded hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label="Chiqarish"><Trash2 size={13} /></button>
                     </div>
                   ))}
