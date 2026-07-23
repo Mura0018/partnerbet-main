@@ -23,10 +23,12 @@ export async function GET(req: NextRequest) {
   // PostgREST or() sintaksisini buzmaslik/injection uchun tozalaymiz.
   const search = (sp.get("search") ?? "").trim().replace(/[,()*%]/g, "").slice(0, 60);
   const partnerId = sp.get("partnerId") ?? "all";
+  const showHidden = sp.get("hidden") === "1"; // standart: yashiringanlar KO'RINMAYDI
   const page = Math.max(0, parseInt(sp.get("page") ?? "0", 10) || 0);
 
   const admin = createAdminClient();
   let q = admin.from("customers").select("id, full_name, phone, created_at, partner_id", { count: "exact" });
+  q = q.eq("is_hidden", showHidden);
   if (search) q = q.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`);
   if (partnerId === "platform") q = q.is("partner_id", null);
   else if (partnerId !== "all") q = q.eq("partner_id", partnerId);
