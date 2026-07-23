@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -20,6 +20,7 @@ const NAV_GROUPS = [
     { href: "/admin/telegram-bot", label: "BetCore Pay", icon: Wallet, permission: "telegram_orders.manage" },
     { href: "/admin/partners", label: "Hamkorlar", icon: Building2, permission: "partners.manage" },
     { href: "/admin/tariffs", label: "Tariflar", icon: Receipt, permission: "partners.manage" },
+    { href: "/admin/customers", label: "Mijozlar", icon: Contact, permission: "customers.manage" },
   ]},
   { label: "Kontent", items: [
     { href: "/admin/football", label: "Football Center", icon: Trophy, permission: "football.manage" },
