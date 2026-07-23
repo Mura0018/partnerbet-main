@@ -15,6 +15,12 @@
    small inline <style> tag in app/layout.tsx — no rebuild needed.
    ========================================================= */
 :root {
+  /* Mijoz mini-app tema tokenlari (classic standart; applyAppTheme almashtiradi) */
+  --t-bg: linear-gradient(180deg,#123f77,#0f3364,#0a1a30);
+  --t-card: linear-gradient(180deg,#0e2038,#0a1a30);
+  --t-btn: linear-gradient(135deg,#3D7FFF,#4f6bff,#7c3aed);
+  --t-card-shadow: 7px 7px 16px rgba(0,0,0,0.5),-4px -4px 12px rgba(120,180,255,0.08);
+  --t-accent: #3D7FFF;
   --color-bg: 8 12 22;              /* #080C16 — near-black navy */
   --color-bg-panel: 15 22 38;       /* #0F1626 — card/panel surface */
   --color-bg-elevated: 21 31 51;    /* #151F33 — modal/elevated surface */
@@ -26,6 +32,11 @@
   --color-muted: 143 163 196;       /* #8FA3C4 */
   --color-danger: 255 70 103;       /* #FF4667 */
 }
+
+/* Mijoz mini-app tema fon class'lari (kafolatlangan; Tailwind JIT'ga bog'liq emas) */
+.app-bg { background-image: var(--t-bg); }
+.app-card-bg { background-image: var(--t-card); }
+.app-btn-bg { background-image: var(--t-btn); }
 
 html {
   scroll-behavior: smooth;

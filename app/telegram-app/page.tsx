@@ -5,6 +5,7 @@ import {
   Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
   Handshake, Sparkles, ShieldCheck, Globe, Rocket, ArrowRight, Building2, Users, Wallet,
 } from "lucide-react";
+import { applyAppTheme } from "@/lib/telegram/appThemes";
 
 declare global {
   interface Window {
@@ -85,7 +86,7 @@ const selectCls = inputCls + " appearance-none";
 
 const buttonCls =
   "w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-[15px] text-white " +
-  "bg-gradient-to-br from-[#3D7FFF] via-[#4f6bff] to-[#7c3aed] " +
+  "app-btn-bg " +
   "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.15)] " +
   "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4),inset_-2px_-2px_6px_rgba(255,255,255,0.05)] " +
   "transition-all disabled:opacity-50";
@@ -95,11 +96,11 @@ const titleShadow = {
 };
 
 const menuCardCls =
-  "rounded-2xl bg-gradient-to-b from-[#0e2038] to-[#0a1a30] p-4 text-left " +
+  "rounded-2xl app-card-bg p-4 text-left " +
   "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.08)] " +
   "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4)] transition-all";
 
-const bgCls = "min-h-screen bg-gradient-to-b from-[#123f77] via-[#0f3364] to-[#0a1a30] text-white";
+const bgCls = "min-h-screen app-bg text-white";
 
 function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => string }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -670,6 +671,7 @@ export default function TelegramAppPage() {
         });
         const data = await res.json();
         setPartnerId(data.partnerId ?? null);
+        applyAppTheme(data.theme);
         if (data.registered) {
           setCustomer(data.customer);
           setScreen("menu");
