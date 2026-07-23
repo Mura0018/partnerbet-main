@@ -88,7 +88,7 @@ export default function MediaLibraryPage() {
   const filtered = items.filter((i) => i.file_name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <h1 className="text-[22px] font-bold mb-1">Media Library</h1>
       <p className="text-[13px] text-muted mb-6">Barcha yuklangan rasm va fayllar — logotip, muqova, banner va h.k. uchun.</p>
 
@@ -134,7 +134,7 @@ export default function MediaLibraryPage() {
           Hech narsa topilmadi.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
           {filtered.map((item) => (
             <div key={item.id} className="group relative rounded-lg border border-white/8 bg-white/[0.02] overflow-hidden">
               <img src={item.public_url} alt={item.file_name} className="w-full aspect-square object-cover" />

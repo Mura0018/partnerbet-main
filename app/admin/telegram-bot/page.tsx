@@ -36,7 +36,7 @@ export default function TelegramBotAdminPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 mb-1">
         <Wallet size={20} className="text-accent" />
         <h1 className="text-[22px] font-bold">BetCore Pay</h1>

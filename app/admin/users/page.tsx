@@ -195,7 +195,7 @@ export default function UsersManager() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-[22px] font-bold">Foydalanuvchilar</h1>
         <button
@@ -209,8 +209,8 @@ export default function UsersManager() {
 
       {loading && <p className="text-[13px] text-muted">{t("common.loading")}</p>}
 
-      <div className="rounded-xl border border-white/8 overflow-hidden">
-        <table className="w-full text-[13px]">
+      <div className="rounded-xl border border-white/8 overflow-x-auto">
+        <table className="w-full min-w-[560px] text-[13px]">
           <thead className="bg-white/[0.03] text-[11px] text-muted uppercase tracking-wide">
             <tr>
               <th className="text-left px-4 py-3 font-medium">Ism</th>

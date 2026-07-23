@@ -156,7 +156,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
-    <div className="min-h-screen bg-bg text-white md:flex">
+    <div className="min-h-[100svh] bg-bg text-white md:flex overflow-x-hidden">
       <div className="md:hidden h-14 flex items-center justify-between px-4 border-b border-white/8 bg-panel/40 sticky top-0 z-30">
         <button onClick={() => setMobileOpen(true)} className="p-2 -ml-2 rounded-lg hover:bg-white/10" aria-label="Menyuni ochish">
           <Menu size={20} />
@@ -190,7 +190,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {sidebarContent}
       </aside>
 
-      <main className="flex-1 min-w-0 overflow-y-auto">
+      <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto">
         <Suspense fallback={null}>
           <ForbiddenBanner />
         </Suspense>

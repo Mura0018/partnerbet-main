@@ -18,7 +18,7 @@ export default function FootballCenterAdmin() {
   ];
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <h1 className="text-[22px] font-bold mb-1">Football Center</h1>
       <p className="text-[13px] text-muted mb-6">
         Provayder va API kalitlarini <a href="/admin/settings" className="text-accent hover:underline">Sozlamalar &gt; API kalitlar</a> bo'limidan boshqaring.

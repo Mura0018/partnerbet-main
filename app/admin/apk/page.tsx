@@ -45,7 +45,7 @@ export default function ApkManager() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <h1 className="text-[22px] font-bold mb-1">APK Manager</h1>
       <p className="text-[13px] text-muted mb-6">Yangi versiya qo'shing — saytda avtomatik ko'rinadi.</p>
 

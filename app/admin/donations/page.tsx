@@ -9,7 +9,7 @@ type Tab = "dashboard" | "methods";
 export default function DonationsAdminPage() {
   const [tab, setTab] = useState<Tab>("dashboard");
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 mb-1">
         <Heart size={20} className="text-cta" />
         <h1 className="text-[22px] font-bold">Donations</h1>

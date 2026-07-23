@@ -27,7 +27,7 @@ type Tab = "providers" | "matches";
 export default function StreamingAdminPage() {
   const [tab, setTab] = useState<Tab>("providers");
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 mb-1">
         <Radio size={20} className="text-accent" />
         <h1 className="text-[22px] font-bold">Live Streaming</h1>

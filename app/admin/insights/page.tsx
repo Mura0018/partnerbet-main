@@ -69,7 +69,7 @@ export default function InsightsManager() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-[22px] font-bold">Match Insights</h1>
