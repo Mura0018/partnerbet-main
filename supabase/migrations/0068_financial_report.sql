@@ -10,7 +10,7 @@ on conflict (key) do nothing;
 
 -- 2) reports.view ruxsati -> faqat super_admin
 insert into permissions (key, description)
-values ('reports.view', 'Moliyaviy hisobotlarni ko''rish')
+values ('reports.view', 'Moliyaviy hisobotlar')
 on conflict (key) do nothing;
 
 insert into role_permissions (role_id, permission_id)
