@@ -587,7 +587,7 @@ export default function TelegramAppPage() {
   // "Allaqachon hamkormisiz?" — email orqali parol havolasi
   const [pmEmail, setPmEmail] = useState("");
   const [pmBusy, setPmBusy] = useState(false);
-  const [pmLink, setPmLink] = useState<string | null>(null);
+  const [pmSent, setPmSent] = useState(false);
   const [pmError, setPmError] = useState("");
   const [pmOpen, setPmOpen] = useState(false);
 
@@ -601,12 +601,12 @@ export default function TelegramAppPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: pmEmail.trim() }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setPmError(data.error === "not_partner" ? "Bu email hamkor sifatida topilmadi. Admin bilan bog'laning." : "Xatolik. Qayta urining.");
+        setPmError(res.status === 429 ? "Juda ko'p urinish. Birozdan so'ng qayta urining." : "Xatolik. Qayta urining.");
         return;
       }
-      setPmLink(data.inviteUrl);
+      // Javob har doim neytral — email hamkorники bo'lsa, havola emailiga yuboriladi.
+      setPmSent(true);
     } catch {
       setPmError("Ulanishda xatolik.");
     } finally {
@@ -1707,13 +1707,11 @@ export default function TelegramAppPage() {
             <button onClick={() => setPmOpen((v) => !v)} className="text-[12px] text-[#93a5ba] underline">Allaqachon hamkormisiz? Kirish havolasini oling</button>
             {pmOpen && (
               <div className="mt-3 rounded-2xl bg-white/[0.04] border border-white/8 p-4 text-left">
-                {pmLink ? (
+                {pmSent ? (
                   <div className="text-center" style={{ animation: "hkRise .4s ease both" }}>
                     <CheckCircle2 size={32} className="text-[#4ADE80] mx-auto mb-2" />
-                    <div className="text-[13px] font-bold mb-3">Havolangiz tayyor</div>
-                    <button onClick={() => { const w = window as any; if (w?.Telegram?.WebApp?.openLink) w.Telegram.WebApp.openLink(pmLink); else window.open(pmLink, "_blank"); }} className={buttonCls}>
-                      <span className="flex items-center justify-center gap-2"><Rocket size={16} /> Parol o'rnatish</span>
-                    </button>
+                    <div className="text-[13px] font-bold mb-1">Yuborildi</div>
+                    <div className="text-[11.5px] text-[#93a5ba]">Agar bu email hamkor bo'lsa, parol o'rnatish havolasi emailingizga yuborildi. Emailingizni (spam papkasini ham) tekshiring.</div>
                   </div>
                 ) : (
                   <>
