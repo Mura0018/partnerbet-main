@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Receipt, Loader2, Check, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { toast } from "@/lib/ui/toast";
 
 type Tariff = {
   id: string;
@@ -34,8 +35,8 @@ function TariffRow({ t, onSaved }: { t: Tariff; onSaved: () => void }) {
       .update({ price: Number(price) || 0, currency, is_active: active, updated_at: new Date().toISOString() })
       .eq("id", t.id);
     setSaving(false);
-    if (!error) { setSaved(true); setTimeout(() => setSaved(false), 1500); onSaved(); }
-    else alert("Saqlashda xatolik: " + error.message);
+    if (!error) { setSaved(true); setTimeout(() => setSaved(false), 1500); onSaved(); toast.success(`"${t.name}" narxi saqlandi ✅`); }
+    else toast.error("Saqlashda xatolik: " + error.message);
   };
 
   return (

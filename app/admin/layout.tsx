@@ -12,6 +12,7 @@ import { LocaleSwitcher } from "@/lib/i18n/LocaleSwitcher";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
+import { Toaster } from "@/lib/ui/toast";
 
 const NAV_GROUPS = [
   { label: "Asosiy", items: [
@@ -198,6 +199,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Suspense>
         {children}
       </main>
+      <Toaster />
     </div>
   );
 }

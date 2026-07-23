@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight, SlidersHorizontal, Bot, Palette, Users, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { GlobalChat } from "@/lib/chat/GlobalChat";
+import { toast } from "@/lib/ui/toast";
 
 type Partner = {
   id: string;
@@ -78,14 +79,18 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = { email_taken: "Bu email allaqachon ro'yxatdan o'tgan.", weak_password: "Parol kamida 8 belgi.", forbidden: "Ruxsatingiz yo'q." };
-        setMError(map[data.error] ?? "Xatolik yuz berdi.");
+        const msg = map[data.error] ?? "Xatolik yuz berdi.";
+        setMError(msg);
+        toast.error("A'zo yaratilmadi: " + msg);
         return;
       }
       setShowAddMember(false);
       setMForm({ fullName: "", email: "", password: "", partnerRole: "partner_admin" });
       loadMembers();
+      toast.success("A'zo (login) muvaffaqiyatli yaratildi ✅");
     } catch {
       setMError("Ulanishda xatolik. Qayta urinib ko'ring.");
+      toast.error("Ulanishda xatolik. Internetni tekshiring.");
     } finally {
       setMSaving(false);
     }
@@ -93,19 +98,23 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 
   const removeMember = async (id: string) => {
     if (!confirm("A'zoni hamkordan chiqarishni tasdiqlaysizmi?")) return;
-    await supabase.from("partner_members").delete().eq("id", id);
+    const { error } = await supabase.from("partner_members").delete().eq("id", id);
+    if (error) toast.error("Chiqarilmadi: " + error.message);
+    else toast.success("A'zo chiqarildi");
     loadMembers();
   };
 
   const toggleService = async (id: string) => {
     const next = !assign[id];
     setAssign((p) => ({ ...p, [id]: next }));
-    await supabase.from("partner_service_assignments").upsert({ partner_id: partner.id, service_id: id, enabled: next }, { onConflict: "partner_id,service_id" });
+    const { error } = await supabase.from("partner_service_assignments").upsert({ partner_id: partner.id, service_id: id, enabled: next }, { onConflict: "partner_id,service_id" });
+    if (error) { setAssign((p) => ({ ...p, [id]: !next })); toast.error("Saqlanmadi: " + error.message); }
   };
   const toggleTheme = async (id: string) => {
     const next = !themeAccess[id];
     setThemeAccess((p) => ({ ...p, [id]: next }));
-    await supabase.from("partner_theme_access").upsert({ partner_id: partner.id, theme_id: id, enabled: next }, { onConflict: "partner_id,theme_id" });
+    const { error } = await supabase.from("partner_theme_access").upsert({ partner_id: partner.id, theme_id: id, enabled: next }, { onConflict: "partner_id,theme_id" });
+    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); toast.error("Saqlanmadi: " + error.message); }
   };
 
   return (
@@ -235,29 +244,40 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
     setError("");
     if (!name.trim()) { setError("Hamkor nomini kiriting."); return; }
     setSaving(true);
-    const payload = {
-      name: name.trim(),
-      company: company.trim() || null,
-      contact: contact.trim() || null,
-      currency,
-      status,
-      billing_model: billing,
-      commission_pct: billing === "commission" ? Number(commission) || 0 : 0,
-      subscription_amount: billing === "subscription" ? Number(subscription) || 0 : 0,
-    };
-    let errMsg: string | null = null;
-    if (editing) {
-      const { error } = await supabase.from("partners").update(payload).eq("id", partner!.id);
-      errMsg = error?.message ?? null;
-    } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from("partners").insert({ ...payload, created_by: user?.id ?? null });
-      errMsg = error?.message ?? null;
+    try {
+      const payload = {
+        name: name.trim(),
+        company: company.trim() || null,
+        contact: contact.trim() || null,
+        currency,
+        status,
+        billing_model: billing,
+        commission_pct: billing === "commission" ? Number(commission) || 0 : 0,
+        subscription_amount: billing === "subscription" ? Number(subscription) || 0 : 0,
+      };
+      let errMsg: string | null = null;
+      if (editing) {
+        const { error } = await supabase.from("partners").update(payload).eq("id", partner!.id);
+        errMsg = error?.message ?? null;
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase.from("partners").insert({ ...payload, created_by: user?.id ?? null });
+        errMsg = error?.message ?? null;
+      }
+      if (errMsg) {
+        setError("Saqlashda xatolik: " + errMsg);
+        toast.error("Saqlanmadi: " + errMsg + ". SQL (0058) va ruxsatni tekshiring.");
+        return;
+      }
+      toast.success(editing ? "Hamkor yangilandi ✅" : "Hamkor muvaffaqiyatli yaratildi ✅");
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      setError("Kutilmagan xatolik yuz berdi.");
+      toast.error("Xatolik: " + (err?.message ?? "noma'lum") + ". Internet/ulanishni tekshiring.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    if (errMsg) { setError("Saqlashda xatolik: " + errMsg); return; }
-    onSaved();
-    onClose();
   };
 
   return (
@@ -363,8 +383,8 @@ export default function PartnersManager() {
   const remove = async (p: Partner) => {
     if (!confirm(`"${p.name}" hamkorini butunlay o'chirishni tasdiqlaysizmi? Uning a'zolari, API'lari va chati ham o'chadi.`)) return;
     const { error } = await supabase.from("partners").delete().eq("id", p.id);
-    if (error) alert("O'chirishda xatolik: " + error.message);
-    else load();
+    if (error) toast.error("O'chirishda xatolik: " + error.message);
+    else { toast.success("Hamkor o'chirildi"); load(); }
   };
 
   const setLeadStatus = async (lead: PartnerLead, status: string) => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Bot, Palette, Users, Receipt, LogOut, Menu, X, Building2, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { Toaster } from "@/lib/ui/toast";
 
 const NAV = [
   { href: "/partner", label: "Boshqaruv", icon: LayoutDashboard },
@@ -88,6 +89,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
       </aside>
 
       <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto">{children}</main>
+      <Toaster />
     </div>
   );
 }

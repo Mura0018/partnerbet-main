@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Bot, Loader2, CheckCircle2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { toast } from "@/lib/ui/toast";
 
 export default function PartnerBotPage() {
   const supabase = createClient();
@@ -32,12 +33,15 @@ export default function PartnerBotPage() {
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = { invalid_token: "Token noto'g'ri — BotFather'dan tekshiring.", telegram_unreachable: "Telegram bilan ulanib bo'lmadi. Qayta urining.", forbidden: "Faqat partner admin botni ulaydi." };
-        setError(map[data.error] ?? "Xatolik yuz berdi.");
+        const msg = map[data.error] ?? "Xatolik yuz berdi.";
+        setError(msg);
+        toast.error("Bot ulanmadi: " + msg);
         return;
       }
       setToken("");
       setUsername(data.username || "");
-    } catch { setError("Ulanishda xatolik."); }
+      toast.success(`Bot ulandi ✅ @${data.username || ""}`);
+    } catch { setError("Ulanishda xatolik."); toast.error("Ulanishda xatolik. Internetni tekshiring."); }
     finally { setBusy(false); }
   };
 
@@ -47,6 +51,7 @@ export default function PartnerBotPage() {
     try {
       await fetch("/api/partner/bot", { method: "DELETE" });
       setUsername(null);
+      toast.success("Bot uzildi");
     } finally { setBusy(false); }
   };
 

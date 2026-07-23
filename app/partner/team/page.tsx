@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Users, Loader2, Trash2, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { toast } from "@/lib/ui/toast";
 
 export default function PartnerTeamPage() {
   const supabase = createClient();
@@ -42,17 +43,21 @@ export default function PartnerTeamPage() {
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = { email_taken: "Bu email band.", weak_password: "Parol kamida 8 belgi.", forbidden: "Ruxsatingiz yo'q." };
-        setError(map[data.error] ?? "Xatolik yuz berdi."); return;
+        const msg = map[data.error] ?? "Xatolik yuz berdi.";
+        setError(msg); toast.error("Xodim qo'shilmadi: " + msg); return;
       }
       setShowAdd(false); setForm({ fullName: "", email: "", password: "" });
       loadMembers();
-    } catch { setError("Ulanishda xatolik."); }
+      toast.success("Xodim qo'shildi ✅");
+    } catch { setError("Ulanishda xatolik."); toast.error("Ulanishda xatolik."); }
     finally { setSaving(false); }
   };
 
   const removeStaff = async (id: string) => {
     if (!confirm("Xodimni o'chirishni tasdiqlaysizmi?")) return;
-    await supabase.from("partner_members").delete().eq("id", id);
+    const { error } = await supabase.from("partner_members").delete().eq("id", id);
+    if (error) toast.error("O'chirilmadi: " + error.message);
+    else toast.success("Xodim o'chirildi");
     loadMembers();
   };
 

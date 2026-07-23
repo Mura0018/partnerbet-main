@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Palette, Check, Lock, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { toast } from "@/lib/ui/toast";
 
 export default function PartnerThemePage() {
   const supabase = createClient();
@@ -43,8 +44,8 @@ export default function PartnerThemePage() {
     setSaving(t.key);
     const { error } = await supabase.from("partners").update({ theme_key: t.key }).eq("id", partnerId);
     setSaving(null);
-    if (!error) setCurrent(t.key);
-    else alert("Saqlashda xatolik: " + error.message);
+    if (!error) { setCurrent(t.key); toast.success(`"${t.name}" temasi tanlandi ✅`); }
+    else toast.error("Saqlashda xatolik: " + error.message);
   };
 
   if (loading) return <div className="p-6 text-[13px] text-muted">Yuklanmoqda...</div>;
