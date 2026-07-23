@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
-import { Can } from "@/lib/auth/permissions";
+import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
@@ -520,6 +520,8 @@ export function OrdersTab() {
   const [onlyUnclaimed, setOnlyUnclaimed] = useState(false);
   const [search, setSearch] = useState("");
   const supabase = createClient();
+  const { profile } = useCurrentProfile();
+  const isSuperAdmin = profile?.roles?.key === "super_admin";
 
   const load = async () => {
     setLoading(true);
@@ -584,56 +586,63 @@ export function OrdersTab() {
 
   return (
     <div>
-      <MyStatusToggle />
-      <TelegramLinkWidget />
+      {/* Ish holati va Telegram xabarnomasi — faqat xodimlar uchun (super admin buyurtma qayta ishlamaydi) */}
+      {!isSuperAdmin && <MyStatusToggle />}
+      {!isSuperAdmin && <TelegramLinkWidget />}
       <Can permission="telegram_operators.manage"><LimitsEditor /></Can>
       <CashdeskBalanceBadge />
 
-      <input
-        className="w-full mb-3 bg-white/5 border border-white/10 rounded-lg py-2 px-3.5 text-[13px] outline-none focus:border-accent"
-        placeholder="Qidirish: hisob ID, telefon, ism, platforma..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      {/* Minimal boshqaruv paneli: qidiruv + filtrlar */}
+      <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3 mb-4">
+        <div className="relative mb-2.5">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+          <input
+            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent"
+            placeholder="Qidirish: ID, telefon, ism, platforma..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-      <div className="flex gap-2 mb-3 overflow-x-auto">
-        {ORDER_STATUS_FILTERS.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-medium border whitespace-nowrap ${
-              filter === f.id ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap gap-2 mb-4 items-center">
-        <select
-          value={operatorFilter}
-          onChange={(e) => setOperatorFilter(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]"
-        >
-          <option value="all">Barcha operatorlar</option>
-          {currentUserId && <option value={currentUserId}>Faqat mening</option>}
-          {Object.entries(operatorNames).filter(([id]) => id !== currentUserId).map(([id, name]) => (
-            <option key={id} value={id}>{name}</option>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {ORDER_STATUS_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                filter === f.id ? "bg-accent/20 text-white" : "text-muted hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {f.label}
+            </button>
           ))}
-        </select>
-        <button
-          onClick={() => setOnlyToday((v) => !v)}
-          className={`px-2.5 py-1.5 rounded-lg text-[12px] border ${onlyToday ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
-        >
-          Bugun
-        </button>
-        <button
-          onClick={() => setOnlyUnclaimed((v) => !v)}
-          className={`px-2.5 py-1.5 rounded-lg text-[12px] border ${onlyUnclaimed ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
-        >
-          Band qilinmagan
-        </button>
+
+          <span className="mx-0.5 h-4 w-px bg-white/10 hidden sm:block" />
+
+          <button
+            onClick={() => setOnlyToday((v) => !v)}
+            className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${onlyToday ? "bg-accent/20 text-white" : "text-muted hover:text-white hover:bg-white/5"}`}
+          >
+            Bugun
+          </button>
+          <button
+            onClick={() => setOnlyUnclaimed((v) => !v)}
+            className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${onlyUnclaimed ? "bg-accent/20 text-white" : "text-muted hover:text-white hover:bg-white/5"}`}
+          >
+            Band emas
+          </button>
+          <select
+            value={operatorFilter}
+            onChange={(e) => setOperatorFilter(e.target.value)}
+            className="ml-auto bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
+          >
+            <option value="all">Barcha operatorlar</option>
+            {currentUserId && <option value={currentUserId}>Faqat mening</option>}
+            {Object.entries(operatorNames).filter(([id]) => id !== currentUserId).map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading ? (
