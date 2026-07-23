@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight, SlidersHorizontal, Bot, Palette } from "lucide-react";
+import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight, SlidersHorizontal, Bot, Palette, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
 type Partner = {
@@ -27,8 +27,18 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const [assign, setAssign] = useState<Record<string, boolean>>({});
   const [themes, setThemes] = useState<any[]>([]);
   const [themeAccess, setThemeAccess] = useState<Record<string, boolean>>({});
+  const [members, setMembers] = useState<any[]>([]);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [mForm, setMForm] = useState({ fullName: "", email: "", password: "", partnerRole: "partner_admin" });
+  const [mSaving, setMSaving] = useState(false);
+  const [mError, setMError] = useState("");
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
+
+  const loadMembers = async () => {
+    const { data } = await supabase.from("partner_members").select("id, partner_role, profiles(full_name)").eq("partner_id", partner.id);
+    setMembers((data as any[]) ?? []);
+  };
 
   useEffect(() => {
     (async () => {
@@ -49,9 +59,42 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       const tm: Record<string, boolean> = {};
       for (const r of (ta.data ?? []) as any[]) tm[r.theme_id] = r.enabled;
       setThemeAccess(tm);
+      await loadMembers();
       setLoading(false);
     })();
   }, [partner.id]);
+
+  const createMember = async () => {
+    setMError("");
+    if (!mForm.fullName.trim() || !mForm.email.trim() || mForm.password.length < 8) { setMError("Barcha maydonlarni to'ldiring — parol kamida 8 belgi."); return; }
+    setMSaving(true);
+    try {
+      const res = await fetch("/api/admin/partners/create-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partnerId: partner.id, fullName: mForm.fullName.trim(), email: mForm.email.trim(), password: mForm.password, partnerRole: mForm.partnerRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const map: Record<string, string> = { email_taken: "Bu email allaqachon ro'yxatdan o'tgan.", weak_password: "Parol kamida 8 belgi.", forbidden: "Ruxsatingiz yo'q." };
+        setMError(map[data.error] ?? "Xatolik yuz berdi.");
+        return;
+      }
+      setShowAddMember(false);
+      setMForm({ fullName: "", email: "", password: "", partnerRole: "partner_admin" });
+      loadMembers();
+    } catch {
+      setMError("Ulanishda xatolik. Qayta urinib ko'ring.");
+    } finally {
+      setMSaving(false);
+    }
+  };
+
+  const removeMember = async (id: string) => {
+    if (!confirm("A'zoni hamkordan chiqarishni tasdiqlaysizmi?")) return;
+    await supabase.from("partner_members").delete().eq("id", id);
+    loadMembers();
+  };
 
   const toggleService = async (id: string) => {
     const next = !assign[id];
@@ -114,6 +157,41 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                           <input type="checkbox" checked={!!themeAccess[t.id]} onChange={() => toggleTheme(t.id)} className="accent-accent" /> Yoqilgan
                         </label>
                       ) : <span className="text-[11px] text-[#4ADE80]">Bepul</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2"><Users size={15} className="text-accent" /><h3 className="text-[13px] font-bold">A'zolar (panel logini)</h3></div>
+                  <button onClick={() => { setShowAddMember((v) => !v); setMError(""); }} className="text-[11.5px] px-2.5 py-1 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25">+ A'zo</button>
+                </div>
+                {showAddMember && (
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 mb-2.5 space-y-2">
+                    <input placeholder="Ism familiya" value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <input placeholder="Email" type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <input placeholder="Parol (kamida 8 belgi)" type="text" value={mForm.password} onChange={(e) => setMForm((p) => ({ ...p, password: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <select value={mForm.partnerRole} onChange={(e) => setMForm((p) => ({ ...p, partnerRole: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
+                      <option value="partner_admin">Partner admin (kattasi)</option>
+                      <option value="staff">Xodim</option>
+                    </select>
+                    {mError && <p className="text-[12px] text-[#FF6B85]">{mError}</p>}
+                    <button onClick={createMember} disabled={mSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
+                      {mSaving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Yaratish"}
+                    </button>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  {members.length === 0 ? (
+                    <p className="text-[12px] text-muted">Hali a'zo yo'q. Partner admin yarating.</p>
+                  ) : members.map((m) => (
+                    <div key={m.id} className="flex items-center gap-2 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[13px] font-medium">{m.profiles?.full_name || "—"}</span>
+                        <span className="text-[10.5px] text-muted"> · {m.partner_role === "partner_admin" ? "Admin" : "Xodim"}</span>
+                      </div>
+                      <button onClick={() => removeMember(m.id)} className="p-1 rounded hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label="Chiqarish"><Trash2 size={13} /></button>
                     </div>
                   ))}
                 </div>
