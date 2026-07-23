@@ -575,6 +575,37 @@ export default function TelegramAppPage() {
 
   const getInitData = () => window.Telegram?.WebApp?.initData ?? "";
 
+  // Hamkorlik arizasi (lead)
+  const [plCompany, setPlCompany] = useState("");
+  const [plMessage, setPlMessage] = useState("");
+  const [plSubmitting, setPlSubmitting] = useState(false);
+  const [plDone, setPlDone] = useState(false);
+  const [plError, setPlError] = useState("");
+
+  const submitPartnerLead = async () => {
+    setPlError("");
+    setPlSubmitting(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/partner-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: getInitData(),
+          name: customer?.full_name ?? "",
+          phone: customer?.phone ?? "",
+          company: plCompany.trim(),
+          message: plMessage.trim(),
+        }),
+      });
+      if (!res.ok) { setPlError("Yuborishda xatolik. Qayta urinib ko'ring."); return; }
+      setPlDone(true);
+    } catch {
+      setPlError("Ulanishda xatolik. Qayta urinib ko'ring.");
+    } finally {
+      setPlSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     fetch("/api/telegram/miniapp/branding")
       .then((r) => r.json())
@@ -1604,11 +1635,38 @@ export default function TelegramAppPage() {
             ))}
           </div>
 
-          {/* CTA */}
-          <button onClick={() => openSupport()} className={buttonCls} style={{ animation: "hkGlow 4s ease-in-out infinite" }}>
-            <span className="flex items-center justify-center gap-2"><Rocket size={17} /> Hamkor bo'lish — bog'lanish</span>
-          </button>
-          <p className="text-[11px] text-[#93a5ba] text-center mt-2.5">Savollaringiz bo'lsa, operatorlarimiz javob beradi.</p>
+          {/* Ariza formasi */}
+          {plDone ? (
+            <div className="rounded-2xl bg-[#4ADE80]/10 border border-[#4ADE80]/30 p-5 text-center" style={{ animation: "hkRise .4s ease both" }}>
+              <CheckCircle2 size={40} className="text-[#4ADE80] mx-auto mb-3" />
+              <div className="text-[15px] font-bold mb-1">So'rovingiz qabul qilindi</div>
+              <div className="text-[12px] text-[#93a5ba]">Tez orada siz bilan bog'lanamiz.</div>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-white/[0.04] border border-white/8 p-4">
+              <div className="text-[14px] font-bold mb-3 flex items-center gap-1.5"><Handshake size={16} className="text-[#F4C76A]" /> Hamkorlik uchun ariza</div>
+              <input
+                value={plCompany}
+                onChange={(e) => setPlCompany(e.target.value)}
+                placeholder="Kompaniya / faoliyat (ixtiyoriy)"
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5"
+              />
+              <textarea
+                value={plMessage}
+                onChange={(e) => setPlMessage(e.target.value)}
+                rows={3}
+                placeholder="Qisqacha o'zingiz haqingizda yoki savolingiz"
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5 resize-none"
+              />
+              <p className="text-[11px] text-[#93a5ba] mb-3">Ism va telefon avtomatik biriktiriladi: <span className="text-white/80">{customer?.full_name || customer?.phone || "—"}</span></p>
+              {plError && <p className="text-[12px] text-[#FF6B85] mb-2.5">{plError}</p>}
+              <button onClick={submitPartnerLead} disabled={plSubmitting} className={buttonCls} style={{ animation: "hkGlow 4s ease-in-out infinite" }}>
+                <span className="flex items-center justify-center gap-2">
+                  {plSubmitting ? <Loader2 size={16} className="animate-spin" /> : <><Rocket size={17} /> Ariza yuborish</>}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock } from "lucide-react";
+import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
 type Partner = {
@@ -28,10 +28,10 @@ function fmtNum(n: number) {
   return Number(n || 0).toLocaleString("ru-RU");
 }
 
-function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; onClose: () => void; onSaved: () => void }) {
+function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner | null; prefill?: { name?: string; company?: string }; onClose: () => void; onSaved: () => void }) {
   const editing = !!partner;
-  const [name, setName] = useState(partner?.name ?? "");
-  const [company, setCompany] = useState(partner?.company ?? "");
+  const [name, setName] = useState(partner?.name ?? prefill?.name ?? "");
+  const [company, setCompany] = useState(partner?.company ?? prefill?.company ?? "");
   const [contact, setContact] = useState(partner?.contact ?? "");
   const [currency, setCurrency] = useState(partner?.currency ?? "UZS");
   const [status, setStatus] = useState<Partner["status"]>(partner?.status ?? "active");
@@ -138,25 +138,57 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
   );
 }
 
+type PartnerLead = { id: string; name: string | null; phone: string | null; company: string | null; message: string | null; status: string; created_at: string };
+
+const LEAD_STATUS: Record<string, { label: string; cls: string }> = {
+  new: { label: "Yangi", cls: "bg-accent/15 text-[#7db8ff] border-accent/30" },
+  contacted: { label: "Bog'lanildi", cls: "bg-[#F4C76A]/10 text-[#F4C76A] border-[#F4C76A]/30" },
+  converted: { label: "Hamkor bo'ldi", cls: "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" },
+  rejected: { label: "Rad etildi", cls: "bg-[#FF6B85]/10 text-[#FF6B85] border-[#FF6B85]/30" },
+};
+
+type ModalState = { open: boolean; partner: Partner | null; prefill?: { name?: string; company?: string }; leadId?: string };
+
 export default function PartnersManager() {
+  const [view, setView] = useState<"partners" | "leads">("partners");
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [leads, setLeads] = useState<PartnerLead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<{ open: boolean; partner: Partner | null }>({ open: false, partner: null });
+  const [modal, setModal] = useState<ModalState>({ open: false, partner: null });
   const supabase = createClient();
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("partners").select("*").order("created_at", { ascending: false });
-    setPartners((data as Partner[]) ?? []);
+    const [{ data: pData }, { data: lData }] = await Promise.all([
+      supabase.from("partners").select("*").order("created_at", { ascending: false }),
+      supabase.from("partner_leads").select("id, name, phone, company, message, status, created_at").order("created_at", { ascending: false }),
+    ]);
+    setPartners((pData as Partner[]) ?? []);
+    setLeads((lData as PartnerLead[]) ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
+  const newLeadsCount = leads.filter((l) => l.status === "new").length;
 
   const remove = async (p: Partner) => {
     if (!confirm(`"${p.name}" hamkorini butunlay o'chirishni tasdiqlaysizmi? Uning a'zolari, API'lari va chati ham o'chadi.`)) return;
     const { error } = await supabase.from("partners").delete().eq("id", p.id);
     if (error) alert("O'chirishda xatolik: " + error.message);
     else load();
+  };
+
+  const setLeadStatus = async (lead: PartnerLead, status: string) => {
+    await supabase.from("partner_leads").update({ status, handled_at: new Date().toISOString() }).eq("id", lead.id);
+    load();
+  };
+
+  const closeModal = () => setModal({ open: false, partner: null });
+  const onModalSaved = async () => {
+    if (modal.leadId) {
+      await supabase.from("partner_leads").update({ status: "converted", handled_at: new Date().toISOString() }).eq("id", modal.leadId);
+    }
+    load();
   };
 
   return (
@@ -166,57 +198,109 @@ export default function PartnersManager() {
           <Building2 size={20} className="text-accent" />
           <h1 className="text-[22px] font-bold">Hamkorlar</h1>
         </div>
-        <button onClick={() => setModal({ open: true, partner: null })} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
-          <Plus size={15} /> Yangi hamkor
+        {view === "partners" && (
+          <button onClick={() => setModal({ open: true, partner: null })} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
+            <Plus size={15} /> Yangi hamkor
+          </button>
+        )}
+      </div>
+      <p className="text-[13px] text-muted mb-5">Hamkor kompaniyalar — o'z panel, API va xodimlari bilan ishlaydi. Siz komissiya/obuna orqali daromad olasiz.</p>
+
+      {/* Tablar */}
+      <div className="inline-flex gap-1 p-1 mb-6 rounded-xl bg-white/[0.03] border border-white/8">
+        <button onClick={() => setView("partners")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium transition-all ${view === "partners" ? "bg-accent/20 text-white" : "text-muted hover:text-white"}`}>
+          <Building2 size={14} /> Hamkorlar
+        </button>
+        <button onClick={() => setView("leads")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium transition-all ${view === "leads" ? "bg-accent/20 text-white" : "text-muted hover:text-white"}`}>
+          <Inbox size={14} /> So'rovlar
+          {newLeadsCount > 0 && <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FF6B85] text-white text-[10px] font-bold flex items-center justify-center">{newLeadsCount}</span>}
         </button>
       </div>
-      <p className="text-[13px] text-muted mb-6">Hamkor kompaniyalar — o'z panel, API va xodimlari bilan ishlaydi. Siz komissiya/obuna orqali daromad olasiz.</p>
 
       {loading ? (
         <p className="text-[13px] text-muted">Yuklanmoqda...</p>
-      ) : partners.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
-          Hozircha hamkor yo'q. "Yangi hamkor" tugmasi orqali qo'shing.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {partners.map((p) => {
-            const st = STATUS_META[p.status] ?? STATUS_META.pending;
-            return (
-              <div key={p.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex flex-col">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <div className="text-[14px] font-bold truncate">{p.name}</div>
-                    {p.company && <div className="text-[11px] text-muted truncate">{p.company}</div>}
+      ) : view === "partners" ? (
+        partners.length === 0 ? (
+          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+            Hozircha hamkor yo'q. "Yangi hamkor" tugmasi orqali qo'shing.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {partners.map((p) => {
+              const st = STATUS_META[p.status] ?? STATUS_META.pending;
+              return (
+                <div key={p.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex flex-col">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <div className="text-[14px] font-bold truncate">{p.name}</div>
+                      {p.company && <div className="text-[11px] text-muted truncate">{p.company}</div>}
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{st.label}</span>
                   </div>
-                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{st.label}</span>
+                  <div className="flex items-center gap-3 text-[12px] text-muted mb-3">
+                    <span className="flex items-center gap-1">
+                      {p.billing_model === "commission"
+                        ? <><Percent size={12} /> {p.commission_pct}%</>
+                        : <><CalendarClock size={12} /> {fmtNum(p.subscription_amount)} {p.currency}</>}
+                    </span>
+                    <span className="text-[#5b6f85]">·</span>
+                    <span>{p.currency}</span>
+                  </div>
+                  <div className="mt-auto flex items-center gap-1.5 pt-2 border-t border-white/5">
+                    <button onClick={() => setModal({ open: true, partner: p })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/10 text-[11.5px] text-muted hover:text-white">
+                      <Pencil size={13} /> Tahrirlash
+                    </button>
+                    <button onClick={() => remove(p)} className="ml-auto p-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label="O'chirish" title="O'chirish">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-3 text-[12px] text-muted mb-3">
-                  <span className="flex items-center gap-1">
-                    {p.billing_model === "commission"
-                      ? <><Percent size={12} /> {p.commission_pct}%</>
-                      : <><CalendarClock size={12} /> {fmtNum(p.subscription_amount)} {p.currency}</>}
-                  </span>
-                  <span className="text-[#5b6f85]">·</span>
-                  <span>{p.currency}</span>
+              );
+            })}
+          </div>
+        )
+      ) : (
+        leads.length === 0 ? (
+          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+            Hozircha hamkorlik so'rovi yo'q.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {leads.map((l) => {
+              const st = LEAD_STATUS[l.status] ?? LEAD_STATUS.new;
+              return (
+                <div key={l.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="min-w-0">
+                      <div className="text-[14px] font-bold truncate">{l.company || l.name || "—"}</div>
+                      <div className="flex items-center gap-3 text-[11.5px] text-muted mt-0.5">
+                        {l.name && <span>{l.name}</span>}
+                        {l.phone && <span className="flex items-center gap-1"><Phone size={11} /> {l.phone}</span>}
+                      </div>
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{st.label}</span>
+                  </div>
+                  {l.message && <p className="text-[12.5px] text-white/85 bg-white/[0.03] rounded-lg px-3 py-2 my-2">{l.message}</p>}
+                  <div className="text-[10.5px] text-[#5b6f85] mb-2.5">{new Date(l.created_at).toLocaleString("ru-RU")}</div>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-white/5">
+                    <button onClick={() => setModal({ open: true, partner: null, prefill: { name: l.company || l.name || "", company: l.company || "" }, leadId: l.id })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
+                      <ArrowRight size={13} /> Hamkor yaratish
+                    </button>
+                    {l.status !== "contacted" && (
+                      <button onClick={() => setLeadStatus(l, "contacted")} className="px-2.5 py-1.5 rounded-md hover:bg-white/10 text-[11.5px] text-muted hover:text-white">Bog'lanildi</button>
+                    )}
+                    {l.status !== "rejected" && (
+                      <button onClick={() => setLeadStatus(l, "rejected")} className="ml-auto px-2.5 py-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85] text-[11.5px]">Rad etish</button>
+                    )}
+                  </div>
                 </div>
-
-                <div className="mt-auto flex items-center gap-1.5 pt-2 border-t border-white/5">
-                  <button onClick={() => setModal({ open: true, partner: p })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/10 text-[11.5px] text-muted hover:text-white">
-                    <Pencil size={13} /> Tahrirlash
-                  </button>
-                  <button onClick={() => remove(p)} className="ml-auto p-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label="O'chirish" title="O'chirish">
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )
       )}
 
-      {modal.open && <PartnerModal partner={modal.partner} onClose={() => setModal({ open: false, partner: null })} onSaved={load} />}
+      {modal.open && <PartnerModal partner={modal.partner} prefill={modal.prefill} onClose={closeModal} onSaved={onModalSaved} />}
     </div>
   );
 }
