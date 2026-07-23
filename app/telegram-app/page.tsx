@@ -44,6 +44,8 @@ type SupportMessage = {
   // F1: optimistik yuborish uchun — faqat client tomonда (DB emas). `clientId`
   // server id kelгунcha vaqtинча id; `status` yetkazish holati.
   clientId?: string; status?: "sending" | "sent" | "failed";
+  // F2e: xabar biriktirilgan buyurtma (karta xabar bilan ketadi).
+  order_id?: string | null;
   // F1c/F2: xato bo'lganda "Qayta yuborish" / "Tahrirlash" uchun asl payload
   // (matn yoki rasm).
   _draft?:
@@ -140,6 +142,68 @@ function CustomerSupportImage({ localUrl, path, getInitData, onOpen }: { localUr
   if (!url) return <p className="text-[11px] text-white/70">Rasm yuklanmoqda…</p>;
   // F2b: to'liq ochish sahifa darajasида boshqariladi (BackButton uni yopadi).
   return <img src={url} alt="Rasm" onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in" />;
+}
+
+// F2e: to'liq ekran rasm — qo'lda (ikki barmoq) yaqinlashtirish/surish.
+function FullscreenImage({ src, onClose }: { src: string; onClose: () => void }) {
+  const [scale, setScale] = useState(1);
+  const [tx, setTx] = useState(0);
+  const [ty, setTy] = useState(0);
+  const ptrs = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const startDist = useRef(0);
+  const startScale = useRef(1);
+  const dragStart = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.current.size === 2) {
+      const [a, b] = [...ptrs.current.values()];
+      startDist.current = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      startScale.current = scale;
+    } else if (ptrs.current.size === 1 && scale > 1) {
+      dragStart.current = { x: e.clientX, y: e.clientY, tx, ty };
+    }
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!ptrs.current.has(e.pointerId)) return;
+    ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.current.size === 2) {
+      const [a, b] = [...ptrs.current.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      setScale(Math.min(4, Math.max(1, startScale.current * (d / startDist.current))));
+    } else if (ptrs.current.size === 1 && scale > 1 && dragStart.current) {
+      setTx(dragStart.current.tx + (e.clientX - dragStart.current.x));
+      setTy(dragStart.current.ty + (e.clientY - dragStart.current.y));
+    }
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    ptrs.current.delete(e.pointerId);
+    dragStart.current = null;
+    if (ptrs.current.size === 0 && scale <= 1) { setTx(0); setTy(0); }
+  };
+  return (
+    <div
+      className="fixed inset-0 bg-black/95 z-[75] flex items-center justify-center overflow-hidden touch-none"
+      onClick={() => { if (scale <= 1) onClose(); }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      <img
+        src={src}
+        alt="Rasm"
+        draggable={false}
+        style={{ transform: `translate(${tx}px, ${ty}px) scale(${scale})`, transition: ptrs.current.size ? "none" : "transform 0.15s" }}
+        className="max-w-full max-h-full object-contain select-none"
+      />
+      {scale > 1 && (
+        <button onClick={(e) => { e.stopPropagation(); setScale(1); setTx(0); setTy(0); }} className="absolute top-4 right-4 text-white/85 text-[12px] bg-white/10 px-3 py-1.5 rounded-full">
+          Asl holat
+        </button>
+      )}
+    </div>
+  );
 }
 
 function FloatingAmbience() {
@@ -481,6 +545,9 @@ export default function TelegramAppPage() {
   // Part I: long-press ochgan xabar menyusi (id) — Nusxalash / O'chirish.
   const [msgMenuFor, setMsgMenuFor] = useState<SupportMessage | null>(null);
   const [msgMenuPos, setMsgMenuPos] = useState<{ x: number; y: number } | null>(null);
+  // Menyu ochilgach barmoq ko'tarilishi tugmani avto-bosmasligi uchun ~280ms
+  // "qurollangan" bo'lmaydi (auto-nusxalash muammosini oldini oladi).
+  const [menuArmed, setMenuArmed] = useState(false);
   const [myChatTheme, setMyChatTheme] = useState("blue");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
@@ -1048,12 +1115,15 @@ export default function TelegramAppPage() {
       sender: "customer", message: text,
       image_path: null, file_name: null, voice_path: null, voice_duration_seconds: null,
       reply_to_id: replyToId, created_at: new Date().toISOString(),
+      order_id: orderId,
       _draft: { kind: "text", message: text, replyToId, orderId },
     };
     setSupportMessages((prev) => [...prev, optimistic]);
     setSupportText("");
     setSupportReplyTo(null);
     setSupportError("");
+    // F2e: karta xabar bilan "ketdi" — composer ustidan olib tashlanadi.
+    setSelectedOrderId(null);
     void deliverSupportMessage(clientId, { message: text, replyToId, orderId });
     // F2: input fokusда qolsin — klaviatura yopilmasin (ketma-ket yozish).
     supportInputRef.current?.focus();
@@ -1100,19 +1170,36 @@ export default function TelegramAppPage() {
     if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
     longPressStartRef.current = null;
   };
-  const bindLongPress = (onLong: (pos: { x: number; y: number }) => void) => ({
+  const openMsgMenu = (m: SupportMessage, pos: { x: number; y: number }) => {
+    setMsgMenuFor(m);
+    setMsgMenuPos(pos);
+    setMenuArmed(false);
+    setTimeout(() => setMenuArmed(true), 280);
+  };
+
+  // Xabar gesture'lari: long-press -> menyu (faqat matn xabar), yon-surish -> javob.
+  const gestureRef = useRef<{ x: number; y: number; lp: ReturnType<typeof setTimeout> | null; swiped: boolean } | null>(null);
+  const bindMessageGestures = (m: SupportMessage, allowMenu: boolean) => ({
     onPointerDown: (e: React.PointerEvent) => {
       const pos = { x: e.clientX, y: e.clientY };
-      longPressStartRef.current = pos;
-      longPressTimerRef.current = setTimeout(() => { onLong(pos); cancelLongPress(); }, 450);
+      const lp = allowMenu ? setTimeout(() => { openMsgMenu(m, pos); if (gestureRef.current) gestureRef.current.lp = null; }, 450) : null;
+      gestureRef.current = { x: e.clientX, y: e.clientY, lp, swiped: false };
     },
-    onPointerUp: cancelLongPress,
-    onPointerLeave: cancelLongPress,
-    onPointerCancel: cancelLongPress,
     onPointerMove: (e: React.PointerEvent) => {
-      const s = longPressStartRef.current;
-      if (s && (Math.abs(e.clientX - s.x) > 10 || Math.abs(e.clientY - s.y) > 10)) cancelLongPress();
+      const g = gestureRef.current;
+      if (!g) return;
+      const dx = e.clientX - g.x, dy = e.clientY - g.y;
+      if ((Math.abs(dx) > 8 || Math.abs(dy) > 8) && g.lp) { clearTimeout(g.lp); g.lp = null; }
+      // Telegram uslubi: yon (chap/o'ng) surish -> javob.
+      if (!g.swiped && !m.message?.startsWith("__END_CONFIRM__") && Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        g.swiped = true;
+        setSupportReplyTo(m);
+        setSupportError("");
+      }
     },
+    onPointerUp: () => { const g = gestureRef.current; if (g?.lp) clearTimeout(g.lp); gestureRef.current = null; },
+    onPointerCancel: () => { const g = gestureRef.current; if (g?.lp) clearTimeout(g.lp); gestureRef.current = null; },
+    onPointerLeave: () => { const g = gestureRef.current; if (g?.lp) clearTimeout(g.lp); gestureRef.current = null; },
   });
 
   // F1c: xato xabarni asl payload bilan qayta yuborish.
@@ -1660,7 +1747,7 @@ export default function TelegramAppPage() {
                 {m.sender === "operator" && <span className="text-[9px] text-[#7db8ff] mb-0.5 px-1 font-medium">BetCore Pay operatori</span>}
                 <div
                   onClick={m.sender === "customer" && m.status === "failed" ? () => setFailedMenuFor((f) => (f === m.clientId ? null : m.clientId ?? null)) : undefined}
-                  {...(!m.message?.startsWith("__END_CONFIRM__") && m.status !== "sending" ? bindLongPress((pos) => { setMsgMenuFor(m); setMsgMenuPos(pos); }) : {})}
+                  {...(m.status !== "sending" && !m.message?.startsWith("__END_CONFIRM__") ? bindMessageGestures(m, !!m.message && !m.image_path && !m._localImageUrl && !m.voice_path) : {})}
                   className={`max-w-[78%] rounded-2xl ${(m.image_path || m._localImageUrl) ? "p-1" : "px-3 py-1.5"} text-[12.5px] leading-snug select-none transition-transform active:scale-[0.97] text-white bg-[#0f2137]/80 backdrop-blur-md border ${m.sender === "customer" ? "border-[#3D7FFF]/30 shadow-[0_2px_16px_rgba(61,127,255,0.20)]" : "border-white/12 shadow-[0_2px_14px_rgba(120,180,255,0.12)]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
                 >
                   {quoted && (
@@ -1669,6 +1756,15 @@ export default function TelegramAppPage() {
                       {quoted.message || (quoted.image_path ? "📷 Rasm" : quoted.voice_path ? "🎤 Ovozli xabar" : "")}
                     </div>
                   )}
+                  {m.order_id && (() => {
+                    const o = orders.find((x) => x.id === m.order_id);
+                    return o ? (
+                      <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-black/25 px-2 py-1 text-[10px] text-[#cfe0f5]">
+                        <ListOrdered size={11} className="text-[#7db8ff] shrink-0" />
+                        <span className="truncate">{o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {Number(o.amount).toLocaleString("ru-RU")} so'm · ID {o.account_id}</span>
+                      </div>
+                    ) : null;
+                  })()}
                   {m.voice_path ? (
                     <VoicePlayer path={m.voice_path} getInitData={getInitData} />
                   ) : (m.image_path || m._localImageUrl) ? (
@@ -1735,10 +1831,10 @@ export default function TelegramAppPage() {
         {msgMenuFor && msgMenuPos && (
           <div className="fixed inset-0 z-[85]" onClick={() => setMsgMenuFor(null)}>
             <div
-              className="absolute w-44 bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1"
+              className={`absolute w-40 bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
               style={{
-                left: Math.max(8, Math.min(msgMenuPos.x - 88, (typeof window !== "undefined" ? window.innerWidth : 360) - 184)),
-                top: Math.max(8, Math.min(msgMenuPos.y, (typeof window !== "undefined" ? window.innerHeight : 640) - 170)),
+                left: Math.max(8, Math.min(msgMenuPos.x - 80, (typeof window !== "undefined" ? window.innerWidth : 360) - 168)),
+                top: Math.max(8, msgMenuPos.y - 104),
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1747,9 +1843,6 @@ export default function TelegramAppPage() {
                   <Copy size={15} className="text-[#7db8ff]" /> Nusxalash
                 </button>
               )}
-              <button onClick={() => { setSupportReplyTo(msgMenuFor); setSupportError(""); setMsgMenuFor(null); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl active:bg-white/10 text-[13.5px] text-white">
-                <Reply size={15} className="text-[#7db8ff]" /> Javob
-              </button>
               {msgMenuFor.sender === "customer" && !msgMenuFor.clientId && (
                 <button onClick={() => { const id = msgMenuFor.id; setMsgMenuFor(null); deleteSupportMessage(id); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl active:bg-white/10 text-[13.5px] text-[#FF6B85]">
                   <Trash2 size={15} /> O'chirish
@@ -1759,12 +1852,8 @@ export default function TelegramAppPage() {
           </div>
         )}
 
-        {/* F2b: to'liq ekran rasm — BackButton buni yopadi (menyuga chiqmaydi). */}
-        {fullscreenImage && (
-          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[75] p-4" onClick={() => setFullscreenImage(null)}>
-            <img src={fullscreenImage} alt="Rasm" className="max-w-full max-h-full object-contain rounded-lg" />
-          </div>
-        )}
+        {/* To'liq ekran rasm — qo'lda zoom; BackButton yopadi (menyuga chiqmaydi). */}
+        {fullscreenImage && <FullscreenImage src={fullscreenImage} onClose={() => setFullscreenImage(null)} />}
         {/* F2b: "Nusxalandi" bildirishnomasi. */}
         {copiedToast && (
           <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[80] px-3 py-1.5 rounded-full bg-black/80 text-white text-[12px] shadow-lg">
@@ -1802,29 +1891,12 @@ export default function TelegramAppPage() {
         {supportError && (
           <p className="px-4 py-1.5 text-[11px] text-[#FF6B85] bg-[#0e2038]">{supportError}</p>
         )}
-        {voiceRecorder.recording ? (
-          <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[#0e2038]">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
-              <span className="text-[12px] text-white font-mono shrink-0">{formatDuration(voiceRecorder.durationSeconds)}</span>
-              <span className="text-[11px] text-[#93a5ba] truncate">Ovoz yozilmoqda...</span>
-            </div>
-            <button onClick={cancelVoiceRecording} className="shrink-0 p-2 rounded-lg bg-white/10 text-white/70" aria-label="Bekor qilish">
-              <Trash2 size={14} />
-            </button>
-            <button onClick={stopAndSendVoice} disabled={supportSending} className="shrink-0 p-2 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed]" aria-label="Yuborish">
-              <Check size={14} />
-            </button>
-          </div>
-        ) : (
+        {/* Support chatda ovoz YO'Q — faqat rasm/fayl + matn. */}
         <div className="flex items-center gap-1.5 px-3 py-2.5">
           <label className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] cursor-pointer">
             <Paperclip size={14} className="text-[#7db8ff]" />
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendSupportImage} disabled={supportSending} />
           </label>
-          <button onClick={startVoiceRecording} disabled={supportSending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] disabled:opacity-50" aria-label="Ovozli xabar">
-            <Mic size={14} className="text-[#7db8ff]" />
-          </button>
           <input
             ref={supportInputRef}
             className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2 px-3 text-[12.5px] text-white outline-none placeholder:text-[#5b7089]"
@@ -1837,7 +1909,6 @@ export default function TelegramAppPage() {
             <Send size={14} />
           </button>
         </div>
-        )}
       </div>
     );
   }

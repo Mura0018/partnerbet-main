@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("telegram_support_messages")
-    .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at")
+    .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at, order_id")
     .eq("customer_id", customerId);
   if (thread?.ended_at) {
     query = query.gt("created_at", thread.ended_at);
@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: inserted, error } = await supabase
     .from("telegram_support_messages")
-    .insert({ customer_id: customerId, sender: "customer", message: String(message).trim().slice(0, 2000), reply_to_id: replyToId ?? null })
-    .select("id, sender, message, created_at")
+    .insert({ customer_id: customerId, sender: "customer", message: String(message).trim().slice(0, 2000), reply_to_id: replyToId ?? null, order_id: orderId ?? null })
+    .select("id, sender, message, created_at, order_id")
     .single();
 
   if (error || !inserted) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
