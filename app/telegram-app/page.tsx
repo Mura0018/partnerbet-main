@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
+  Handshake, Sparkles, ShieldCheck, Globe, Rocket, ArrowRight, Building2, Users, Wallet,
 } from "lucide-react";
 
 declare global {
@@ -12,7 +13,7 @@ declare global {
 }
 
 type Customer = { id: string; full_name: string | null; phone: string };
-type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success" | "forgot-password";
+type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success" | "forgot-password" | "hamkorlik";
 type PaymentMethod = "click" | "payme" | "card" | "crypto";
 
 type Order = {
@@ -451,7 +452,7 @@ export default function TelegramAppPage() {
   useEffect(() => {
     const tg = (window as any)?.Telegram?.WebApp;
     if (!tg?.BackButton) return;
-    const isInner = screen === "topup" || screen === "withdraw" || screen === "orders" || screen === "support" || screen === "order-success" || screen === "forgot-password";
+    const isInner = screen === "topup" || screen === "withdraw" || screen === "orders" || screen === "support" || screen === "order-success" || screen === "forgot-password" || screen === "hamkorlik";
     const goBack = () => {
       // F2b: avval ochiq overlay (to'liq rasm / rasm preview) yopiladi.
       if (overlayCloserRef.current) { overlayCloserRef.current(); return; }
@@ -1535,6 +1536,84 @@ export default function TelegramAppPage() {
     );
   }
 
+  if (screen === "hamkorlik") {
+    return (
+      <div className={`${bgCls} p-5 relative`}>
+        <FloatingAmbience />
+        <div className="relative z-10 pb-8">
+          <ScreenHeader title="Hamkorlik" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+
+          {/* Hero */}
+          <div className="flex flex-col items-center text-center mb-7" style={{ animation: "hkRise .5s ease both" }}>
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#F4C76A] to-[#3D7FFF] flex items-center justify-center mb-4" style={{ animation: "hkFloat 3.4s ease-in-out infinite, hkGlow 4s ease-in-out infinite" }}>
+              <Handshake size={36} className="text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]" />
+            </div>
+            <h1 className="text-[22px] font-extrabold leading-tight mb-2" style={titleShadow}>Biznesingizni biz bilan yuriting</h1>
+            <p className="text-[13px] text-[#93a5ba] max-w-[300px]">O'z panelingiz, o'z API'laringiz va o'z jamoangiz bilan mustaqil ishlang — texnologiyani biz beramiz.</p>
+          </div>
+
+          {/* Ustunliklar */}
+          <div className="grid grid-cols-2 gap-3 mb-7">
+            {[
+              { icon: Building2, t: "O'z paneling", d: "Boshqaruv o'z qo'lingizda", c: "#3D7FFF" },
+              { icon: Globe, t: "Istalgan kompaniya", d: "1xbet va boshqa API'lar", c: "#4ADE80" },
+              { icon: Users, t: "O'z jamoang", d: "Xodimlarni o'zing boshqarasan", c: "#7c3aed" },
+              { icon: Wallet, t: "Istalgan valyuta", d: "Qaysi valyutada xohlasang", c: "#F4C76A" },
+              { icon: ShieldCheck, t: "Xavfsizlik", d: "To'liq izolyatsiya", c: "#4ADE80" },
+              { icon: Rocket, t: "Tez start", d: "Tez orada ishga tushasan", c: "#3D7FFF" },
+            ].map((v, i) => (
+              <div key={v.t} className={menuCardCls} style={{ animation: "hkRise .5s ease both", animationDelay: `${0.06 * i + 0.1}s` }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2.5 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]" style={{ background: `linear-gradient(135deg, ${v.c}, ${v.c}99)` }}>
+                  <v.icon size={16} className="text-white" />
+                </div>
+                <div className="text-[12.5px] font-bold">{v.t}</div>
+                <div className="text-[10.5px] text-[#93a5ba] mt-0.5">{v.d}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Qanday boshlanadi */}
+          <h2 className="text-[15px] font-bold mb-3">Qanday boshlanadi?</h2>
+          <div className="space-y-2.5 mb-7">
+            {[
+              "Biz bilan bog'laning",
+              "Sizga shaxsiy panel ochamiz",
+              "O'z kompaniyangiz API'sini ulaysiz",
+              "Mijozlarga xizmat ko'rsatishni boshlaysiz",
+            ].map((s, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/8 px-3.5 py-3">
+                <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-[#3D7FFF] to-[#2456c9] flex items-center justify-center text-[13px] font-bold">{i + 1}</div>
+                <div className="text-[13px]">{s}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Qoidalar */}
+          <h2 className="text-[15px] font-bold mb-3">Hamkorlik qoidalari</h2>
+          <div className="rounded-2xl bg-white/[0.04] border border-white/8 p-4 mb-7 space-y-2.5">
+            {[
+              "Halol va shaffof ishlash",
+              "Mijozlar xavfsizligi va maxfiyligini saqlash",
+              "O'z ma'lumotlaringiz uchun to'liq mas'uliyat",
+              "Platforma qoidalariga rioya qilish",
+            ].map((r, i) => (
+              <div key={i} className="flex items-start gap-2.5 text-[13px]">
+                <CheckCircle2 size={16} className="text-[#4ADE80] shrink-0 mt-0.5" />
+                <span>{r}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <button onClick={() => openSupport()} className={buttonCls} style={{ animation: "hkGlow 4s ease-in-out infinite" }}>
+            <span className="flex items-center justify-center gap-2"><Rocket size={17} /> Hamkor bo'lish — bog'lanish</span>
+          </button>
+          <p className="text-[11px] text-[#93a5ba] text-center mt-2.5">Savollaringiz bo'lsa, operatorlarimiz javob beradi.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (screen === "topup") {
     return (
       <div className={`${bgCls} p-5 relative`}>
@@ -1967,6 +2046,31 @@ export default function TelegramAppPage() {
           <div className="text-[13px] font-bold">Operator bilan aloqa</div>
         </button>
       </div>
+
+      {/* Hamkorlik — marketing banner */}
+      <button
+        onClick={() => { setError(""); setScreen("hamkorlik"); }}
+        className="group relative w-full mt-3.5 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)] active:translate-y-[2px] transition-all"
+        style={{ background: "linear-gradient(120deg,#F4C76A,#3D7FFF,#7c3aed,#F4C76A)", backgroundSize: "300% 100%", animation: "hkShimmer 6s linear infinite" }}
+      >
+        <div className="relative rounded-2xl bg-gradient-to-br from-[#0e2038] to-[#0a1a30] px-4 py-3.5 flex items-center gap-3.5">
+          <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#F4C76A] to-[#c99a3e] flex items-center justify-center shadow-[3px_3px_10px_rgba(0,0,0,0.45)]" style={{ animation: "hkFloat 3.4s ease-in-out infinite" }}>
+            <Handshake size={20} className="text-[#2a1e05]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[14px] font-extrabold flex items-center gap-1.5">Hamkor bo'ling <Sparkles size={13} className="text-[#F4C76A]" /></div>
+            <div className="text-[11px] text-[#93a5ba] mt-0.5">O'z biznesingizni bizning platformamiz bilan yuriting</div>
+          </div>
+          <ArrowRight size={18} className="shrink-0 text-[#93a5ba] group-active:translate-x-0.5 transition-transform" />
+        </div>
+      </button>
+
+      <style>{`
+        @keyframes hkShimmer { 0%{background-position:0% 0} 100%{background-position:300% 0} }
+        @keyframes hkFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+        @keyframes hkGlow { 0%,100%{box-shadow:0 0 26px 4px rgba(244,199,106,0.28)} 50%{box-shadow:0 0 40px 10px rgba(61,127,255,0.34)} }
+        @keyframes hkRise { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
       </div>
     </div>
   );
