@@ -38,6 +38,33 @@
 .app-card-bg { background-image: var(--t-card); }
 .app-btn-bg { background-image: var(--t-btn); }
 
+/* Tema STILI — har tema tugma/karta shaklini, chegarasini, effektini o'zgartiradi.
+   classic = neumorphic (standart). neon = o'tkir + porlash. royal = nafis + oltin chegara. */
+:root[data-app-theme="neon"] .app-btn-bg {
+  border-radius: 8px !important;
+  border: 1px solid rgba(34, 211, 238, 0.55);
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+:root[data-app-theme="neon"] .app-card-bg {
+  border-radius: 12px;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.16) !important;
+}
+:root[data-app-theme="royal"] .app-btn-bg {
+  border-radius: 14px !important;
+  border: 1px solid rgba(244, 199, 106, 0.55);
+  box-shadow: 0 10px 26px rgba(244, 199, 106, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  color: #2a1e05;
+  letter-spacing: 0.02em;
+}
+:root[data-app-theme="royal"] .app-card-bg {
+  border-radius: 18px;
+  border: 1px solid rgba(244, 199, 106, 0.35);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5) !important;
+}
+
 html {
   scroll-behavior: smooth;
 }

@@ -27,7 +27,10 @@ export const APP_THEMES: Record<string, Record<string, string>> = {
 
 export function applyAppTheme(themeKey: string | null | undefined) {
   if (typeof document === "undefined") return;
-  const t = APP_THEMES[themeKey ?? "classic"] ?? APP_THEMES.classic;
+  const key = APP_THEMES[themeKey ?? "classic"] ? (themeKey as string) : "classic";
+  const t = APP_THEMES[key];
   const root = document.documentElement;
   for (const [k, v] of Object.entries(t)) root.style.setProperty(k, v);
+  // Tema class'i — tugma/karta STILI (shakl, chegara, effekt) globals.css'da farqlanadi.
+  root.setAttribute("data-app-theme", key);
 }
