@@ -7,6 +7,7 @@ import { bumpCardUsage } from "@/lib/payments/cardUsage";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
+import { resolveOrderCashdesk } from "@/lib/cashdesk/pickCashdesk";
 
 const PAYMENT_METHODS = ["click", "payme", "card", "crypto"] as const;
 
@@ -136,6 +137,20 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !order) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+
+  // 3-BOSQICH: buyurtmaga kassa biriktirish. Egasi bор mijoz -> owner
+  // operator kassasi (egalik buzilmaydi); yangi mijoz -> balansi eng kam
+  // aktiv kassa. Best-effort: cashdesk_id ustuni hali yo'q / kassa yo'q /
+  // balans olinmasa -> bo'sh qoladi (bajarilishда default kassa). Buyurtma
+  // yaratish HECH QACHON bloklanmaydi.
+  try {
+    const cashdeskId = await resolveOrderCashdesk(ownerOperatorId);
+    if (cashdeskId) {
+      await supabase.from("telegram_orders").update({ cashdesk_id: cashdeskId }).eq("id", order.id);
+    }
+  } catch {
+    /* kassa biriktirish best-effort */
+  }
 
   await sendTelegramMessage(customer.telegram_id, buildOrderCreatedMessage(type, amountNum));
   await notifyOperatorsNewOrder(type, amountNum, playerName ?? String(accountId).trim());
