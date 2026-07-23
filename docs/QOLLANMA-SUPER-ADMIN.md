@@ -155,7 +155,8 @@ Bir marta belgilaysiz — hamma hamkorga amal qiladi.
 - [x] 2 — Hamkorlar sahifasi
 - [x] 3 — Appda "Hamkorlik" marketing + ariza (leads)
 - [x] 4 — DB: bot/tema/tarif poydevori
-- [ ] 5 — **Tariflar + har hamkorga provisioning (plan/xizmat/tema)**
-- [ ] 6 — **Hamkor paneli `/partner`** (login, bot, tema, xodim, API, to'lov)
-- [ ] 7 — **Ko'p-bot mini-app** (hamkor boti → mijozlari → o'z temasi)
-- [ ] 8 — Buyurtma `partner_id` + avtomatik komissiya/hisob-kitob
+- [x] 5 — Tariflar + har hamkorga provisioning (Sozlash: plan/xizmat/tema)
+- [x] 6 — Hamkor paneli `/partner` (login, bot ulash, tema, jamoa, hisob)
+- [x] + — Global chat (hamkorlar ↔ platforma)
+- [ ] 7 — **Ko'p-bot mini-app** (hamkor boti → mijozlari → o'z temasi) — sizning bot tokeningiz + sinov kerak
+- [ ] 8 — Buyurtma `partner_id` + avtomatik komissiya/hisob-kitob (to'lov usullari bo'limi shu bosqichda)
