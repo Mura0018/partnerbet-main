@@ -311,12 +311,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {sidebarContent}
       </aside>
 
-      <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto">
+      <main className={`flex-1 min-w-0 overflow-x-hidden overflow-y-auto ${shell?.canManageOrders ? "pb-16 md:pb-0" : ""}`}>
         <Suspense fallback={null}>
           <ForbiddenBanner />
         </Suspense>
         {children}
       </main>
+
+      {/* Mobil pastki tab-bar — operator kunlik 4 + "Yana" (faqat BetCore foydalanuvchi) */}
+      {shell?.canManageOrders && (
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 h-[62px] grid grid-cols-5 border-t border-white/8 bg-panel/95 backdrop-blur-xl">
+          {[
+            { href: "/admin/dashboard", label: t("shl.tabPanel"), icon: LayoutDashboard, color: "#2E8FFF" },
+            { href: "/admin/telegram-bot", label: t("shl.tabOrders"), icon: Wallet, color: "#12D9A0", badge: shell?.counts?.pendingOrders ?? 0 },
+            { href: "/admin/cashdesks", label: t("shl.tabCashdesk"), icon: Landmark, color: "#12D9A0" },
+            { href: "/admin/telegram-bot?chat=1", label: t("shl.tabChat"), icon: MessageCircle, color: "#8B5CFF", dot: chatNew },
+            { more: true, label: t("shl.tabMore"), icon: Menu, color: "#7D8CA6" },
+          ].map((tb: any, i) => {
+            const active = tb.href && !tb.href.includes("?") && pathname.startsWith(tb.href);
+            const inner = (
+              <>
+                <div className="relative">
+                  <tb.icon size={20} className="transition-transform" style={active ? { color: tb.color, filter: `drop-shadow(0 3px 6px ${tb.color}80)`, transform: "translateY(-2px) scale(1.1)" } : undefined} />
+                  {tb.badge ? <span className="absolute -top-2 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[#FF4D6A] text-white text-[9px] font-bold grid place-items-center font-mono">{tb.badge}</span> : null}
+                  {tb.dot ? <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full" style={{ background: tb.color, boxShadow: `0 0 6px ${tb.color}` }} /> : null}
+                </div>
+                <span className="text-[10px]" style={active ? { color: tb.color } : undefined}>{tb.label}</span>
+              </>
+            );
+            return tb.more ? (
+              <button key={i} onClick={() => setMobileOpen(true)} className="flex flex-col items-center justify-center gap-0.5 text-muted">{inner}</button>
+            ) : (
+              <Link key={i} href={tb.href} className={`flex flex-col items-center justify-center gap-0.5 ${active ? "" : "text-muted"}`}>{inner}</Link>
+            );
+          })}
+        </nav>
+      )}
+
       {cmdOpen && (
         <CommandPalette groups={NAV_GROUPS} perms={shell?.perms} onClose={() => setCmdOpen(false)} onToggleBusy={handleToggleBusy} />
       )}
