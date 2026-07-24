@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { canAssignRole } from "@/lib/auth/roleAssign";
+import { checkPasswordStrength } from "@/lib/auth/password";
 
 async function requireUsersManage() {
   const supabase = await createServerSupabaseClient();
@@ -25,8 +26,9 @@ export async function POST(req: NextRequest) {
   if (!fullName || !email || !password || !roleId) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
-  if (String(password).length < 8) {
-    return NextResponse.json({ error: "weak_password" }, { status: 400 });
+  const strength = checkPasswordStrength(String(password), email);
+  if (!strength.valid) {
+    return NextResponse.json({ error: "weak_password", failedRules: strength.failedRules }, { status: 400 });
   }
 
   // Imtiyoz eskalatsiyasini oldini olish: chaqiruvchi o'zidan teng yoki yuqori

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
+import { checkPasswordStrength } from "@/lib/auth/password";
 
 // Hamkor taklif havolasi orqali O'Z parolini o'rnatadi (login talab qilinmaydi).
 export async function POST(req: NextRequest) {
@@ -10,7 +11,8 @@ export async function POST(req: NextRequest) {
 
   const { token, password } = (await req.json().catch(() => ({}))) ?? {};
   if (!token || !password) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
-  if (String(password).length < 8) return NextResponse.json({ error: "weak_password" }, { status: 400 });
+  const strength = checkPasswordStrength(String(password));
+  if (!strength.valid) return NextResponse.json({ error: "weak_password", failedRules: strength.failedRules }, { status: 400 });
 
   const admin = createAdminClient();
   const { data: invite } = await admin

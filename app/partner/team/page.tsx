@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Users, Loader2, Trash2, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
+import { checkPasswordStrength } from "@/lib/auth/password";
 
 export default function PartnerTeamPage() {
   const supabase = createClient();
@@ -36,13 +37,14 @@ export default function PartnerTeamPage() {
 
   const addStaff = async () => {
     setError("");
-    if (!form.fullName.trim() || !form.email.trim() || form.password.length < 8) { setError("Barcha maydon — parol kamida 8 belgi."); return; }
+    if (!form.fullName.trim() || !form.email.trim()) { setError("Barcha maydonni to'ldiring."); return; }
+    if (!checkPasswordStrength(form.password, form.email.trim()).valid) { setError("Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi)."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/partner/create-staff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fullName: form.fullName.trim(), email: form.email.trim(), password: form.password }) });
       const data = await res.json();
       if (!res.ok) {
-        const map: Record<string, string> = { email_taken: "Bu email band.", weak_password: "Parol kamida 8 belgi.", forbidden: "Ruxsatingiz yo'q." };
+        const map: Record<string, string> = { email_taken: "Bu email band.", weak_password: "Parol kamida 10 belgi: harf, raqam va belgi.", forbidden: "Ruxsatingiz yo'q." };
         const msg = map[data.error] ?? "Xatolik yuz berdi.";
         setError(msg); toast.error("Xodim qo'shilmadi: " + msg); return;
       }
@@ -75,7 +77,7 @@ export default function PartnerTeamPage() {
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 mb-4 space-y-2.5">
           <input placeholder="Ism familiya" value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-          <input placeholder="Parol (kamida 8 belgi)" type="text" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+          <input placeholder="Parol (kamida 10 belgi: harf, raqam, belgi)" type="text" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
           {error && <p className="text-[12px] text-[#FF6B85]">{error}</p>}
           <button onClick={addStaff} disabled={saving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">{saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Yaratish"}</button>
         </div>
