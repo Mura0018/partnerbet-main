@@ -12,6 +12,7 @@ import { LocaleSwitcher } from "@/lib/i18n/LocaleSwitcher";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
+import { useShellData } from "@/lib/admin/useShellData";
 import { Toaster } from "@/lib/ui/toast";
 
 // 7 rangli guruh (mockup v3 IA). Rang = bo'lim (bezak emas) — 2-bosqichda
@@ -82,7 +83,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { profile } = useCurrentProfile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { data: shell } = useShellData();
   const settings = useSiteSettings();
+
+  // Menyu havolasi -> jonli badge (aniq sanoq). Chat "yangilik" nuqtasi alohida.
+  const badgeFor = (href: string): { n: number; color: string } | null => {
+    const c = shell?.counts;
+    if (!c) return null;
+    if (href === "/admin/telegram-bot" && c.pendingOrders > 0) return { n: c.pendingOrders, color: "#FF4D6A" };
+    if (href === "/admin/cashdesks" && c.cashdesksLow) return { n: c.cashdesksLow, color: "#FFB020" };
+    if (href === "/admin/staff-monitor" && c.openDebts > 0) return { n: c.openDebts, color: "#FFB020" };
+    return null;
+  };
+  const chatSeenAt = typeof window !== "undefined" ? localStorage.getItem("team_chat_seen_at") : null;
+  const chatNew = !!shell?.counts?.teamChatLatestAt && (!chatSeenAt || new Date(shell.counts.teamChatLatestAt) > new Date(chatSeenAt));
 
   // Guruh yig'ilgan/ochiq holati — localStorage'da saqlanadi (reload'dan keyin ham).
   useEffect(() => {
@@ -143,6 +157,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {NAV_GROUPS.map((group) => {
           const isCollapsed = !!collapsed[group.id];
           const g = group.color;
+          const rollup = group.items.reduce((a, i) => a + (badgeFor(i.href)?.n ?? 0), 0);
           return (
             <div key={group.labelKey} className="mb-1" style={{ ["--g" as any]: g }}>
               <button
@@ -152,6 +167,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: g, boxShadow: `0 0 8px ${g}` }} />
                 <ChevronDown size={10} className="shrink-0 opacity-60 transition-transform duration-200" style={{ transform: isCollapsed ? "rotate(-90deg)" : "none" }} />
                 {t(group.labelKey as any)}
+                {isCollapsed && rollup > 0 && (
+                  <span className="ml-auto text-[10px] font-bold leading-none px-1.5 py-0.5 rounded-full font-mono" style={{ background: `${g}33`, color: g, boxShadow: `0 0 10px ${g}44` }}>
+                    {rollup}
+                  </span>
+                )}
               </button>
               <div
                 className="overflow-hidden transition-[max-height] duration-200 ease-out"
@@ -172,7 +192,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       {active && <span className="absolute -left-2 top-[9px] bottom-[9px] w-[3px] rounded-r" style={{ background: g, boxShadow: `0 0 10px ${g}` }} />}
                       <item.icon size={16} className="transition-transform group-hover:scale-110" style={active ? { color: g, filter: `drop-shadow(0 0 6px ${g}b3)` } : undefined} />
                       {t(item.labelKey as any)}
-                      {active && <span className="ml-auto w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: g, boxShadow: `0 0 10px ${g}` }} />}
+                      {(() => {
+                        const b = badgeFor(item.href);
+                        if (b) return <span className="ml-auto text-[10px] font-bold leading-none px-1.5 py-0.5 rounded-full font-mono" style={{ background: `${b.color}26`, color: b.color, boxShadow: `0 0 10px ${b.color}40` }}>{b.n}</span>;
+                        if (item.href === "/admin/telegram-bot?chat=1" && chatNew) return <span className="ml-auto w-[7px] h-[7px] rounded-full" style={{ background: g, boxShadow: `0 0 8px ${g}` }} />;
+                        if (active) return <span className="ml-auto w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: g, boxShadow: `0 0 10px ${g}` }} />;
+                        return null;
+                      })()}
                     </Link>
                   );
                   return item.permission ? (
