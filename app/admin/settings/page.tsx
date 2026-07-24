@@ -6,19 +6,20 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type SettingsMap = Record<string, any>;
 type SecretStatuses = Record<string, boolean>;
 type Tab = "general" | "branding" | "social" | "seo" | "analytics" | "api" | "maintenance";
 
-const TABS: { id: Tab; label: string; icon: any }[] = [
-  { id: "general", label: "Umumiy", icon: Globe },
-  { id: "branding", label: "Brend", icon: Palette },
-  { id: "social", label: "Ijtimoiy tarmoq", icon: Share2 },
-  { id: "seo", label: "SEO", icon: Search },
-  { id: "analytics", label: "Analitika", icon: BarChart3 },
-  { id: "api", label: "API kalitlar", icon: KeyRound },
-  { id: "maintenance", label: "Texnik ishlar", icon: Wrench },
+const TABS: { id: Tab; labelKey: string; icon: any }[] = [
+  { id: "general", labelKey: "set.tGeneral", icon: Globe },
+  { id: "branding", labelKey: "set.tBranding", icon: Palette },
+  { id: "social", labelKey: "set.tSocial", icon: Share2 },
+  { id: "seo", labelKey: "set.tSeo", icon: Search },
+  { id: "analytics", labelKey: "set.tAnalytics", icon: BarChart3 },
+  { id: "api", labelKey: "set.tApi", icon: KeyRound },
+  { id: "maintenance", labelKey: "set.tMaintenance", icon: Wrench },
 ];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -33,6 +34,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] text-white outline-none focus:border-accent transition-colors";
 
 function SaveButton({ saving, saved, onClick }: { saving: boolean; saved: boolean; onClick: () => void }) {
+  const { t } = useLocale();
   return (
     <button
       onClick={onClick}
@@ -40,12 +42,13 @@ function SaveButton({ saving, saved, onClick }: { saving: boolean; saved: boolea
       className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-60"
     >
       {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : null}
-      {saving ? "Saqlanmoqda…" : saved ? "Saqlandi" : "Saqlash"}
+      {saving ? t("set.saving") : saved ? t("set.saved") : t("set.save")}
     </button>
   );
 }
 
 export default function SettingsPage() {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState<Tab>("general");
   const [settings, setSettings] = useState<SettingsMap>({});
   const [secretStatuses, setSecretStatuses] = useState<SecretStatuses>({});
@@ -81,13 +84,13 @@ export default function SettingsPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-[13px] text-muted">Yuklanmoqda…</div>;
+    return <div className="p-8 text-[13px] text-muted">{t("set.loading")}</div>;
   }
 
   return (
     <div className="p-8 max-w-3xl">
-      <h1 className="text-[22px] font-bold mb-1">Sayt sozlamalari</h1>
-      <p className="text-[13px] text-muted mb-6">Sayt bo'yicha barcha global sozlamalar shu yerdan boshqariladi.</p>
+      <h1 className="text-[22px] font-bold mb-1">{t("set.title")}</h1>
+      <p className="text-[13px] text-muted mb-6">{t("set.sub")}</p>
 
       <div className="flex gap-1 mb-6 border-b border-white/8 overflow-x-auto">
         {TABS.map((tab) => (
@@ -98,7 +101,7 @@ export default function SettingsPage() {
               activeTab === tab.id ? "border-accent text-accent" : "border-transparent text-muted hover:text-white"
             }`}
           >
-            <tab.icon size={14} /> {tab.label}
+            <tab.icon size={14} /> {t(tab.labelKey as any)}
           </button>
         ))}
       </div>
@@ -135,6 +138,7 @@ function useSaveState() {
 }
 
 function GeneralTab({ settings, updateLocal, saveKey }: TabProps) {
+  const { t } = useLocale();
   const { saving, saved, run } = useSaveState();
   const identity = settings.site_identity ?? {};
   const contact = settings.contact_info ?? {};
@@ -142,19 +146,19 @@ function GeneralTab({ settings, updateLocal, saveKey }: TabProps) {
 
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
-      <Field label="Sayt nomi">
+      <Field label={t("set.gSiteName")}>
         <input className={inputCls} value={identity.site_name ?? ""} onChange={(e) => updateLocal("site_identity", { site_name: e.target.value })} placeholder="WINORA" />
       </Field>
-      <Field label="Slogan">
+      <Field label={t("set.gTagline")}>
         <input className={inputCls} value={identity.tagline ?? ""} onChange={(e) => updateLocal("site_identity", { tagline: e.target.value })} />
       </Field>
-      <Field label="Qo'llab-quvvatlash emaili">
+      <Field label={t("set.gSupportEmail")}>
         <input type="email" className={inputCls} value={contact.email ?? ""} onChange={(e) => updateLocal("contact_info", { email: e.target.value })} placeholder="support@couponbet.org" />
       </Field>
-      <Field label="Telefon">
+      <Field label={t("set.gPhone")}>
         <input className={inputCls} value={contact.phone ?? ""} onChange={(e) => updateLocal("contact_info", { phone: e.target.value })} />
       </Field>
-      <Field label="Footer tavsifi">
+      <Field label={t("set.gFooterDesc")}>
         <textarea rows={3} className={inputCls} value={footer.description ?? ""} onChange={(e) => updateLocal("footer", { description: e.target.value })} />
       </Field>
       <SaveButton saving={saving} saved={saved} onClick={() => run(async () => { await saveKey("site_identity"); await saveKey("contact_info"); await saveKey("footer"); })} />
@@ -183,6 +187,7 @@ function BrandImageField({
   position?: { x: number; y: number };
   onPositionChange?: (pos: { x: number; y: number }) => void;
 }) {
+  const { t } = useLocale();
   const [dragOver, setDragOver] = useState(false);
   const [panning, setPanning] = useState(false);
   const inputId = React.useId();
@@ -222,10 +227,10 @@ function BrandImageField({
         onTouchStart={(e) => {
           if (!currentUrl || !onPositionChange) return;
           setPanning(true);
-          const t = e.touches[0];
-          updatePositionFromPointer(t.clientX, t.clientY);
+          const tp = e.touches[0];
+          updatePositionFromPointer(tp.clientX, tp.clientY);
         }}
-        onTouchMove={(e) => { if (panning) { const t = e.touches[0]; updatePositionFromPointer(t.clientX, t.clientY); } }}
+        onTouchMove={(e) => { if (panning) { const tp = e.touches[0]; updatePositionFromPointer(tp.clientX, tp.clientY); } }}
         onTouchEnd={() => setPanning(false)}
         className={`relative flex items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden select-none ${boxClassName} ${
           dragOver ? "border-accent bg-accent/10" : "border-white/15 hover:border-white/30"
@@ -259,12 +264,12 @@ function BrandImageField({
         ) : (
           <div className="flex flex-col items-center gap-1.5 text-center px-3">
             <Upload size={18} className="text-muted" />
-            <span className="text-[11px] text-muted leading-snug">Bosing yoki rasmni shu yerga tashlang</span>
+            <span className="text-[11px] text-muted leading-snug">{t("set.dropHint")}</span>
           </div>
         )}
         {currentUrl && onPositionChange && !uploading && (
           <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-black/60 text-[9px] text-white/80 pointer-events-none">
-            Surib joylashtiring
+            {t("set.panHint")}
           </div>
         )}
         <input id={inputId} type="file" accept={accept} className="hidden" disabled={uploading}
@@ -274,7 +279,7 @@ function BrandImageField({
         <span className="text-[11px] text-[#5b6f85] leading-snug">{recommendedText}</span>
         {currentUrl && onRemove && (
           <button type="button" onClick={onRemove} className="shrink-0 text-[11px] text-muted hover:text-[#FF6B85] transition-colors ml-2">
-            O'chirish
+            {t("set.remove")}
           </button>
         )}
       </div>
@@ -284,6 +289,7 @@ function BrandImageField({
 
 
 function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
+  const { t } = useLocale();
   const { saving, saved, run } = useSaveState();
   const branding = settings.branding ?? {};
   const theme = settings.theme ?? {};
@@ -298,7 +304,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
       const media = await uploadImage(file);
       updateLocal("branding", { [field]: media.id, [`${field}_url`]: media.publicUrl });
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik yuz berdi.");
+      setError(e.message ?? t("set.bUploadErr"));
     } finally {
       setUploading(false);
     }
@@ -312,12 +318,10 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
 
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
-      <Field label="Logotip">
+      <Field label={t("set.bLogo")}>
         <p className="text-[12px] text-muted mb-3 leading-relaxed">
-          Bu yerga qo'ygan logotip <span className="text-white font-medium">bir joyda</span> o'zgaradi va{" "}
-          <span className="text-white font-medium">hamma joyda</span> ko'rinadi — admin panelning chap menyusida
-          (barcha xodimlar: operator, admin, super admin — kim bo'lishidan qat'iy nazar) va saytning o'zida (yuqori
-          menyu). Bu — profil rasmingiz emas, butun loyihaning brend logotipi.
+          {t("set.bLogoDesc1")}<span className="text-white font-medium">{t("set.bLogoBold1")}</span>{t("set.bLogoDesc2")}
+          <span className="text-white font-medium">{t("set.bLogoBold2")}</span>{t("set.bLogoDesc3")}
         </p>
         <div className="flex items-center gap-4 mb-3">
           {/* Preview: where this logo shows up */}
@@ -330,7 +334,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
               )}
               <span className="text-[10px] font-bold">WINORA</span>
             </div>
-            <span className="text-[9px] text-muted">Admin panel</span>
+            <span className="text-[9px] text-muted">{t("set.bAdminPanel")}</span>
           </div>
           <div className="flex flex-col items-center gap-1.5">
             <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-bg-elevated border border-white/10">
@@ -341,7 +345,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
               )}
               <span className="text-[10px] font-bold">WINORA</span>
             </div>
-            <span className="text-[9px] text-muted">Sayt</span>
+            <span className="text-[9px] text-muted">{t("set.bSite")}</span>
           </div>
         </div>
         <div className="max-w-[220px]">
@@ -349,7 +353,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
             currentUrl={branding.logo_media_id_url ?? null}
             uploading={logoUploading}
             accept="image/png,image/jpeg,image/webp,image/svg+xml"
-            recommendedText="Tavsiya: shaffof fon (PNG/SVG), kvadrat shakl. Surib, kadrni o'zingiz belgilang."
+            recommendedText={t("set.bLogoRec")}
             boxClassName="w-full aspect-square"
             onUpload={(file) => handleUpload(file, "logo_media_id", setLogoUploading)}
             onRemove={removeLogo}
@@ -358,13 +362,13 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
           />
         </div>
       </Field>
-      <Field label="Favicon">
+      <Field label={t("set.bFavicon")}>
         <div className="max-w-[140px]">
           <BrandImageField
             currentUrl={branding.favicon_media_id_url ?? null}
             uploading={faviconUploading}
             accept="image/png,image/x-icon,image/svg+xml"
-            recommendedText="32×32px yoki kattaroq, kvadrat"
+            recommendedText={t("set.bFaviconRec")}
             boxClassName="w-full aspect-square"
             onUpload={(file) => handleUpload(file, "favicon_media_id", setFaviconUploading)}
             onRemove={() => updateLocal("branding", { favicon_media_id: null, favicon_media_id_url: null })}
@@ -373,13 +377,13 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
       </Field>
       {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
 
-      <Field label="Bosh sahifa hero rasmi">
+      <Field label={t("set.bHero")}>
         <div className="max-w-[220px]">
           <BrandImageField
             currentUrl={branding.hero_image_media_id_url ?? null}
             uploading={heroUploading}
             accept="image/png,image/webp"
-            recommendedText="Shaffof fonli PNG, taxminan 1200×1600px, 3MB dan kichik. Surib, rasmning qaysi qismi ko'rinishini o'zingiz belgilang."
+            recommendedText={t("set.bHeroRec")}
             boxClassName="w-full aspect-[3/4]"
             onUpload={(file) => handleUpload(file, "hero_image_media_id", setHeroUploading)}
             onRemove={() => updateLocal("branding", { hero_image_media_id: null, hero_image_media_id_url: null, hero_image_position: null })}
@@ -390,17 +394,17 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Asosiy rang">
+        <Field label={t("set.bAccent")}>
           <input type="color" className="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer" value={theme.accent_color ?? "#00A3FF"} onChange={(e) => updateLocal("theme", { accent_color: e.target.value })} />
         </Field>
-        <Field label="Ikkinchi rang">
+        <Field label={t("set.bSecondary")}>
           <input type="color" className="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer" value={theme.secondary_color ?? "#FFC857"} onChange={(e) => updateLocal("theme", { secondary_color: e.target.value })} />
         </Field>
-        <Field label="Fon rangi">
+        <Field label={t("set.bBackground")}>
           <input type="color" className="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer" value={theme.background_color ?? "#07111F"} onChange={(e) => updateLocal("theme", { background_color: e.target.value })} />
         </Field>
       </div>
-      <p className="text-[11px] text-[#5b6f85] mb-4">Ranglar saqlangach, butun saytda darhol qo'llaniladi — qayta deploy shart emas.</p>
+      <p className="text-[11px] text-[#5b6f85] mb-4">{t("set.bColorHint")}</p>
 
       <SaveButton saving={saving} saved={saved} onClick={() => run(async () => { await saveKey("branding"); await saveKey("theme"); })} />
     </div>
@@ -429,14 +433,15 @@ function SocialTab({ settings, updateLocal, saveKey }: TabProps) {
 }
 
 function SeoTab({ settings, updateLocal, saveKey }: TabProps) {
+  const { t } = useLocale();
   const { saving, saved, run } = useSaveState();
   const seo = settings.seo_defaults ?? {};
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
-      <Field label="Standart sarlavha (title)">
+      <Field label={t("set.sTitle")}>
         <input className={inputCls} value={seo.default_title ?? ""} onChange={(e) => updateLocal("seo_defaults", { default_title: e.target.value })} />
       </Field>
-      <Field label="Standart tavsif (description)">
+      <Field label={t("set.sDesc")}>
         <textarea rows={3} className={inputCls} value={seo.default_description ?? ""} onChange={(e) => updateLocal("seo_defaults", { default_description: e.target.value })} />
       </Field>
       <SaveButton saving={saving} saved={saved} onClick={() => run(() => saveKey("seo_defaults"))} />
@@ -445,18 +450,19 @@ function SeoTab({ settings, updateLocal, saveKey }: TabProps) {
 }
 
 function AnalyticsTab({ settings, updateLocal, saveKey }: TabProps) {
+  const { t } = useLocale();
   const { saving, saved, run } = useSaveState();
   const analytics = settings.analytics ?? {};
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
-      <Field label="Google Analytics Measurement ID">
+      <Field label={t("set.aGa")}>
         <input className={inputCls} value={analytics.ga_measurement_id ?? ""} onChange={(e) => updateLocal("analytics", { ga_measurement_id: e.target.value })} placeholder="G-XXXXXXXXXX" />
       </Field>
-      <Field label="Meta (Facebook) Pixel ID">
+      <Field label={t("set.aMeta")}>
         <input className={inputCls} value={analytics.meta_pixel_id ?? ""} onChange={(e) => updateLocal("analytics", { meta_pixel_id: e.target.value })} />
       </Field>
       <p className="text-[11px] text-[#5b6f85] mb-4">
-        Bu ID'lar shu yerda saqlanadi; sahifalarga real skript sifatida ulash Phase 5 (Frontend) doirasida amalga oshiriladi.
+        {t("set.aHint")}
       </p>
       <SaveButton saving={saving} saved={saved} onClick={() => run(() => saveKey("analytics"))} />
     </div>
@@ -464,6 +470,7 @@ function AnalyticsTab({ settings, updateLocal, saveKey }: TabProps) {
 }
 
 function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }: TabProps & { secretStatuses: SecretStatuses; onSaved: () => void }) {
+  const { t } = useLocale();
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -471,34 +478,34 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
   const footballProvider = settings.football_provider ?? {};
 
   const PROVIDERS = [
-    { id: "", label: "— Tanlanmagan —" },
+    { id: "", label: t("set.pNone") },
     { id: "api_football", label: "API-Football" },
     { id: "sportmonks", label: "Sportmonks" },
     { id: "football_data_org", label: "Football-Data.org" },
   ];
 
   const FOOTBALL_KEYS: { key: string; label: string; placeholder: string }[] = [
-    { key: "football_api_key", label: "API-Football kaliti", placeholder: "x-apisports-key" },
-    { key: "sportmonks_api_key", label: "Sportmonks kaliti", placeholder: "api_token" },
-    { key: "footballdata_org_api_key", label: "Football-Data.org kaliti", placeholder: "X-Auth-Token" },
+    { key: "football_api_key", label: t("set.kFootballApi"), placeholder: "x-apisports-key" },
+    { key: "sportmonks_api_key", label: t("set.kSportmonks"), placeholder: "api_token" },
+    { key: "footballdata_org_api_key", label: t("set.kFootballData"), placeholder: "X-Auth-Token" },
   ];
   const PUSH_KEYS: { key: string; label: string; placeholder: string }[] = [
-    { key: "push_fcm_server_key", label: "Push — FCM Server Key", placeholder: "AAAA..." },
-    { key: "push_vapid_public_key", label: "Push — VAPID Public Key", placeholder: "BF..." },
-    { key: "push_vapid_private_key", label: "Push — VAPID Private Key", placeholder: "..." },
+    { key: "push_fcm_server_key", label: t("set.kFcm"), placeholder: "AAAA..." },
+    { key: "push_vapid_public_key", label: t("set.kVapidPub"), placeholder: "BF..." },
+    { key: "push_vapid_private_key", label: t("set.kVapidPriv"), placeholder: "..." },
   ];
   const AI_KEYS: { key: string; label: string; placeholder: string }[] = [
-    { key: "openai_api_key", label: "OpenAI API kaliti (Match Insights uchun)", placeholder: "sk-..." },
+    { key: "openai_api_key", label: t("set.kOpenai"), placeholder: "sk-..." },
   ];
   const TELEGRAM_KEYS: { key: string; label: string; placeholder: string }[] = [
-    { key: "telegram_bot_token", label: "Telegram Bot Token (BetCore Pay)", placeholder: "123456789:ABC..." },
-    { key: "telegram_webhook_secret", label: "Webhook Secret Token", placeholder: "o'zingiz o'ylab topgan tasodifiy matn" },
+    { key: "telegram_bot_token", label: t("set.kTgToken"), placeholder: "123456789:ABC..." },
+    { key: "telegram_webhook_secret", label: t("set.kWebhookSecret"), placeholder: t("set.phWebhookSecret") },
   ];
   const CASHDESK_KEYS: { key: string; label: string; placeholder: string }[] = [
-    { key: "cashdesk_login", label: "Kassir login", placeholder: "login" },
-    { key: "cashdesk_pass", label: "Kassir paroli (cashierpass)", placeholder: "parol" },
-    { key: "cashdesk_hash", label: "Hash kaliti", placeholder: "menejerdan olingan hash" },
-    { key: "cashdesk_id", label: "Kassa raqami (cashdeskId)", placeholder: "masalan: 77" },
+    { key: "cashdesk_login", label: t("set.kCdLogin"), placeholder: t("set.phCdLogin") },
+    { key: "cashdesk_pass", label: t("set.kCdPass"), placeholder: t("set.phCdPass") },
+    { key: "cashdesk_hash", label: t("set.kCdHash"), placeholder: t("set.phCdHash") },
+    { key: "cashdesk_id", label: t("set.kCdId"), placeholder: t("set.phCdId") },
   ];
 
   const save = async (key: string) => {
@@ -515,7 +522,7 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
       setValues((prev) => ({ ...prev, [key]: "" }));
       onSaved();
     } catch {
-      setError("Saqlashda xatolik yuz berdi.");
+      setError(t("set.saveErr"));
     } finally {
       setSaving(null);
     }
@@ -526,7 +533,7 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
       <div className="flex items-center gap-2 mb-1.5">
         <label className="text-[12px] text-muted">{k.label}</label>
         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${secretStatuses[k.key] ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-white/10"}`}>
-          {secretStatuses[k.key] ? "Sozlangan" : "Sozlanmagan"}
+          {secretStatuses[k.key] ? t("set.configured") : t("set.notConfigured")}
         </span>
       </div>
       <div className="flex gap-2">
@@ -542,7 +549,7 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
           disabled={saving === k.key || !values[k.key]}
           className="px-4 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[13px] font-semibold disabled:opacity-50 shrink-0"
         >
-          {saving === k.key ? "…" : "Saqlash"}
+          {saving === k.key ? "…" : t("set.save")}
         </button>
       </div>
     </div>
@@ -551,62 +558,54 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
-        <h3 className="text-[13px] font-semibold mb-1">Football Center — ma'lumot manbai</h3>
+        <h3 className="text-[13px] font-semibold mb-1">{t("set.fcTitle")}</h3>
         <p className="text-[12px] text-[#5b6f85] mb-4 leading-relaxed">
-          Faol provayderni tanlang. Hech biri tanlanmasa, Football Center "hozircha jonli
-          ma'lumot yo'q" holatini professional ko'rinishda ko'rsatadi — sayt buzilmaydi.
-          Kelajakda boshqa provayderga o'tish — shu yerda faqat tanlovni almashtirish, kod
-          o'zgartirish shart emas.
+          {t("set.fcDesc")}
         </p>
-        <Field label="Faol provayder">
+        <Field label={t("set.fcActive")}>
           <select className={inputCls} value={footballProvider.active ?? ""} onChange={(e) => updateLocal("football_provider", { active: e.target.value || null })}>
             {PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Standart liga ID">
-            <input className={inputCls} value={footballProvider.default_league_id ?? ""} onChange={(e) => updateLocal("football_provider", { default_league_id: e.target.value })} placeholder="masalan: 39" />
+          <Field label={t("set.fcLeagueId")}>
+            <input className={inputCls} value={footballProvider.default_league_id ?? ""} onChange={(e) => updateLocal("football_provider", { default_league_id: e.target.value })} placeholder={t("set.phLeagueId")} />
           </Field>
-          <Field label="Standart mavsum">
-            <input className={inputCls} value={footballProvider.default_season ?? ""} onChange={(e) => updateLocal("football_provider", { default_season: e.target.value })} placeholder="masalan: 2026" />
+          <Field label={t("set.fcSeason")}>
+            <input className={inputCls} value={footballProvider.default_season ?? ""} onChange={(e) => updateLocal("football_provider", { default_season: e.target.value })} placeholder={t("set.phSeason")} />
           </Field>
         </div>
         <p className="text-[11px] text-[#5b6f85] mb-3">
-          Liga ID/mavsum formati tanlangan provayderga bog'liq (masalan API-Football raqamli liga
-          ID ishlatadi, Football-Data.org qisqa kod ishlatadi) — "Featured Leagues" bo'limida
-          aniq qiymatlarni ko'rasiz.
+          {t("set.fcHint")}
         </p>
         <SaveButton saving={savingProvider} saved={savedProvider} onClick={() => runProviderSave(() => saveKey("football_provider"))} />
       </div>
 
       <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
         <p className="text-[12px] text-[#5b6f85] mb-4 leading-relaxed">
-          Xavfsizlik uchun kalitlar saqlangandan keyin qayta ko'rsatilmaydi — faqat
-          "sozlangan" holati ko'rinadi. Yangilash uchun yangi qiymatni kiriting va saqlang.
+          {t("set.secNote")}
         </p>
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
-        <h3 className="text-[13px] font-semibold mb-3">Football provayder kalitlari</h3>
+        <h3 className="text-[13px] font-semibold mb-3">{t("set.hFootball")}</h3>
         {FOOTBALL_KEYS.map(renderKeyRow)}
-        <h3 className="text-[13px] font-semibold mb-3 mt-2">Push xabarnoma kalitlari</h3>
-        <p className="text-[11px] text-[#5b6f85] mb-3">Hozircha faqat xavfsiz saqlanadi — xabar yuborish funksiyasi Phase 4'da qo'shiladi.</p>
+        <h3 className="text-[13px] font-semibold mb-3 mt-2">{t("set.hPush")}</h3>
+        <p className="text-[11px] text-[#5b6f85] mb-3">{t("set.pushHint")}</p>
         {PUSH_KEYS.map(renderKeyRow)}
-        <h3 className="text-[13px] font-semibold mb-3 mt-2">AI kalitlari</h3>
-        <p className="text-[11px] text-[#5b6f85] mb-3">Match Insights uchun avtomatik matn xulosa generatsiyasida ishlatiladi.</p>
+        <h3 className="text-[13px] font-semibold mb-3 mt-2">{t("set.hAi")}</h3>
+        <p className="text-[11px] text-[#5b6f85] mb-3">{t("set.aiHint")}</p>
         {AI_KEYS.map(renderKeyRow)}
-        <h3 className="text-[13px] font-semibold mb-3 mt-2">Telegram Bot kalitlari</h3>
-        <p className="text-[11px] text-[#5b6f85] mb-3">BetCore Pay — hisob to'ldirish/yechish uchun Telegram bot.</p>
+        <h3 className="text-[13px] font-semibold mb-3 mt-2">{t("set.hTg")}</h3>
+        <p className="text-[11px] text-[#5b6f85] mb-3">{t("set.tgHint")}</p>
         {TELEGRAM_KEYS.map(renderKeyRow)}
         <p className="text-[11px] text-[#5b6f85] mb-3 leading-relaxed">
-          "Webhook Secret Token"ni saqlagandan so'ng, xuddi shu qiymatni Telegram tomonida ham
-          o'rnatish kerak — aks holda webhook ishlamay qoladi:{" "}
+          {t("set.webhookNote")}{" "}
           <code className="text-[10px] bg-white/5 px-1 py-0.5 rounded break-all">
             {'curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://www.couponbet.org/api/telegram/webhook&secret_token=<SECRET>"'}
           </code>
         </p>
-        <h3 className="text-[13px] font-semibold mb-3 mt-2">Kassa API (1xBet — CashdeskBotAPI)</h3>
+        <h3 className="text-[13px] font-semibold mb-3 mt-2">{t("set.hCashdesk")}</h3>
         <p className="text-[11px] text-[#5b6f85] mb-3 leading-relaxed">
-          Sozlansa, hisob to'ldirish/pul yechish buyurtmalari operator "Bajarildi" bosganda avtomatik
-          amalga oshadi. Sozlanmasa, hammasi avvalgidek qo'lda ishlaydi — bu ixtiyoriy.
+          {t("set.cashdeskHint")}
         </p>
         {CASHDESK_KEYS.map(renderKeyRow)}
       </div>
@@ -615,20 +614,20 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
 }
 
 function MaintenanceTab({ settings, updateLocal, saveKey }: TabProps) {
+  const { t } = useLocale();
   const { saving, saved, run } = useSaveState();
   const maintenance = settings.maintenance ?? {};
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
       <label className="flex items-center gap-3 mb-4 cursor-pointer">
         <input type="checkbox" checked={!!maintenance.enabled} onChange={(e) => updateLocal("maintenance", { enabled: e.target.checked })} />
-        <span className="text-[13px] font-medium">Texnik ishlar rejimini yoqish</span>
+        <span className="text-[13px] font-medium">{t("set.mEnable")}</span>
       </label>
       <p className="text-[11px] text-[#5b6f85] mb-4 leading-relaxed">
-        Yoqilganda, admin bo'lmagan barcha tashrifchilar "Texnik ishlar" sahifasini ko'radi.
-        Admin hisoblar saytni odatdagidek ko'rishda davom etadi.
+        {t("set.mHint")}
       </p>
-      <Field label="Xabar matni (ixtiyoriy)">
-        <textarea rows={3} className={inputCls} value={maintenance.message ?? ""} onChange={(e) => updateLocal("maintenance", { message: e.target.value })} placeholder="Sayt qisqa vaqt ichida yana ishga tushadi." />
+      <Field label={t("set.mMessage")}>
+        <textarea rows={3} className={inputCls} value={maintenance.message ?? ""} onChange={(e) => updateLocal("maintenance", { message: e.target.value })} placeholder={t("set.mMessagePh")} />
       </Field>
       <SaveButton saving={saving} saved={saved} onClick={() => run(() => saveKey("maintenance"))} />
     </div>
