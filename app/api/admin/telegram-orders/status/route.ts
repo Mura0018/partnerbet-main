@@ -5,6 +5,7 @@ import { sendTelegramMessage, buildOrderResolvedMessage } from "@/lib/telegram/n
 import { cashdeskDeposit, cashdeskPayout, isCashdeskConfigured } from "@/lib/cashdesk/client";
 import { getCashdeskCredsById, type Creds } from "@/lib/cashdesk/store";
 import { enforceDebtLimit } from "@/lib/cashdesk/debt";
+import { applyRating } from "@/lib/cashdesk/oversight";
 
 async function requireOrdersManage() {
   const supabase = await createServerSupabaseClient();
@@ -142,6 +143,29 @@ export async function POST(req: NextRequest) {
     } catch {
       /* qarz yozish best-effort */
     }
+  }
+
+  // 7-BOSQICH: REYTING (best-effort).
+  //  - completed -> buyurtmani bajargan operatorga +1 (vaqtida ish).
+  //  - rejected  -> agar telefon tasdiqида "Ha" degan qayd bор bo'lsa,
+  //    tasdiqlagan operatorga -5 (yolg'on tasdiq: tasdiqlagan buyurtma rad etildi).
+  try {
+    if (status === "completed") {
+      await applyRating(admin, check.userId, 1, orderId, "Buyurtma bajarildi");
+    } else if (status === "rejected") {
+      const { data: conf } = await admin
+        .from("order_confirmations")
+        .select("operator_id")
+        .eq("order_id", orderId)
+        .eq("confirmed", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const confirmer = (conf as any)?.operator_id;
+      if (confirmer) await applyRating(admin, confirmer, -5, orderId, "Yolg'on tasdiq (tasdiqlangan buyurtma rad etildi)");
+    }
+  } catch {
+    /* reyting best-effort */
   }
 
   const telegramId = (order as any).customers?.telegram_id;

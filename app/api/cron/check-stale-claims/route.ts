@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getSlaMinutes } from "@/lib/cashdesk/sla";
 import { getDebtSettings } from "@/lib/cashdesk/debt";
+import { getAlertSettings, recordAlert, applyRating } from "@/lib/cashdesk/oversight";
 import { sendTelegramMessage } from "@/lib/telegram/notify";
 
 // Ikki bosqichli tekshiruv (tashqi scheduler har 10-15 daqiqada uradi;
@@ -35,6 +36,10 @@ export async function GET(req: NextRequest) {
 
   const nameById = new Map((profiles ?? []).map((p: any) => [p.id, p.display_name || p.full_name || "Operator"]));
   const busySet = new Set((profiles ?? []).filter((p: any) => p.is_busy).map((p: any) => p.id));
+  const superAdminChats = (profiles ?? [])
+    .filter((p: any) => p.roles?.key === "super_admin" && p.telegram_chat_id)
+    .map((p: any) => p.telegram_chat_id);
+  const alertSettings = await getAlertSettings();
 
   // ---------- 1) SLA HANDOFF ----------
   let handoffCount = 0;
@@ -67,6 +72,43 @@ export async function GET(req: NextRequest) {
         .update({ handoff_open: true, claim_escalated_at: new Date().toISOString() })
         .eq("id", order.id);
       handoffCount++;
+
+      // 7-BOSQICH: e'tiborsizlik -> 1-daraja alert + reyting -2 (owner).
+      await recordAlert(admin, order.claimed_by, order.id, 1, `E'tiborsizlik: ${reason}`);
+      await applyRating(admin, order.claimed_by, -2, order.id, `E'tiborsizlik: ${reason}`);
+
+      // Darajali eskalatsiya: oynада (window_hours) 1-daraja alertlar soni.
+      try {
+        const winStart = new Date(now - alertSettings.windowHours * 3600 * 1000).toISOString();
+        const { count } = await admin
+          .from("operator_alerts")
+          .select("id", { count: "exact", head: true })
+          .eq("operator_id", order.claimed_by)
+          .eq("level", 1)
+          .gte("created_at", winStart);
+        const n = count ?? 0;
+        if (n === alertSettings.level3) {
+          // 3-daraja: super_admin + katta reyting minus + avtomatik shikoyat (qayd)
+          await recordAlert(admin, order.claimed_by, order.id, 3, `Takroriy e'tiborsizlik (${n} handoff/${alertSettings.windowHours}s)`);
+          await applyRating(admin, order.claimed_by, -3, order.id, "Takroriy e'tiborsizlik (3-daraja)");
+          await admin.from("team_chat_messages").insert({
+            sender_id: superAdmin.id,
+            is_system: true,
+            message: `🟥 Tizim: ${opName} takroriy e'tiborsizlik (${n} handoff/${alertSettings.windowHours}s) — super_admin nazoratiga olindi.`,
+          });
+          await Promise.all(superAdminChats.map((c: number) => sendTelegramMessage(c, `🟥 BETCORE PAY\n\n${opName} takroriy e'tiborsizlik (${n} handoff) — nazorat kerak.`, undefined)));
+        } else if (n === alertSettings.level2) {
+          // 2-daraja: jamoa chati + admin e'tibori
+          await recordAlert(admin, order.claimed_by, order.id, 2, `Takror e'tiborsizlik (${n} handoff/${alertSettings.windowHours}s)`);
+          await admin.from("team_chat_messages").insert({
+            sender_id: superAdmin.id,
+            is_system: true,
+            message: `🟧 Tizim: ${opName} takror e'tiborsiz (${n} handoff/${alertSettings.windowHours}s) — admin e'tiboriga.`,
+          });
+        }
+      } catch {
+        /* alert eskalatsiyasi best-effort */
+      }
     }
   } catch {
     /* sla_deadline/handoff_open ustuni hali yo'q -> handoff o'tkazib yuboriladi */
@@ -112,10 +154,6 @@ export async function GET(req: NextRequest) {
       .neq("status", "paid")
       .is("escalated_at", null)
       .lt("created_at", cutoff);
-
-    const superAdminChats = (profiles ?? [])
-      .filter((p: any) => p.roles?.key === "super_admin" && p.telegram_chat_id)
-      .map((p: any) => p.telegram_chat_id);
 
     for (const d of (staleDebts ?? []) as any[]) {
       const debtorName = nameById.get(d.debtor_operator_id) ?? "Operator";

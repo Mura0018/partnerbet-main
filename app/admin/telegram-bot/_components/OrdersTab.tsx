@@ -700,6 +700,29 @@ function DebtsSection() {
   );
 }
 
+// 7-BOSQICH: operator o'z ishonch reytingini ko'radi (ixtiyoriy; asosiy
+// nazorat super_admin panelida /admin/operator-rating).
+function MyRatingBadge() {
+  const [rating, setRating] = useState<number | null>(null);
+  const supabase = createClient();
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("rating").eq("id", user.id).maybeSingle();
+      if (data) setRating((data as any).rating ?? 0);
+    });
+  }, []);
+  if (rating === null) return null;
+  return (
+    <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2 text-[12px] flex items-center gap-2">
+      <span className="text-muted">Ishonch reytingi:</span>
+      <span className={`font-semibold ${rating > 0 ? "text-[#4ADE80]" : rating < 0 ? "text-[#FF6B85]" : "text-white"}`}>
+        {rating > 0 ? `+${rating}` : rating}
+      </span>
+    </div>
+  );
+}
+
 function TelegramLinkWidget() {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [statusError, setStatusError] = useState(false);
@@ -881,6 +904,7 @@ export function OrdersTab() {
       {/* Ish holati va Telegram xabarnomasi — faqat xodimlar uchun (super admin buyurtma qayta ishlamaydi) */}
       {!isSuperAdmin && <MyStatusToggle />}
       {!isSuperAdmin && <MyBusyToggle />}
+      {!isSuperAdmin && <MyRatingBadge />}
       {!isSuperAdmin && <DebtsSection />}
       {!isSuperAdmin && <TelegramLinkWidget />}
       <Can permission="telegram_operators.manage"><LimitsEditor /></Can>
