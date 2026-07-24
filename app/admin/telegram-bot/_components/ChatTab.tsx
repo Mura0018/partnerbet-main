@@ -254,11 +254,11 @@ export function ChatTab() {
 
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className="flex items-center gap-2 p-2.5 border-b border-white/8">
+      <div className="flex items-center gap-2 p-2.5 bg-white/[0.04] backdrop-blur-md border-b border-white/[0.06]">
         {showSearch ? (
           <input
             autoFocus
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-[12px] outline-none focus:border-accent"
+            className="flex-1 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-1.5 px-3 text-[12px] outline-none focus:border-accent"
             placeholder="Xabar yoki fayl nomini qidirish..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -290,13 +290,13 @@ export function ChatTab() {
         </button>
       </div>
       {showThemePicker && (
-        <div className="px-3 py-2.5 border-b border-white/8">
+        <div className="px-3 py-2.5 bg-white/[0.03] backdrop-blur-md border-b border-white/[0.06]">
           <ThemePicker value={myTheme} onChange={changeMyTheme} />
         </div>
       )}
 
       {/* 8-BOSQICH: pinned qoidalar */}
-      <div className="px-3 py-2 border-b border-white/8 bg-white/[0.02]">
+      <div className="px-3 py-2 bg-white/[0.04] backdrop-blur-md border-b border-white/[0.06]">
         <div className="flex items-start gap-2">
           <span className="text-[11px] shrink-0">📌</span>
           {editingRules ? (
@@ -324,7 +324,7 @@ export function ChatTab() {
       </div>
 
       {/* 8-BOSQICH: tur filtri + faol (smenada) operatorlar */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/8">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] backdrop-blur-md border-b border-white/[0.06]">
         {([["all", "Hammasi"], ["chat", "Suhbat"], ["system", "Tizim"]] as const).map(([id, label]) => (
           <button
             key={id}
@@ -399,7 +399,7 @@ export function ChatTab() {
                   <span className="text-[9px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
                 <div
-                  className={`rounded-xl px-3 py-2 text-[12.5px] leading-snug break-words ${isMe ? "text-white" : "bg-white/[0.08] text-white/90"}`}
+                  className={`rounded-xl px-3 py-2 text-[12.5px] leading-snug break-words ${isMe ? "text-white shadow-lg shadow-black/20" : "bg-white/10 backdrop-blur-md border border-white/[0.06] text-white/90"}`}
                   style={isMe ? { background: chatThemeGradient(myTheme) } : undefined}
                 >
                   {quoted && (
@@ -436,7 +436,7 @@ export function ChatTab() {
         <div ref={bottomRef} />
       </div>
       {replyTo && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-white/8 bg-white/[0.03]">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-white/[0.06]">
           <Reply size={12} className="text-accent shrink-0" />
           <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
             {replyTo.message || (replyTo.image_path ? "📷 Rasm" : replyTo.voice_path ? "🎤 Ovozli xabar" : "")}
@@ -447,7 +447,7 @@ export function ChatTab() {
         </div>
       )}
       {voiceRecorder.recording ? (
-        <div className="flex items-center gap-2.5 px-3 py-2 border-t border-white/8">
+        <div className="flex items-center gap-2.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
           <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
           <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
@@ -458,16 +458,16 @@ export function ChatTab() {
           </button>
         </div>
       ) : (
-      <div className="flex items-center gap-1.5 px-3 py-2 border-t border-white/8">
-        <label className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10">
+      <div className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
+        <label className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] cursor-pointer hover:bg-white/10">
           <Paperclip size={13} className="text-muted" />
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendImage} disabled={sending} />
         </label>
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
           <Mic size={13} className="text-muted" />
         </button>
         <input
-          className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
+          className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
           placeholder="Xabar yozing..."
           value={text}
           onChange={(e) => setText(e.target.value)}
