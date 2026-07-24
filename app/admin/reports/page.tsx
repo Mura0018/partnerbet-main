@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useMemo, useState } from "react";
 import { TrendingUp, TrendingDown, Wallet, ArrowDownToLine, ArrowUpFromLine, Percent, Gift, Banknote, Download, Loader2, BarChart3 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -19,16 +20,17 @@ type Report = {
   daily: { day: string; topup_vol: number; withdraw_vol: number }[];
 };
 
-const PRESETS: { id: string; label: string; days: number }[] = [
-  { id: "day", label: "Kunlik", days: 1 },
-  { id: "week", label: "Haftalik", days: 7 },
-  { id: "month", label: "Oylik", days: 30 },
-  { id: "year", label: "Yillik", days: 365 },
+const PRESETS: { id: string; labelKey: string; days: number }[] = [
+  { id: "day", labelKey: "rep.daily", days: 1 },
+  { id: "week", labelKey: "rep.weekly", days: 7 },
+  { id: "month", labelKey: "rep.monthly", days: 30 },
+  { id: "year", labelKey: "rep.yearly", days: 365 },
 ];
 const som = (n: number) => `${Math.round(n).toLocaleString("ru-RU")} so'm`;
 
 function Growth({ cur, prev }: { cur: number; prev: number }) {
-  if (prev <= 0) return cur > 0 ? <span className="text-[11px] text-[#4ADE80]">yangi</span> : <span className="text-[11px] text-muted">—</span>;
+  const { t } = useLocale();
+  if (prev <= 0) return cur > 0 ? <span className="text-[11px] text-[#4ADE80]">{t("rep.new")}</span> : <span className="text-[11px] text-muted">—</span>;
   const pct = ((cur - prev) / prev) * 100;
   const up = pct >= 0;
   return (
@@ -39,6 +41,7 @@ function Growth({ cur, prev }: { cur: number; prev: number }) {
 }
 
 export default function ReportsManager() {
+  const { t } = useLocale();
   const [preset, setPreset] = useState("month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -72,7 +75,7 @@ export default function ReportsManager() {
     if (!data) return;
     const c = data.current;
     const lines: string[] = [];
-    lines.push("Ko'rsatkich,Qiymat");
+    lines.push(t("rep.csvMetric"));
     lines.push(`Umumiy kirim,${Math.round(c.topupVolume)}`);
     lines.push(`Umumiy chiqim,${Math.round(c.withdrawVolume)}`);
     lines.push(`Komissiya (to'ldirish ${data.commissionPct.topup}%),${Math.round(c.topupCommission)}`);
@@ -84,7 +87,7 @@ export default function ReportsManager() {
     lines.push(`Rad etilgan,${c.rejectedCount}`);
     lines.push(`Kutilayotgan,${c.pendingCount}`);
     lines.push("");
-    lines.push("Hamkor,Kirim,Chiqim,Buyurtma,Komissiya");
+    lines.push(t("rep.csvPartners"));
     for (const p of data.partnerRows) lines.push(`${p.name},${Math.round(p.topupVol)},${Math.round(p.withdrawVol)},${p.count},${Math.round(p.commission)}`);
     const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -101,23 +104,23 @@ export default function ReportsManager() {
       <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
         <div className="flex items-center gap-2">
           <BarChart3 size={20} className="text-accent" />
-          <h1 className="text-[22px] font-bold">Moliyaviy hisobot</h1>
+          <h1 className="text-[22px] font-bold">{t("rep.title")}</h1>
         </div>
         <button onClick={exportCsv} disabled={!data} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-[12.5px] font-medium hover:bg-white/[0.08] disabled:opacity-40">
-          <Download size={14} /> CSV yuklab olish
+          <Download size={14} /> {t("rep.csvDownload")}
         </button>
       </div>
-      <p className="text-[13px] text-muted mb-5">Butun tizim moliyasi. Komissiya: to'ldirish {data?.commissionPct.topup ?? 8}% / yechish {data?.commissionPct.withdraw ?? 2}% (sozlamalardan).</p>
+      <p className="text-[13px] text-muted mb-5">{t("rep.sub", { topup: data?.commissionPct.topup ?? 8, withdraw: data?.commissionPct.withdraw ?? 2 })}</p>
 
       {/* Davr */}
       <div className="flex flex-wrap items-center gap-1.5 mb-6">
         {PRESETS.map((pr) => (
           <button key={pr.id} onClick={() => setPreset(pr.id)}
             className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${preset === pr.id ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}>
-            {pr.label}
+            {t(pr.labelKey as any)}
           </button>
         ))}
-        <button onClick={() => setPreset("custom")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${preset === "custom" ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}>Ixtiyoriy</button>
+        <button onClick={() => setPreset("custom")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${preset === "custom" ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}>{t("rep.custom")}</button>
         {preset === "custom" && (
           <>
             <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]" />
@@ -134,10 +137,10 @@ export default function ReportsManager() {
           {/* Asosiy kartalar */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
             {[
-              { label: "Umumiy kirim", val: som(c.topupVolume), icon: ArrowDownToLine, color: "#4ADE80", cur: c.topupVolume, prev: p.topupVolume },
-              { label: "Umumiy chiqim", val: som(c.withdrawVolume), icon: ArrowUpFromLine, color: "#F4C76A", cur: c.withdrawVolume, prev: p.withdrawVolume },
-              { label: "Komissiya daromadi", val: som(c.totalCommission), icon: Percent, color: "#7db8ff", cur: c.totalCommission, prev: p.totalCommission },
-              { label: "Sof foyda", val: som(c.netProfit), icon: Banknote, color: "#4ADE80", cur: c.netProfit, prev: p.netProfit },
+              { label: t("rep.totalIn"), val: som(c.topupVolume), icon: ArrowDownToLine, color: "#4ADE80", cur: c.topupVolume, prev: p.topupVolume },
+              { label: t("rep.totalOut"), val: som(c.withdrawVolume), icon: ArrowUpFromLine, color: "#F4C76A", cur: c.withdrawVolume, prev: p.withdrawVolume },
+              { label: t("rep.commissionRev"), val: som(c.totalCommission), icon: Percent, color: "#7db8ff", cur: c.totalCommission, prev: p.totalCommission },
+              { label: t("rep.netProfit"), val: som(c.netProfit), icon: Banknote, color: "#4ADE80", cur: c.netProfit, prev: p.netProfit },
             ].map((k) => (
               <div key={k.label} className="glass-card p-4">
                 <k.icon size={17} className="mb-2.5" style={{ color: k.color }} />
@@ -153,21 +156,21 @@ export default function ReportsManager() {
           {/* Komissiya breakdown + bonus + orderlar */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <div className="glass-card p-4">
-              <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">Komissiya tafsiloti</div>
+              <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">{t("rep.commissionDetail")}</div>
               <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">To'ldirish ({data.commissionPct.topup}%)</span><span className="font-semibold">{som(c.topupCommission)}</span></div>
               <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">Yechish ({data.commissionPct.withdraw}%)</span><span className="font-semibold">{som(c.withdrawCommission)}</span></div>
-              <div className="flex justify-between text-[13px] pt-1 border-t border-white/8"><span className="font-medium">Jami</span><span className="font-bold text-[#7db8ff]">{som(c.totalCommission)}</span></div>
+              <div className="flex justify-between text-[13px] pt-1 border-t border-white/8"><span className="font-medium">{t("rep.total")}</span><span className="font-bold text-[#7db8ff]">{som(c.totalCommission)}</span></div>
             </div>
             <div className="glass-card p-4">
-              <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">Bonus sarf</div>
+              <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">{t("rep.bonusSpent")}</div>
               <div className="flex items-center gap-2 text-[15px] font-bold"><Gift size={16} className="text-[#F4C76A]" /> {som(c.bonusSpend)}</div>
-              <div className="text-[11px] text-muted mt-1.5">Bonus tizimi hali yo'q — keyingi bosqichda ulanadi.</div>
+              <div className="text-[11px] text-muted mt-1.5">{t("rep.bonusNote")}</div>
             </div>
             <div className="glass-card p-4">
-              <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">Buyurtmalar</div>
-              <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">Bajarilgan</span><span className="font-semibold text-[#4ADE80]">{c.completedCount}</span></div>
-              <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">Kutilayotgan</span><span className="font-semibold text-[#F4C76A]">{c.pendingCount}</span></div>
-              <div className="flex justify-between text-[13px]"><span className="text-muted">Rad etilgan</span><span className="font-semibold text-[#FF6B85]">{c.rejectedCount}</span></div>
+              <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">{t("rep.orders")}</div>
+              <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">{t("rep.completed")}</span><span className="font-semibold text-[#4ADE80]">{c.completedCount}</span></div>
+              <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">{t("rep.pending")}</span><span className="font-semibold text-[#F4C76A]">{c.pendingCount}</span></div>
+              <div className="flex justify-between text-[13px]"><span className="text-muted">{t("rep.rejected")}</span><span className="font-semibold text-[#FF6B85]">{c.rejectedCount}</span></div>
             </div>
           </div>
 
@@ -175,7 +178,7 @@ export default function ReportsManager() {
           <div className="glass-card p-4 mb-6">
             <div className="text-[13px] font-bold mb-3 flex items-center gap-2"><TrendingUp size={15} className="text-accent" /> Kirim va chiqim (kunlik)</div>
             {data.daily.length === 0 ? (
-              <p className="text-[12px] text-muted text-center py-8">Bu davrda ma'lumot yo'q.</p>
+              <p className="text-[12px] text-muted text-center py-8">{t("rep.noPeriodData")}</p>
             ) : (
               <div style={{ width: "100%", height: 260 }}>
                 <ResponsiveContainer>
@@ -187,7 +190,7 @@ export default function ReportsManager() {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                     <XAxis dataKey="day" tick={{ fill: "#5b6f85", fontSize: 10 }} tickFormatter={(d) => String(d).slice(5)} />
                     <YAxis tick={{ fill: "#5b6f85", fontSize: 10 }} tickFormatter={(v) => (v >= 1e6 ? `${(v / 1e6).toFixed(0)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(0)}k` : v)} width={38} />
-                    <Tooltip contentStyle={{ background: "#0e2038", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} formatter={(v: any, n: any) => [som(Number(v)), n === "topup_vol" ? "Kirim" : "Chiqim"]} labelStyle={{ color: "#93a5ba" }} />
+                    <Tooltip contentStyle={{ background: "#0e2038", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} formatter={(v: any, n: any) => [som(Number(v)), n === "topup_vol" ? t("rep.cIn") : t("rep.cOut")]} labelStyle={{ color: "#93a5ba" }} />
                     <Area type="monotone" dataKey="topup_vol" stroke="#4ADE80" fill="url(#gIn)" strokeWidth={2} />
                     <Area type="monotone" dataKey="withdraw_vol" stroke="#F4C76A" fill="url(#gOut)" strokeWidth={2} />
                   </AreaChart>
@@ -198,15 +201,15 @@ export default function ReportsManager() {
 
           {/* Hamkorlar kesimi */}
           <div className="mb-6">
-            <div className="text-[13px] font-bold mb-2">Hamkorlar bo'yicha</div>
+            <div className="text-[13px] font-bold mb-2">{t("rep.byPartners")}</div>
             <div className="rounded-xl border border-white/8 overflow-x-auto">
               <table className="w-full min-w-[520px] text-[13px]">
                 <thead className="bg-white/[0.03] text-[11px] text-muted uppercase tracking-wide">
-                  <tr><th className="text-left px-4 py-3 font-medium">Hamkor</th><th className="text-right px-4 py-3 font-medium">Kirim</th><th className="text-right px-4 py-3 font-medium">Chiqim</th><th className="text-right px-4 py-3 font-medium">Buyurtma</th><th className="text-right px-4 py-3 font-medium">Komissiya</th></tr>
+                  <tr><th className="text-left px-4 py-3 font-medium">{t("rep.cPartner")}</th><th className="text-right px-4 py-3 font-medium">{t("rep.cIn")}</th><th className="text-right px-4 py-3 font-medium">{t("rep.cOut")}</th><th className="text-right px-4 py-3 font-medium">{t("rep.cOrders")}</th><th className="text-right px-4 py-3 font-medium">{t("rep.cCommission")}</th></tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {data.partnerRows.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-5 text-center text-muted">Ma'lumot yo'q.</td></tr>
+                    <tr><td colSpan={5} className="px-4 py-5 text-center text-muted">{t("rep.noData")}</td></tr>
                   ) : data.partnerRows.map((pr, i) => (
                     <tr key={i}>
                       <td className="px-4 py-3 font-medium">{pr.name}</td>
@@ -224,9 +227,9 @@ export default function ReportsManager() {
           {/* To'lov turi + operatorlar */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
-              <div className="text-[13px] font-bold mb-2">To'lov turi bo'yicha</div>
+              <div className="text-[13px] font-bold mb-2">{t("rep.byPaymentType")}</div>
               <div className="glass-card p-4 space-y-2">
-                {data.paymentRows.length === 0 ? <p className="text-[12px] text-muted">Ma'lumot yo'q.</p> : data.paymentRows.map((pm) => (
+                {data.paymentRows.length === 0 ? <p className="text-[12px] text-muted">{t("rep.noData")}</p> : data.paymentRows.map((pm) => (
                   <div key={pm.method} className="flex items-center justify-between text-[13px]">
                     <span className="capitalize">{pm.method}</span>
                     <span className="text-muted">{pm.count} ta · <span className="text-white">{som(pm.topupVol + pm.withdrawVol)}</span></span>
@@ -235,9 +238,9 @@ export default function ReportsManager() {
               </div>
             </div>
             <div>
-              <div className="text-[13px] font-bold mb-2">Operatorlar bo'yicha</div>
+              <div className="text-[13px] font-bold mb-2">{t("rep.byOperators")}</div>
               <div className="glass-card p-4 space-y-2">
-                {data.operatorRows.length === 0 ? <p className="text-[12px] text-muted">Ma'lumot yo'q.</p> : data.operatorRows.map((op, i) => (
+                {data.operatorRows.length === 0 ? <p className="text-[12px] text-muted">{t("rep.noData")}</p> : data.operatorRows.map((op, i) => (
                   <div key={i} className="flex items-center justify-between text-[13px]">
                     <span>{op.name}</span>
                     <span className="text-muted">{op.count} ta · <span className="text-white">{som(op.vol)}</span></span>
