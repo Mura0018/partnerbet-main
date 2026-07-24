@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import QRCode from "qrcode";
 import { Loader2, Gift, Sparkles, QrCode } from "lucide-react";
 
@@ -11,6 +12,7 @@ import { Loader2, Gift, Sparkles, QrCode } from "lucide-react";
 type Card = { card_code: string; claimed_at: string };
 
 export function PrizeCard({ initData }: { initData: string }) {
+  const { t } = useLocale();
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
   const [card, setCard] = useState<Card | null>(null);
@@ -55,13 +57,13 @@ export function PrizeCard({ initData }: { initData: string }) {
       });
       const d = await res.json();
       if (!res.ok || !d.ok) {
-        setError(d.error === "promo_disabled" ? "Aksiya hozircha faol emas." : "Xatolik. Qayta urinib ko'ring.");
+        setError(d.error === "promo_disabled" ? t("pz.ePromoOff") : t("pz.eGeneric"));
         return;
       }
       setCard(d.card);
       setTimeout(() => setFlipped(true), 120);
     } catch {
-      setError("Ulanishда xatolik. Qayta urinib ko'ring.");
+      setError(t("pz.eConn"));
     } finally {
       setClaiming(false);
     }
@@ -75,8 +77,8 @@ export function PrizeCard({ initData }: { initData: string }) {
     return (
       <div className="text-center py-20 px-6">
         <div className="inline-flex w-16 h-16 rounded-2xl bg-[#F4C76A]/10 items-center justify-center mb-4"><Gift size={28} className="text-[#F4C76A]" /></div>
-        <p className="text-[15px] font-bold text-white mb-1">Sovrinli aksiya tez orada!</p>
-        <p className="text-[12.5px] text-[#93a5ba]">Faol bo'lib turing — aksiya boshlanганда kartangizni shu yerдан olasiz.</p>
+        <p className="text-[15px] font-bold text-white mb-1">{t("pz.soonTitle")}</p>
+        <p className="text-[12.5px] text-[#93a5ba]">{t("pz.soonSub")}</p>
       </div>
     );
   }
@@ -112,8 +114,8 @@ export function PrizeCard({ initData }: { initData: string }) {
               <Sparkles size={16} className="text-[#F4C76A]" />
             </div>
             <div>
-              <div style={{ fontSize: 11, letterSpacing: 2, color: "#7fb8ad" }}>SOVRIN KARTASI</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 2 }}>Yopiq karta</div>
+              <div style={{ fontSize: 11, letterSpacing: 2, color: "#7fb8ad" }}>{t("pz.prizeCard")}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 2 }}>{t("pz.closed")}</div>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
               {[0, 1, 2, 3].map((i) => <span key={i} style={{ width: 22, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.15)" }} />)}
@@ -135,10 +137,10 @@ export function PrizeCard({ initData }: { initData: string }) {
               {qr ? <img src={qr} alt="QR" style={{ width: 96, height: 96, display: "block" }} /> : <div style={{ width: 96, height: 96, display: "flex", alignItems: "center", justifyContent: "center" }}><QrCode size={40} className="text-[#04231F]" /></div>}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 10.5, letterSpacing: 1.5, color: "#F4C76A", fontWeight: 700 }}>SOVRIN KARTASI</div>
-              <div style={{ fontSize: 12, color: "#93a5ba", margin: "6px 0 2px" }}>Karta kodi</div>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, color: "#F4C76A", fontWeight: 700 }}>{t("pz.prizeCard")}</div>
+              <div style={{ fontSize: 12, color: "#93a5ba", margin: "6px 0 2px" }}>{t("pz.cardCode")}</div>
               <div style={{ fontFamily: "monospace", fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: 1 }}>{card?.card_code}</div>
-              <div style={{ fontSize: 10.5, color: "#7fb8ad", marginTop: 8 }}>Operatorга QR yoki kodni ko'rsating</div>
+              <div style={{ fontSize: 10.5, color: "#7fb8ad", marginTop: 8 }}>{t("pz.showOperator")}</div>
             </div>
           </div>
         </div>
@@ -147,7 +149,7 @@ export function PrizeCard({ initData }: { initData: string }) {
       {/* HOLAT / TUGMA */}
       <div className="mt-6 text-center">
         {card ? (
-          <p className="text-[12.5px] text-[#93a5ba]">🎉 Kartangiz faollashtirildi! Faol bo'lib turing — g'oliblar eng faol mijozlardан tanlanadi.</p>
+          <p className="text-[12.5px] text-[#93a5ba]">{t("pz.claimed")}</p>
         ) : (
           <>
             {error && <p className="text-[12.5px] text-[#FF6B85] mb-3">{error}</p>}
@@ -157,9 +159,9 @@ export function PrizeCard({ initData }: { initData: string }) {
               className="w-full max-w-[300px] mx-auto py-3.5 rounded-2xl font-extrabold text-[15px] text-[#04231F] disabled:opacity-60 flex items-center justify-center gap-2"
               style={{ background: "linear-gradient(120deg,#F4C76A,#1CE0C3,#F4C76A)", backgroundSize: "200% 100%", animation: "prizeShine 3s linear infinite", boxShadow: "0 10px 30px rgba(28,224,195,0.3)" }}
             >
-              {claiming ? <Loader2 size={17} className="animate-spin" /> : <Gift size={17} />} Kartani oching
+              {claiming ? <Loader2 size={17} className="animate-spin" /> : <Gift size={17} />} {t("pz.openCard")}
             </button>
-            <p className="text-[11px] text-[#7fb8ad] mt-3">Karta bir marta olinadi.</p>
+            <p className="text-[11px] text-[#7fb8ad] mt-3">{t("pz.onceOnly")}</p>
           </>
         )}
       </div>

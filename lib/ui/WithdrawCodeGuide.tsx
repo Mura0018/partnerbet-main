@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type GuideStep = {
   title: string;
   image?: string;
   taps?: { x: number; y: number }[];
   mockHtml?: string;
-  caption: string;
+  captionKey: string;
 };
 
 const STEPS: GuideStep[] = [
@@ -15,28 +16,29 @@ const STEPS: GuideStep[] = [
     title: "1xBet",
     image: "/guides/withdraw-code/step1.jpg",
     taps: [{ x: 93, y: 9 }],
-    caption: "Bosh sahifada yuqori o'ng burchakdagi ⚙️ sozlamalar belgisini bosing",
+    captionKey: "wcg.cap1",
   },
   {
     title: "Настройки",
     image: "/guides/withdraw-code/step2.jpg",
     taps: [{ x: 50, y: 30 }],
-    caption: "Sozlamalarda «Вывести со счета»ni bosing",
+    captionKey: "wcg.cap2",
   },
   {
     title: "Вывод средств",
     mockHtml: `<div class="wcg-row" style="font-size:11px">Счет 1615391023</div><div class="wcg-row wcg-highlight" style="background:#2456C9;color:#fff">1XBET — Наличные</div>`,
-    caption: "Ro'yxatdan «1XBET — Наличные»ni tanlang",
+    captionKey: "wcg.cap3",
   },
   {
     title: "Ma'lumotlar",
     image: "/guides/withdraw-code/step4.jpg",
     taps: [{ x: 50, y: 73 }],
-    caption: "Summani kiriting, kassa nomini (ko'cha) tekshirib «ПОДТВЕРДИТЬ»ni bosing",
+    captionKey: "wcg.cap4",
   },
 ];
 
 export function WithdrawCodeGuide() {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState<"forward" | "back" | null>(null);
@@ -62,8 +64,8 @@ export function WithdrawCodeGuide() {
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-[12.5px] text-[#93a5ba]"
       >
-        <span>💡 4 xonali kodni qanday olish kerak?</span>
-        <span className="text-[#7db8ff]">{open ? "Yopish ▲" : "Ko'rsatish ▼"}</span>
+        <span>{t("wcg.toggleQ")}</span>
+        <span className="text-[#7db8ff]">{open ? t("wcg.hide") : t("wcg.show")}</span>
       </button>
 
       {open && (
@@ -143,7 +145,7 @@ export function WithdrawCodeGuide() {
           </svg>
 
           <div className="wcg-guide">
-            <div className="text-[12px] font-bold text-center mb-3 text-[#dce6f5]">📲 1xBet: pul yechish kodini olish</div>
+            <div className="text-[12px] font-bold text-center mb-3 text-[#dce6f5]">{t("wcg.header")}</div>
 
             <div className="wcg-book">
               <div className={`wcg-page ${direction === "forward" ? "wcg-turning" : direction === "back" ? "wcg-turning-back" : "wcg-incoming"}`}>
@@ -163,7 +165,7 @@ export function WithdrawCodeGuide() {
                 onClick={() => goTo(current - 1, "back")}
                 className="px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-white/[0.08] border border-white/15 text-[#cdd8ea] disabled:opacity-30"
               >
-                ‹ Orqaga
+                {t("wcg.prev")}
               </button>
               <div className="flex gap-1.5">
                 {STEPS.map((_, i) => (
@@ -176,10 +178,10 @@ export function WithdrawCodeGuide() {
                 onClick={() => goTo((current + 1) % STEPS.length, "forward")}
                 className="px-3.5 py-1.5 rounded-full text-[11px] font-bold text-white bg-gradient-to-r from-accent to-accent-dim"
               >
-                Keyingi ›
+                {t("wcg.next")}
               </button>
             </div>
-            <p className="text-[11px] text-[#b8c6dc] text-center mt-2.5 leading-relaxed">{step.caption}</p>
+            <p className="text-[11px] text-[#b8c6dc] text-center mt-2.5 leading-relaxed">{t(step.captionKey as any)}</p>
           </div>
         </div>
       )}

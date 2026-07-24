@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { Loader2, CheckCircle2, ShieldCheck, AlertTriangle, ChevronRight } from "lucide-react";
 
 // W2: bosqichли pul yechish (A-oqim).
@@ -17,6 +18,7 @@ const METHODS = [
 const PLATFORMS = ["1xBet", "Melbet", "Linebet", "Boshqa"];
 
 export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { getInitData: () => string; onDone: () => void; inputCls: string; buttonCls: string }) {
+  const { t } = useLocale();
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +41,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
   // 1-qadam: ID tekshirish
   const verifyId = async () => {
     setError("");
-    if (!realPlatform || !accountId.trim()) { setError("Platforma va ID ni kiriting."); return; }
+    if (!realPlatform || !accountId.trim()) { setError(t("wz.ePlatformId")); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/telegram/miniapp/verify-player", {
@@ -48,7 +50,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
       });
       const d = await res.json();
       if (!res.ok || d.error) {
-        setError(d.error === "not_found" ? "Bunday hisob ID topilmadi." : d.error === "not_configured" ? "Kassa hozircha ulanmagan." : "Tekshirishда xatolik.");
+        setError(d.error === "not_found" ? t("wz.eIdNotFound") : d.error === "not_configured" ? t("wz.eCdOff") : t("wz.eVerify"));
         return;
       }
       setPlayerName(d.playerName ?? "");
@@ -62,7 +64,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
   // 2-qadam: kod -> Payout (pul yechiladi)
   const confirmCode = async () => {
     setError("");
-    if (!code.trim()) { setError("Yechish kodini kiriting."); return; }
+    if (!code.trim()) { setError(t("wz.eCode")); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/telegram/miniapp/withdraw/payout", {
@@ -71,11 +73,11 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
       });
       const d = await res.json();
       if (!res.ok || !d.ok) {
-        if (d.error === "payout_failed") setError("Kod noto'g'ri yoki eskirган. 1xbet'да yangi kod oling.");
-        else if (d.error === "withdraw_disabled") setError("Pul yechish hozircha vaqtincha to'xtatilgan.");
-        else if (d.error === "too_many_pending_orders") setError("Sizда ko'rib chiqilayotган buyurtмалар bor. Kuting.");
-        else if (d.error === "player_not_found") setError("Hisob ID topilmadi.");
-        else setError("Xatolik. Qayta urinib ko'ring.");
+        if (d.error === "payout_failed") setError(t("wz.ePayout"));
+        else if (d.error === "withdraw_disabled") setError(t("wz.eWithdrawOff"));
+        else if (d.error === "too_many_pending_orders") setError(t("wz.ePending"));
+        else if (d.error === "player_not_found") setError(t("wz.ePlayerNF"));
+        else setError(t("wz.eGeneric"));
         return;
       }
       setOrderId(d.orderId);
@@ -90,8 +92,8 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
   // 4-qadam: yakunlash
   const finish = async () => {
     setError("");
-    if (!details.trim()) { setError("Qabul qiluvchi raqam/karta kiriting."); return; }
-    if (!recipient.trim()) { setError("Qabul qiluvchi F.I.Sh. kiriting."); return; }
+    if (!details.trim()) { setError(t("wz.eDetails")); return; }
+    if (!recipient.trim()) { setError(t("wz.eRecipient")); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/telegram/miniapp/withdraw/details", {
@@ -99,7 +101,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
         body: JSON.stringify({ initData: getInitData(), orderId, paymentMethod: method, payoutDetails: details.trim(), recipientName: recipient.trim() }),
       });
       const d = await res.json();
-      if (!res.ok || !d.ok) { setError("Yakunlashда xatolik. Qayta urinib ko'ring."); return; }
+      if (!res.ok || !d.ok) { setError(t("wz.eFinish")); return; }
       onDone();
     } finally {
       setBusy(false);
@@ -120,59 +122,59 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
 
       {step === 1 && (
         <div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">Platforma</label>
+          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.platform")}</label>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {PLATFORMS.map((p) => (
               <button key={p} type="button" onClick={() => setPlatform(p)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"}`}>{p}</button>
             ))}
           </div>
-          {platform === "Boshqa" && <input className={`${inputCls} mb-3`} placeholder="Platforma nomi" value={customPlatform} onChange={(e) => setCustomPlatform(e.target.value)} />}
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID</label>
-          <input className={`${inputCls} mb-2`} placeholder="Masalan: 123456789" value={accountId} onChange={(e) => setAccountId(e.target.value)} />
+          {platform === "Boshqa" && <input className={`${inputCls} mb-3`} placeholder={t("wz.platformPh")} value={customPlatform} onChange={(e) => setCustomPlatform(e.target.value)} />}
+          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.accId")}</label>
+          <input className={`${inputCls} mb-2`} placeholder={t("wz.accIdPh")} value={accountId} onChange={(e) => setAccountId(e.target.value)} />
           {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
-          <button onClick={verifyId} disabled={busy} className={buttonCls}>{busy ? <Loader2 size={16} className="animate-spin" /> : (<><ShieldCheck size={16} /> Tekshirish</>)}</button>
+          <button onClick={verifyId} disabled={busy} className={buttonCls}>{busy ? <Loader2 size={16} className="animate-spin" /> : (<><ShieldCheck size={16} /> {t("wz.verify")}</>)}</button>
         </div>
       )}
 
       {step === 2 && (
         <div>
-          {playerName && <div className="flex items-center gap-2 mb-3 text-[13px] text-[#4ADE80]"><CheckCircle2 size={15} /> O'yinchi: <b>{playerName}</b></div>}
+          {playerName && <div className="flex items-center gap-2 mb-3 text-[13px] text-[#4ADE80]"><CheckCircle2 size={15} /> {t("wz.player")} <b>{playerName}</b></div>}
           <div className="rounded-xl bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 mb-3 flex items-start gap-2">
             <AlertTriangle size={15} className="text-[#F4C76A] shrink-0 mt-0.5" />
-            <span className="text-[11.5px] text-[#F4C76A]">Kodни tasdiqlаганда pul 1xbet hisobingizдан darhol yechiladi. 1xbet ilovasида yechish kodини oling.</span>
+            <span className="text-[11.5px] text-[#F4C76A]">{t("wz.payoutWarn")}</span>
           </div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">Yechish kodi</label>
-          <input className={`${inputCls} mb-2`} placeholder="Masalan: A1b2" value={code} onChange={(e) => setCode(e.target.value)} />
+          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.code")}</label>
+          <input className={`${inputCls} mb-2`} placeholder={t("wz.codePh")} value={code} onChange={(e) => setCode(e.target.value)} />
           {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
-          <button onClick={confirmCode} disabled={busy} className={buttonCls}>{busy ? <Loader2 size={16} className="animate-spin" /> : (<>Tasdiqlash <ChevronRight size={16} /></>)}</button>
+          <button onClick={confirmCode} disabled={busy} className={buttonCls}>{busy ? <Loader2 size={16} className="animate-spin" /> : (<>{t("wz.confirm")} <ChevronRight size={16} /></>)}</button>
         </div>
       )}
 
       {step === 3 && (
         <div>
           <div className="rounded-xl bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-3 mb-4 text-center">
-            <div className="text-[11px] text-[#4ADE80]">1xbetдан yechildi</div>
-            <div className="text-[22px] font-extrabold text-white">{summa.toLocaleString("ru-RU")} so'm</div>
+            <div className="text-[11px] text-[#4ADE80]">{t("wz.withdrawn")}</div>
+            <div className="text-[22px] font-extrabold text-white">{summa.toLocaleString("ru-RU")} {t("wz.sumUnit")}</div>
           </div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">Pulni qabul qilish usuli</label>
+          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.receiveMethod")}</label>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {METHODS.map((m) => (
               <button key={m.id} type="button" onClick={() => setMethod(m.id)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${method === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"}`}>{m.label}</button>
             ))}
           </div>
-          <button onClick={() => setStep(4)} className={buttonCls}>Davom etish <ChevronRight size={16} /></button>
+          <button onClick={() => setStep(4)} className={buttonCls}>{t("wz.continueBtn")} <ChevronRight size={16} /></button>
         </div>
       )}
 
       {step === 4 && (
         <div>
-          <div className="rounded-xl bg-white/[0.03] border border-white/10 px-3.5 py-2.5 mb-3 text-[12px] text-[#93a5ba]">Summa: <b className="text-white">{summa.toLocaleString("ru-RU")} so'm</b> · Usul: <b className="text-white">{METHODS.find((m) => m.id === method)?.label}</b></div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">Qabul qiluvchi F.I.Sh. (avto to'ldirilди)</label>
-          <input className={`${inputCls} mb-3`} value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Masalan: Aliyev Vali" />
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">Qabul qiluvchi raqam/karta</label>
-          <input className={`${inputCls} mb-2`} value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Karta / Click / Payme raqami" />
+          <div className="rounded-xl bg-white/[0.03] border border-white/10 px-3.5 py-2.5 mb-3 text-[12px] text-[#93a5ba]">{t("wz.sumLabel")} <b className="text-white">{summa.toLocaleString("ru-RU")} {t("wz.sumUnit")}</b> · {t("wz.methodLabel")} <b className="text-white">{METHODS.find((m) => m.id === method)?.label}</b></div>
+          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.recipient")}</label>
+          <input className={`${inputCls} mb-3`} value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder={t("wz.recipientPh")} />
+          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.recipientReq")}</label>
+          <input className={`${inputCls} mb-2`} value={details} onChange={(e) => setDetails(e.target.value)} placeholder={t("wz.recipientReqPh")} />
           {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
-          <button onClick={finish} disabled={busy} className={buttonCls}>{busy ? <Loader2 size={16} className="animate-spin" /> : "Yakunlash"}</button>
+          <button onClick={finish} disabled={busy} className={buttonCls}>{busy ? <Loader2 size={16} className="animate-spin" /> : t("wz.finish")}</button>
         </div>
       )}
     </div>
