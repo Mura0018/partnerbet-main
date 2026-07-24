@@ -27,6 +27,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: string }[] = [
   { prefix: "/admin/customers", permission: "customers.manage" },
   { prefix: "/admin/cashdesks", permission: "cashdesks.manage" },
   { prefix: "/admin/control", permission: "settings.manage" },
+  { prefix: "/admin/promo/scan", permission: "telegram_orders.manage" },
   { prefix: "/admin/promo", permission: "promo.manage" },
   { prefix: "/admin/operator-rating", permission: "operators.oversight" },
   { prefix: "/admin/reports", permission: "reports.view" },
