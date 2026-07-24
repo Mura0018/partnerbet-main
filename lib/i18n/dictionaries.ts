@@ -121,6 +121,11 @@ export const dictionaries = {
       deskGeneral: "Umumiy kassa", faol: "faol", som: "so'm", busy: "BANDMAN", free: "BO'SH",
       sla: "SLA", slaOver: "o'tdi", notConfigured: "Kassa ulanmagan", lowCashdesk: "{n} kassa limitdan past",
       toFill: "To'ldirish", rating: "Reyting",
+      trigger: "Bo'lim, buyurtma yoki mijoz ID", searchPh: "Yozing…",
+      secSections: "Bo'limlar", secActions: "Amallar", secDirect: "To'g'ridan-to'g'ri",
+      empty: "\"{q}\" topilmadi. Mijoz ID yoki buyurtma raqamini yozing.",
+      custId: "Mijoz ID: {id}", orderId: "Buyurtma #{id}",
+      actBusy: "Band / Bo'sh rejimi", actChat: "Jamoa chatiga yozish", actProfile: "Profil",
     },
     prm: {
       mgrTitle: "Sovrinli aksiya", mgrSub: "Muddat, sovrinlar, naqd/onlayn reyting va g'oliblar",
@@ -700,6 +705,11 @@ export const dictionaries = {
       deskGeneral: "Общая касса", faol: "актив", som: "сум", busy: "ЗАНЯТ", free: "СВОБОДЕН",
       sla: "SLA", slaOver: "истёк", notConfigured: "Касса не подключена", lowCashdesk: "{n} касса ниже лимита",
       toFill: "Пополнить", rating: "Рейтинг",
+      trigger: "Раздел, заказ или ID клиента", searchPh: "Введите…",
+      secSections: "Разделы", secActions: "Действия", secDirect: "Напрямую",
+      empty: "\"{q}\" не найдено. Введите ID клиента или номер заказа.",
+      custId: "ID клиента: {id}", orderId: "Заказ #{id}",
+      actBusy: "Режим Занят / Свободен", actChat: "Написать в командный чат", actProfile: "Профиль",
     },
     prm: {
       mgrTitle: "Призовая акция", mgrSub: "Срок, призы, рейтинг нал/онлайн и победители",
