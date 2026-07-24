@@ -4,19 +4,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 
-const REJECT_REASON_TEMPLATES = [
-  "To'lov cheki noaniq/mos emas",
-  "Hisob ID noto'g'ri yoki topilmadi",
-  "Summasi to'lovga mos kelmayapti",
-  "Pul yechish kodi noto'g'ri",
-  "Takroriy buyurtma",
-];
+const REJECT_REASON_KEYS = ["ord.rt1", "ord.rt2", "ord.rt3", "ord.rt4", "ord.rt5"];
 
 
 type Order = {
@@ -54,6 +49,7 @@ const ORDER_STATUS_FILTERS: { id: "pending" | "completed" | "rejected" | "all"; 
 ];
 
 function ReceiptViewer({ path }: { path: string }) {
+  const { t } = useLocale();
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -66,8 +62,8 @@ function ReceiptViewer({ path }: { path: string }) {
       .finally(() => setLoading(false));
   }, [path]);
 
-  if (loading) return <p className="text-[12px] text-muted">Chek yuklanmoqda…</p>;
-  if (!url) return <p className="text-[12px] text-[#FF6B85]">Chekni yuklab bo'lmadi.</p>;
+  if (loading) return <p className="text-[12px] text-muted">{t("ord.receiptLoading")}</p>;
+  if (!url) return <p className="text-[12px] text-[#FF6B85]">{t("ord.receiptFailed")}</p>;
 
   return (
     <>
@@ -95,6 +91,7 @@ function ReceiptViewer({ path }: { path: string }) {
 // bajarilishini bloklamaydi, alohida bo'lim.
 function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorNames: Record<string, string> }) {
   const supabase = createClient();
+  const { t } = useLocale();
   const [rows, setRows] = useState<{ id: string; operator_id: string | null; confirmed: boolean; amount: number | null; note: string | null; created_at: string }[]>([]);
   const [amount, setAmount] = useState(String(order.amount));
   const [note, setNote] = useState("");
@@ -122,7 +119,7 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setErr(data.error === "not_responsible" ? "Faqat mas'ul operator yoki admin qayd qiladi." : "Qayd qilinmadi. Qayta urinib ko'ring.");
+        setErr(data.error === "not_responsible" ? t("ord.notResponsible") : t("ord.confirmFailed"));
         return;
       }
       setNote("");
@@ -134,22 +131,22 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
 
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
-      <div className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-2.5">📞 Telefon tasdiqi</div>
+      <div className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-2.5">📞 {t("ord.phoneConfirm")}</div>
       <div className="flex items-center gap-2 mb-2">
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          placeholder="Summa"
+          placeholder={t("ord.amount")}
           className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
         />
-        <span className="text-[11px] text-muted">so'm — mijoz qabul qildimi?</span>
+        <span className="text-[11px] text-muted">{t("ord.receivedQ")}</span>
       </div>
       <textarea
         rows={2}
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="Izoh (ixtiyoriy)"
+        placeholder={t("ord.noteOptional")}
         className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[12px] outline-none focus:border-accent mb-2"
       />
       {err && <div className="rounded-lg bg-[#FF6B85]/10 border border-[#FF6B85]/30 text-[#FF6B85] text-[11px] px-3 py-2 mb-2">{err}</div>}
@@ -159,14 +156,14 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
           disabled={submitting !== null}
           className="flex-1 py-2 rounded-lg bg-[#4ADE80]/15 border border-[#4ADE80]/40 text-[#4ADE80] font-semibold text-[12px] disabled:opacity-50"
         >
-          {submitting === "yes" ? <Loader2 size={13} className="animate-spin mx-auto" /> : "✅ Ha — qabul qilindi"}
+          {submitting === "yes" ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("ord.yesReceived")}
         </button>
         <button
           onClick={() => submit(false)}
           disabled={submitting !== null}
           className="flex-1 py-2 rounded-lg bg-[#FF6B85]/15 border border-[#FF6B85]/40 text-[#FF6B85] font-semibold text-[12px] disabled:opacity-50"
         >
-          {submitting === "no" ? <Loader2 size={13} className="animate-spin mx-auto" /> : "❌ Yo'q"}
+          {submitting === "no" ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("ord.no")}
         </button>
       </div>
       {rows.length > 0 && (
@@ -174,10 +171,10 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
           {rows.map((r) => (
             <div key={r.id} className="text-[11px] text-muted">
               <span className={r.confirmed ? "text-[#4ADE80]" : "text-[#FF6B85]"}>
-                {r.confirmed ? `✅ Ha${r.amount != null ? `, ${Number(r.amount).toLocaleString("ru-RU")} so'm` : ""}` : "❌ Yo'q"}
+                {r.confirmed ? `✅ ${t("ord.yesShort")}${r.amount != null ? `, ${Number(r.amount).toLocaleString("ru-RU")} ${t("ord.sum")}` : ""}` : `❌ ${t("ord.noShort")}`}
               </span>
               {" · "}
-              {r.operator_id ? (operatorNames[r.operator_id] ?? "Operator") : "Operator"}
+              {r.operator_id ? (operatorNames[r.operator_id] ?? t("ord.operator")) : t("ord.operator")}
               {" · "}
               {new Date(r.created_at).toLocaleString("ru-RU")}
               {r.note ? ` · ${r.note}` : ""}
@@ -193,13 +190,14 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState<"completed" | "rejected" | null>(null);
   const [apiError, setApiError] = useState("");
+  const { t } = useLocale();
 
   const CASHDESK_ERROR_LABELS: Record<string, string> = {
-    not_configured: "Kassa API sozlanmagan — buyurtma faqat qo'lda belgilanadi.",
-    network_error: "Kassa API bilan ulanishda xatolik. Qayta urinib ko'ring.",
-    request_failed: "Kassa API so'rovi muvaffaqiyatsiz. Qayta urinib ko'ring.",
-    signature_error_401: "Kassa API imzosi noto'g'ri (401) — Sozlamalar > API kalitlar'da kassa ma'lumotlarini tekshiring.",
-    signature_error_403: "Kassa API ruxsat xatosi (403) — Sozlamalar > API kalitlar'da kassa ma'lumotlarini tekshiring.",
+    not_configured: t("ord.cd_not_configured"),
+    network_error: t("ord.cd_network"),
+    request_failed: t("ord.cd_request"),
+    signature_error_401: t("ord.cd_sign401"),
+    signature_error_403: t("ord.cd_sign403"),
   };
 
   const resolve = async (status: "completed" | "rejected") => {
@@ -214,11 +212,11 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         if (data.error === "cashdesk_failed") {
-          setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? `Kassa API xatosi: ${data.detail}`);
+          setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? `${t("ord.cd_error")}: ${data.detail}`);
         } else if (data.error === "reason_required") {
-          setApiError("Rad etish uchun sabab kiriting.");
+          setApiError(t("ord.reasonRequired"));
         } else {
-          setApiError("Xatolik yuz berdi. Qayta urinib ko'ring.");
+          setApiError(t("ord.genericError"));
         }
         return;
       }
@@ -239,64 +237,64 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="font-bold text-[16px]">{order.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"}</h2>
+          <h2 className="font-bold text-[16px]">{order.type === "topup" ? t("ord.topup") : t("ord.withdraw")}</h2>
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
         </div>
-        <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} so'm</div>
+        <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} {t("ord.sum")}</div>
 
         {order.type === "withdraw" && order.payout_done && (
           <div className="rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/30 text-[#4ADE80] text-[12px] px-3 py-2.5 mb-4">
-            💸 Pul 1xbet'дан allaqачон yechilган (mijoz kodида). Mijoz kartаsига to'lang, so'ng "Bajarildi" bosing — qayta Payout bo'lмаydi.
+            {t("ord.payoutDone")}
           </div>
         )}
 
         {/* Verification checks — the things an operator must actually look at */}
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
-          <div className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-2.5">Tekshiruvlar</div>
+          <div className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-2.5">{t("ord.checks")}</div>
 
           <div className="flex items-center gap-2 mb-3">
             {order.player_name ? (
               <>
                 <CheckCircle2 size={15} className="text-[#4ADE80] shrink-0" />
                 <span className="text-[13px]">
-                  O'yinchi: <span className="font-semibold text-[#4ADE80]">{order.player_name}</span>
-                  <span className="text-[10px] text-[#5b6f85] ml-1">(kassa API orqali tasdiqlangan)</span>
+                  {t("ord.player")}: <span className="font-semibold text-[#4ADE80]">{order.player_name}</span>
+                  <span className="text-[10px] text-[#5b6f85] ml-1">{t("ord.verifiedApi")}</span>
                 </span>
               </>
             ) : (
               <>
                 <AlertCircle size={15} className="text-[#F4C76A] shrink-0" />
-                <span className="text-[13px] text-[#F4C76A]">O'yinchi ismi tekshirilmagan — ID'ni qo'lda tekshiring.</span>
+                <span className="text-[13px] text-[#F4C76A]">{t("ord.playerUnverified")}</span>
               </>
             )}
           </div>
 
           {order.type === "topup" && (
             <div className="mb-3 rounded-lg bg-accent/10 border border-accent/25 px-3 py-2.5">
-              <div className="text-[11px] text-accent font-semibold mb-1">💳 To'lov qabul qilingan joy</div>
+              <div className="text-[11px] text-accent font-semibold mb-1">{t("ord.paymentPlace")}</div>
               {order.received_account_number ? (
                 <div className="text-[13px]">
                   <span className="font-semibold">{order.received_account_number}</span>
                   {order.received_holder_name && <span className="text-muted"> — {order.received_holder_name}</span>}
                   <div className="text-[11px] text-muted mt-0.5">
-                    Operator: <span className="font-semibold text-white">
-                      {order.payment_operator_id ? (operatorNames[order.payment_operator_id] ?? "noma'lum") : "noma'lum"}
+                    {t("ord.operator")}: <span className="font-semibold text-white">
+                      {order.payment_operator_id ? (operatorNames[order.payment_operator_id] ?? t("ord.unknown")) : t("ord.unknown")}
                     </span>
                   </div>
                 </div>
               ) : (
-                <p className="text-[12px] text-[#F4C76A]">Yozib olinmagan (eski buyurtma) — mijozdan so'rang.</p>
+                <p className="text-[12px] text-[#F4C76A]">{t("ord.notRecorded")}</p>
               )}
             </div>
           )}
 
           {order.type === "topup" && (
             <div>
-              <div className="text-[12px] text-muted mb-1.5">To'lov cheki</div>
+              <div className="text-[12px] text-muted mb-1.5">{t("ord.receipt")}</div>
               {order.receipt_path ? (
                 <ReceiptViewer path={order.receipt_path} />
               ) : (
-                <p className="text-[12px] text-[#FF6B85]">Mijoz chek yuklamagan.</p>
+                <p className="text-[12px] text-[#FF6B85]">{t("ord.noReceipt")}</p>
               )}
             </div>
           )}
@@ -305,7 +303,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
             <div className="flex items-center gap-2">
               <UserCheck size={15} className="text-accent shrink-0" />
               <span className="text-[13px]">
-                Qabul qiluvchi: <span className="font-semibold">{order.recipient_name || "—"}</span>
+                {t("ord.recipient")}: <span className="font-semibold">{order.recipient_name || "—"}</span>
               </span>
             </div>
           )}
@@ -313,12 +311,12 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
 
         {/* Order details */}
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
-          <Row label="Mijoz" value={order.customers?.full_name || order.customers?.phone || "—"} />
-          <Row label="Platforma" value={order.platform} />
-          <Row label="Hisob ID" value={order.account_id} />
-          <Row label="To'lov usuli" value={order.payment_method} />
-          {order.withdraw_code && <Row label="Yechish kodi" value={order.withdraw_code} highlight />}
-          {order.payout_details && <Row label="Qabul qiluvchi raqam" value={order.payout_details} highlight />}
+          <Row label={t("ord.customer")} value={order.customers?.full_name || order.customers?.phone || "—"} />
+          <Row label={t("ord.platform")} value={order.platform} />
+          <Row label={t("ord.accountId")} value={order.account_id} />
+          <Row label={t("ord.method")} value={order.payment_method} />
+          {order.withdraw_code && <Row label={t("ord.withdrawCode")} value={order.withdraw_code} highlight />}
+          {order.payout_details && <Row label={t("ord.recipientNum")} value={order.payout_details} highlight />}
         </div>
 
         {/* 5-BOSQICH: telefon tasdiqi — pending va hal qilingan buyurtmalar uchun ham (dalil) */}
@@ -327,21 +325,21 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         {order.status === "pending" ? (
         <>
         <div className="flex gap-1.5 mb-2 overflow-x-auto min-w-0">
-          {REJECT_REASON_TEMPLATES.map((tpl, i) => (
+          {REJECT_REASON_KEYS.map((tpl, i) => (
             <button
               key={i}
               type="button"
-              onClick={() => setNote(tpl)}
+              onClick={() => setNote(t(tpl as any))}
               className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
             >
-              {tpl}
+              {t(tpl as any)}
             </button>
           ))}
         </div>
         <textarea
           rows={2}
           className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3"
-          placeholder="Izoh — rad etish uchun SHART, mijozga yuboriladi"
+          placeholder={t("ord.rejPlaceholder")}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
@@ -354,26 +352,26 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
           <button
             onClick={() => resolve("rejected")}
             disabled={submitting !== null || !note.trim()}
-            title={!note.trim() ? "Rad etish uchun sabab yozing" : undefined}
+            title={!note.trim() ? t("ord.rejReasonHint") : undefined}
             className="flex-1 py-2.5 rounded-lg bg-[#FF6B85]/15 border border-[#FF6B85]/40 text-[#FF6B85] font-semibold text-[13px] disabled:opacity-50"
           >
-            {submitting === "rejected" ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Rad etish"}
+            {submitting === "rejected" ? <Loader2 size={14} className="animate-spin mx-auto" /> : t("ord.reject")}
           </button>
           <button
             onClick={() => resolve("completed")}
             disabled={submitting !== null}
             className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50"
           >
-            {submitting === "completed" ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Bajarildi"}
+            {submitting === "completed" ? <Loader2 size={14} className="animate-spin mx-auto" /> : t("ord.done")}
           </button>
         </div>
         </>
         ) : (
           <div className="rounded-lg bg-white/[0.03] border border-white/10 px-3.5 py-3 text-[13px]">
             <span className={`font-semibold ${order.status === "completed" ? "text-[#4ADE80]" : "text-[#FF6B85]"}`}>
-              {order.status === "completed" ? "✓ Bajarilgan buyurtma" : "✕ Rad etilgan buyurtma"}
+              {order.status === "completed" ? t("ord.doneOrder") : t("ord.rejectedOrder")}
             </span>
-            {order.operator_note && <div className="text-[12px] text-muted mt-1.5">Izoh: {order.operator_note}</div>}
+            {order.operator_note && <div className="text-[12px] text-muted mt-1.5">{t("ord.note")}: {order.operator_note}</div>}
           </div>
         )}
       </div>
