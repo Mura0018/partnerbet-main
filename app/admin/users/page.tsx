@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { ShieldCheck, ShieldOff, Pencil, Check, X, Plus, Loader2, Trash2 } from "lucide-react";
 import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { createClient } from "@/lib/supabase";
+import { checkPasswordStrength } from "@/lib/auth/password";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
 
@@ -72,8 +73,12 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!fullName.trim() || !email.trim() || password.length < 8 || !roleId) {
-      setError("Barcha maydonlarni to'ldiring — parol kamida 8 belgi.");
+    if (!fullName.trim() || !email.trim() || !roleId) {
+      setError("Barcha maydonlarni to'ldiring.");
+      return;
+    }
+    if (!checkPasswordStrength(password, email.trim()).valid) {
+      setError("Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi).");
       return;
     }
     setSubmitting(true);
@@ -87,7 +92,7 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
       if (!res.ok) {
         const messages: Record<string, string> = {
           email_taken: "Bu email allaqachon ro'yxatdan o'tgan.",
-          weak_password: "Parol kamida 8 belgidan iborat bo'lishi kerak.",
+          weak_password: "Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi).",
           forbidden: "Bu amal uchun ruxsatingiz yo'q.",
         };
         setError(messages[data.error] ?? "Xatolik yuz berdi.");
@@ -126,7 +131,7 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
           />
         </div>
         <div className="mb-3">
-          <label className="block text-[12px] text-muted mb-1">Parol (kamida 8 belgi)</label>
+          <label className="block text-[12px] text-muted mb-1">Parol (kamida 10 belgi: harf, raqam, belgi)</label>
           <PasswordInput
             className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
             value={password} onChange={(e) => setPassword(e.target.value)}

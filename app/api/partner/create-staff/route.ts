@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { isPartnerActive } from "@/lib/partner/status";
+import { checkPasswordStrength } from "@/lib/auth/password";
 
 // Partner admin o'z hamkoriga xodim (staff) qo'shadi.
 async function resolvePartnerAdmin() {
@@ -23,7 +24,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const { fullName, email, password } = body ?? {};
   if (!fullName || !email || !password) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
-  if (String(password).length < 8) return NextResponse.json({ error: "weak_password" }, { status: 400 });
+  const strength = checkPasswordStrength(String(password), email);
+  if (!strength.valid) return NextResponse.json({ error: "weak_password", failedRules: strength.failedRules }, { status: 400 });
 
   const admin = createAdminClient();
   const { data: created, error: createError } = await admin.auth.admin.createUser({

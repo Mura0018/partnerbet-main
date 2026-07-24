@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Lock, ShieldCheck, Loader2, CheckCircle2, AlertTriangle, KeyRound } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { checkPasswordStrength } from "@/lib/auth/password";
 
 function SetPasswordInner() {
   const token = useSearchParams().get("token") ?? "";
@@ -31,7 +32,7 @@ function SetPasswordInner() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (pw.length < 8) { setError("Parol kamida 8 belgi bo'lsin."); return; }
+    if (!checkPasswordStrength(pw).valid) { setError("Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi)."); return; }
     if (pw !== pw2) { setError("Parollar mos kelmadi."); return; }
     setBusy(true);
     try {
@@ -51,7 +52,7 @@ function SetPasswordInner() {
         if (!res.ok) {
           const map: Record<string, string> = {
             invalid_or_expired: "Havola yaroqsiz yoki muddati tugagan. Admindan yangi havola so'rang.",
-            weak_password: "Parol kamida 8 belgi bo'lsin.",
+            weak_password: "Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi).",
             rate_limited: "Juda ko'p urinish. Birozdan so'ng qayta urining.",
           };
           setError(map[data.error] ?? "Xatolik yuz berdi.");
@@ -102,7 +103,7 @@ function SetPasswordInner() {
                 <p className="text-[12.5px] text-[#93a5ba] mt-1">Hamkorlik paneliga kirish uchun parol o'rnating.</p>
               </div>
               <form onSubmit={submit}>
-                <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Yangi parol (kamida 8 belgi)" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-3.5 text-[14px] outline-none focus:border-accent mb-2.5" />
+                <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Yangi parol (kamida 10 belgi: harf, raqam, belgi)" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-3.5 text-[14px] outline-none focus:border-accent mb-2.5" />
                 <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="Parolni takrorlang" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-3.5 text-[14px] outline-none focus:border-accent mb-3" />
                 {error && <p className="text-[12.5px] text-[#FF6B85] mb-3">{error}</p>}
                 <button type="submit" disabled={busy} className="w-full py-3 rounded-xl bg-gradient-to-r from-accent to-accent-dim font-bold text-[15px] disabled:opacity-50">
