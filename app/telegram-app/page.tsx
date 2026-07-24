@@ -750,13 +750,13 @@ export default function TelegramAppPage() {
       const data = await res.json();
       if (!res.ok) {
         const messages: Record<string, string> = {
-          phone_taken: "Bu telefon raqami allaqachon ro'yxatdan o'tgan.",
-          telegram_already_linked: "Bu Telegram hisobi allaqachon boshqa akkauntga bog'langan.",
-          weak_password: "Parol kamida 6 belgidan iborat bo'lishi kerak.",
-          not_found: "Bunday hisob topilmadi.",
-          wrong_password: "Parol noto'g'ri.",
-          linked_to_other_telegram: "Bu hisob boshqa Telegram akkauntiga bog'langan.",
-          rate_limited: "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.",
+          phone_taken: t("tg.ePhoneTaken"),
+          telegram_already_linked: t("tg.eTgLinked"),
+          weak_password: t("tg.eWeakPass"),
+          not_found: t("tg.eNotFound"),
+          wrong_password: t("tg.eWrongPass"),
+          linked_to_other_telegram: t("tg.eLinkedOther"),
+          rate_limited: t("tg.errRate"),
         };
         setError(messages[data.error] ?? "Xatolik yuz berdi.");
         return;
@@ -799,7 +799,7 @@ export default function TelegramAppPage() {
     e.preventDefault();
     setFpError("");
     if (!fpCode.trim() || fpNewPassword.length < 6) {
-      setFpError("Kodni kiriting va kamida 6 belgili yangi parol tanlang.");
+      setFpError(t("tg.fpNeedCode"));
       return;
     }
     setFpSubmitting(true);
@@ -812,10 +812,10 @@ export default function TelegramAppPage() {
       const data = await res.json();
       if (!res.ok) {
         const messages: Record<string, string> = {
-          invalid_code: "Kod noto'g'ri.",
-          code_expired: "Kod muddati tugagan. Qaytadan so'rang.",
-          weak_password: "Parol kamida 6 belgidan iborat bo'lishi kerak.",
-          rate_limited: "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.",
+          invalid_code: t("tg.eInvalidCode"),
+          code_expired: t("tg.eCodeExpired"),
+          weak_password: t("tg.eWeakPass"),
+          rate_limited: t("tg.errRate"),
         };
         setFpError(messages[data.error] ?? "Xatolik yuz berdi.");
         return;
@@ -1551,9 +1551,9 @@ export default function TelegramAppPage() {
           <div className="w-16 h-16 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center mb-5">
             <ShieldCheck size={30} className="text-[#93a5ba]" />
           </div>
-          <h1 className="text-[18px] font-extrabold mb-2" style={titleShadow}>Bu xizmat siz uchun emas</h1>
+          <h1 className="text-[18px] font-extrabold mb-2" style={titleShadow}>{t("tg.blockedTitle")}</h1>
           <p className="text-[13px] text-[#93a5ba] leading-relaxed">
-            Siz boshqa xizmat ko'rsatuvchiga biriktirilgansiz. Iltimos, o'z xizmatchingiz orqali davom eting.
+            {t("tg.blockedText")}
           </p>
         </div>
       </div>
@@ -1581,21 +1581,21 @@ export default function TelegramAppPage() {
             </h1>
           )}
           <p className="text-[13px] text-[#93a5ba] text-center mb-7">
-            {mode === "login" ? "Hisobingizga kiring" : "Yangi hisob yarating"}
+            {mode === "login" ? t("tg.loginSub") : t("tg.registerSub")}
           </p>
 
           <form onSubmit={submitAuth} className="space-y-3.5">
             {mode === "register" && (
-              <input className={inputCls} placeholder="Ism-familiya (ixtiyoriy)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <input className={inputCls} placeholder={t("tg.phFullName")} value={fullName} onChange={(e) => setFullName(e.target.value)} />
             )}
-            <input className={inputCls} placeholder="Telefon raqami" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
-            <PasswordInput className={inputCls} placeholder="Parol" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <input className={inputCls} placeholder={t("tg.phPhone")} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
+            <PasswordInput className={inputCls} placeholder={t("tg.phPassword")} value={password} onChange={(e) => setPassword(e.target.value)} />
 
             {error && <p className="text-[12px] text-[#FF6B85] text-center">{error}</p>}
             {authInfo && <p className="text-[12px] text-[#4ADE80] text-center">{authInfo}</p>}
 
             <button type="submit" disabled={submitting} className={buttonCls}>
-              {submitting ? <Loader2 size={16} className="animate-spin" /> : mode === "login" ? "Kirish" : "Ro'yxatdan o'tish"}
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : mode === "login" ? t("tg.login") : t("tg.register")}
             </button>
           </form>
 
@@ -1604,7 +1604,7 @@ export default function TelegramAppPage() {
               onClick={() => { setFpStep("phone"); setFpPhone(phone); setFpError(""); setFpInfo(""); setScreen("forgot-password"); }}
               className="w-full text-center mt-3.5 text-[12px] text-[#7db8ff]/80"
             >
-              Parolni unutdingizmi?
+              {t("tg.forgot")}
             </button>
           )}
 
@@ -1614,7 +1614,7 @@ export default function TelegramAppPage() {
           >
             <span className="pointer-events-none absolute top-0 -left-full w-3/5 h-full bg-gradient-to-r from-transparent via-white/25 to-transparent" style={{ animation: "loginShimmer 3s infinite" }} />
             <style>{`@keyframes loginShimmer { 0%{left:-100%} 60%,100%{left:200%} }`}</style>
-            <span className="relative z-10">{mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting →" : "Hisobingiz bormi? Kiring →"}</span>
+            <span className="relative z-10">{mode === "login" ? t("tg.toRegister") : t("tg.toLogin")}</span>
           </button>
         </div>
       </div>
@@ -1626,34 +1626,34 @@ export default function TelegramAppPage() {
       <div className={`${bgCls} p-6 flex flex-col justify-center relative`}>
         <FloatingAmbience />
         <div className="max-w-sm mx-auto w-full relative z-10">
-          <ScreenHeader title="Parolni tiklash" onBack={() => setScreen("auth")} />
+          <ScreenHeader title={t("tg.fpTitle")} onBack={() => setScreen("auth")} />
 
           {fpStep === "phone" ? (
             <form onSubmit={requestResetCode} className="space-y-3.5">
               <p className="text-[13px] text-[#93a5ba] mb-1">
-                Telefon raqamingizni kiriting — Telegram orqali tasdiqlash kodi yuboramiz.
+                {t("tg.fpHint")}
               </p>
-              <input className={inputCls} placeholder="Telefon raqami" value={fpPhone} onChange={(e) => setFpPhone(e.target.value)} inputMode="tel" />
+              <input className={inputCls} placeholder={t("tg.phPhone")} value={fpPhone} onChange={(e) => setFpPhone(e.target.value)} inputMode="tel" />
               {fpError && <p className="text-[12px] text-[#FF6B85] text-center">{fpError}</p>}
               <button type="submit" disabled={fpSubmitting} className={buttonCls}>
-                {fpSubmitting ? <Loader2 size={16} className="animate-spin" /> : "Kod yuborish"}
+                {fpSubmitting ? <Loader2 size={16} className="animate-spin" /> : t("tg.fpSend")}
               </button>
             </form>
           ) : (
             <form onSubmit={confirmResetPassword} className="space-y-3.5">
               {fpInfo && <p className="text-[12px] text-[#4ADE80] text-center mb-1">{fpInfo}</p>}
-              <input className={inputCls} placeholder="Tasdiqlash kodi (6 xonali)" value={fpCode} onChange={(e) => setFpCode(e.target.value)} inputMode="numeric" />
-              <PasswordInput className={inputCls} placeholder="Yangi parol" value={fpNewPassword} onChange={(e) => setFpNewPassword(e.target.value)} />
+              <input className={inputCls} placeholder={t("tg.phCode")} value={fpCode} onChange={(e) => setFpCode(e.target.value)} inputMode="numeric" />
+              <PasswordInput className={inputCls} placeholder={t("tg.phNewPass")} value={fpNewPassword} onChange={(e) => setFpNewPassword(e.target.value)} />
               {fpError && <p className="text-[12px] text-[#FF6B85] text-center">{fpError}</p>}
               <button type="submit" disabled={fpSubmitting} className={buttonCls}>
-                {fpSubmitting ? <Loader2 size={16} className="animate-spin" /> : "Parolni yangilash"}
+                {fpSubmitting ? <Loader2 size={16} className="animate-spin" /> : t("tg.fpUpdate")}
               </button>
               <button
                 type="button"
                 onClick={() => { setFpStep("phone"); setFpError(""); setFpInfo(""); }}
                 className="w-full text-center text-[12px] text-[#7db8ff]/80"
               >
-                Boshqa raqamga kod yuborish
+                {t("tg.fpOther")}
               </button>
             </form>
           )}
@@ -1668,12 +1668,12 @@ export default function TelegramAppPage() {
         <FloatingAmbience />
         <div className="relative z-10 flex flex-col items-center">
         <CheckCircle2 size={48} className="text-[#4ADE80] mb-4" />
-        <p className="text-[16px] font-bold mb-1.5">{successLabel} buyurtmangiz qabul qilindi</p>
-        <p className="text-[13px] text-[#93a5ba] mb-6">Operator tez orada ko'rib chiqadi. Holatni "Buyurtmalarim" bo'limida kuzatishingiz mumkin.</p>
+        <p className="text-[16px] font-bold mb-1.5">{successLabel} {t("tg.okTitleSuffix")}</p>
+        <p className="text-[13px] text-[#93a5ba] mb-6">{t("tg.okSub")}</p>
         {successWarning && (
           <p className="text-[12px] text-[#F4C76A] bg-[#F4C76A]/10 border border-[#F4C76A]/30 rounded-lg px-3 py-2 mb-5 max-w-[300px]">{successWarning}</p>
         )}
-        <button onClick={() => setScreen("menu")} className={`${buttonCls} max-w-[220px]`}>Menyuga qaytish</button>
+        <button onClick={() => setScreen("menu")} className={`${buttonCls} max-w-[220px]`}>{t("tg.backToMenu")}</button>
         </div>
       </div>
     );
@@ -1684,26 +1684,26 @@ export default function TelegramAppPage() {
       <div className={`${bgCls} p-5 relative`}>
         <FloatingAmbience />
         <div className="relative z-10 pb-8">
-          <ScreenHeader title="Hamkorlik" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+          <ScreenHeader title={t("tg.hkTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
 
           {/* Hero */}
           <div className="flex flex-col items-center text-center mb-7" style={{ animation: "hkRise .5s ease both" }}>
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#F4C76A] to-[#3D7FFF] flex items-center justify-center mb-4" style={{ animation: "hkFloat 3.4s ease-in-out infinite, hkGlow 4s ease-in-out infinite" }}>
               <Handshake size={36} className="text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]" />
             </div>
-            <h1 className="text-[22px] font-extrabold leading-tight mb-2" style={titleShadow}>Biznesingizni biz bilan yuriting</h1>
-            <p className="text-[13px] text-[#93a5ba] max-w-[300px]">O'z panelingiz, o'z API'laringiz va o'z jamoangiz bilan mustaqil ishlang — texnologiyani biz beramiz.</p>
+            <h1 className="text-[22px] font-extrabold leading-tight mb-2" style={titleShadow}>{t("tg.hkHero")}</h1>
+            <p className="text-[13px] text-[#93a5ba] max-w-[300px]">{t("tg.hkHeroSub")}</p>
           </div>
 
           {/* Ustunliklar */}
           <div className="grid grid-cols-2 gap-3 mb-7">
             {[
-              { icon: Building2, t: "O'z paneling", d: "Boshqaruv o'z qo'lingizda", c: "#3D7FFF" },
-              { icon: Globe, t: "Istalgan kompaniya", d: "1xbet va boshqa API'lar", c: "#4ADE80" },
-              { icon: Users, t: "O'z jamoang", d: "Xodimlarni o'zing boshqarasan", c: "#7c3aed" },
-              { icon: Wallet, t: "Istalgan valyuta", d: "Qaysi valyutada xohlasang", c: "#F4C76A" },
-              { icon: ShieldCheck, t: "Xavfsizlik", d: "To'liq izolyatsiya", c: "#4ADE80" },
-              { icon: Rocket, t: "Tez start", d: "Tez orada ishga tushasan", c: "#3D7FFF" },
+              { icon: Building2, t: t("tg.adv1t"), d: t("tg.adv1d"), c: "#3D7FFF" },
+              { icon: Globe, t: t("tg.adv2t"), d: t("tg.adv2d"), c: "#4ADE80" },
+              { icon: Users, t: t("tg.adv3t"), d: t("tg.adv3d"), c: "#7c3aed" },
+              { icon: Wallet, t: t("tg.adv4t"), d: t("tg.adv4d"), c: "#F4C76A" },
+              { icon: ShieldCheck, t: t("tg.adv5t"), d: t("tg.adv5d"), c: "#4ADE80" },
+              { icon: Rocket, t: t("tg.adv6t"), d: t("tg.adv6d"), c: "#3D7FFF" },
             ].map((v, i) => (
               <div key={v.t} className={menuCardCls} style={{ animation: "hkRise .5s ease both", animationDelay: `${0.06 * i + 0.1}s` }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2.5 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]" style={{ background: `linear-gradient(135deg, ${v.c}, ${v.c}99)` }}>
@@ -1716,13 +1716,13 @@ export default function TelegramAppPage() {
           </div>
 
           {/* Qanday boshlanadi */}
-          <h2 className="text-[15px] font-bold mb-3">Qanday boshlanadi?</h2>
+          <h2 className="text-[15px] font-bold mb-3">{t("tg.hkHow")}</h2>
           <div className="space-y-2.5 mb-7">
             {[
-              "Biz bilan bog'laning",
-              "Sizga shaxsiy panel ochamiz",
-              "O'z kompaniyangiz API'sini ulaysiz",
-              "Mijozlarga xizmat ko'rsatishni boshlaysiz",
+              t("tg.step1"),
+              t("tg.step2"),
+              t("tg.step3"),
+              t("tg.step4"),
             ].map((s, i) => (
               <div key={i} className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/8 px-3.5 py-3">
                 <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-[#3D7FFF] to-[#2456c9] flex items-center justify-center text-[13px] font-bold">{i + 1}</div>
@@ -1732,13 +1732,13 @@ export default function TelegramAppPage() {
           </div>
 
           {/* Qoidalar */}
-          <h2 className="text-[15px] font-bold mb-3">Hamkorlik qoidalari</h2>
+          <h2 className="text-[15px] font-bold mb-3">{t("tg.hkRules")}</h2>
           <div className="rounded-2xl bg-white/[0.04] border border-white/8 p-4 mb-7 space-y-2.5">
             {[
-              "Halol va shaffof ishlash",
-              "Mijozlar xavfsizligi va maxfiyligini saqlash",
-              "O'z ma'lumotlaringiz uchun to'liq mas'uliyat",
-              "Platforma qoidalariga rioya qilish",
+              t("tg.rule1"),
+              t("tg.rule2"),
+              t("tg.rule3"),
+              t("tg.rule4"),
             ].map((r, i) => (
               <div key={i} className="flex items-start gap-2.5 text-[13px]">
                 <CheckCircle2 size={16} className="text-[#4ADE80] shrink-0 mt-0.5" />
@@ -1751,30 +1751,30 @@ export default function TelegramAppPage() {
           {plDone ? (
             <div className="rounded-2xl bg-[#4ADE80]/10 border border-[#4ADE80]/30 p-5 text-center" style={{ animation: "hkRise .4s ease both" }}>
               <CheckCircle2 size={40} className="text-[#4ADE80] mx-auto mb-3" />
-              <div className="text-[15px] font-bold mb-1">So'rovingiz qabul qilindi</div>
-              <div className="text-[12px] text-[#93a5ba]">Tez orada siz bilan bog'lanamiz.</div>
+              <div className="text-[15px] font-bold mb-1">{t("tg.hkDone")}</div>
+              <div className="text-[12px] text-[#93a5ba]">{t("tg.hkDoneSub")}</div>
             </div>
           ) : (
             <div className="rounded-2xl bg-white/[0.04] border border-white/8 p-4">
-              <div className="text-[14px] font-bold mb-3 flex items-center gap-1.5"><Handshake size={16} className="text-[#F4C76A]" /> Hamkorlik uchun ariza</div>
+              <div className="text-[14px] font-bold mb-3 flex items-center gap-1.5"><Handshake size={16} className="text-[#F4C76A]" /> {t("tg.hkForm")}</div>
               <input
                 value={plCompany}
                 onChange={(e) => setPlCompany(e.target.value)}
-                placeholder="Kompaniya / faoliyat (ixtiyoriy)"
+                placeholder={t("tg.phCompany")}
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5"
               />
               <textarea
                 value={plMessage}
                 onChange={(e) => setPlMessage(e.target.value)}
                 rows={3}
-                placeholder="Qisqacha o'zingiz haqingizda yoki savolingiz"
+                placeholder={t("tg.phAbout")}
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5 resize-none"
               />
-              <p className="text-[11px] text-[#93a5ba] mb-3">Ism va telefon avtomatik biriktiriladi: <span className="text-white/80">{customer?.full_name || customer?.phone || "—"}</span></p>
+              <p className="text-[11px] text-[#93a5ba] mb-3">{t("tg.hkAuto")} <span className="text-white/80">{customer?.full_name || customer?.phone || "—"}</span></p>
               {plError && <p className="text-[12px] text-[#FF6B85] mb-2.5">{plError}</p>}
               <button onClick={submitPartnerLead} disabled={plSubmitting} className={buttonCls} style={{ animation: "hkGlow 4s ease-in-out infinite" }}>
                 <span className="flex items-center justify-center gap-2">
-                  {plSubmitting ? <Loader2 size={16} className="animate-spin" /> : <><Rocket size={17} /> Ariza yuborish</>}
+                  {plSubmitting ? <Loader2 size={16} className="animate-spin" /> : <><Rocket size={17} /> {t("tg.hkSubmit")}</>}
                 </span>
               </button>
             </div>
@@ -1782,21 +1782,21 @@ export default function TelegramAppPage() {
 
           {/* Allaqachon hamkormisiz? — email orqali parol havolasi */}
           <div className="mt-6 text-center">
-            <button onClick={() => setPmOpen((v) => !v)} className="text-[12px] text-[#93a5ba] underline">Allaqachon hamkormisiz? Kirish havolasini oling</button>
+            <button onClick={() => setPmOpen((v) => !v)} className="text-[12px] text-[#93a5ba] underline">{t("tg.hkAlready")}</button>
             {pmOpen && (
               <div className="mt-3 rounded-2xl bg-white/[0.04] border border-white/8 p-4 text-left">
                 {pmSent ? (
                   <div className="text-center" style={{ animation: "hkRise .4s ease both" }}>
                     <CheckCircle2 size={32} className="text-[#4ADE80] mx-auto mb-2" />
-                    <div className="text-[13px] font-bold mb-1">Yuborildi</div>
-                    <div className="text-[11.5px] text-[#93a5ba]">Agar bu email hamkor bo'lsa, parol o'rnatish havolasi emailingizga yuborildi. Emailingizni (spam papkasini ham) tekshiring.</div>
+                    <div className="text-[13px] font-bold mb-1">{t("tg.hkSent")}</div>
+                    <div className="text-[11.5px] text-[#93a5ba]">{t("tg.hkSentSub")}</div>
                   </div>
                 ) : (
                   <>
-                    <input value={pmEmail} onChange={(e) => setPmEmail(e.target.value)} type="email" placeholder="Emailingiz (admin bergan)" className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5" />
+                    <input value={pmEmail} onChange={(e) => setPmEmail(e.target.value)} type="email" placeholder={t("tg.phEmail")} className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5" />
                     {pmError && <p className="text-[12px] text-[#FF6B85] mb-2.5">{pmError}</p>}
                     <button onClick={requestPartnerInvite} disabled={pmBusy} className={buttonCls}>
-                      <span className="flex items-center justify-center gap-2">{pmBusy ? <Loader2 size={16} className="animate-spin" /> : "Havola olish"}</span>
+                      <span className="flex items-center justify-center gap-2">{pmBusy ? <Loader2 size={16} className="animate-spin" /> : t("tg.hkGetLink")}</span>
                     </button>
                   </>
                 )}
