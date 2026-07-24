@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
   if (!orderId || (status !== "completed" && status !== "rejected")) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
+  // Rad etish uchun SABAB majburiy — mijoz nima uchun rad etilganини bilsin.
+  if (status === "rejected" && (!note || !String(note).trim())) {
+    return NextResponse.json({ error: "reason_required" }, { status: 400 });
+  }
 
   const admin = createAdminClient();
 

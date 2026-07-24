@@ -215,6 +215,8 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         const data = await res.json().catch(() => ({}));
         if (data.error === "cashdesk_failed") {
           setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? `Kassa API xatosi: ${data.detail}`);
+        } else if (data.error === "reason_required") {
+          setApiError("Rad etish uchun sabab kiriting.");
         } else {
           setApiError("Xatolik yuz berdi. Qayta urinib ko'ring.");
         }
@@ -339,7 +341,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         <textarea
           rows={2}
           className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3"
-          placeholder="Izoh (ixtiyoriy) — mijozga yuboriladi"
+          placeholder="Izoh — rad etish uchun SHART, mijozga yuboriladi"
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
@@ -351,7 +353,8 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         <div className="flex gap-2.5">
           <button
             onClick={() => resolve("rejected")}
-            disabled={submitting !== null}
+            disabled={submitting !== null || !note.trim()}
+            title={!note.trim() ? "Rad etish uchun sabab yozing" : undefined}
             className="flex-1 py-2.5 rounded-lg bg-[#FF6B85]/15 border border-[#FF6B85]/40 text-[#FF6B85] font-semibold text-[13px] disabled:opacity-50"
           >
             {submitting === "rejected" ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Rad etish"}

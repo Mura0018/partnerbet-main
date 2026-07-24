@@ -75,6 +75,8 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   const [archiving, setArchiving] = useState(false);
   const [claimedBy, setClaimedBy] = useState(thread.claimed_by);
   const [claimedByName, setClaimedByName] = useState(thread.claimed_by_name);
+  const [linkedOrder, setLinkedOrder] = useState<any>(null);
+  const [orderFlipped, setOrderFlipped] = useState(false);
   const [replyTo, setReplyTo] = useState<SupportMsg | null>(null);
   const [myTheme, setMyTheme] = useState<string>("blue");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,21 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
     loadThread();
     const interval = setInterval(loadThread, 4000);
     return () => clearInterval(interval);
+  }, [thread.customer_id]);
+
+  // Biriktirilgan buyurtmani (thread.linked_order_id) olamiz — operator ham
+  // buyurtма kartаsини ko'radi (bosса 3D aylanib holat/izoh chiqadi).
+  const loadLinkedOrder = async () => {
+    const { data: t } = await supabase.from("telegram_support_threads").select("linked_order_id").eq("customer_id", thread.customer_id).maybeSingle();
+    const oid = (t as any)?.linked_order_id;
+    if (!oid) { setLinkedOrder(null); return; }
+    const { data: o } = await supabase.from("telegram_orders").select("id, type, amount, platform, account_id, status, operator_note, payment_method").eq("id", oid).maybeSingle();
+    setLinkedOrder(o ?? null);
+  };
+  useEffect(() => {
+    loadLinkedOrder();
+    const t = setInterval(loadLinkedOrder, 5000);
+    return () => clearInterval(t);
   }, [thread.customer_id]);
 
   useEffect(() => {
@@ -254,6 +271,33 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
 
       {/* Desktopda xabar ustuni cheksiz cho'zilmasin — markazlashgan ustun. */}
       <div className="flex-1 flex flex-col min-h-0 w-full max-w-3xl mx-auto">
+
+      {linkedOrder && (
+        <div className="px-3 pt-2 shrink-0" style={{ perspective: 1000 }}>
+          <button onClick={() => setOrderFlipped((v) => !v)} className="block w-full text-left">
+            <div style={{ position: "relative", transformStyle: "preserve-3d", transition: "transform 0.6s cubic-bezier(0.22,1,0.36,1)", transform: orderFlipped ? "rotateY(180deg)" : "rotateY(0deg)", minHeight: 82 }}>
+              <div style={{ backfaceVisibility: "hidden" }} className="rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-3">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[12.5px] font-semibold text-white">{linkedOrder.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"}</span>
+                  <span className="text-[11px] font-semibold" style={{ color: linkedOrder.status === "completed" ? "#4ADE80" : linkedOrder.status === "rejected" ? "#FF6B85" : "#F4C76A" }}>
+                    {linkedOrder.status === "completed" ? "Bajarildi" : linkedOrder.status === "rejected" ? "Rad etildi" : "Kutilmoqda"}
+                  </span>
+                </div>
+                <div className="text-[11px] text-white/40">{linkedOrder.platform} · ID {linkedOrder.account_id}</div>
+                <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} so'm</div>
+                <div className="text-[9px] text-white/30 mt-1">Bosing — holat/izoh</div>
+              </div>
+              <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }} className="rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-3 flex flex-col justify-center">
+                <div className="text-[11.5px] font-semibold" style={{ color: linkedOrder.status === "completed" ? "#4ADE80" : linkedOrder.status === "rejected" ? "#FF6B85" : "#F4C76A" }}>
+                  {linkedOrder.status === "completed" ? "✓ Bajarilgan" : linkedOrder.status === "rejected" ? "✕ Rad etilgan" : "⏳ Kutilmoqda"}
+                </div>
+                <div className="text-[11.5px] text-white/70 mt-1 leading-snug">{linkedOrder.operator_note || "Izoh yo'q."}</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
+
       <div
         ref={listRef}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0"
