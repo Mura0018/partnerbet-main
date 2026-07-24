@@ -39,6 +39,7 @@ type Order = {
   received_holder_name: string | null;
   player_name: string | null;
   auto_processed: boolean;
+  payout_done: boolean;
   handoff_open: boolean;
   sla_deadline: string | null;
   created_at: string;
@@ -240,6 +241,12 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
         </div>
         <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} so'm</div>
+
+        {order.type === "withdraw" && order.payout_done && (
+          <div className="rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/30 text-[#4ADE80] text-[12px] px-3 py-2.5 mb-4">
+            💸 Pul 1xbet'дан allaqачон yechilган (mijoz kodида). Mijoz kartаsига to'lang, so'ng "Bajarildi" bosing — qayta Payout bo'lмаydi.
+          </div>
+        )}
 
         {/* Verification checks — the things an operator must actually look at */}
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
@@ -839,7 +846,7 @@ export function OrdersTab() {
     setLoading(true);
     let query = supabase
       .from("telegram_orders")
-      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, handoff_open, sla_deadline, created_at, customers(phone, full_name)")
+      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, payout_done, handoff_open, sla_deadline, created_at, customers(phone, full_name)")
       .order("created_at", { ascending: false })
       .limit(200);
     if (filter !== "all") query = query.eq("status", filter);
