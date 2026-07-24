@@ -5,13 +5,14 @@ import { Users, Download, Copy, MousePointerClick, TrendingUp, Wallet, Clock, Ch
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type Period = "today" | "7d" | "30d" | "all";
-const PERIODS: { key: Period; label: string }[] = [
-  { key: "today", label: "Bugun" },
-  { key: "7d", label: "7 kun" },
-  { key: "30d", label: "30 kun" },
-  { key: "all", label: "Hammasi" },
+const PERIODS: { key: Period; labelKey: string }[] = [
+  { key: "today", labelKey: "dash.pToday" },
+  { key: "7d", labelKey: "dash.p7d" },
+  { key: "30d", labelKey: "dash.p30d" },
+  { key: "all", labelKey: "dash.pAll" },
 ];
 function periodStart(p: Period): string | null {
   if (p === "all") return null;
@@ -19,17 +20,18 @@ function periodStart(p: Period): string | null {
   if (p === "today") { const d = new Date(now); d.setHours(0, 0, 0, 0); return d.toISOString(); }
   return new Date(now.getTime() - (p === "7d" ? 7 : 30) * 86400000).toISOString();
 }
-function fmtSom(n: number): string {
-  return `${Math.round(n).toLocaleString("ru-RU")} so'm`;
+function fmtSom(n: number, som: string): string {
+  return `${Math.round(n).toLocaleString("ru-RU")} ${som}`;
 }
 
 export default function Dashboard() {
+  const { t } = useLocale();
   const [period, setPeriod] = useState<Period>("today");
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto">
       <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
-        <h1 className="text-[22px] font-bold">Dashboard</h1>
+        <h1 className="text-[22px] font-bold">{t("dash.title")}</h1>
         <div className="flex gap-1.5 flex-wrap">
           {PERIODS.map((p) => (
             <button
@@ -37,12 +39,12 @@ export default function Dashboard() {
               onClick={() => setPeriod(p.key)}
               className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border transition-colors ${period === p.key ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
             >
-              {p.label}
+              {t(p.labelKey as any)}
             </button>
           ))}
         </div>
       </div>
-      <p className="text-[13px] text-muted mb-6">Umumiy statistika — tanlangan davr bo'yicha (real ma'lumot).</p>
+      <p className="text-[13px] text-muted mb-6">{t("dash.sub")}</p>
 
       <Can permission="telegram_orders.manage">
         <BetCorePayMetrics period={period} />
@@ -62,6 +64,7 @@ export default function Dashboard() {
 }
 
 function WebAnalytics({ period }: { period: Period }) {
+  const { t } = useLocale();
   const [counts, setCounts] = useState({ views: 0, apk: 0, promo: 0, ads: 0 });
 
   useEffect(() => {
@@ -86,24 +89,24 @@ function WebAnalytics({ period }: { period: Period }) {
   }, [period]);
 
   const cards = [
-    { label: "Page Views", value: counts.views, icon: Users },
-    { label: "APK Downloads", value: counts.apk, icon: Download },
-    { label: "Promo Copies", value: counts.promo, icon: Copy },
-    { label: "Ad Clicks", value: counts.ads, icon: MousePointerClick },
+    { labelKey: "dash.wViews", value: counts.views, icon: Users },
+    { labelKey: "dash.wApk", value: counts.apk, icon: Download },
+    { labelKey: "dash.wPromo", value: counts.promo, icon: Copy },
+    { labelKey: "dash.wAds", value: counts.ads, icon: MousePointerClick },
   ];
 
   return (
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp size={16} className="text-accent" />
-        <h2 className="text-[15px] font-bold">Veb-analitika</h2>
+        <h2 className="text-[15px] font-bold">{t("dash.webTitle")}</h2>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-xl border border-white/8 bg-white/[0.02] p-4 sm:p-5">
+          <div key={c.labelKey} className="rounded-xl border border-white/8 bg-white/[0.02] p-4 sm:p-5">
             <c.icon size={18} className="text-accent mb-3" />
             <div className="text-[22px] sm:text-[24px] font-bold">{c.value.toLocaleString("ru-RU")}</div>
-            <div className="text-[12px] text-muted mt-1">{c.label}</div>
+            <div className="text-[12px] text-muted mt-1">{t(c.labelKey as any)}</div>
           </div>
         ))}
       </div>
@@ -112,6 +115,7 @@ function WebAnalytics({ period }: { period: Period }) {
 }
 
 function BetCorePayMetrics({ period }: { period: Period }) {
+  const { t } = useLocale();
   const [m, setM] = useState({ pending: 0, completed: 0, rejected: 0, volume: 0, topup: 0, withdraw: 0, customers: 0, openSupport: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -141,37 +145,37 @@ function BetCorePayMetrics({ period }: { period: Period }) {
   }, [period]);
 
   const cards = [
-    { label: "Kutilayotgan", value: m.pending.toLocaleString("ru-RU"), icon: Clock, color: "#F4C76A" },
-    { label: "Bajarilgan", value: m.completed.toLocaleString("ru-RU"), icon: CheckCircle2, color: "#4ADE80" },
-    { label: "Rad etilgan", value: m.rejected.toLocaleString("ru-RU"), icon: XCircle, color: "#FF6B85" },
-    { label: "Hajm (so'm)", value: fmtSom(m.volume), icon: Banknote, color: "#7db8ff" },
-    { label: period === "all" ? "Jami mijozlar" : "Yangi mijozlar", value: m.customers.toLocaleString("ru-RU"), icon: Users, color: "#7db8ff" },
-    { label: "Ochiq murojaatlar", value: m.openSupport.toLocaleString("ru-RU"), icon: Headset, color: "#7db8ff" },
+    { labelKey: "dash.cPending", value: m.pending.toLocaleString("ru-RU"), icon: Clock, color: "#F4C76A" },
+    { labelKey: "dash.cCompleted", value: m.completed.toLocaleString("ru-RU"), icon: CheckCircle2, color: "#4ADE80" },
+    { labelKey: "dash.cRejected", value: m.rejected.toLocaleString("ru-RU"), icon: XCircle, color: "#FF6B85" },
+    { labelKey: "dash.cVolume", value: fmtSom(m.volume, t("dash.som")), icon: Banknote, color: "#7db8ff" },
+    { labelKey: period === "all" ? "dash.cAllCustomers" : "dash.cNewCustomers", value: m.customers.toLocaleString("ru-RU"), icon: Users, color: "#7db8ff" },
+    { labelKey: "dash.cOpenSupport", value: m.openSupport.toLocaleString("ru-RU"), icon: Headset, color: "#7db8ff" },
   ];
 
   return (
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-3">
         <Wallet size={16} className="text-accent" />
-        <h2 className="text-[15px] font-bold">BetCore Pay — buyurtmalar oqimi</h2>
+        <h2 className="text-[15px] font-bold">{t("dash.payTitle")}</h2>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-4 mb-3">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={c.labelKey} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
             <c.icon size={17} className="mb-2.5" style={{ color: c.color }} />
             <div className="text-[16px] sm:text-[19px] font-bold leading-tight">{loading ? "…" : c.value}</div>
-            <div className="text-[11px] text-muted mt-1">{c.label}</div>
+            <div className="text-[11px] text-muted mt-1">{t(c.labelKey as any)}</div>
           </div>
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex items-center gap-3">
           <ArrowDownToLine size={18} className="text-[#4ADE80] shrink-0" />
-          <div><div className="text-[16px] font-bold">{loading ? "…" : m.topup.toLocaleString("ru-RU")}</div><div className="text-[11px] text-muted">To'ldirish (bajarilgan)</div></div>
+          <div><div className="text-[16px] font-bold">{loading ? "…" : m.topup.toLocaleString("ru-RU")}</div><div className="text-[11px] text-muted">{t("dash.topupDone")}</div></div>
         </div>
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex items-center gap-3">
           <ArrowUpFromLine size={18} className="text-[#F4C76A] shrink-0" />
-          <div><div className="text-[16px] font-bold">{loading ? "…" : m.withdraw.toLocaleString("ru-RU")}</div><div className="text-[11px] text-muted">Yechish (bajarilgan)</div></div>
+          <div><div className="text-[16px] font-bold">{loading ? "…" : m.withdraw.toLocaleString("ru-RU")}</div><div className="text-[11px] text-muted">{t("dash.withdrawDone")}</div></div>
         </div>
       </div>
     </div>
@@ -179,6 +183,7 @@ function BetCorePayMetrics({ period }: { period: Period }) {
 }
 
 function StaffActivity({ period }: { period: Period }) {
+  const { t } = useLocale();
   const [rows, setRows] = useState<{ id: string; name: string; completed: number; volume: number; replies: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -218,28 +223,28 @@ function StaffActivity({ period }: { period: Period }) {
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-3">
         <UserCog size={16} className="text-accent" />
-        <h2 className="text-[15px] font-bold">Xodimlar faoliyati (operatorlar)</h2>
+        <h2 className="text-[15px] font-bold">{t("dash.staffTitle")}</h2>
       </div>
       <div className="rounded-xl border border-white/8 overflow-x-auto">
         <table className="w-full min-w-[520px] text-[13px]">
           <thead className="bg-white/[0.03] text-[11px] text-muted uppercase tracking-wide">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Operator</th>
-              <th className="text-right px-4 py-3 font-medium">Bajarilgan</th>
-              <th className="text-right px-4 py-3 font-medium">Hajm</th>
-              <th className="text-right px-4 py-3 font-medium">Support javob</th>
+              <th className="text-left px-4 py-3 font-medium">{t("dash.colOperator")}</th>
+              <th className="text-right px-4 py-3 font-medium">{t("dash.colCompleted")}</th>
+              <th className="text-right px-4 py-3 font-medium">{t("dash.colVolume")}</th>
+              <th className="text-right px-4 py-3 font-medium">{t("dash.colReplies")}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">Yuklanmoqda…</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">{t("dash.loading")}</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">Bu davrda faoliyat yo'q.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">{t("dash.noActivity")}</td></tr>
             ) : rows.map((r) => (
               <tr key={r.id} className="border-t border-white/5">
                 <td className="px-4 py-3 font-medium">{r.name}</td>
                 <td className="px-4 py-3 text-right">{r.completed.toLocaleString("ru-RU")}</td>
-                <td className="px-4 py-3 text-right text-muted">{fmtSom(r.volume)}</td>
+                <td className="px-4 py-3 text-right text-muted">{fmtSom(r.volume, t("dash.som"))}</td>
                 <td className="px-4 py-3 text-right">{r.replies.toLocaleString("ru-RU")}</td>
               </tr>
             ))}
@@ -251,6 +256,7 @@ function StaffActivity({ period }: { period: Period }) {
 }
 
 function AffiliateAnalytics() {
+  const { t } = useLocale();
   const [summary, setSummary] = useState({ total: 0, today: 0, week: 0, month: 0 });
   const [dailySeries, setDailySeries] = useState<{ day: string; clicks: number }[]>([]);
   const [breakdown, setBreakdown] = useState<{ country: Record<string, number>; device: Record<string, number> }>({ country: {}, device: {} });
@@ -303,19 +309,19 @@ function AffiliateAnalytics() {
     <div>
       <div className="flex items-center gap-2 mb-4">
         <TrendingUp size={16} className="text-accent" />
-        <h2 className="text-[16px] font-bold">Affiliate Click Analytics</h2>
+        <h2 className="text-[16px] font-bold">{t("dash.affTitle")}</h2>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-5">
         {[
-          { label: "Jami klik", value: summary.total },
-          { label: "Bugun", value: summary.today },
-          { label: "So'nggi 7 kun", value: summary.week },
-          { label: "So'nggi 30 kun", value: summary.month },
+          { labelKey: "dash.aTotal", value: summary.total },
+          { labelKey: "dash.aToday", value: summary.today },
+          { labelKey: "dash.aWeek", value: summary.week },
+          { labelKey: "dash.aMonth", value: summary.month },
         ].map((c) => (
-          <div key={c.label} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={c.labelKey} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
             <div className="text-[20px] font-bold">{c.value}</div>
-            <div className="text-[11px] text-muted mt-1">{c.label}</div>
+            <div className="text-[11px] text-muted mt-1">{t(c.labelKey as any)}</div>
           </div>
         ))}
       </div>
@@ -323,7 +329,7 @@ function AffiliateAnalytics() {
       {!loading && (
         <div className="grid md:grid-cols-3 gap-4">
           <div className="md:col-span-2 rounded-xl border border-white/8 bg-white/[0.02] p-4">
-            <div className="text-[12px] text-muted mb-3">Kunlik kliklar (14 kun)</div>
+            <div className="text-[12px] text-muted mb-3">{t("dash.chartDaily")}</div>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={dailySeries}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -336,9 +342,9 @@ function AffiliateAnalytics() {
           </div>
 
           <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-            <div className="text-[12px] text-muted mb-3">Top mamlakatlar</div>
+            <div className="text-[12px] text-muted mb-3">{t("dash.topCountries")}</div>
             <div className="space-y-2">
-              {topCountries.length === 0 && <p className="text-[11px] text-[#5b6f85]">Ma'lumot yo'q</p>}
+              {topCountries.length === 0 && <p className="text-[11px] text-[#5b6f85]">{t("dash.noData")}</p>}
               {topCountries.map(([country, count]) => (
                 <div key={country} className="flex items-center justify-between text-[12px]">
                   <span>{country}</span>
@@ -346,7 +352,7 @@ function AffiliateAnalytics() {
                 </div>
               ))}
             </div>
-            <div className="text-[12px] text-muted mt-4 mb-3">Qurilmalar</div>
+            <div className="text-[12px] text-muted mt-4 mb-3">{t("dash.devices")}</div>
             <div className="space-y-2">
               {topDevices.map(([device, count]) => (
                 <div key={device} className="flex items-center justify-between text-[12px]">
