@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { createPartnerInvite } from "@/lib/partner/invite";
+import { sendEmail, renderActionEmail } from "@/lib/email/send";
 
 // Hamkor a'zosi uchun parol o'rnatish havolasini QAYTA hosil qiladi (tiklash).
 // Faqat partners.manage.
@@ -24,6 +25,26 @@ export async function POST(req: NextRequest) {
 
   try {
     const inviteUrl = await createPartnerInvite(profileId);
+
+    // A'zo emailини olib, havolани emailга ham yuboramiz (fail-soft).
+    try {
+      const { data: authUser } = await admin.auth.admin.getUserById(profileId);
+      const memberEmail = authUser?.user?.email;
+      if (memberEmail) {
+        await sendEmail({
+          to: memberEmail,
+          subject: "BetCore Pay — parolni tiklash",
+          html: renderActionEmail({
+            heading: "Parolni tiklash",
+            body: "Parolingizni qayta o'rnatish uchun quyidagi tugmani bosing.",
+            buttonLabel: "Parol o'rnatish",
+            url: inviteUrl,
+            note: "Havola 1 soat amal qiladi.",
+          }),
+        });
+      }
+    } catch { /* email best-effort */ }
+
     return NextResponse.json({ inviteUrl });
   } catch (e: any) {
     return NextResponse.json({ error: "invite_failed", detail: e?.message }, { status: 500 });

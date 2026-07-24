@@ -25,4 +25,17 @@ export const env = {
   get siteName() {
     return process.env.NEXT_PUBLIC_SITE_NAME || "WINORA";
   },
+  // --- EMAIL (ixtiyoriy — sozlanmasa email yuborilmaydi, oqim buzilmaydi) ---
+  get emailProvider() {
+    return (process.env.EMAIL_PROVIDER || "resend").toLowerCase();
+  },
+  get resendApiKey() {
+    return process.env.RESEND_API_KEY || "";
+  },
+  get brevoApiKey() {
+    return process.env.BREVO_API_KEY || "";
+  },
+  get emailFrom() {
+    return process.env.EMAIL_FROM || "";
+  },
 } as const;

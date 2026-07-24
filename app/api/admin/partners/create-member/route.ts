@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { createPartnerInvite } from "@/lib/partner/invite";
+import { sendEmail, renderActionEmail } from "@/lib/email/send";
 
 // Hamkorga a'zo (partner_admin yoki staff) yaratadi. Parol qo'yilmaydi —
 // hamkor o'zi taklif havolasi orqali o'rnatadi. Faqat partners.manage.
@@ -53,6 +54,23 @@ export async function POST(req: NextRequest) {
   try {
     inviteUrl = await createPartnerInvite(created.user.id);
   } catch { /* invite jadvali yo'q bo'lsa ham a'zo yaratildi */ }
+
+  // Taklif havolаsини a'zo emailiga yuboramiz (email sozlangan bo'lsa).
+  // sendEmail fail-soft — email yuborilmaса ham a'zo yaratildi, admin
+  // inviteUrl ni qo'lда ham berishi mumkin (zaxira).
+  if (inviteUrl) {
+    await sendEmail({
+      to: email,
+      subject: "BetCore Pay — hisobingizni faollashtiring",
+      html: renderActionEmail({
+        heading: "Xush kelibsiz!",
+        body: "Sizga BetCore Pay hamkor paneli uchun hisob yaratildi. Parolingizni o'rnatish uchun quyidagi tugmani bosing.",
+        buttonLabel: "Parol o'rnatish",
+        url: inviteUrl,
+        note: "Havola 1 soat amal qiladi. Agar bu siz bo'lmasangiz, xabarni e'tiborsiz qoldiring.",
+      }),
+    });
+  }
 
   return NextResponse.json({ success: true, inviteUrl });
 }
