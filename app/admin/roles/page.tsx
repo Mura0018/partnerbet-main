@@ -4,19 +4,21 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, Lock, Plus, X, Loader2, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type Role = { id: string; key: string; name: string };
 type Perm = { id: string; key: string; description: string | null };
 
-const CATEGORIES: { label: string; keys: string[] }[] = [
-  { label: "Kontent", keys: ["posts.manage", "football.manage", "football_news.manage", "match_insights.manage", "media.manage", "taxonomy.manage", "faqs.manage"] },
-  { label: "Marketing", keys: ["advertisements.manage", "promotions.manage", "donations.manage", "streaming.manage", "navigation.manage"] },
-  { label: "BetCore Pay", keys: ["telegram_orders.manage", "telegram_operators.manage", "support.manage", "team_chat.use"] },
-  { label: "Hamkorlik", keys: ["partners.manage"] },
-  { label: "Tizim", keys: ["users.manage", "roles.manage", "settings.manage", "logs.view", "apk.manage"] },
+const CATEGORIES: { labelKey: string; keys: string[] }[] = [
+  { labelKey: "rol.cContent", keys: ["posts.manage", "football.manage", "football_news.manage", "match_insights.manage", "media.manage", "taxonomy.manage", "faqs.manage"] },
+  { labelKey: "rol.cMarketing", keys: ["advertisements.manage", "promotions.manage", "donations.manage", "streaming.manage", "navigation.manage"] },
+  { labelKey: "rol.cPay", keys: ["telegram_orders.manage", "telegram_operators.manage", "support.manage", "team_chat.use"] },
+  { labelKey: "rol.cPartner", keys: ["partners.manage"] },
+  { labelKey: "rol.cSystem", keys: ["users.manage", "roles.manage", "settings.manage", "logs.view", "apk.manage"] },
 ];
 
 function CreateRoleModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { t } = useLocale();
   const [key, setKey] = useState("");
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -30,15 +32,15 @@ function CreateRoleModal({ onClose, onCreated }: { onClose: () => void; onCreate
       const res = await fetch("/api/admin/roles/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, name }) });
       const data = await res.json();
       if (!res.ok) {
-        const map: Record<string, string> = { key_taken: "Bu kalit band.", invalid_key: "Kalit: kichik harf/raqam/pastki chiziq (a-z, 0-9, _).", forbidden: "Ruxsatingiz yo'q." };
-        setError(map[data.error] ?? "Xatolik yuz berdi.");
+        const map: Record<string, string> = { key_taken: t("rol.eKeyTaken"), invalid_key: t("rol.eInvalidKey"), forbidden: t("rol.eForbidden") };
+        setError(map[data.error] ?? t("rol.eGeneric"));
         return;
       }
-      toast.success("Rol yaratildi ✅");
+      toast.success(t("rol.tCreated"));
       onCreated();
       onClose();
     } catch {
-      setError("Ulanishda xatolik.");
+      setError(t("rol.eConn"));
     } finally {
       setSaving(false);
     }
@@ -48,24 +50,25 @@ function CreateRoleModal({ onClose, onCreated }: { onClose: () => void; onCreate
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-white/10 bg-panel p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-[16px]">Yangi rol</h2>
-          <button type="button" onClick={onClose} aria-label="Yopish"><X size={18} /></button>
+          <h2 className="font-bold text-[16px]">{t("rol.newRole")}</h2>
+          <button type="button" onClick={onClose} aria-label={t("rol.close")}><X size={18} /></button>
         </div>
-        <label className="block text-[12px] text-muted mb-1">Kalit (masalan <span className="font-mono">support_lead</span>)</label>
-        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="kichik_harf_kalit" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3 font-mono" />
-        <label className="block text-[12px] text-muted mb-1">Nomi</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Support boshlig'i" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-4" />
+        <label className="block text-[12px] text-muted mb-1">{t("rol.fKey")} <span className="font-mono">support_lead</span>)</label>
+        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder={t("rol.keyPh")} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3 font-mono" />
+        <label className="block text-[12px] text-muted mb-1">{t("rol.fName")}</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("rol.namePh")} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-4" />
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
         <button type="submit" disabled={saving} className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] disabled:opacity-50">
-          {saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : "Yaratish"}
+          {saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : t("rol.create")}
         </button>
-        <p className="text-[11px] text-muted mt-3">Yaratilgach ruxsatlarni toggle bilan bering. Tizim rollari (super_admin/admin...) o'zgartirilmaydi.</p>
+        <p className="text-[11px] text-muted mt-3">{t("rol.hint")}</p>
       </form>
     </div>
   );
 }
 
 export default function RolesManager() {
+  const { t } = useLocale();
   const supabase = createClient();
   const [roles, setRoles] = useState<Role[]>([]);
   const [perms, setPerms] = useState<Perm[]>([]);
@@ -96,12 +99,15 @@ export default function RolesManager() {
   const permByKey = useMemo(() => { const m: Record<string, Perm> = {}; for (const p of perms) m[p.key] = p; return m; }, [perms]);
   const grouped = useMemo(() => {
     const used = new Set<string>();
-    const groups = CATEGORIES.map((c) => ({ label: c.label, items: c.keys.map((k) => permByKey[k]).filter(Boolean) as Perm[] }));
+    const groups = CATEGORIES.map((c) => ({ labelKey: c.labelKey, items: c.keys.map((k) => permByKey[k]).filter(Boolean) as Perm[] }));
     groups.forEach((g) => g.items.forEach((p) => used.add(p.key)));
     const others = perms.filter((p) => !used.has(p.key));
-    if (others.length) groups.push({ label: "Boshqa", items: others });
+    if (others.length) groups.push({ labelKey: "rol.cOther", items: others });
     return groups.filter((g) => g.items.length);
   }, [perms, permByKey]);
+
+  // Lug'atda tarjima bo'lmasa (maxsus rol) DB dagi nomni ko'rsatamiz.
+  const roleName = (r: Role) => { const v = t(`roles.${r.key}` as any); return v === `roles.${r.key}` ? r.name : v; };
 
   const role = roles.find((x) => x.id === selected) ?? null;
   const isSuper = role?.key === "super_admin";
@@ -123,12 +129,12 @@ export default function RolesManager() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const map: Record<string, string> = {
-        protected_role: "super_admin roli himoyalangan.",
-        cannot_edit_own_role: "O'z rolingizni o'zgartira olmaysiz.",
-        cannot_grant_missing_permission: "O'zingizda yo'q ruxsatni bera olmaysiz.",
-        forbidden: "Ruxsatingiz yo'q.",
+        protected_role: t("rol.eProtected"),
+        cannot_edit_own_role: t("rol.eOwnRole"),
+        cannot_grant_missing_permission: t("rol.eGrantMissing"),
+        forbidden: t("rol.eForbidden"),
       };
-      toast.error(map[data.error] ?? "Saqlanmadi.");
+      toast.error(map[data.error] ?? t("rol.eNotSaved"));
       // revert
       setAssign((prev) => {
         const copy = { ...prev };
@@ -145,16 +151,16 @@ export default function RolesManager() {
       <div className="flex items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2">
           <ShieldCheck size={20} className="text-accent" />
-          <h1 className="text-[22px] font-bold">Rollar va ruxsatlar</h1>
+          <h1 className="text-[22px] font-bold">{t("rol.title")}</h1>
         </div>
         <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
-          <Plus size={15} /> Yangi rol
+          <Plus size={15} /> {t("rol.newRole")}
         </button>
       </div>
-      <p className="text-[13px] text-muted mb-6">Har rolga ruxsatlarni yoqing/o'chiring. super_admin himoyalangan (hamma ruxsat).</p>
+      <p className="text-[13px] text-muted mb-6">{t("rol.sub")}</p>
 
       {loading ? (
-        <p className="text-[13px] text-muted">Yuklanmoqda...</p>
+        <p className="text-[13px] text-muted">{t("rol.loading")}</p>
       ) : (
         <>
           {/* Rol tanlash */}
@@ -162,7 +168,7 @@ export default function RolesManager() {
             {roles.map((r) => (
               <button key={r.id} onClick={() => setSelected(r.id)}
                 className={`px-3 py-1.5 rounded-lg text-[12.5px] font-medium border transition-colors ${selected === r.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted hover:text-white"}`}>
-                {r.name}{r.key === "super_admin" && <Lock size={11} className="inline ml-1 -mt-0.5" />}
+                {roleName(r)}{r.key === "super_admin" && <Lock size={11} className="inline ml-1 -mt-0.5" />}
               </button>
             ))}
           </div>
@@ -170,15 +176,15 @@ export default function RolesManager() {
           {isSuper && (
             <div className="rounded-xl border border-[#F4C76A]/30 bg-[#F4C76A]/10 p-4 mb-4 text-[13px] flex items-start gap-2.5">
               <Lock size={16} className="text-[#F4C76A] shrink-0 mt-0.5" />
-              <span className="text-[#F4C76A]"><b>super_admin</b> — barcha ruxsatlar, himoyalangan. Qulflab qo'ymaslik uchun bu rol o'zgartirilmaydi.</span>
+              <span className="text-[#F4C76A]"><b>super_admin</b> {t("rol.superNote")}</span>
             </div>
           )}
 
           {/* Ruxsat matritsasi */}
           <div className="space-y-5">
             {grouped.map((g) => (
-              <div key={g.label}>
-                <div className="text-[11px] font-bold uppercase tracking-wide text-[#5b6f85] mb-2">{g.label}</div>
+              <div key={g.labelKey}>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-[#5b6f85] mb-2">{t(g.labelKey as any)}</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {g.items.map((p) => {
                     const checked = isSuper ? true : roleSet.has(p.id);
