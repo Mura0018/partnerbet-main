@@ -503,6 +503,7 @@ function MyStatusToggle() {
       sender_id: user.id,
       message: next ? `🟢 ${name} endi faol.` : `🔴 ${name} band holatiga o'tdi.`,
       is_system: true,
+      event_type: "status",
     });
     setIsOnline(next);
     setSaving(false);
@@ -562,6 +563,7 @@ function MyBusyToggle() {
     await supabase.from("team_chat_messages").insert({
       sender_id: user.id,
       is_system: true,
+      event_type: "status",
       message: next
         ? `⛔ ${name} bandman deb belgiladi${nextReason ? ` (${nextReason})` : ""} — buyurtmalari boshqa operatorga o'tishi mumkin.`
         : `✅ ${name} yana bo'sh.`,
