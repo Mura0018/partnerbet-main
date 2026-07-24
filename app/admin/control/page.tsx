@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { SlidersHorizontal, Loader2, Wallet, Landmark, HandCoins, Gauge, MessageSquare, Wrench, Power } from "lucide-react";
+import { SlidersHorizontal, Loader2, Wallet, Landmark, HandCoins, Gauge, MessageSquare, Wrench, Power, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
 
@@ -62,6 +62,7 @@ export default function ControlCenter() {
   const alert = s.cashdesk_alert || {};
   const rules = s.team_chat_rules || {};
   const maint = s.maintenance || {};
+  const promo = s.promo || {};
 
   const Toggle = ({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) => (
     <button
@@ -162,6 +163,15 @@ export default function ControlCenter() {
         <Card icon={<MessageSquare size={16} />} title="Jamoa chati qoidalari" side="Xodim tarafi — pinned qoidalar">
           <textarea rows={4} className={inp} value={rules.text ?? ""} onChange={(e) => patch("team_chat_rules", { text: e.target.value })} />
           <div className="mt-3"><SaveBtn k="team_chat_rules" value={{ text: String(rules.text ?? "") }} /></div>
+        </Card>
+
+        {/* SOVRINLI KARTA / BONUS (mijoz tarafi) */}
+        <Card icon={<Trophy size={16} />} title="Sovrinli karta (aksiya)" side="Mijoz tarafi — bonus / sovrin">
+          <div className="mb-3">
+            <Toggle on={!!promo.enabled} label="Aksiya" onClick={() => patch("promo", { enabled: !promo.enabled })} />
+            <p className="text-[10.5px] text-white/30 mt-2">Yoniq bo'lса mijozlar sovrin kartasини oladi. Reyting: "Sovrinli karta" bo'limi.</p>
+          </div>
+          <SaveBtn k="promo" value={{ ...promo, enabled: !!promo.enabled }} />
         </Card>
 
         {/* SAYT (umumiy) */}
