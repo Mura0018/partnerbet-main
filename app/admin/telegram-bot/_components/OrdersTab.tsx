@@ -41,11 +41,11 @@ type Order = {
   customers: { phone: string; full_name: string | null } | null;
 };
 
-const ORDER_STATUS_FILTERS: { id: "pending" | "completed" | "rejected" | "all"; label: string }[] = [
-  { id: "pending", label: "Kutilmoqda" },
-  { id: "completed", label: "Bajarilgan" },
-  { id: "rejected", label: "Rad etilgan" },
-  { id: "all", label: "Barchasi" },
+const ORDER_STATUS_FILTERS: { id: "pending" | "completed" | "rejected" | "all"; labelKey: string }[] = [
+  { id: "pending", labelKey: "ord.fPending" },
+  { id: "completed", labelKey: "ord.fCompleted" },
+  { id: "rejected", labelKey: "ord.fRejected" },
+  { id: "all", labelKey: "ord.fAll" },
 ];
 
 function ReceiptViewer({ path }: { path: string }) {
@@ -841,6 +841,7 @@ export function OrdersTab() {
   const [search, setSearch] = useState("");
   const supabase = createClient();
   const { profile } = useCurrentProfile();
+  const { t } = useLocale();
   const isSuperAdmin = profile?.roles?.key === "super_admin";
 
   const load = async () => {
@@ -939,7 +940,7 @@ export function OrdersTab() {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           <input
             className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent"
-            placeholder="Qidirish: ID, telefon, ism, platforma..."
+            placeholder={t("ord.searchOrders")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -954,7 +955,7 @@ export function OrdersTab() {
                 filter === f.id ? "bg-accent/20 text-white" : "text-muted hover:text-white hover:bg-white/5"
               }`}
             >
-              {f.label}
+              {t(f.labelKey as any)}
             </button>
           ))}
 
@@ -964,21 +965,21 @@ export function OrdersTab() {
             onClick={() => setOnlyToday((v) => !v)}
             className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${onlyToday ? "bg-accent/20 text-white" : "text-muted hover:text-white hover:bg-white/5"}`}
           >
-            Bugun
+            {t("ord.today")}
           </button>
           <button
             onClick={() => setOnlyUnclaimed((v) => !v)}
             className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${onlyUnclaimed ? "bg-accent/20 text-white" : "text-muted hover:text-white hover:bg-white/5"}`}
           >
-            Band emas
+            {t("ord.unclaimed")}
           </button>
           <select
             value={operatorFilter}
             onChange={(e) => setOperatorFilter(e.target.value)}
             className="ml-auto bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
           >
-            <option value="all">Barcha operatorlar</option>
-            {currentUserId && <option value={currentUserId}>Faqat mening</option>}
+            <option value="all">{t("ord.allOperators")}</option>
+            {currentUserId && <option value={currentUserId}>{t("ord.onlyMine")}</option>}
             {Object.entries(operatorNames).filter(([id]) => id !== currentUserId).map(([id, name]) => (
               <option key={id} value={id}>{name}</option>
             ))}
@@ -987,10 +988,10 @@ export function OrdersTab() {
       </div>
 
       {loading ? (
-        <p className="text-[13px] text-muted">Yuklanmoqda...</p>
+        <p className="text-[13px] text-muted">{t("common.loading")}</p>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
-          Bu holatda buyurtmalar yo'q.
+          {t("ord.noOrders")}
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -1005,7 +1006,7 @@ export function OrdersTab() {
               >
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold flex items-center gap-1.5">
-                    {o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {o.platform}
+                    {o.type === "topup" ? t("ord.topup") : t("ord.withdraw")} · {o.platform}
                     {o.auto_processed && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">API</span>
                     )}
@@ -1015,12 +1016,12 @@ export function OrdersTab() {
                   </div>
                   {o.type === "topup" && o.payment_operator_id && (
                     <div className="text-[10px] text-[#F4C76A] mt-0.5">
-                      💳 {operatorNames[o.payment_operator_id] ?? "noma'lum"} kartasiga to'landi
+                      💳 {operatorNames[o.payment_operator_id] ?? t("ord.unknown")} {t("ord.paidToCard")}
                     </div>
                   )}
                   {ownerName && (
                     <div className="text-[10px] text-accent mt-1">
-                      {o.status === "pending" ? `🔵 ${ownerName} ko'rib chiqmoqda` : `${ownerName} bajardi`}
+                      {o.status === "pending" ? `🔵 ${ownerName} ${t("ord.reviewing")}` : `${ownerName} ${t("ord.didIt")}`}
                     </div>
                   )}
                   {o.status === "pending" && o.handoff_open && o.claimed_by !== currentUserId && (
@@ -1030,7 +1031,7 @@ export function OrdersTab() {
                       onClick={(e) => { e.stopPropagation(); takeover(o); }}
                       className="inline-flex items-center gap-1 mt-1.5 text-[11px] px-2.5 py-1 rounded-lg bg-[#F4C76A]/15 border border-[#F4C76A]/40 text-[#F4C76A] font-semibold cursor-pointer hover:bg-[#F4C76A]/25"
                     >
-                      ⚠️ Javob yo'q — Olaman
+                      {t("ord.takeoverBtn")}
                     </span>
                   )}
                 </div>
@@ -1041,7 +1042,7 @@ export function OrdersTab() {
                       o.status === "pending" ? "text-[#F4C76A]" : o.status === "completed" ? "text-[#4ADE80]" : "text-[#FF6B85]"
                     }`}
                   >
-                    {o.status === "pending" ? "Kutilmoqda" : o.status === "completed" ? "Bajarildi" : "Rad etildi"}
+                    {o.status === "pending" ? t("ord.statusPending") : o.status === "completed" ? t("ord.statusCompleted") : t("ord.statusRejected")}
                   </div>
                 </div>
               </button>

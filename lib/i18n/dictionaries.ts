@@ -50,6 +50,11 @@ export const dictionaries = {
       rejPlaceholder: "Izoh — rad etish uchun SHART, mijozga yuboriladi", rejReasonHint: "Rad etish uchun sabab yozing",
       reject: "Rad etish", done: "Bajarildi", doneOrder: "✓ Bajarilgan buyurtma", rejectedOrder: "✕ Rad etilgan buyurtma", note: "Izoh",
       rt1: "To'lov cheki noaniq/mos emas", rt2: "Hisob ID noto'g'ri yoki topilmadi", rt3: "Summasi to'lovga mos kelmayapti", rt4: "Pul yechish kodi noto'g'ri", rt5: "Takroriy buyurtma",
+      fPending: "Kutilmoqda", fCompleted: "Bajarilgan", fRejected: "Rad etilgan", fAll: "Barchasi",
+      statusPending: "Kutilmoqda", statusCompleted: "Bajarildi", statusRejected: "Rad etildi",
+      searchOrders: "Qidirish: ID, telefon, ism, platforma...", today: "Bugun", unclaimed: "Band emas",
+      allOperators: "Barcha operatorlar", onlyMine: "Faqat mening", noOrders: "Bu holatda buyurtmalar yo'q.",
+      paidToCard: "kartasiga to'landi", reviewing: "ko'rib chiqmoqda", didIt: "bajardi", takeoverBtn: "⚠️ Javob yo'q — Olaman",
     },
     common: {
       loading: "Yuklanmoqda…",
@@ -195,6 +200,11 @@ export const dictionaries = {
       rejPlaceholder: "Комментарий — ОБЯЗАТЕЛЕН для отклонения, отправляется клиенту", rejReasonHint: "Укажите причину отклонения",
       reject: "Отклонить", done: "Выполнено", doneOrder: "✓ Выполненный заказ", rejectedOrder: "✕ Отклонённый заказ", note: "Комментарий",
       rt1: "Чек оплаты нечёткий/не соответствует", rt2: "ID счёта неверный или не найден", rt3: "Сумма не соответствует оплате", rt4: "Код вывода неверный", rt5: "Повторный заказ",
+      fPending: "Ожидает", fCompleted: "Выполнен", fRejected: "Отклонён", fAll: "Все",
+      statusPending: "Ожидает", statusCompleted: "Выполнено", statusRejected: "Отклонено",
+      searchOrders: "Поиск: ID, телефон, имя, платформа...", today: "Сегодня", unclaimed: "Свободные",
+      allOperators: "Все операторы", onlyMine: "Только мои", noOrders: "Заказов в этом статусе нет.",
+      paidToCard: "— оплата на карту", reviewing: "рассматривает", didIt: "выполнил", takeoverBtn: "⚠️ Нет ответа — Взять",
     },
     common: {
       loading: "Загрузка…",
