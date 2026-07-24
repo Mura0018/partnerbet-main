@@ -5,6 +5,7 @@ import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, In
 import { createClient } from "@/lib/supabase";
 import { GlobalChat } from "@/lib/chat/GlobalChat";
 import { toast } from "@/lib/ui/toast";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type Partner = {
   id: string;
@@ -24,6 +25,7 @@ type Partner = {
 };
 
 function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () => void }) {
+  const { t } = useLocale();
   const supabase = createClient();
   const [services, setServices] = useState<any[]>([]);
   const [assign, setAssign] = useState<Record<string, boolean>>({});
@@ -78,7 +80,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 
   const createMember = async () => {
     setMError("");
-    if (!mForm.fullName.trim() || !mForm.email.trim()) { setMError("Ism va emailni kiriting."); return; }
+    if (!mForm.fullName.trim() || !mForm.email.trim()) { setMError(t("prt.eNameEmail")); return; }
     setMSaving(true);
     try {
       const res = await fetch("/api/admin/partners/create-member", {
@@ -88,20 +90,20 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       });
       const data = await res.json();
       if (!res.ok) {
-        const map: Record<string, string> = { email_taken: "Bu email allaqachon ro'yxatdan o'tgan.", forbidden: "Ruxsatingiz yo'q." };
-        const msg = map[data.error] ?? "Xatolik yuz berdi.";
+        const map: Record<string, string> = { email_taken: t("prt.eEmailTaken"), forbidden: t("prt.eForbidden") };
+        const msg = map[data.error] ?? t("prt.eGeneric");
         setMError(msg);
-        toast.error("A'zo yaratilmadi: " + msg);
+        toast.error(t("prt.tMemberFail") + msg);
         return;
       }
       setShowAddMember(false);
       setMForm({ fullName: "", email: "", partnerRole: "partner_admin" });
       loadMembers();
-      if (data.inviteUrl) { setInviteLink(data.inviteUrl); toast.success("A'zo yaratildi ✅ Havolani hamkorga bering."); }
-      else toast.success("A'zo yaratildi (havola hosil bo'lmadi — 0064 SQL qo'yilganmi?).");
+      if (data.inviteUrl) { setInviteLink(data.inviteUrl); toast.success(t("prt.tMemberOk")); }
+      else toast.success(t("prt.tMemberOkNoLink"));
     } catch {
-      setMError("Ulanishda xatolik. Qayta urinib ko'ring.");
-      toast.error("Ulanishda xatolik. Internetni tekshiring.");
+      setMError(t("prt.eConnRetry"));
+      toast.error(t("prt.eConnCheck"));
     } finally {
       setMSaving(false);
     }
@@ -111,23 +113,23 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
     try {
       const res = await fetch("/api/admin/partners/reset-invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profileId }) });
       const data = await res.json();
-      if (res.ok && data.inviteUrl) { setInviteLink(data.inviteUrl); toast.success("Yangi havola hosil bo'ldi ✅"); }
-      else toast.error("Havola hosil bo'lmadi (0064 SQL?).");
-    } catch { toast.error("Ulanishda xatolik."); }
+      if (res.ok && data.inviteUrl) { setInviteLink(data.inviteUrl); toast.success(t("prt.tNewLink")); }
+      else toast.error(t("prt.eNoLink"));
+    } catch { toast.error(t("prt.eConn")); }
   };
 
-  const copyInvite = () => { if (inviteLink) { navigator.clipboard?.writeText(inviteLink); toast.success("Havola nusxalandi"); } };
+  const copyInvite = () => { if (inviteLink) { navigator.clipboard?.writeText(inviteLink); toast.success(t("prt.tLinkCopied")); } };
 
   const removeMember = async (id: string) => {
-    if (!confirm("A'zoni hamkordan chiqarishni tasdiqlaysizmi?")) return;
+    if (!confirm(t("prt.confirmRemoveMember"))) return;
     const { error } = await supabase.from("partner_members").delete().eq("id", id);
-    if (error) toast.error("Chiqarilmadi: " + error.message);
-    else toast.success("A'zo chiqarildi");
+    if (error) toast.error(t("prt.tRemoveFail") + error.message);
+    else toast.success(t("prt.tRemoved"));
     loadMembers();
   };
 
   const createInvoice = async () => {
-    if (!invForm.period.trim() || !(Number(invForm.amount) > 0)) { toast.error("Davr (YYYY-MM) va summani to'g'ri kiriting."); return; }
+    if (!invForm.period.trim() || !(Number(invForm.amount) > 0)) { toast.error(t("prt.eInvoiceForm")); return; }
     setInvSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("partner_invoices").insert({
@@ -135,29 +137,29 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       amount: Number(invForm.amount) || 0, currency: partner.currency, status: "unpaid", created_by: user?.id ?? null,
     });
     setInvSaving(false);
-    if (error) { toast.error("Invoice yaratilmadi: " + error.message); return; }
-    toast.success("Invoice yaratildi ✅");
+    if (error) { toast.error(t("prt.tInvoiceFail") + error.message); return; }
+    toast.success(t("prt.tInvoiceOk"));
     setInvForm((p) => ({ ...p, amount: "" }));
     loadInvoices();
   };
   const toggleInvoicePaid = async (inv: any) => {
     const next = inv.status === "paid" ? "unpaid" : "paid";
     const { error } = await supabase.from("partner_invoices").update({ status: next, paid_at: next === "paid" ? new Date().toISOString() : null }).eq("id", inv.id);
-    if (error) toast.error("O'zgartirilmadi: " + error.message);
-    else { toast.success(next === "paid" ? "To'langan deb belgilandi ✅" : "To'lanmagan"); loadInvoices(); }
+    if (error) toast.error(t("prt.tChangeFail") + error.message);
+    else { toast.success(next === "paid" ? t("prt.tMarkedPaid") : t("prt.tMarkedUnpaid")); loadInvoices(); }
   };
 
   const toggleService = async (id: string) => {
     const next = !assign[id];
     setAssign((p) => ({ ...p, [id]: next }));
     const { error } = await supabase.from("partner_service_assignments").upsert({ partner_id: partner.id, service_id: id, enabled: next }, { onConflict: "partner_id,service_id" });
-    if (error) { setAssign((p) => ({ ...p, [id]: !next })); toast.error("Saqlanmadi: " + error.message); }
+    if (error) { setAssign((p) => ({ ...p, [id]: !next })); toast.error(t("prt.tNotSaved") + error.message); }
   };
   const toggleTheme = async (id: string) => {
     const next = !themeAccess[id];
     setThemeAccess((p) => ({ ...p, [id]: next }));
     const { error } = await supabase.from("partner_theme_access").upsert({ partner_id: partner.id, theme_id: id, enabled: next }, { onConflict: "partner_id,theme_id" });
-    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); toast.error("Saqlanmadi: " + error.message); }
+    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); toast.error(t("prt.tNotSaved") + error.message); }
   };
 
   return (
@@ -166,28 +168,28 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       <div className="absolute inset-y-0 right-0 w-full sm:w-[440px] bg-bg border-l border-white/10 flex flex-col shadow-2xl">
         <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/8 shrink-0">
           <SlidersHorizontal size={18} className="text-accent" />
-          <h2 className="text-[15px] font-bold flex-1 truncate">Sozlash — {partner.name}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10" aria-label="Yopish"><X size={18} /></button>
+          <h2 className="text-[15px] font-bold flex-1 truncate">{t("prt.setup")} — {partner.name}</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10" aria-label={t("prt.close")}><X size={18} /></button>
         </div>
         <div className="p-4 space-y-6 overflow-y-auto">
           {loading ? (
-            <p className="text-[13px] text-muted">Yuklanmoqda...</p>
+            <p className="text-[13px] text-muted">{t("prt.loading")}</p>
           ) : missing ? (
             <div className="rounded-xl border border-[#F4C76A]/30 bg-[#F4C76A]/10 p-4 text-[13px]">
-              <div className="font-semibold text-[#F4C76A] mb-1">Jadvallar topilmadi</div>
-              <div className="text-muted">0059 va 0060 migratsiyalarini Supabase'da ishga tushiring.</div>
+              <div className="font-semibold text-[#F4C76A] mb-1">{t("prt.missingTitle")}</div>
+              <div className="text-muted">{t("prt.missingBody")}</div>
             </div>
           ) : (
             <>
               <div>
-                <div className="flex items-center gap-2 mb-2"><Bot size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Bot</h3></div>
+                <div className="flex items-center gap-2 mb-2"><Bot size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hBot")}</h3></div>
                 <div className={`rounded-lg px-3 py-2.5 text-[12.5px] border ${partner.bot_username ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/[0.03] border-white/10 text-muted"}`}>
-                  {partner.bot_username ? `✅ Ulangan${partner.bot_username ? ` — @${partner.bot_username}` : ""}` : "Hali ulanmagan — hamkor o'z panelidan ulaydi"}
+                  {partner.bot_username ? `${t("prt.botConnected")} — @${partner.bot_username}` : t("prt.botNotConnected")}
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center gap-2 mb-2"><Check size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Xizmatlar</h3></div>
+                <div className="flex items-center gap-2 mb-2"><Check size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hServices")}</h3></div>
                 <div className="space-y-1.5">
                   {services.map((s) => (
                     <label key={s.id} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2.5 cursor-pointer">
@@ -199,17 +201,17 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
               </div>
 
               <div>
-                <div className="flex items-center gap-2 mb-2"><Palette size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Temalar</h3></div>
+                <div className="flex items-center gap-2 mb-2"><Palette size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hThemes")}</h3></div>
                 <div className="space-y-1.5">
-                  {themes.map((t) => (
-                    <div key={t.id} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2.5">
-                      <span className="w-4 h-4 rounded-full shrink-0" style={{ background: t.accent || "#3D7FFF" }} />
-                      <div className="flex-1 min-w-0"><span className="text-[13px] font-medium">{t.name}</span></div>
-                      {t.is_premium ? (
+                  {themes.map((thm) => (
+                    <div key={thm.id} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2.5">
+                      <span className="w-4 h-4 rounded-full shrink-0" style={{ background: thm.accent || "#3D7FFF" }} />
+                      <div className="flex-1 min-w-0"><span className="text-[13px] font-medium">{thm.name}</span></div>
+                      {thm.is_premium ? (
                         <label className="flex items-center gap-1.5 text-[11.5px] text-muted cursor-pointer">
-                          <input type="checkbox" checked={!!themeAccess[t.id]} onChange={() => toggleTheme(t.id)} className="accent-accent" /> Yoqilgan
+                          <input type="checkbox" checked={!!themeAccess[thm.id]} onChange={() => toggleTheme(thm.id)} className="accent-accent" /> {t("prt.themeOn")}
                         </label>
-                      ) : <span className="text-[11px] text-[#4ADE80]">Bepul</span>}
+                      ) : <span className="text-[11px] text-[#4ADE80]">{t("prt.themeFree")}</span>}
                     </div>
                   ))}
                 </div>
@@ -217,73 +219,73 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2"><Users size={15} className="text-accent" /><h3 className="text-[13px] font-bold">A'zolar (panel logini)</h3></div>
-                  <button onClick={() => { setShowAddMember((v) => !v); setMError(""); }} className="text-[11.5px] px-2.5 py-1 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25">+ A'zo</button>
+                  <div className="flex items-center gap-2"><Users size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hMembers")}</h3></div>
+                  <button onClick={() => { setShowAddMember((v) => !v); setMError(""); }} className="text-[11.5px] px-2.5 py-1 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25">{t("prt.addMember")}</button>
                 </div>
                 {showAddMember && (
                   <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 mb-2.5 space-y-2">
-                    <input placeholder="Ism familiya" value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-                    <input placeholder="Email" type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-                    <p className="text-[11px] text-muted">Parol qo'yilmaydi — yaratilgach havola chiqadi, hamkor o'zi o'rnatadi.</p>
+                    <input placeholder={t("prt.phFullName")} value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <input placeholder={t("prt.phEmail")} type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <p className="text-[11px] text-muted">{t("prt.noPassNote")}</p>
                     <select value={mForm.partnerRole} onChange={(e) => setMForm((p) => ({ ...p, partnerRole: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
-                      <option value="partner_admin">Partner admin (kattasi)</option>
-                      <option value="staff">Xodim</option>
+                      <option value="partner_admin">{t("prt.roleAdmin")}</option>
+                      <option value="staff">{t("prt.roleStaff")}</option>
                     </select>
                     {mError && <p className="text-[12px] text-[#FF6B85]">{mError}</p>}
                     <button onClick={createMember} disabled={mSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
-                      {mSaving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Yaratish"}
+                      {mSaving ? <Loader2 size={14} className="animate-spin mx-auto" /> : t("prt.create")}
                     </button>
                   </div>
                 )}
                 {inviteLink && (
                   <div className="rounded-lg border border-[#4ADE80]/30 bg-[#4ADE80]/10 p-3 mb-2.5">
-                    <div className="text-[11px] text-[#4ADE80] font-semibold mb-1.5">Parol o'rnatish havolasi — hamkorga bering (7 kun amal qiladi):</div>
+                    <div className="text-[11px] text-[#4ADE80] font-semibold mb-1.5">{t("prt.inviteTitle")}</div>
                     <div className="flex items-center gap-2">
                       <input readOnly value={inviteLink} onFocus={(e) => e.target.select()} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-md py-1.5 px-2 text-[11px] font-mono" />
-                      <button onClick={copyInvite} className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-md bg-accent/20 text-[#7db8ff] font-medium">Nusxa</button>
+                      <button onClick={copyInvite} className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-md bg-accent/20 text-[#7db8ff] font-medium">{t("prt.copy")}</button>
                       <button onClick={() => setInviteLink(null)} className="shrink-0 p-1.5 rounded-md hover:bg-white/10 text-muted"><X size={13} /></button>
                     </div>
                   </div>
                 )}
                 <div className="space-y-1.5">
                   {members.length === 0 ? (
-                    <p className="text-[12px] text-muted">Hali a'zo yo'q. Partner admin yarating.</p>
+                    <p className="text-[12px] text-muted">{t("prt.noMembers")}</p>
                   ) : members.map((m) => (
                     <div key={m.id} className="flex items-center gap-2 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2">
                       <div className="flex-1 min-w-0">
                         <span className="text-[13px] font-medium">{m.profiles?.full_name || "—"}</span>
-                        <span className="text-[10.5px] text-muted"> · {m.partner_role === "partner_admin" ? "Admin" : "Xodim"}</span>
+                        <span className="text-[10.5px] text-muted"> · {m.partner_role === "partner_admin" ? t("prt.mAdmin") : t("prt.mStaff")}</span>
                       </div>
-                      <button onClick={() => resetInvite(m.profile_id)} className="text-[10.5px] px-2 py-1 rounded-md bg-white/5 text-muted hover:text-white" title="Parol havolasi (tiklash)">Havola</button>
-                      <button onClick={() => removeMember(m.id)} className="p-1 rounded hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label="Chiqarish"><Trash2 size={13} /></button>
+                      <button onClick={() => resetInvite(m.profile_id)} className="text-[10.5px] px-2 py-1 rounded-md bg-white/5 text-muted hover:text-white" title={t("prt.tipResetLink")}>{t("prt.linkBtn")}</button>
+                      <button onClick={() => removeMember(m.id)} className="p-1 rounded hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label={t("prt.removeMember")}><Trash2 size={13} /></button>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center gap-2 mb-2"><CalendarClock size={15} className="text-accent" /><h3 className="text-[13px] font-bold">Hisob-kitob</h3></div>
+                <div className="flex items-center gap-2 mb-2"><CalendarClock size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hBilling")}</h3></div>
                 <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 mb-2.5 space-y-2">
                   <div className="flex gap-2">
                     <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
                     <select value={invForm.model} onChange={(e) => setInvForm((p) => ({ ...p, model: e.target.value }))} className="bg-white/5 border border-white/10 rounded-lg py-2 px-2 text-[12px] outline-none focus:border-accent">
-                      <option value="subscription">Obuna</option>
-                      <option value="commission">Komissiya</option>
+                      <option value="subscription">{t("prt.subscription")}</option>
+                      <option value="commission">{t("prt.commission")}</option>
                     </select>
-                    <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={`Summa (${partner.currency})`} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
+                    <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={t("prt.phAmount", { cur: partner.currency })} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
                   </div>
-                  <button onClick={createInvoice} disabled={invSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[12.5px] disabled:opacity-50">{invSaving ? <Loader2 size={13} className="animate-spin mx-auto" /> : "Invoice yaratish"}</button>
+                  <button onClick={createInvoice} disabled={invSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[12.5px] disabled:opacity-50">{invSaving ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("prt.createInvoice")}</button>
                 </div>
                 <div className="space-y-1.5">
                   {invoices.length === 0 ? (
-                    <p className="text-[12px] text-muted">Hozircha invoice yo'q.</p>
+                    <p className="text-[12px] text-muted">{t("prt.noInvoices")}</p>
                   ) : invoices.map((inv) => (
                     <div key={inv.id} className="flex items-center gap-2 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2">
                       <div className="flex-1 min-w-0">
                         <span className="text-[12.5px] font-medium">{inv.period}</span>
-                        <span className="text-[10.5px] text-muted"> · {inv.model === "commission" ? "Komissiya" : "Obuna"} · {Math.round(inv.amount).toLocaleString("ru-RU")} {inv.currency}</span>
+                        <span className="text-[10.5px] text-muted"> · {inv.model === "commission" ? t("prt.commission") : t("prt.subscription")} · {Math.round(inv.amount).toLocaleString("ru-RU")} {inv.currency}</span>
                       </div>
-                      <button onClick={() => toggleInvoicePaid(inv)} className={`shrink-0 text-[10.5px] px-2 py-1 rounded-md ${inv.status === "paid" ? "bg-[#4ADE80]/15 text-[#4ADE80]" : "bg-[#F4C76A]/15 text-[#F4C76A]"}`}>{inv.status === "paid" ? "To'langan" : "To'lanmagan"}</button>
+                      <button onClick={() => toggleInvoicePaid(inv)} className={`shrink-0 text-[10.5px] px-2 py-1 rounded-md ${inv.status === "paid" ? "bg-[#4ADE80]/15 text-[#4ADE80]" : "bg-[#F4C76A]/15 text-[#F4C76A]"}`}>{inv.status === "paid" ? t("prt.paid") : t("prt.unpaid")}</button>
                     </div>
                   ))}
                 </div>
@@ -297,10 +299,10 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 }
 
 const CURRENCIES = ["UZS", "USD", "RUB", "EUR", "KZT", "TRY"];
-const STATUS_META: Record<string, { label: string; cls: string }> = {
-  active: { label: "Faol", cls: "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" },
-  pending: { label: "Kutilmoqda", cls: "bg-[#F4C76A]/10 text-[#F4C76A] border-[#F4C76A]/30" },
-  suspended: { label: "To'xtatilgan", cls: "bg-[#FF6B85]/10 text-[#FF6B85] border-[#FF6B85]/30" },
+const STATUS_META: Record<string, { labelKey: string; cls: string }> = {
+  active: { labelKey: "prt.stActive", cls: "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" },
+  pending: { labelKey: "prt.stPending", cls: "bg-[#F4C76A]/10 text-[#F4C76A] border-[#F4C76A]/30" },
+  suspended: { labelKey: "prt.stSuspended", cls: "bg-[#FF6B85]/10 text-[#FF6B85] border-[#FF6B85]/30" },
 };
 
 function fmtNum(n: number) {
@@ -308,6 +310,7 @@ function fmtNum(n: number) {
 }
 
 function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner | null; prefill?: { name?: string; company?: string }; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLocale();
   const editing = !!partner;
   const [name, setName] = useState(partner?.name ?? prefill?.name ?? "");
   const [company, setCompany] = useState(partner?.company ?? prefill?.company ?? "");
@@ -324,7 +327,7 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!name.trim()) { setError("Hamkor nomini kiriting."); return; }
+    if (!name.trim()) { setError(t("prt.eName")); return; }
     setSaving(true);
     try {
       const payload = {
@@ -350,17 +353,17 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
       // Xatoni OBYEKT bo'yicha tekshiramiz (bo'sh message'li xato ham ushlanadi) +
       // qator haqiqatan yozildi va o'qildi (row) — shundagina muvaffaqiyat.
       if (opError || !row) {
-        const msg = opError?.message || opError?.hint || opError?.code || "Noma'lum xatolik (ehtimol ruxsat/RLS yoki ulanish/token).";
-        setError("Saqlashda xatolik: " + msg);
-        toast.error("Saqlanmadi: " + msg);
+        const msg = opError?.message || opError?.hint || opError?.code || t("prt.eSaveUnknown");
+        setError(t("prt.eSavePrefix") + msg);
+        toast.error(t("prt.tNotSaved") + msg);
         return;
       }
-      toast.success(editing ? "Hamkor yangilandi ✅" : "Hamkor muvaffaqiyatli yaratildi ✅");
+      toast.success(editing ? t("prt.tUpdated") : t("prt.tCreated"));
       onSaved();
       onClose();
     } catch (err: any) {
-      setError("Kutilmagan xatolik yuz berdi.");
-      toast.error("Xatolik: " + (err?.message ?? "noma'lum") + ". Internet/ulanishni tekshiring.");
+      setError(t("prt.eUnexpected"));
+      toast.error(t("prt.tErrPrefix") + (err?.message ?? t("prt.unknown")) + t("prt.tErrSuffix"));
     } finally {
       setSaving(false);
     }
@@ -370,21 +373,21 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
       <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-[16px]">{editing ? "Hamkorni tahrirlash" : "Yangi hamkor"}</h2>
-          <button type="button" onClick={onClose} aria-label="Yopish"><X size={18} /></button>
+          <h2 className="font-bold text-[16px]">{editing ? t("prt.editTitle") : t("prt.newTitle")}</h2>
+          <button type="button" onClick={onClose} aria-label={t("prt.close")}><X size={18} /></button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="col-span-2">
-            <label className="block text-[12px] text-muted mb-1">Hamkor nomi *</label>
+            <label className="block text-[12px] text-muted mb-1">{t("prt.fName")}</label>
             <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
-            <label className="block text-[12px] text-muted mb-1">Kompaniya</label>
+            <label className="block text-[12px] text-muted mb-1">{t("prt.fCompany")}</label>
             <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder="1xbet" value={company} onChange={(e) => setCompany(e.target.value)} />
           </div>
           <div>
-            <label className="block text-[12px] text-muted mb-1">Valyuta</label>
+            <label className="block text-[12px] text-muted mb-1">{t("prt.fCurrency")}</label>
             <select className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={currency} onChange={(e) => setCurrency(e.target.value)}>
               {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -392,40 +395,40 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
         </div>
 
         <div className="mb-3">
-          <label className="block text-[12px] text-muted mb-1">Kontakt (ixtiyoriy)</label>
-          <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder="Telegram / telefon" value={contact} onChange={(e) => setContact(e.target.value)} />
+          <label className="block text-[12px] text-muted mb-1">{t("prt.fContact")}</label>
+          <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phContact")} value={contact} onChange={(e) => setContact(e.target.value)} />
         </div>
 
         <div className="mb-3">
-          <label className="block text-[12px] text-muted mb-1.5">To'lov modeli</label>
+          <label className="block text-[12px] text-muted mb-1.5">{t("prt.fBilling")}</label>
           <div className="flex gap-1.5 mb-2">
             {(["commission", "subscription"] as const).map((b) => (
               <button key={b} type="button" onClick={() => setBilling(b)}
                 className={`flex-1 py-2 rounded-lg text-[12.5px] font-medium border ${billing === b ? "bg-accent/20 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}>
-                {b === "commission" ? "Komissiya (%)" : "Obuna"}
+                {b === "commission" ? t("prt.bCommission") : t("prt.bSubscription")}
               </button>
             ))}
           </div>
           {billing === "commission" ? (
-            <input type="number" step="0.01" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder="Komissiya foizi, masalan 5" value={commission} onChange={(e) => setCommission(e.target.value)} />
+            <input type="number" step="0.01" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phCommission")} value={commission} onChange={(e) => setCommission(e.target.value)} />
           ) : (
-            <input type="number" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={`Obuna to'lovi (${currency})`} value={subscription} onChange={(e) => setSubscription(e.target.value)} />
+            <input type="number" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phSubscription", { cur: currency })} value={subscription} onChange={(e) => setSubscription(e.target.value)} />
           )}
         </div>
 
         <div className="mb-5">
-          <label className="block text-[12px] text-muted mb-1">Holat</label>
+          <label className="block text-[12px] text-muted mb-1">{t("prt.fStatus")}</label>
           <select className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={status} onChange={(e) => setStatus(e.target.value as Partner["status"])}>
-            <option value="active">Faol</option>
-            <option value="pending">Kutilmoqda</option>
-            <option value="suspended">To'xtatilgan</option>
+            <option value="active">{t("prt.stActive")}</option>
+            <option value="pending">{t("prt.stPending")}</option>
+            <option value="suspended">{t("prt.stSuspended")}</option>
           </select>
         </div>
 
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
 
         <button type="submit" disabled={saving} className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] disabled:opacity-50">
-          {saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : editing ? "Saqlash" : "Yaratish"}
+          {saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : editing ? t("prt.save") : t("prt.create")}
         </button>
       </form>
     </div>
@@ -434,16 +437,17 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
 
 type PartnerLead = { id: string; name: string | null; phone: string | null; company: string | null; message: string | null; status: string; created_at: string };
 
-const LEAD_STATUS: Record<string, { label: string; cls: string }> = {
-  new: { label: "Yangi", cls: "bg-accent/15 text-[#7db8ff] border-accent/30" },
-  contacted: { label: "Bog'lanildi", cls: "bg-[#F4C76A]/10 text-[#F4C76A] border-[#F4C76A]/30" },
-  converted: { label: "Hamkor bo'ldi", cls: "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" },
-  rejected: { label: "Rad etildi", cls: "bg-[#FF6B85]/10 text-[#FF6B85] border-[#FF6B85]/30" },
+const LEAD_STATUS: Record<string, { labelKey: string; cls: string }> = {
+  new: { labelKey: "prt.lNew", cls: "bg-accent/15 text-[#7db8ff] border-accent/30" },
+  contacted: { labelKey: "prt.lContacted", cls: "bg-[#F4C76A]/10 text-[#F4C76A] border-[#F4C76A]/30" },
+  converted: { labelKey: "prt.lConverted", cls: "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" },
+  rejected: { labelKey: "prt.lRejected", cls: "bg-[#FF6B85]/10 text-[#FF6B85] border-[#FF6B85]/30" },
 };
 
 type ModalState = { open: boolean; partner: Partner | null; prefill?: { name?: string; company?: string }; leadId?: string };
 
 export default function PartnersManager() {
+  const { t } = useLocale();
   const [view, setView] = useState<"partners" | "leads" | "chat">("partners");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [leads, setLeads] = useState<PartnerLead[]>([]);
@@ -458,7 +462,7 @@ export default function PartnersManager() {
       supabase.from("partners").select("*").order("created_at", { ascending: false }),
       supabase.from("partner_leads").select("id, name, phone, company, message, status, created_at").order("created_at", { ascending: false }),
     ]);
-    if (pErr) toast.error("Ro'yxatni yuklashda xatolik: " + (pErr.message || pErr.code || "noma'lum"));
+    if (pErr) toast.error(t("prt.tLoadErr") + (pErr.message || pErr.code || t("prt.unknown")));
     setPartners((pData as Partner[]) ?? []);
     setLeads((lData as PartnerLead[]) ?? []);
     setLoading(false);
@@ -468,10 +472,10 @@ export default function PartnersManager() {
   const newLeadsCount = leads.filter((l) => l.status === "new").length;
 
   const remove = async (p: Partner) => {
-    if (!confirm(`"${p.name}" hamkorini butunlay o'chirishni tasdiqlaysizmi? Uning a'zolari, API'lari va chati ham o'chadi.`)) return;
+    if (!confirm(t("prt.confirmDelete", { name: p.name }))) return;
     const { error } = await supabase.from("partners").delete().eq("id", p.id);
-    if (error) toast.error("O'chirishda xatolik: " + error.message);
-    else { toast.success("Hamkor o'chirildi"); load(); }
+    if (error) toast.error(t("prt.tDelFail") + error.message);
+    else { toast.success(t("prt.tDeleted")); load(); }
   };
 
   const setLeadStatus = async (lead: PartnerLead, status: string) => {
@@ -492,27 +496,27 @@ export default function PartnersManager() {
       <div className="flex items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2">
           <Building2 size={20} className="text-accent" />
-          <h1 className="text-[22px] font-bold">Hamkorlar</h1>
+          <h1 className="text-[22px] font-bold">{t("prt.title")}</h1>
         </div>
         {view === "partners" && (
           <button onClick={() => setModal({ open: true, partner: null })} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
-            <Plus size={15} /> Yangi hamkor
+            <Plus size={15} /> {t("prt.newPartner")}
           </button>
         )}
       </div>
-      <p className="text-[13px] text-muted mb-5">Hamkor kompaniyalar — o'z panel, API va xodimlari bilan ishlaydi. Siz komissiya/obuna orqali daromad olasiz.</p>
+      <p className="text-[13px] text-muted mb-5">{t("prt.sub")}</p>
 
       {/* Tablar */}
       <div className="inline-flex gap-1 p-1 mb-6 rounded-xl bg-white/[0.03] border border-white/8">
         <button onClick={() => setView("partners")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium transition-all ${view === "partners" ? "bg-accent/20 text-white" : "text-muted hover:text-white"}`}>
-          <Building2 size={14} /> Hamkorlar
+          <Building2 size={14} /> {t("prt.tabPartners")}
         </button>
         <button onClick={() => setView("leads")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium transition-all ${view === "leads" ? "bg-accent/20 text-white" : "text-muted hover:text-white"}`}>
-          <Inbox size={14} /> So'rovlar
+          <Inbox size={14} /> {t("prt.tabLeads")}
           {newLeadsCount > 0 && <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FF6B85] text-white text-[10px] font-bold flex items-center justify-center">{newLeadsCount}</span>}
         </button>
         <button onClick={() => setView("chat")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium transition-all ${view === "chat" ? "bg-accent/20 text-white" : "text-muted hover:text-white"}`}>
-          <MessageCircle size={14} /> Global chat
+          <MessageCircle size={14} /> {t("prt.tabChat")}
         </button>
       </div>
 
@@ -521,11 +525,11 @@ export default function PartnersManager() {
           <GlobalChat />
         </div>
       ) : loading ? (
-        <p className="text-[13px] text-muted">Yuklanmoqda...</p>
+        <p className="text-[13px] text-muted">{t("prt.loading")}</p>
       ) : view === "partners" ? (
         partners.length === 0 ? (
           <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
-            Hozircha hamkor yo'q. "Yangi hamkor" tugmasi orqali qo'shing.
+            {t("prt.emptyPartners")}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -538,7 +542,7 @@ export default function PartnersManager() {
                       <div className="text-[14px] font-bold truncate">{p.name}</div>
                       {p.company && <div className="text-[11px] text-muted truncate">{p.company}</div>}
                     </div>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{st.label}</span>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{t(st.labelKey as any)}</span>
                   </div>
                   <div className="flex items-center gap-3 text-[12px] text-muted mb-3">
                     <span className="flex items-center gap-1">
@@ -551,12 +555,12 @@ export default function PartnersManager() {
                   </div>
                   <div className="mt-auto flex items-center gap-1.5 pt-2 border-t border-white/5">
                     <button onClick={() => setProvisionFor(p)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
-                      <SlidersHorizontal size={13} /> Sozlash
+                      <SlidersHorizontal size={13} /> {t("prt.setupBtn")}
                     </button>
                     <button onClick={() => setModal({ open: true, partner: p })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/10 text-[11.5px] text-muted hover:text-white">
-                      <Pencil size={13} /> Tahrirlash
+                      <Pencil size={13} /> {t("prt.editBtn")}
                     </button>
-                    <button onClick={() => remove(p)} className="ml-auto p-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label="O'chirish" title="O'chirish">
+                    <button onClick={() => remove(p)} className="ml-auto p-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85]" aria-label={t("prt.delBtn")} title={t("prt.delBtn")}>
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -568,7 +572,7 @@ export default function PartnersManager() {
       ) : (
         leads.length === 0 ? (
           <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
-            Hozircha hamkorlik so'rovi yo'q.
+            {t("prt.emptyLeads")}
           </div>
         ) : (
           <div className="space-y-3">
@@ -584,19 +588,19 @@ export default function PartnersManager() {
                         {l.phone && <span className="flex items-center gap-1"><Phone size={11} /> {l.phone}</span>}
                       </div>
                     </div>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{st.label}</span>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{t(st.labelKey as any)}</span>
                   </div>
                   {l.message && <p className="text-[12.5px] text-white/85 bg-white/[0.03] rounded-lg px-3 py-2 my-2">{l.message}</p>}
                   <div className="text-[10.5px] text-[#5b6f85] mb-2.5">{new Date(l.created_at).toLocaleString("ru-RU")}</div>
                   <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-white/5">
                     <button onClick={() => setModal({ open: true, partner: null, prefill: { name: l.company || l.name || "", company: l.company || "" }, leadId: l.id })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
-                      <ArrowRight size={13} /> Hamkor yaratish
+                      <ArrowRight size={13} /> {t("prt.createPartner")}
                     </button>
                     {l.status !== "contacted" && (
-                      <button onClick={() => setLeadStatus(l, "contacted")} className="px-2.5 py-1.5 rounded-md hover:bg-white/10 text-[11.5px] text-muted hover:text-white">Bog'lanildi</button>
+                      <button onClick={() => setLeadStatus(l, "contacted")} className="px-2.5 py-1.5 rounded-md hover:bg-white/10 text-[11.5px] text-muted hover:text-white">{t("prt.contacted")}</button>
                     )}
                     {l.status !== "rejected" && (
-                      <button onClick={() => setLeadStatus(l, "rejected")} className="ml-auto px-2.5 py-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85] text-[11.5px]">Rad etish</button>
+                      <button onClick={() => setLeadStatus(l, "rejected")} className="ml-auto px-2.5 py-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85] text-[11.5px]">{t("prt.reject")}</button>
                     )}
                   </div>
                 </div>
