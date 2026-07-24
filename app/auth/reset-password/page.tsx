@@ -50,11 +50,23 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { data: sess } = await supabase.auth.getSession();
+    const accessToken = sess.session?.access_token;
+    if (!accessToken) { setLoading(false); setError(t("resetPassword.invalidLink")); return; }
+
+    // Parolni SERVER route orqali yangilaymiz — kuch tekshiruvi server tomonда
+    // majburlanadi (client bypass yopiladi).
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken, password }),
+    });
+    const data = await res.json().catch(() => ({}));
     setLoading(false);
 
-    if (updateError) {
-      setError(t("login.genericError"));
+    if (!res.ok || !data.ok) {
+      if (data.error === "weak_password" && data.failedRules?.[0]) setError(t(`passwordStrength.${data.failedRules[0]}`));
+      else setError(t("login.genericError"));
       return;
     }
     setSuccess(true);

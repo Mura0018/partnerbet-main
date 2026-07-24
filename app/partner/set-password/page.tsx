@@ -37,9 +37,20 @@ function SetPasswordInner() {
     setBusy(true);
     try {
       if (recovery) {
-        // Supabase email havolasi: joriy sessiya orqali parolni yangilaymiz.
-        const { error: upErr } = await supabase.auth.updateUser({ password: pw });
-        if (upErr) { setError("Xatolik: " + upErr.message); return; }
+        // Recovery sessiyasi -> server route (parol kuchi SERVER tomonда majburlanadi).
+        const { data: sess } = await supabase.auth.getSession();
+        const accessToken = sess.session?.access_token;
+        if (!accessToken) { setError("Havola yaroqsiz yoki muddati tugagan. Admindan yangi havola so'rang."); return; }
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken, password: pw }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          setError(data.error === "weak_password" ? "Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi)." : "Xatolik yuz berdi.");
+          return;
+        }
         setDone(true);
       } else if (token) {
         // Admin bergan havola (eski token oqimi).
