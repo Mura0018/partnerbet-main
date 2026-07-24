@@ -21,6 +21,7 @@ export type ShellData = {
     cashdesksLow: number | null;
   };
   balance?: { configured: boolean; balance: number | null; limit: number | null } | null;
+  deskName?: string | null;
   slaDeadline?: string | null;
 };
 

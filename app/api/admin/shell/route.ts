@@ -161,12 +161,26 @@ export async function GET() {
   }
 
   // ---- Jonli 1xBet chaqiruvlari (sekin bo'lishi mumkin -> timeout bilan) ----
+  // Rol-aware: operator o'z kassasi (owner_operator_id) balansini ko'radi;
+  // aks holda (super) — birlamchi kassa.
   let balance: { configured: boolean; balance: number | null; limit: number | null } | null = null;
+  let deskName: string | null = null;
   if (canManageOrders) {
+    let ownCreds = null;
+    try {
+      const desks = await listCashdesks();
+      const mine = desks.find((d) => d.is_active && (d as any).owner_operator_id === user.id);
+      if (mine) {
+        deskName = mine.name;
+        ownCreds = await getCashdeskCredsById(mine.id);
+      }
+    } catch {
+      /* skip */
+    }
     balance = await withTimeout(
       (async () => {
         try {
-          const creds = await getDefaultCashdeskCreds();
+          const creds = ownCreds ?? (await getDefaultCashdeskCreds());
           const r = await getCashdeskBalance(creds ?? undefined);
           if (!r.ok) return { configured: r.error !== "not_configured", balance: null, limit: null };
           return { configured: true, balance: r.data.Balance, limit: r.data.Limit };
@@ -215,6 +229,7 @@ export async function GET() {
       me,
       counts,
       balance,
+      deskName,
       slaDeadline,
     },
     { headers: { "Cache-Control": "no-store" } },
