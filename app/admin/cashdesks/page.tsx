@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Landmark, Plus, Loader2, Pencil, Trash2, X, RefreshCw, DownloadCloud, AlertTriangle } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type Operator = { id: string; full_name: string | null; email: string | null };
 type Cashdesk = {
@@ -41,6 +42,7 @@ const emptyForm: FormState = {
 };
 
 export default function CashdesksManager() {
+  const { t } = useLocale();
   const [rows, setRows] = useState<Cashdesk[]>([]);
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,13 +75,13 @@ export default function CashdesksManager() {
     try {
       const res = await fetch("/api/admin/cashdesks");
       const data = await res.json();
-      if (!res.ok) { toast.error("Yuklashda xatolik: " + (data.error ?? "")); return; }
+      if (!res.ok) { toast.error(t("csh.tLoadErr") + (data.error ?? "")); return; }
       setRows(data.cashdesks ?? []);
       setOperators(data.operators ?? []);
       // Balanslarni non-blocking, har kassa alohida.
       for (const c of data.cashdesks ?? []) loadBalance(c.id);
     } catch {
-      toast.error("Ulanishda xatolik.");
+      toast.error(t("csh.tConnErr"));
     } finally {
       setLoading(false);
     }
@@ -99,10 +101,10 @@ export default function CashdesksManager() {
   const save = async () => {
     if (!form) return;
     if (!form.name.trim() || !form.cashdesk_id.trim() || !form.login.trim()) {
-      toast.error("Nom, KRM raqami va login shart."); return;
+      toast.error(t("csh.tNameReq")); return;
     }
     if (!form.id && (!form.pass.trim() || !form.hash.trim())) {
-      toast.error("Yangi kassa uchun pass va hash shart."); return;
+      toast.error(t("csh.tPassReq")); return;
     }
     setSaving(true);
     try {
@@ -125,10 +127,10 @@ export default function CashdesksManager() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const msg = data.error === "duplicate_cashdesk_id" ? "Bu KRM raqami allaqachon mavjud." : (data.error ?? "xatolik");
-        toast.error("Saqlanmadi: " + msg); return;
+        const msg = data.error === "duplicate_cashdesk_id" ? t("csh.tDuplicate") : (data.error ?? "xatolik");
+        toast.error(t("csh.tSaveFailed") + msg); return;
       }
-      toast.success(isEdit ? "Kassa yangilandi." : "Kassa qo'shildi.");
+      toast.success(isEdit ? t("csh.tUpdated") : t("csh.tAdded"));
       setForm(null);
       await load();
     } catch {
@@ -139,12 +141,12 @@ export default function CashdesksManager() {
   };
 
   const remove = async (c: Cashdesk) => {
-    if (!confirm(`"${c.name}" kassasi o'chirilsinmi?`)) return;
+    if (!confirm(t("csh.confirmDelete", { name: c.name }))) return;
     try {
       const res = await fetch(`/api/admin/cashdesks/${c.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) { toast.error("O'chirilmadi: " + (data.error ?? "")); return; }
-      toast.success("Kassa o'chirildi.");
+      if (!res.ok) { toast.error(t("csh.tDelFailed") + (data.error ?? "")); return; }
+      toast.success(t("csh.tDeleted"));
       await load();
     } catch {
       toast.error("Ulanishda xatolik.");
@@ -157,11 +159,11 @@ export default function CashdesksManager() {
       const res = await fetch("/api/admin/cashdesks/import-legacy", { method: "POST" });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        const msg = data.error === "no_legacy" ? "Ko'chiriladigan eski kassa topilmadi." : (data.error ?? "xatolik");
+        const msg = data.error === "no_legacy" ? t("csh.tNoLegacy") : (data.error ?? "xatolik");
         toast.error(msg); return;
       }
-      if (data.alreadyExists) toast.info("Kassa allaqachon ko'chirilgan.");
-      else toast.success("Mavjud kassa muvaffaqiyatli ko'chirildi.");
+      if (data.alreadyExists) toast.info(t("csh.tAlreadyImported"));
+      else toast.success(t("csh.tImported"));
       await load();
     } catch {
       toast.error("Ulanishda xatolik.");
@@ -176,20 +178,20 @@ export default function CashdesksManager() {
         <div className="flex items-center gap-2.5">
           <span className="p-2 rounded-xl bg-[#1CE0C3]/10 text-[#1CE0C3]"><Landmark size={20} /></span>
           <div>
-            <h1 className="text-lg font-semibold text-white">Kassalar</h1>
-            <p className="text-xs text-white/40">Ko'p kassa (multi-cashdesk) — poydevor</p>
+            <h1 className="text-lg font-semibold text-white">{t("csh.title")}</h1>
+            <p className="text-xs text-white/40">{t("csh.subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {!loading && rows.length === 0 && (
             <button onClick={importLegacy} disabled={importing}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm bg-white/5 hover:bg-white/10 text-white/80 disabled:opacity-50">
-              {importing ? <Loader2 size={16} className="animate-spin" /> : <DownloadCloud size={16} />} Mavjud kassani ko'chirish
+              {importing ? <Loader2 size={16} className="animate-spin" /> : <DownloadCloud size={16} />} {t("csh.importLegacy")}
             </button>
           )}
           <button onClick={openCreate}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-[#1CE0C3] text-[#04231F] hover:brightness-110">
-            <Plus size={16} /> Yangi kassa
+            <Plus size={16} /> {t("csh.newCashdesk")}
           </button>
         </div>
       </div>
@@ -198,21 +200,21 @@ export default function CashdesksManager() {
         <div className="flex items-center justify-center py-20 text-white/40"><Loader2 className="animate-spin" /></div>
       ) : rows.length === 0 ? (
         <div className="text-center py-16 text-white/40 text-sm border border-white/10 rounded-2xl">
-          Hozircha kassa yo'q. "Yangi kassa" qo'shing yoki mavjud kassani ko'chiring.
+          {t("csh.empty")}
         </div>
       ) : (
         <div className="overflow-x-auto border border-white/10 rounded-2xl">
           <table className="w-full text-sm">
             <thead className="text-white/40 text-xs border-b border-white/10">
               <tr>
-                <th className="text-left font-medium px-4 py-3">Nom</th>
-                <th className="text-left font-medium px-4 py-3">KRM</th>
-                <th className="text-left font-medium px-4 py-3">Egasi</th>
-                <th className="text-left font-medium px-4 py-3">Mintaqa</th>
-                <th className="text-right font-medium px-4 py-3">Balans</th>
-                <th className="text-right font-medium px-4 py-3">Chegara</th>
-                <th className="text-center font-medium px-4 py-3">Holat</th>
-                <th className="text-right font-medium px-4 py-3">Amallar</th>
+                <th className="text-left font-medium px-4 py-3">{t("csh.hName")}</th>
+                <th className="text-left font-medium px-4 py-3">{t("csh.hKrm")}</th>
+                <th className="text-left font-medium px-4 py-3">{t("csh.hOwner")}</th>
+                <th className="text-left font-medium px-4 py-3">{t("csh.hRegion")}</th>
+                <th className="text-right font-medium px-4 py-3">{t("csh.hBalance")}</th>
+                <th className="text-right font-medium px-4 py-3">{t("csh.hThreshold")}</th>
+                <th className="text-center font-medium px-4 py-3">{t("csh.hStatus")}</th>
+                <th className="text-right font-medium px-4 py-3">{t("csh.hActions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -228,7 +230,7 @@ export default function CashdesksManager() {
                       {!b || b.loading ? (
                         <Loader2 size={14} className="animate-spin inline text-white/30" />
                       ) : !b.ok ? (
-                        <span className="text-white/30 text-xs">balans olinmadi</span>
+                        <span className="text-white/30 text-xs">{t("csh.balanceFailed")}</span>
                       ) : (
                         <span className={`inline-flex items-center gap-1 font-medium ${b.low ? "text-[#FF6B85]" : "text-[#4ADE80]"}`}>
                           {b.low && <AlertTriangle size={13} />}{fmtSum(b.balance)}
@@ -238,16 +240,16 @@ export default function CashdesksManager() {
                     <td className="px-4 py-3 text-right text-white/50">{fmtSum(c.low_balance_threshold)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`px-2 py-0.5 rounded-full text-xs ${c.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80]" : "bg-white/5 text-white/40"}`}>
-                        {c.is_active ? "Aktiv" : "O'chiq"}
+                        {c.is_active ? t("csh.active") : t("csh.off")}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => loadBalance(c.id)} title="Balansni yangilash"
+                        <button onClick={() => loadBalance(c.id)} title={t("csh.refreshBalance")}
                           className="p-1.5 rounded-lg hover:bg-white/10 text-white/50"><RefreshCw size={15} /></button>
-                        <button onClick={() => openEdit(c)} title="Tahrirlash"
+                        <button onClick={() => openEdit(c)} title={t("csh.edit")}
                           className="p-1.5 rounded-lg hover:bg-white/10 text-white/60"><Pencil size={15} /></button>
-                        <button onClick={() => remove(c)} title="O'chirish"
+                        <button onClick={() => remove(c)} title={t("csh.del")}
                           className="p-1.5 rounded-lg hover:bg-[#FF6B85]/10 text-[#FF6B85]"><Trash2 size={15} /></button>
                       </div>
                     </td>
@@ -263,42 +265,42 @@ export default function CashdesksManager() {
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !saving && setForm(null)}>
           <div className="bg-[#0E1518] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 sticky top-0 bg-[#0E1518]">
-              <h2 className="text-white font-semibold">{form.id ? "Kassani tahrirlash" : "Yangi kassa"}</h2>
+              <h2 className="text-white font-semibold">{form.id ? t("csh.editTitle") : t("csh.newTitle")}</h2>
               <button onClick={() => !saving && setForm(null)} className="p-1 rounded-lg hover:bg-white/10 text-white/50"><X size={18} /></button>
             </div>
             <div className="p-5 space-y-3">
-              <Field label="Kassa nomi *"><input className={inp} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Masalan: Toshkent-1" /></Field>
-              <Field label="1xBet KRM raqami (cashdesk_id) *"><input className={inp} value={form.cashdesk_id} onChange={(e) => setForm({ ...form, cashdesk_id: e.target.value })} placeholder="123456" /></Field>
-              <Field label="Login *"><input className={inp} value={form.login} onChange={(e) => setForm({ ...form, login: e.target.value })} autoComplete="off" /></Field>
+              <Field label={t("csh.fName")}><input className={inp} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t("csh.phName")} /></Field>
+              <Field label={t("csh.fKrm")}><input className={inp} value={form.cashdesk_id} onChange={(e) => setForm({ ...form, cashdesk_id: e.target.value })} placeholder={t("csh.phKrm")} /></Field>
+              <Field label={t("csh.fLogin")}><input className={inp} value={form.login} onChange={(e) => setForm({ ...form, login: e.target.value })} autoComplete="off" /></Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field label={form.id ? "Parol (yangilash uchun)" : "Parol (cashierpass) *"}>
-                  <input className={inp} type="password" value={form.pass} onChange={(e) => setForm({ ...form, pass: e.target.value })} placeholder={form.id ? "o'zgarmasa bo'sh" : ""} autoComplete="new-password" />
+                <Field label={form.id ? t("csh.fPassEdit") : t("csh.fPassNew")}>
+                  <input className={inp} type="password" value={form.pass} onChange={(e) => setForm({ ...form, pass: e.target.value })} placeholder={form.id ? t("csh.phEditBlank") : ""} autoComplete="new-password" />
                 </Field>
-                <Field label={form.id ? "Hash (yangilash uchun)" : "Hash *"}>
-                  <input className={inp} type="password" value={form.hash} onChange={(e) => setForm({ ...form, hash: e.target.value })} placeholder={form.id ? "o'zgarmasa bo'sh" : ""} autoComplete="new-password" />
+                <Field label={form.id ? t("csh.fHashEdit") : t("csh.fHashNew")}>
+                  <input className={inp} type="password" value={form.hash} onChange={(e) => setForm({ ...form, hash: e.target.value })} placeholder={form.id ? t("csh.phEditBlank") : ""} autoComplete="new-password" />
                 </Field>
               </div>
-              <p className="text-[11px] text-white/30 -mt-1">🔒 Parol va hash bazaga shifrlangan saqlanadi, hech qachon ko'rsatilmaydi.</p>
-              <Field label="Kassa egasi (operator)">
+              <p className="text-[11px] text-white/30 -mt-1">{t("csh.encNote")}</p>
+              <Field label={t("csh.fOwner")}>
                 <select className={inp} value={form.owner_operator_id} onChange={(e) => setForm({ ...form, owner_operator_id: e.target.value })}>
-                  <option value="">— tanlanmagan —</option>
+                  <option value="">{t("csh.notSelected")}</option>
                   {operators.map((o) => <option key={o.id} value={o.id}>{o.full_name || o.email}</option>)}
                 </select>
               </Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Mintaqa"><input className={inp} value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} placeholder="ixtiyoriy" /></Field>
-                <Field label="Past balans chegarasi"><input className={inp} type="number" value={form.low_balance_threshold} onChange={(e) => setForm({ ...form, low_balance_threshold: e.target.value })} placeholder="ixtiyoriy" /></Field>
+                <Field label={t("csh.fRegion")}><input className={inp} value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} placeholder={t("csh.phOptional")} /></Field>
+                <Field label={t("csh.fThreshold")}><input className={inp} type="number" value={form.low_balance_threshold} onChange={(e) => setForm({ ...form, low_balance_threshold: e.target.value })} placeholder={t("csh.phOptional")} /></Field>
               </div>
-              <Field label="Izoh"><input className={inp} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="ixtiyoriy" /></Field>
+              <Field label={t("csh.fNote")}><input className={inp} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder={t("csh.phOptional")} /></Field>
               <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer">
                 <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="accent-[#1CE0C3]" />
-                Aktiv (buyurtmalarda ishlatiladi)
+                {t("csh.activeCheckbox")}
               </label>
             </div>
             <div className="flex justify-end gap-2 px-5 py-4 border-t border-white/10">
-              <button onClick={() => setForm(null)} disabled={saving} className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5">Bekor</button>
+              <button onClick={() => setForm(null)} disabled={saving} className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5">{t("csh.cancel")}</button>
               <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-[#1CE0C3] text-[#04231F] hover:brightness-110 disabled:opacity-50">
-                {saving && <Loader2 size={15} className="animate-spin" />} Saqlash
+                {saving && <Loader2 size={15} className="animate-spin" />} {t("csh.save")}
               </button>
             </div>
           </div>
