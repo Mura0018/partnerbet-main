@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
+import { sendEmail, renderActionEmail } from "@/lib/email/send";
 
 // App'dagi "Hamkormisiz?" — hamkor o'z emaili orqali parol havolasini oladi.
 // XAVFSIZLIK: havola HECH QACHON javobda qaytarilmaydi. Faqat hamkor bo'lsa,
@@ -24,11 +24,25 @@ export async function POST(req: NextRequest) {
   // Faqat haqiqiy hamkor a'zosiga email yuboriladi; javob har doim bir xil.
   if (profileId) {
     try {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (url && anon) {
-        const sb = createClient(url, anon);
-        await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: RESET_REDIRECT });
+      // Tashqi email provider orqali: recovery havolаsини server yaratadi
+      // (generateLink) va faqat EMAIL ichiga yuboradi — javobga emas.
+      const { data: linkData } = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email: email.trim(),
+        options: { redirectTo: RESET_REDIRECT },
+      });
+      const actionLink = (linkData as any)?.properties?.action_link;
+      if (actionLink) {
+        await sendEmail({
+          to: email.trim(),
+          subject: "BetCore Pay — parolni tiklash",
+          html: renderActionEmail({
+            heading: "Parolni tiklash",
+            body: "Hamkor paneliga kirish parolingizni tiklash uchun quyidagi tugmani bosing.",
+            buttonLabel: "Parolni tiklash",
+            url: actionLink,
+          }),
+        });
       }
     } catch {
       // neytral javob — xatoni oshkor qilmaymiz

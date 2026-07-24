@@ -19,9 +19,12 @@ export default function ForgotPasswordPage() {
     setError("");
     setLoading(true);
     try {
-      const supabase = createClient();
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+      // Server route: recovery havolаsини tashqi email provider orqali
+      // yuboradi (generateLink service-role kerak). Javob har doim neytral.
+      await fetch("/api/auth/request-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
       // Always show the same success state regardless of whether the email
       // exists — prevents account enumeration.
