@@ -27,6 +27,7 @@ export const dictionaries = {
       tags: "Teglar", faq: "FAQ", apk: "APK", control: "Boshqaruv markazi", settings: "Sozlamalar", profile: "Profil",
     },
     ord: {
+      cdBalance: "Kassa balansi:", limitLabel: "Limit:",
       topup: "Hisob to'ldirish", withdraw: "Pul yechish", sum: "so'm",
       receiptLoading: "Chek yuklanmoqda…", receiptFailed: "Chekni yuklab bo'lmadi.",
       phoneConfirm: "Telefon tasdiqi", amount: "Summa", receivedQ: "so'm — mijoz qabul qildimi?",
@@ -302,6 +303,7 @@ export const dictionaries = {
       confirmDelete: "O'chirishni tasdiqlaysizmi?", eDelete: "O'chirib bo'lmadi. Qayta urinib ko'ring.",
     },
     sup: {
+      imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…",
       tpl1: "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
       tpl2: "So'rovingiz ko'rib chiqilmoqda, biroz kuting.",
       tpl3: "Iltimos, to'lov chekining aniqroq skrinshotini yuboring.",
@@ -516,6 +518,7 @@ export const dictionaries = {
       tags: "Теги", faq: "FAQ", apk: "APK", control: "Центр управления", settings: "Настройки", profile: "Профиль",
     },
     ord: {
+      cdBalance: "Баланс кассы:", limitLabel: "Лимит:",
       topup: "Пополнение счёта", withdraw: "Вывод средств", sum: "сум",
       receiptLoading: "Загрузка чека…", receiptFailed: "Не удалось загрузить чек.",
       phoneConfirm: "Телефонное подтверждение", amount: "Сумма", receivedQ: "сум — клиент получил?",
@@ -791,6 +794,7 @@ export const dictionaries = {
       confirmDelete: "Подтвердите удаление?", eDelete: "Не удалось удалить. Попробуйте снова.",
     },
     sup: {
+      imgLoading: "Изображение загружается…", audioLoading: "Загрузка…",
       tpl1: "Здравствуйте! Чем можем помочь?",
       tpl2: "Ваш запрос рассматривается, немного подождите.",
       tpl3: "Пожалуйста, отправьте более чёткий скриншот чека об оплате.",

@@ -30,6 +30,7 @@ const REPLY_TEMPLATE_KEYS = [
 ];
 
 function SupportImage({ path }: { path: string }) {
+  const { t } = useLocale();
   const [url, setUrl] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -40,7 +41,7 @@ function SupportImage({ path }: { path: string }) {
       .catch(() => setUrl(null));
   }, [path]);
 
-  if (!url) return <p className="text-[11px] text-muted">Rasm yuklanmoqda…</p>;
+  if (!url) return <p className="text-[11px] text-muted">{t("sup.imgLoading")}</p>;
 
   return (
     <>
@@ -56,6 +57,7 @@ function SupportImage({ path }: { path: string }) {
 
 // Fullscreen thread view — opened when a thread is selected from the list.
 function SupportVoice({ path }: { path: string }) {
+  const { t } = useLocale();
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,7 +67,7 @@ function SupportVoice({ path }: { path: string }) {
       .catch(() => setUrl(null));
   }, [path]);
 
-  if (!url) return <p className="text-[11px] text-muted">Yuklanmoqda…</p>;
+  if (!url) return <p className="text-[11px] text-muted">{t("sup.audioLoading")}</p>;
   return <audio controls src={url} className="max-w-[220px] h-9" />;
 }
 

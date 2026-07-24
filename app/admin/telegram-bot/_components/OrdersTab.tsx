@@ -380,6 +380,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
 }
 
 function CashdeskBalanceBadge() {
+  const { t } = useLocale();
   const [state, setState] = useState<{ configured: boolean; balance?: number | null; limit?: number | null } | null>(null);
 
   useEffect(() => {
@@ -393,11 +394,11 @@ function CashdeskBalanceBadge() {
 
   return (
     <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2.5 text-[12px] flex items-center gap-4">
-      <span className="text-muted">Kassa balansi:</span>
+      <span className="text-muted">{t("ord.cdBalance")}</span>
       <span className="font-semibold">{state.balance != null ? Number(state.balance).toLocaleString("ru-RU") : "—"}</span>
       {state.limit != null && (
         <>
-          <span className="text-muted">Limit:</span>
+          <span className="text-muted">{t("ord.limitLabel")}</span>
           <span className="font-semibold">{Number(state.limit).toLocaleString("ru-RU")}</span>
         </>
       )}
