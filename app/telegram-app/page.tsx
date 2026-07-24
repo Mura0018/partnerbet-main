@@ -502,6 +502,8 @@ export default function TelegramAppPage() {
   const [tuReceiptBase64, setTuReceiptBase64] = useState("");
   const [tuReceiptMime, setTuReceiptMime] = useState("");
   const [tuReceiptFileName, setTuReceiptFileName] = useState("");
+  const [tuStep, setTuStep] = useState(1); // T1: bosqichли to'ldirish
+  const [tuVerifying, setTuVerifying] = useState(false);
 
   // Withdraw form
   const [wdPlatform, setWdPlatform] = useState(PLATFORMS[0]);
@@ -827,7 +829,7 @@ export default function TelegramAppPage() {
 
   const resetForms = () => {
     setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
-    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName("");
+    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1);
     setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails(""); setWdRecipientName("");
   };
 
@@ -851,6 +853,27 @@ export default function TelegramAppPage() {
       setTuReceiptBase64(result.split(",")[1] ?? "");
     };
     reader.readAsDataURL(file);
+  };
+
+  const verifyTopupId = async () => {
+    setError("");
+    const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
+    if (!platform || !tuAccountId.trim()) { setError("Platforma va ID ni kiriting."); return; }
+    setTuVerifying(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/verify-player", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), accountId: tuAccountId.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok || d.error) {
+        setError(d.error === "not_found" ? "Bunday hisob ID topilmadi." : d.error === "not_configured" ? "Kassa hozircha ulanmagan." : "Tekshirishда xatolik.");
+        return;
+      }
+      setTuStep(2);
+    } finally {
+      setTuVerifying(false);
+    }
   };
 
   const submitTopup = async (e: React.FormEvent) => {
@@ -1767,30 +1790,57 @@ export default function TelegramAppPage() {
         <FloatingAmbience />
         <div className="relative z-10">
         <ScreenHeader title="Hisob to'ldirish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
-        <form onSubmit={submitTopup}>
-          <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
-          <AccountIdVerifyField accountId={tuAccountId} setAccountId={setTuAccountId} getInitData={getInitData} />
-          <div className="mb-3.5">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Summa</label>
-            <input className={inputCls} type="number" min={1} placeholder="Masalan: 50000" value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
+        <div>
+          <div className="flex items-center gap-1.5 mb-4">
+            {[1, 2, 3].map((n) => <div key={n} className={`h-1.5 flex-1 rounded-full ${n <= tuStep ? "bg-accent" : "bg-white/10"}`} />)}
           </div>
-          <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} paymentInfo={paymentInfo} />
-          <div className="mb-4">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">To'lov cheki (skrinshot)</label>
-            <label className="flex items-center justify-center gap-2 w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]">
-              <Upload size={15} />
-              {tuReceiptFileName || "Rasm tanlash"}
-              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleReceiptSelect} />
-            </label>
-          </div>
-          <p className="text-[11px] text-[#5b7089] mb-4 leading-relaxed">
-            Ko'rsatilgan raqamga to'lovni amalga oshirib, chek skrinshotini yuklang va quyidagi tugmani bosing — operator to'lovni tekshirib, hisobingizni to'ldiradi.
-          </p>
-          {error && <p className="text-[12px] text-[#FF6B85] text-center mb-3">{error}</p>}
-          <button type="submit" disabled={submitting} className={buttonCls}>
-            {submitting ? <Loader2 size={16} className="animate-spin" /> : "To'ladim, buyurtma berish"}
-          </button>
-        </form>
+
+          {tuStep === 1 && (
+            <div>
+              <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
+              <div className="mb-3.5">
+                <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID</label>
+                <input className={inputCls} placeholder="Masalan: 123456789" value={tuAccountId} onChange={(e) => setTuAccountId(e.target.value)} />
+              </div>
+              {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+              <button type="button" onClick={verifyTopupId} disabled={tuVerifying} className={buttonCls}>
+                {tuVerifying ? <Loader2 size={16} className="animate-spin" /> : "Tekshirish"}
+              </button>
+            </div>
+          )}
+
+          {tuStep === 2 && (
+            <div>
+              <div className="mb-3.5">
+                <label className="block text-[12px] text-[#93a5ba] mb-1.5">Summa</label>
+                <input className={inputCls} type="number" min={1} placeholder="Masalan: 50000" value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
+              </div>
+              <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} paymentInfo={paymentInfo} />
+              {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+              <button type="button" onClick={() => { if (!tuAmount || Number(tuAmount) <= 0) { setError("Summani kiriting."); return; } setError(""); setTuStep(3); }} className={buttonCls}>Davom etish</button>
+            </div>
+          )}
+
+          {tuStep === 3 && (
+            <form onSubmit={submitTopup}>
+              <div className="mb-4">
+                <label className="block text-[12px] text-[#93a5ba] mb-1.5">To'lov cheki (skrinshot)</label>
+                <label className="flex items-center justify-center gap-2 w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]">
+                  <Upload size={15} />
+                  {tuReceiptFileName || "Rasm tanlash"}
+                  <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleReceiptSelect} />
+                </label>
+              </div>
+              <p className="text-[11px] text-[#5b7089] mb-4 leading-relaxed">
+                Ko'rsatilgan raqamga to'lovni amalga oshirib, chek skrinshotini yuklang va quyidagi tugmani bosing — operator to'lovni tekshirib, hisobingizni to'ldiradi.
+              </p>
+              {error && <p className="text-[12px] text-[#FF6B85] text-center mb-3">{error}</p>}
+              <button type="submit" disabled={submitting} className={buttonCls}>
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : "To'ladim, buyurtma berish"}
+              </button>
+            </form>
+          )}
+        </div>
         </div>
       </div>
     );
