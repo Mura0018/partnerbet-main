@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import {
   Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
   Handshake, Sparkles, ShieldCheck, Globe, Rocket, ArrowRight, Building2, Users, Wallet, Gift,
@@ -68,16 +69,16 @@ type PaymentInfo = {
 };
 
 const PLATFORMS = ["1xBet", "Melbet", "Betwinner", "Boshqa"];
-const PAYMENT_METHODS: { id: PaymentMethod; label: string }[] = [
+const PAYMENT_METHODS: { id: PaymentMethod; label: string; labelKey?: string }[] = [
   { id: "click", label: "Click" },
   { id: "payme", label: "Payme" },
-  { id: "card", label: "Bank kartasi" },
-  { id: "crypto", label: "Crypto (USDT)" },
+  { id: "card", label: "Bank kartasi", labelKey: "tg.mCard" },
+  { id: "crypto", label: "Crypto (USDT)", labelKey: "tg.mCrypto" },
 ];
-const STATUS_LABEL: Record<Order["status"], { label: string; color: string; icon: any }> = {
-  pending: { label: "Kutilmoqda", color: "#F4C76A", icon: Clock },
-  completed: { label: "Bajarildi", color: "#4ADE80", icon: CheckCircle2 },
-  rejected: { label: "Rad etildi", color: "#FF6B85", icon: XCircle },
+const STATUS_LABEL: Record<Order["status"], { labelKey: string; color: string; icon: any }> = {
+  pending: { labelKey: "tg.stPending", color: "#F4C76A", icon: Clock },
+  completed: { labelKey: "tg.stCompleted", color: "#4ADE80", icon: CheckCircle2 },
+  rejected: { labelKey: "tg.stRejected", color: "#FF6B85", icon: XCircle },
 };
 
 const inputCls =
@@ -106,6 +107,7 @@ const menuCardCls =
 const bgCls = "min-h-screen app-bg text-white";
 
 function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => string }) {
+  const { t } = useLocale();
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -121,14 +123,15 @@ function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => s
       .finally(() => setLoading(false));
   }, [path]);
 
-  if (loading) return <p className="text-[12px] text-white/70">Yuklanmoqda…</p>;
-  if (!url) return <p className="text-[12px] text-[#FF6B85]">Ovozli xabarni yuklab bo'lmadi.</p>;
+  if (loading) return <p className="text-[12px] text-white/70">{t("tg.voiceLoading")}</p>;
+  if (!url) return <p className="text-[12px] text-[#FF6B85]">{t("tg.voiceFail")}</p>;
   return <audio controls src={url} className="max-w-[190px] h-8" />;
 }
 
 // F2: mijoz chat bubble'ida rasmni ko'rsatadi. Optimistik holatda mahalliy
 // `localUrl` (upload'gача), aks holda `path` bo'yicha himoyalangan media-url.
 function CustomerSupportImage({ localUrl, path, getInitData, onOpen }: { localUrl?: string; path?: string | null; getInitData: () => string; onOpen: (url: string) => void }) {
+  const { t } = useLocale();
   const [url, setUrl] = useState<string | null>(localUrl ?? null);
   useEffect(() => {
     if (localUrl) { setUrl(localUrl); return; }
@@ -144,9 +147,9 @@ function CustomerSupportImage({ localUrl, path, getInitData, onOpen }: { localUr
       .catch(() => { if (alive) setUrl(null); });
     return () => { alive = false; };
   }, [localUrl, path]);
-  if (!url) return <p className="text-[11px] text-white/70">Rasm yuklanmoqda…</p>;
+  if (!url) return <p className="text-[11px] text-white/70">{t("tg.imgLoading")}</p>;
   // F2b: to'liq ochish sahifa darajasида boshqariladi (BackButton uni yopadi).
-  return <img src={url} alt="Rasm" onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in" />;
+  return <img src={url} alt={t("tg.imgAlt")} onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in" />;
 }
 
 // F2e: to'liq ekran rasm — qo'lda (ikki barmoq) yaqinlashtirish/surish.
@@ -242,6 +245,7 @@ function AccountIdVerifyField({
   setAccountId: (v: string) => void;
   getInitData: () => string;
 }) {
+  const { t } = useLocale();
   const [verifying, setVerifying] = useState(false);
   const [verifiedName, setVerifiedName] = useState<string | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -273,7 +277,7 @@ function AccountIdVerifyField({
 
   return (
     <div className="mb-3.5">
-      <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID raqami</label>
+      <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.accIdLabel")}</label>
       <div style={{ perspective: "1200px" }}>
         <div
           className="relative transition-transform duration-500"
@@ -282,7 +286,7 @@ function AccountIdVerifyField({
           <div className="flex gap-2" style={{ backfaceVisibility: "hidden" }}>
             <input
               className={`${inputCls} flex-1`}
-              placeholder="Masalan: 123456789"
+              placeholder={t("tg.accIdPh")}
               value={accountId}
               onChange={(e) => { setAccountId(e.target.value); setNotFound(false); }}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); verify(); } }}
@@ -293,7 +297,7 @@ function AccountIdVerifyField({
               disabled={verifying || !accountId.trim()}
               className="shrink-0 px-4 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#2456c9] text-[13px] font-semibold disabled:opacity-50"
             >
-              {verifying ? <Loader2 size={15} className="animate-spin" /> : "Tekshirish"}
+              {verifying ? <Loader2 size={15} className="animate-spin" /> : t("tg.verify")}
             </button>
           </div>
           <div
@@ -305,16 +309,16 @@ function AccountIdVerifyField({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[14px] font-bold truncate">{verifiedName}</div>
-              <div className="text-[10px] text-[#93a5ba]">ID: {accountId} — tasdiqlangan</div>
+              <div className="text-[10px] text-[#93a5ba]">ID: {accountId} — {t("tg.confirmed")}</div>
             </div>
             <button type="button" onClick={() => { setFlipped(false); setVerifiedName(null); }} className="shrink-0 text-[11px] text-[#7db8ff]">
-              O'zgartirish
+              {t("tg.change")}
             </button>
           </div>
         </div>
       </div>
       {notFound && (
-        <p className="text-[11px] text-[#F4C76A] mt-1.5">Bu ID bo'yicha ma'lumot topilmadi — to'g'ri kiritganingizga ishonch hosil qiling. Baribir davom etishingiz mumkin.</p>
+        <p className="text-[11px] text-[#F4C76A] mt-1.5">{t("tg.idNotFound")}</p>
       )}
     </div>
   );
@@ -322,14 +326,15 @@ function AccountIdVerifyField({
 
 
 function ScreenHeader({ title, onBack, onHome }: { title: string; onBack: () => void; onHome?: () => void }) {
+  const { t } = useLocale();
   return (
     <div className="flex items-center gap-2 mb-5">
-      <button onClick={onBack} className="p-2 -ml-2 rounded-lg active:bg-white/5" aria-label="Orqaga">
+      <button onClick={onBack} className="p-2 -ml-2 rounded-lg active:bg-white/5" aria-label={t("tg.back")}>
         <ChevronLeft size={20} />
       </button>
       <h1 className="text-[18px] font-bold flex-1">{title}</h1>
       {onHome && (
-        <button onClick={onHome} className="p-2 rounded-lg active:bg-white/5" aria-label="Bosh sahifa">
+        <button onClick={onHome} className="p-2 rounded-lg active:bg-white/5" aria-label={t("tg.home")}>
           <Home size={18} />
         </button>
       )}
@@ -346,15 +351,16 @@ function PaymentMethodPicker({
   onChange: (m: PaymentMethod) => void;
   paymentInfo: PaymentInfo | null;
 }) {
+  const { t } = useLocale();
   const detail: Record<PaymentMethod, { number: string; holder: string; label: string } | null> = {
     click: paymentInfo?.clickNumber ? { number: paymentInfo.clickNumber, holder: paymentInfo.clickHolder, label: "Click" } : null,
     payme: paymentInfo?.paymeNumber ? { number: paymentInfo.paymeNumber, holder: paymentInfo.paymeHolder, label: "Payme" } : null,
-    card: paymentInfo?.cardNumber ? { number: paymentInfo.cardNumber, holder: paymentInfo.cardHolder, label: "Karta" } : null,
-    crypto: paymentInfo?.cryptoWallet ? { number: paymentInfo.cryptoWallet, holder: "", label: "USDT (TRC20)" } : null,
+    card: paymentInfo?.cardNumber ? { number: paymentInfo.cardNumber, holder: paymentInfo.cardHolder, label: t("tg.mCardShort") } : null,
+    crypto: paymentInfo?.cryptoWallet ? { number: paymentInfo.cryptoWallet, holder: "", label: t("tg.mCryptoShort") } : null,
   };
   return (
     <div className="mb-3.5">
-      <label className="block text-[12px] text-[#93a5ba] mb-1.5">To'lov usuli</label>
+      <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.payMethod")}</label>
       <div className="grid grid-cols-2 gap-2 mb-2.5">
         {PAYMENT_METHODS.map((m) => (
           <button
@@ -365,7 +371,7 @@ function PaymentMethodPicker({
               value === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"
             }`}
           >
-            {m.label}
+            {m.labelKey ? t(m.labelKey as any) : m.label}
           </button>
         ))}
       </div>
@@ -378,7 +384,7 @@ function PaymentMethodPicker({
         />
       ) : (
         <div className="rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
-          Bu usul uchun ma'lumot hali kiritilmagan. Boshqa usulni tanlang yoki operator bilan bog'laning.
+          {t("tg.noMethodInfo")}
         </div>
       )}
     </div>
@@ -396,20 +402,21 @@ function PlatformField({
   customPlatform: string;
   setCustomPlatform: (v: string) => void;
 }) {
+  const { t } = useLocale();
   return (
     <>
       <div className="mb-3.5">
-        <label className="block text-[12px] text-[#93a5ba] mb-1.5">Platforma</label>
+        <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.platform")}</label>
         <select className={selectCls} value={platform} onChange={(e) => setPlatform(e.target.value)}>
           {PLATFORMS.map((p) => (
-            <option key={p} value={p}>{p}</option>
+            <option key={p} value={p}>{p === "Boshqa" ? t("tg.platformOther") : p}</option>
           ))}
         </select>
       </div>
       {platform === "Boshqa" && (
         <input
           className={`${inputCls} mb-3.5`}
-          placeholder="Platforma nomi"
+          placeholder={t("tg.platformPh")}
           value={customPlatform}
           onChange={(e) => setCustomPlatform(e.target.value)}
         />
@@ -420,33 +427,34 @@ function PlatformField({
 
 // H2: mijoz tomonда matn/rasm yuborishda API xatosini do'stona matnga
 // aylantiradi (xom JSON emas). `kind` umumiy fallback matnini tanlaydi.
-function supportSendErrorMessage(error: unknown, status: number, kind: "message" | "image"): string {
+function supportSendErrorMessage(t: (k: any, v?: any) => string, error: unknown, status: number, kind: "message" | "image"): string {
   if (status === 429 || error === "rate_limited") {
-    return "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.";
+    return t("tg.errRate");
   }
   if (status === 401 || error === "not_registered" || error === "invalid_signature" || error === "not_configured") {
-    return "Sessiya tugagan. Ilovani qayta oching.";
+    return t("tg.errSession");
   }
   if (kind === "image" && error === "invalid_image_size") {
-    return "Rasm hajmi juda katta.";
+    return t("tg.errImgSize");
   }
   return kind === "image"
-    ? "Rasm yuborilmadi. Qayta urinib ko'ring."
-    : "Xabar yuborilmadi. Qayta urinib ko'ring.";
+    ? t("tg.errImgSend")
+    : t("tg.errMsgSend");
 }
 
 // Part I: kun ajratgichi yorlig'i (Telegram uslubi: Bugun / Kecha / sana).
-function dayLabel(iso: string): string {
+function dayLabel(t: (k: any, v?: any) => string, iso: string): string {
   const d = new Date(iso);
   const now = new Date();
   const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diffDays = Math.round((startOf(now) - startOf(d)) / 86400000);
-  if (diffDays === 0) return "Bugun";
-  if (diffDays === 1) return "Kecha";
+  if (diffDays === 0) return t("tg.today");
+  if (diffDays === 1) return t("tg.yesterday");
   return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
 }
 
 export default function TelegramAppPage() {
+  const { t } = useLocale();
   const [screen, setScreen] = useState<Screen>("loading");
   // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
   // BackButton avval shuni yopadi, keyin ekrandan chiqadi.
@@ -1194,7 +1202,7 @@ export default function TelegramAppPage() {
       if (!res.ok) {
         setMsgStatus(clientId, "failed");
         const data = await res.json().catch(() => ({}));
-        setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "message"));
+        setSupportError(supportSendErrorMessage(t, (data as any)?.error, res.status, "message"));
         return;
       }
       // Muvaffaqiyat: optimistik nusxани server id + "sent" ga reconcile.
@@ -1438,7 +1446,7 @@ export default function TelegramAppPage() {
       if (!res.ok) {
         setMsgStatus(clientId, "failed");
         const data = await res.json().catch(() => ({}));
-        setSupportError(supportSendErrorMessage((data as any)?.error, res.status, "image"));
+        setSupportError(supportSendErrorMessage(t, (data as any)?.error, res.status, "image"));
         return;
       }
       const data = await res.json().catch(() => ({}));
@@ -1920,7 +1928,7 @@ export default function TelegramAppPage() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[13px] font-bold">{o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"}</span>
                     <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: s.color }}>
-                      <Icon size={12} /> {s.label}
+                      <Icon size={12} /> {t(s.labelKey as any)}
                     </span>
                   </div>
                   <div className="text-[12px] text-[#93a5ba]">{o.platform} · ID: {o.account_id}</div>
@@ -2038,7 +2046,7 @@ export default function TelegramAppPage() {
               <React.Fragment key={m.id}>
                 {showDay && (
                   <div className="flex justify-center my-2">
-                    <span className="text-[10px] text-white/75 bg-black/30 px-2.5 py-0.5 rounded-full backdrop-blur-sm">{dayLabel(m.created_at)}</span>
+                    <span className="text-[10px] text-white/75 bg-black/30 px-2.5 py-0.5 rounded-full backdrop-blur-sm">{dayLabel(t, m.created_at)}</span>
                   </div>
                 )}
               <div className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
@@ -2169,7 +2177,7 @@ export default function TelegramAppPage() {
                 <div className="text-[11px] font-semibold text-white truncate">
                   {selectedOrder.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {Number(selectedOrder.amount).toLocaleString("ru-RU")} so'm
                 </div>
-                <div className="text-[10px] text-[#93a5ba] truncate">{selectedOrder.platform} · ID {selectedOrder.account_id} · {STATUS_LABEL[selectedOrder.status].label}</div>
+                <div className="text-[10px] text-[#93a5ba] truncate">{selectedOrder.platform} · ID {selectedOrder.account_id} · {t(STATUS_LABEL[selectedOrder.status].labelKey as any)}</div>
               </div>
               <button onClick={() => setSelectedOrderId(null)} className="shrink-0 p-1 rounded active:bg-white/10 text-[#93a5ba]" aria-label="Olib tashlash"><XCircle size={14} /></button>
             </div>
