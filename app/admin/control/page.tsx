@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { SlidersHorizontal, Loader2, Wallet, Landmark, HandCoins, Gauge, MessageSquare, Wrench, Power, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 // Super admin BOSHQARUV MARKAZI — barcha oqim sozlamalari (site_settings)
 // bitta joyда, guruhlangan. Mavjud kalitlar qayta ishlatiladi (rewrite emas).
@@ -20,6 +21,7 @@ function num(v: any, d = 0) {
 
 export default function ControlCenter() {
   const supabase = createClient();
+  const { t } = useLocale();
   const [s, setS] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
@@ -44,9 +46,9 @@ export default function ControlCenter() {
       const { error } = await supabase
         .from("site_settings")
         .upsert({ key, value, updated_by: user?.id, updated_at: new Date().toISOString() }, { onConflict: "key" });
-      if (error) { toast.error("Saqlanmadi: " + error.message); return; }
+      if (error) { toast.error(t("ctl.saveFailed") + error.message); return; }
       patch(key, value); // normalizatsiya qilingan qiymatни qaytarib qo'yamiz
-      toast.success("Saqlandi ✅");
+      toast.success(t("ctl.saved"));
     } finally {
       setSavingKey(null);
     }
@@ -71,7 +73,7 @@ export default function ControlCenter() {
         on ? "bg-[#4ADE80]/15 border-[#4ADE80]/40 text-[#4ADE80]" : "bg-[#FF6B85]/10 border-[#FF6B85]/30 text-[#FF6B85]"
       }`}
     >
-      <Power size={13} /> {label}: {on ? "Yoniq" : "O'chiq"}
+      <Power size={13} /> {label}: {on ? t("ctl.on") : t("ctl.off")}
     </button>
   );
 
@@ -81,7 +83,7 @@ export default function ControlCenter() {
       disabled={savingKey === k}
       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-medium bg-accent/20 text-white hover:bg-accent/30 disabled:opacity-50"
     >
-      {savingKey === k && <Loader2 size={13} className="animate-spin" />} Saqlash
+      {savingKey === k && <Loader2 size={13} className="animate-spin" />} {t("ctl.save")}
     </button>
   );
 
@@ -105,23 +107,23 @@ export default function ControlCenter() {
       <div className="flex items-center gap-2.5 mb-1">
         <span className="p-2 rounded-xl bg-[#1CE0C3]/10 text-[#1CE0C3]"><SlidersHorizontal size={20} /></span>
         <div>
-          <h1 className="text-lg font-semibold text-white">Boshqaruv markazi</h1>
-          <p className="text-xs text-white/40">Barcha tizim oqimlarини bitta joydан boshqaring (faqat super admin)</p>
+          <h1 className="text-lg font-semibold text-white">{t("ctl.title")}</h1>
+          <p className="text-xs text-white/40">{t("ctl.subtitle")}</p>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 mt-5">
         {/* TO'LOV OQIMI (mijoz tarafi) */}
-        <Card icon={<Wallet size={16} />} title="To'lov oqimi" side="Mijoz tarafi — buyurtmalar">
+        <Card icon={<Wallet size={16} />} title={t("ctl.payFlow")} side={t("ctl.payFlowSide")}>
           <div className="flex gap-2 mb-3">
-            <Toggle on={switches.topup !== false} label="To'ldirish" onClick={() => patch("betcore_switches", { topup: !(switches.topup !== false) })} />
-            <Toggle on={switches.withdraw !== false} label="Yechish" onClick={() => patch("betcore_switches", { withdraw: !(switches.withdraw !== false) })} />
+            <Toggle on={switches.topup !== false} label={t("ctl.topup")} onClick={() => patch("betcore_switches", { topup: !(switches.topup !== false) })} />
+            <Toggle on={switches.withdraw !== false} label={t("ctl.withdraw")} onClick={() => patch("betcore_switches", { withdraw: !(switches.withdraw !== false) })} />
           </div>
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div><L>Komissiya — to'ldirish (%)</L><input className={inp} type="number" value={commission.topup_pct ?? ""} onChange={(e) => patch("betcore_commission", { topup_pct: e.target.value })} /></div>
-            <div><L>Komissiya — yechish (%)</L><input className={inp} type="number" value={commission.withdraw_pct ?? ""} onChange={(e) => patch("betcore_commission", { withdraw_pct: e.target.value })} /></div>
-            <div><L>Bitta buyurtma maksimumi</L><input className={inp} type="number" value={limits.max_order_amount ?? ""} onChange={(e) => patch("betcore_pay_limits", { max_order_amount: e.target.value })} /></div>
-            <div><L>Kunlik mijoz limiti</L><input className={inp} type="number" value={limits.daily_customer_limit ?? ""} onChange={(e) => patch("betcore_pay_limits", { daily_customer_limit: e.target.value })} /></div>
+            <div><L>{t("ctl.commTopup")}</L><input className={inp} type="number" value={commission.topup_pct ?? ""} onChange={(e) => patch("betcore_commission", { topup_pct: e.target.value })} /></div>
+            <div><L>{t("ctl.commWithdraw")}</L><input className={inp} type="number" value={commission.withdraw_pct ?? ""} onChange={(e) => patch("betcore_commission", { withdraw_pct: e.target.value })} /></div>
+            <div><L>{t("ctl.maxOrder")}</L><input className={inp} type="number" value={limits.max_order_amount ?? ""} onChange={(e) => patch("betcore_pay_limits", { max_order_amount: e.target.value })} /></div>
+            <div><L>{t("ctl.dailyLimit")}</L><input className={inp} type="number" value={limits.daily_customer_limit ?? ""} onChange={(e) => patch("betcore_pay_limits", { daily_customer_limit: e.target.value })} /></div>
           </div>
           <div className="flex gap-2">
             <SaveBtn k="betcore_switches" value={{ topup: switches.topup !== false, withdraw: switches.withdraw !== false }} />
@@ -131,54 +133,54 @@ export default function ControlCenter() {
         </Card>
 
         {/* KASSA (xodim tarafi) */}
-        <Card icon={<Landmark size={16} />} title="Kassa (SLA)" side="Xodim tarafi — operator javob muddati">
+        <Card icon={<Landmark size={16} />} title={t("ctl.cashSla")} side={t("ctl.cashSlaSide")}>
           <div className="mb-3">
-            <L>SLA — javob berish muddati (daqiqa)</L>
+            <L>{t("ctl.slaMinutes")}</L>
             <input className={inp} type="number" value={sla.minutes ?? ""} onChange={(e) => patch("cashdesk_sla", { minutes: e.target.value })} />
-            <p className="text-[10.5px] text-white/30 mt-1">Operator shu muddatда javob bermasa buyurtma boshqaga o'tadi (handoff).</p>
+            <p className="text-[10.5px] text-white/30 mt-1">{t("ctl.slaHint")}</p>
           </div>
           <SaveBtn k="cashdesk_sla" value={{ minutes: num(sla.minutes, 5) }} />
         </Card>
 
         {/* QARZ (xodim tarafi) */}
-        <Card icon={<HandCoins size={16} />} title="Qarz" side="Xodim tarafi — operatorlararo qarz">
+        <Card icon={<HandCoins size={16} />} title={t("ctl.debt")} side={t("ctl.debtSide")}>
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div><L>Qarz limiti (0 = cheksiz)</L><input className={inp} type="number" value={debt.limit ?? ""} onChange={(e) => patch("cashdesk_debt", { limit: e.target.value })} /></div>
-            <div><L>Eskalatsiya (soat)</L><input className={inp} type="number" value={debt.escalation_hours ?? ""} onChange={(e) => patch("cashdesk_debt", { escalation_hours: e.target.value })} /></div>
+            <div><L>{t("ctl.debtLimit")}</L><input className={inp} type="number" value={debt.limit ?? ""} onChange={(e) => patch("cashdesk_debt", { limit: e.target.value })} /></div>
+            <div><L>{t("ctl.escalation")}</L><input className={inp} type="number" value={debt.escalation_hours ?? ""} onChange={(e) => patch("cashdesk_debt", { escalation_hours: e.target.value })} /></div>
           </div>
           <SaveBtn k="cashdesk_debt" value={{ limit: num(debt.limit, 0), escalation_hours: num(debt.escalation_hours, 24) }} />
         </Card>
 
         {/* ALERT / REYTING (xodim tarafi) */}
-        <Card icon={<Gauge size={16} />} title="Alert / Reyting" side="Xodim tarafi — e'tiborsizlik darajalari">
+        <Card icon={<Gauge size={16} />} title={t("ctl.alert")} side={t("ctl.alertSide")}>
           <div className="grid grid-cols-3 gap-3 mb-3">
-            <div><L>2-daraja (handoff)</L><input className={inp} type="number" value={alert.level2 ?? ""} onChange={(e) => patch("cashdesk_alert", { level2: e.target.value })} /></div>
-            <div><L>3-daraja (handoff)</L><input className={inp} type="number" value={alert.level3 ?? ""} onChange={(e) => patch("cashdesk_alert", { level3: e.target.value })} /></div>
-            <div><L>Oyna (soat)</L><input className={inp} type="number" value={alert.window_hours ?? ""} onChange={(e) => patch("cashdesk_alert", { window_hours: e.target.value })} /></div>
+            <div><L>{t("ctl.level2")}</L><input className={inp} type="number" value={alert.level2 ?? ""} onChange={(e) => patch("cashdesk_alert", { level2: e.target.value })} /></div>
+            <div><L>{t("ctl.level3")}</L><input className={inp} type="number" value={alert.level3 ?? ""} onChange={(e) => patch("cashdesk_alert", { level3: e.target.value })} /></div>
+            <div><L>{t("ctl.window")}</L><input className={inp} type="number" value={alert.window_hours ?? ""} onChange={(e) => patch("cashdesk_alert", { window_hours: e.target.value })} /></div>
           </div>
           <SaveBtn k="cashdesk_alert" value={{ level2: num(alert.level2, 3), level3: num(alert.level3, 5), window_hours: num(alert.window_hours, 24) }} />
         </Card>
 
         {/* JAMOA CHATI (xodim tarafi) */}
-        <Card icon={<MessageSquare size={16} />} title="Jamoa chati qoidalari" side="Xodim tarafi — pinned qoidalar">
+        <Card icon={<MessageSquare size={16} />} title={t("ctl.chatRules")} side={t("ctl.chatRulesSide")}>
           <textarea rows={4} className={inp} value={rules.text ?? ""} onChange={(e) => patch("team_chat_rules", { text: e.target.value })} />
           <div className="mt-3"><SaveBtn k="team_chat_rules" value={{ text: String(rules.text ?? "") }} /></div>
         </Card>
 
         {/* SOVRINLI KARTA / BONUS (mijoz tarafi) */}
-        <Card icon={<Trophy size={16} />} title="Sovrinli karta (aksiya)" side="Mijoz tarafi — bonus / sovrin">
+        <Card icon={<Trophy size={16} />} title={t("ctl.promo")} side={t("ctl.promoSide")}>
           <div className="mb-3">
-            <Toggle on={!!promo.enabled} label="Aksiya" onClick={() => patch("promo", { enabled: !promo.enabled })} />
-            <p className="text-[10.5px] text-white/30 mt-2">Yoniq bo'lса mijozlar sovrin kartasини oladi. Reyting: "Sovrinli karta" bo'limi.</p>
+            <Toggle on={!!promo.enabled} label={t("ctl.promoLabel")} onClick={() => patch("promo", { enabled: !promo.enabled })} />
+            <p className="text-[10.5px] text-white/30 mt-2">{t("ctl.promoHint")}</p>
           </div>
           <SaveBtn k="promo" value={{ ...promo, enabled: !!promo.enabled }} />
         </Card>
 
         {/* SAYT (umumiy) */}
-        <Card icon={<Wrench size={16} />} title="Sayt holati" side="Umumiy — texnik ish rejimi">
+        <Card icon={<Wrench size={16} />} title={t("ctl.site")} side={t("ctl.siteSide")}>
           <div className="mb-3">
-            <Toggle on={!!maint.enabled} label="Texnik ish" onClick={() => patch("maintenance", { enabled: !maint.enabled })} />
-            <p className="text-[10.5px] text-white/30 mt-2">Yoniq bo'lса sayt tashrifchilarга "texnik ish" ekrани ko'rinadi (adminlar kiradi).</p>
+            <Toggle on={!!maint.enabled} label={t("ctl.maintenance")} onClick={() => patch("maintenance", { enabled: !maint.enabled })} />
+            <p className="text-[10.5px] text-white/30 mt-2">{t("ctl.maintenanceHint")}</p>
           </div>
           <SaveBtn k="maintenance" value={{ enabled: !!maint.enabled }} />
         </Card>
