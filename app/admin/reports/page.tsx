@@ -139,7 +139,7 @@ export default function ReportsManager() {
               { label: "Komissiya daromadi", val: som(c.totalCommission), icon: Percent, color: "#7db8ff", cur: c.totalCommission, prev: p.totalCommission },
               { label: "Sof foyda", val: som(c.netProfit), icon: Banknote, color: "#4ADE80", cur: c.netProfit, prev: p.netProfit },
             ].map((k) => (
-              <div key={k.label} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+              <div key={k.label} className="glass-card p-4">
                 <k.icon size={17} className="mb-2.5" style={{ color: k.color }} />
                 <div className="text-[17px] sm:text-[19px] font-bold leading-tight">{k.val}</div>
                 <div className="flex items-center justify-between mt-1">
@@ -152,18 +152,18 @@ export default function ReportsManager() {
 
           {/* Komissiya breakdown + bonus + orderlar */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-            <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+            <div className="glass-card p-4">
               <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">Komissiya tafsiloti</div>
               <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">To'ldirish ({data.commissionPct.topup}%)</span><span className="font-semibold">{som(c.topupCommission)}</span></div>
               <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">Yechish ({data.commissionPct.withdraw}%)</span><span className="font-semibold">{som(c.withdrawCommission)}</span></div>
               <div className="flex justify-between text-[13px] pt-1 border-t border-white/8"><span className="font-medium">Jami</span><span className="font-bold text-[#7db8ff]">{som(c.totalCommission)}</span></div>
             </div>
-            <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+            <div className="glass-card p-4">
               <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">Bonus sarf</div>
               <div className="flex items-center gap-2 text-[15px] font-bold"><Gift size={16} className="text-[#F4C76A]" /> {som(c.bonusSpend)}</div>
               <div className="text-[11px] text-muted mt-1.5">Bonus tizimi hali yo'q — keyingi bosqichda ulanadi.</div>
             </div>
-            <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+            <div className="glass-card p-4">
               <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">Buyurtmalar</div>
               <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">Bajarilgan</span><span className="font-semibold text-[#4ADE80]">{c.completedCount}</span></div>
               <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">Kutilayotgan</span><span className="font-semibold text-[#F4C76A]">{c.pendingCount}</span></div>
@@ -172,7 +172,7 @@ export default function ReportsManager() {
           </div>
 
           {/* Grafik */}
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 mb-6">
+          <div className="glass-card p-4 mb-6">
             <div className="text-[13px] font-bold mb-3 flex items-center gap-2"><TrendingUp size={15} className="text-accent" /> Kirim va chiqim (kunlik)</div>
             {data.daily.length === 0 ? (
               <p className="text-[12px] text-muted text-center py-8">Bu davrda ma'lumot yo'q.</p>
@@ -225,7 +225,7 @@ export default function ReportsManager() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
               <div className="text-[13px] font-bold mb-2">To'lov turi bo'yicha</div>
-              <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 space-y-2">
+              <div className="glass-card p-4 space-y-2">
                 {data.paymentRows.length === 0 ? <p className="text-[12px] text-muted">Ma'lumot yo'q.</p> : data.paymentRows.map((pm) => (
                   <div key={pm.method} className="flex items-center justify-between text-[13px]">
                     <span className="capitalize">{pm.method}</span>
@@ -236,7 +236,7 @@ export default function ReportsManager() {
             </div>
             <div>
               <div className="text-[13px] font-bold mb-2">Operatorlar bo'yicha</div>
-              <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 space-y-2">
+              <div className="glass-card p-4 space-y-2">
                 {data.operatorRows.length === 0 ? <p className="text-[12px] text-muted">Ma'lumot yo'q.</p> : data.operatorRows.map((op, i) => (
                   <div key={i} className="flex items-center justify-between text-[13px]">
                     <span>{op.name}</span>
