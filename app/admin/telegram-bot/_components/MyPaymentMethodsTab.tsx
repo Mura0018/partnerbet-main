@@ -136,7 +136,7 @@ export function MyPaymentMethodsTab() {
       )}
 
       {methods.length === 0 && !showForm && (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-6 text-center text-[13px] text-muted mb-4">
+        <div className="rounded-xl glass-card p-6 text-center text-[13px] text-muted mb-4">
           {t("pay.empty")}
         </div>
       )}
@@ -163,7 +163,7 @@ export function MyPaymentMethodsTab() {
       </div>
 
       {showForm ? (
-        <form onSubmit={submitForm} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <form onSubmit={submitForm} className="rounded-xl glass-card p-4">
           <div className="text-[13px] font-semibold mb-3">{editingId ? t("pay.editTitle") : t("pay.newTitle")}</div>
           <div className="mb-3">
             <label className="block text-[12px] text-muted mb-1.5">{t("pay.fType")}</label>

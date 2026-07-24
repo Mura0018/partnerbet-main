@@ -180,32 +180,32 @@ export default function BannersManager() {
       <p className="text-[13px] text-muted mb-6">{t("bnr.sub")}</p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl glass-card p-4">
           <div className="text-[20px] font-bold">{totalViews.toLocaleString()}</div>
           <div className="text-[11px] text-muted mt-1">{t("bnr.totalViews")}</div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl glass-card p-4">
           <div className="text-[20px] font-bold">{totalClicks.toLocaleString()}</div>
           <div className="text-[11px] text-muted mt-1">{t("bnr.totalClicks")}</div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl glass-card p-4">
           <div className="text-[20px] font-bold">{overallCtr.toFixed(2)}%</div>
           <div className="text-[11px] text-muted mt-1">{t("bnr.ctr")}</div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl glass-card p-4">
           <div className="text-[20px] font-bold">{banners.length}</div>
           <div className="text-[11px] text-muted mt-1">{t("bnr.totalBanners")}</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl glass-card p-4">
           <div className="text-[11px] text-muted mb-2">{t("bnr.status")}</div>
           <div className="flex items-center justify-between text-[12px] mb-1"><span>{t("bnr.active")}</span><span className="text-[#17C964] font-semibold">{activeCount}</span></div>
           <div className="flex items-center justify-between text-[12px] mb-1"><span>{t("bnr.scheduled")}</span><span className="text-accent font-semibold">{scheduledCount}</span></div>
           <div className="flex items-center justify-between text-[12px]"><span>{t("bnr.expired")}</span><span className="text-[#FF6B85] font-semibold">{expiredCount}</span></div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl glass-card p-4">
           <div className="text-[11px] text-muted mb-2">{t("bnr.best")}</div>
           {topBanner ? (
             <>
@@ -216,7 +216,7 @@ export default function BannersManager() {
             <p className="text-[11px] text-[#5b6f85]">{t("bnr.notEnough")}</p>
           )}
         </div>
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl glass-card p-4">
           <div className="text-[11px] text-muted mb-2">{t("bnr.worst")}</div>
           {worstBanner ? (
             <>
@@ -229,7 +229,7 @@ export default function BannersManager() {
         </div>
       </div>
 
-      <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-3">
+      <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })} className={inputCls}>
             <option value="image">{t("bnr.typeImage")}</option>
@@ -332,7 +332,7 @@ export default function BannersManager() {
 
       <div className="space-y-3">
         {filteredBanners.map((b) => (
-          <div key={b.id} className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={b.id} className="flex items-center justify-between rounded-xl glass-card p-4">
             <div className="min-w-0 flex items-center gap-3">
               <button onClick={() => toggleSelect(b.id)} className="shrink-0 text-muted hover:text-white" aria-label="Tanlash">
                 {selectedIds.has(b.id) ? <CheckSquare size={16} className="text-accent" /> : <Square size={16} />}
@@ -360,7 +360,7 @@ export default function BannersManager() {
           </div>
         ))}
         {filteredBanners.length === 0 && (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-[#5b6f85]">
+          <div className="rounded-xl glass-card p-8 text-center text-[13px] text-[#5b6f85]">
             {banners.length === 0 ? "Hozircha banner yo'q." : "Qidiruv/filtrlarga mos banner topilmadi."}
           </div>
         )}

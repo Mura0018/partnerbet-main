@@ -280,7 +280,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         <div className="px-3 pt-2 shrink-0" style={{ perspective: 1000 }}>
           <button onClick={() => setOrderFlipped((v) => !v)} className="block w-full text-left">
             <div style={{ position: "relative", transformStyle: "preserve-3d", transition: "transform 0.6s cubic-bezier(0.22,1,0.36,1)", transform: orderFlipped ? "rotateY(180deg)" : "rotateY(0deg)", minHeight: 82 }}>
-              <div style={{ backfaceVisibility: "hidden" }} className="rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-3">
+              <div style={{ backfaceVisibility: "hidden" }} className="rounded-xl glass-card backdrop-blur-md p-3">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-[12.5px] font-semibold text-white">{linkedOrder.type === "topup" ? t("sup.topup") : t("sup.withdraw")}</span>
                   <span className="text-[11px] font-semibold" style={{ color: linkedOrder.status === "completed" ? "#4ADE80" : linkedOrder.status === "rejected" ? "#FF6B85" : "#F4C76A" }}>

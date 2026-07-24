@@ -51,7 +51,7 @@ export default function ApkManager() {
       <h1 className="text-[22px] font-bold mb-1">{t("cnt.apkTitle")}</h1>
       <p className="text-[13px] text-muted mb-6">{t("cnt.apkSub")}</p>
 
-      <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 grid md:grid-cols-2 gap-3">
+      <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 grid md:grid-cols-2 gap-3">
         <input required placeholder={t("cnt.apkPhVersion")} value={form.version}
           onChange={(e) => setForm({ ...form, version: e.target.value })}
           className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]" />
@@ -71,7 +71,7 @@ export default function ApkManager() {
 
       <div className="space-y-3">
         {releases.map((r) => (
-          <div key={r.id} className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={r.id} className="flex items-center justify-between rounded-xl glass-card p-4">
             <div>
               <div className="font-semibold text-[14px] flex items-center gap-2">
                 v{r.version} {r.is_active && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/30">{t("cnt.apkActive")}</span>}

@@ -197,7 +197,7 @@ export default function CustomersManager() {
               <div className="py-8 text-center"><Loader2 size={20} className="animate-spin text-muted mx-auto" /></div>
             ) : (
               <>
-                <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 mb-4">
+                <div className="rounded-xl glass-card p-4 mb-4">
                   <div className="text-[16px] font-bold">{detail.customer.full_name || "—"}</div>
                   <div className="text-[13px] text-muted mt-0.5">{detail.customer.phone}</div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[12px] text-muted">
@@ -224,7 +224,7 @@ export default function CustomersManager() {
                     {detail.orders.map((o) => {
                       const st = STATUS[o.status] ?? STATUS.pending;
                       return (
-                        <div key={o.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2">
+                        <div key={o.id} className="flex items-center justify-between gap-3 rounded-lg glass-card px-3 py-2">
                           <div className="min-w-0">
                             <div className="text-[12.5px] font-medium">{o.type === "topup" ? t("cus.topupLabel") : t("cus.withdrawLabel")} · {o.platform}</div>
                             <div className="text-[10.5px] text-[#5b6f85]">{fmtDate(o.created_at)}</div>

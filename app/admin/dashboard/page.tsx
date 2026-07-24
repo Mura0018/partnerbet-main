@@ -103,7 +103,7 @@ function WebAnalytics({ period }: { period: Period }) {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {cards.map((c) => (
-          <div key={c.labelKey} className="rounded-xl border border-white/8 bg-white/[0.02] p-4 sm:p-5">
+          <div key={c.labelKey} className="rounded-xl glass-card p-4 sm:p-5">
             <c.icon size={18} className="text-accent mb-3" />
             <div className="text-[22px] sm:text-[24px] font-bold">{c.value.toLocaleString("ru-RU")}</div>
             <div className="text-[12px] text-muted mt-1">{t(c.labelKey as any)}</div>
@@ -161,7 +161,7 @@ function BetCorePayMetrics({ period }: { period: Period }) {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-4 mb-3">
         {cards.map((c) => (
-          <div key={c.labelKey} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={c.labelKey} className="rounded-xl glass-card p-4">
             <c.icon size={17} className="mb-2.5" style={{ color: c.color }} />
             <div className="text-[16px] sm:text-[19px] font-bold leading-tight">{loading ? "…" : c.value}</div>
             <div className="text-[11px] text-muted mt-1">{t(c.labelKey as any)}</div>
@@ -169,11 +169,11 @@ function BetCorePayMetrics({ period }: { period: Period }) {
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex items-center gap-3">
+        <div className="rounded-xl glass-card p-4 flex items-center gap-3">
           <ArrowDownToLine size={18} className="text-[#4ADE80] shrink-0" />
           <div><div className="text-[16px] font-bold">{loading ? "…" : m.topup.toLocaleString("ru-RU")}</div><div className="text-[11px] text-muted">{t("dash.topupDone")}</div></div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex items-center gap-3">
+        <div className="rounded-xl glass-card p-4 flex items-center gap-3">
           <ArrowUpFromLine size={18} className="text-[#F4C76A] shrink-0" />
           <div><div className="text-[16px] font-bold">{loading ? "…" : m.withdraw.toLocaleString("ru-RU")}</div><div className="text-[11px] text-muted">{t("dash.withdrawDone")}</div></div>
         </div>
@@ -319,7 +319,7 @@ function AffiliateAnalytics() {
           { labelKey: "dash.aWeek", value: summary.week },
           { labelKey: "dash.aMonth", value: summary.month },
         ].map((c) => (
-          <div key={c.labelKey} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={c.labelKey} className="rounded-xl glass-card p-4">
             <div className="text-[20px] font-bold">{c.value}</div>
             <div className="text-[11px] text-muted mt-1">{t(c.labelKey as any)}</div>
           </div>
@@ -328,7 +328,7 @@ function AffiliateAnalytics() {
 
       {!loading && (
         <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="md:col-span-2 rounded-xl glass-card p-4">
             <div className="text-[12px] text-muted mb-3">{t("dash.chartDaily")}</div>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={dailySeries}>
@@ -341,7 +341,7 @@ function AffiliateAnalytics() {
             </ResponsiveContainer>
           </div>
 
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="rounded-xl glass-card p-4">
             <div className="text-[12px] text-muted mb-3">{t("dash.topCountries")}</div>
             <div className="space-y-2">
               {topCountries.length === 0 && <p className="text-[11px] text-[#5b6f85]">{t("dash.noData")}</p>}

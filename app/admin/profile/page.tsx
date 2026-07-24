@@ -114,7 +114,7 @@ function TwoFactorSection() {
   if (loading) return null;
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+    <div className="rounded-xl glass-card p-5 mb-6">
       <h2 className="text-[15px] font-semibold mb-1">Ikki bosqichli tasdiqlash (2FA)</h2>
       <p className="text-[12px] text-muted mb-4 leading-relaxed">
         Yoqilsa, kirishda parolingizdan tashqari, telefoningizdagi autentifikator ilova (Google Authenticator, Authy va h.k.) kodi ham so'raladi.
@@ -189,7 +189,7 @@ function StatsSection() {
   if (!stats) return null;
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+    <div className="rounded-xl glass-card p-5 mb-6">
       <h2 className="text-[15px] font-semibold mb-4 flex items-center gap-2"><TrendingUp size={16} className="text-accent" /> Shu oylik statistika</h2>
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg bg-white/[0.03] p-3.5">
@@ -233,7 +233,7 @@ function ChatThemeSection() {
   if (loading) return null;
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+    <div className="rounded-xl glass-card p-5 mb-6">
       <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-accent" /> Chat mavzusi</h2>
       <p className="text-[12px] text-muted mb-3">O'zingiz yozgan xabarlar rangini tanlang — Jamoa chati va Murojaatlarda shu rang ishlatiladi.</p>
       <ThemePicker value={theme} onChange={change} />
@@ -291,7 +291,7 @@ function NotificationPrefsSection() {
   if (loading) return null;
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+    <div className="rounded-xl glass-card p-5 mb-6">
       <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><Bell size={16} className="text-accent" /> Telegram bildirishnomalari</h2>
       <p className="text-[12px] text-muted mb-2">Botga ulangan bo'lsangiz, qaysi xabarlarni olishni tanlang.</p>
       <div className="divide-y divide-white/5">
@@ -340,7 +340,7 @@ function EmailChangeSection() {
   };
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+    <div className="rounded-xl glass-card p-5 mb-6">
       <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><Mail size={16} className="text-accent" /> Email manzil</h2>
       {!editing ? (
         <div className="flex items-center justify-between">
@@ -400,7 +400,7 @@ function LoginHistorySection() {
   if (loading || history.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+    <div className="rounded-xl glass-card p-5 mb-6">
       <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><ShieldAlert size={16} className="text-accent" /> Oxirgi kirishlar</h2>
       <div className="space-y-2">
         {history.map((h, i) => (
@@ -516,7 +516,7 @@ export default function ProfilePage() {
       <p className="text-[13px] text-muted mb-6">Hisob ma'lumotlari va xavfsizlik sozlamalari.</p>
 
       {!profileLoading && profile && (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+        <div className="rounded-xl glass-card p-5 mb-6">
           <div className="flex items-center gap-3 mb-4">
             {avatarUrl ? (
               <img src={avatarUrl} alt="" className="w-14 h-14 rounded-full object-cover border-2" style={{ borderColor: roleColor }} />
@@ -575,7 +575,7 @@ export default function ProfilePage() {
       <NotificationPrefsSection />
       <EmailChangeSection />
 
-      <form onSubmit={handleChangePassword} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6">
+      <form onSubmit={handleChangePassword} className="rounded-xl glass-card p-5 mb-6">
         <h2 className="text-[15px] font-semibold mb-4">{t("changePassword.title")}</h2>
 
         <label className="block text-[12px] text-muted mb-1.5">{t("changePassword.currentPassword")}</label>

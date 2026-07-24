@@ -188,7 +188,7 @@ export default function BlogManager() {
 
       <div className="space-y-3">
         {posts.map((p) => (
-          <div key={p.id} className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={p.id} className="flex items-center justify-between rounded-xl glass-card p-4">
             <div className="flex items-center gap-3 min-w-0">
               {p.cover_url && <img src={p.cover_url} alt="" className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />}
               <div className="min-w-0">
@@ -207,7 +207,7 @@ export default function BlogManager() {
           </div>
         ))}
         {posts.length === 0 && (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-[#5b6f85]">Hozircha maqola yo'q.</div>
+          <div className="rounded-xl glass-card p-8 text-center text-[13px] text-[#5b6f85]">Hozircha maqola yo'q.</div>
         )}
       </div>
 

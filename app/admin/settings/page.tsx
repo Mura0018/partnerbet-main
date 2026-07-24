@@ -145,7 +145,7 @@ function GeneralTab({ settings, updateLocal, saveKey }: TabProps) {
   const footer = settings.footer ?? {};
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+    <div className="rounded-xl glass-card p-5">
       <Field label={t("set.gSiteName")}>
         <input className={inputCls} value={identity.site_name ?? ""} onChange={(e) => updateLocal("site_identity", { site_name: e.target.value })} placeholder="WINORA" />
       </Field>
@@ -317,7 +317,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
   };
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+    <div className="rounded-xl glass-card p-5">
       <Field label={t("set.bLogo")}>
         <p className="text-[12px] text-muted mb-3 leading-relaxed">
           {t("set.bLogoDesc1")}<span className="text-white font-medium">{t("set.bLogoBold1")}</span>{t("set.bLogoDesc2")}
@@ -421,7 +421,7 @@ function SocialTab({ settings, updateLocal, saveKey }: TabProps) {
     { key: "twitter", label: "Twitter / X" },
   ];
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+    <div className="rounded-xl glass-card p-5">
       {platforms.map((p) => (
         <Field key={p.key} label={p.label}>
           <input className={inputCls} value={social[p.key] ?? ""} onChange={(e) => updateLocal("social_links", { [p.key]: e.target.value })} placeholder={`https://${p.key}.com/...`} />
@@ -437,7 +437,7 @@ function SeoTab({ settings, updateLocal, saveKey }: TabProps) {
   const { saving, saved, run } = useSaveState();
   const seo = settings.seo_defaults ?? {};
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+    <div className="rounded-xl glass-card p-5">
       <Field label={t("set.sTitle")}>
         <input className={inputCls} value={seo.default_title ?? ""} onChange={(e) => updateLocal("seo_defaults", { default_title: e.target.value })} />
       </Field>
@@ -454,7 +454,7 @@ function AnalyticsTab({ settings, updateLocal, saveKey }: TabProps) {
   const { saving, saved, run } = useSaveState();
   const analytics = settings.analytics ?? {};
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+    <div className="rounded-xl glass-card p-5">
       <Field label={t("set.aGa")}>
         <input className={inputCls} value={analytics.ga_measurement_id ?? ""} onChange={(e) => updateLocal("analytics", { ga_measurement_id: e.target.value })} placeholder="G-XXXXXXXXXX" />
       </Field>
@@ -557,7 +557,7 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+      <div className="rounded-xl glass-card p-5">
         <h3 className="text-[13px] font-semibold mb-1">{t("set.fcTitle")}</h3>
         <p className="text-[12px] text-[#5b6f85] mb-4 leading-relaxed">
           {t("set.fcDesc")}
@@ -581,7 +581,7 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
         <SaveButton saving={savingProvider} saved={savedProvider} onClick={() => runProviderSave(() => saveKey("football_provider"))} />
       </div>
 
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+      <div className="rounded-xl glass-card p-5">
         <p className="text-[12px] text-[#5b6f85] mb-4 leading-relaxed">
           {t("set.secNote")}
         </p>
@@ -618,7 +618,7 @@ function MaintenanceTab({ settings, updateLocal, saveKey }: TabProps) {
   const { saving, saved, run } = useSaveState();
   const maintenance = settings.maintenance ?? {};
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+    <div className="rounded-xl glass-card p-5">
       <label className="flex items-center gap-3 mb-4 cursor-pointer">
         <input type="checkbox" checked={!!maintenance.enabled} onChange={(e) => updateLocal("maintenance", { enabled: e.target.checked })} />
         <span className="text-[13px] font-medium">{t("set.mEnable")}</span>

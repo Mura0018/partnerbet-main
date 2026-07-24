@@ -86,7 +86,7 @@ function DashboardTab() {
           { label: "So'nggi 7 kun", value: stats.week },
           { label: "So'nggi 30 kun", value: stats.month },
         ].map((c) => (
-          <div key={c.label} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={c.label} className="rounded-xl glass-card p-4">
             <TrendingUp size={15} className="text-cta mb-2" />
             <div className="text-[20px] font-bold">${c.value.toFixed(2)}</div>
             <div className="text-[11px] text-muted mt-1">{c.label}</div>

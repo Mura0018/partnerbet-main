@@ -65,7 +65,7 @@ export function OperatorsTab() {
 
   return (
     <div>
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 mb-5 text-[12px] text-muted leading-relaxed">
+      <div className="rounded-xl glass-card p-4 mb-5 text-[12px] text-muted leading-relaxed">
         {t("tgb.noteP1")}<a href="/admin/users" className="text-accent">{t("tgb.noteLink")}</a>{t("tgb.noteP2")}
         <span className="text-white font-medium">{t("tgb.noteBold")}</span>{t("tgb.noteP3")}
       </div>
@@ -77,13 +77,13 @@ export function OperatorsTab() {
       {loading ? (
         <p className="text-[13px] text-muted">{t("tgb.loading")}</p>
       ) : operators.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+        <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
           {t("tgb.empty")}
         </div>
       ) : (
         <div className="space-y-3">
           {operators.map((op) => (
-            <div key={op.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4">
+            <div key={op.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl glass-card p-4">
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-semibold flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full shrink-0 ${op.is_online ? "bg-[#4ADE80]" : "bg-[#5b6f85]"}`} />

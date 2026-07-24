@@ -42,7 +42,7 @@ function TariffRow({ tf, onSaved }: { tf: Tariff; onSaved: () => void }) {
   };
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+    <div className="rounded-xl glass-card p-4">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
           <div className="text-[14px] font-bold">{tf.name}</div>
@@ -107,7 +107,7 @@ export default function TariffsManager() {
           </div>
         </div>
       ) : tariffs.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">{t("trf.empty")}</div>
+        <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">{t("trf.empty")}</div>
       ) : (
         <div className="space-y-3">
           {tariffs.map((tf) => <TariffRow key={tf.id} tf={tf} onSaved={load} />)}

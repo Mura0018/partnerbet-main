@@ -71,7 +71,7 @@ function FeaturedLeaguesTab() {
         Liga ID — tanlangan provayderning o'ziga xos identifikatori (masalan API-Football'da
         Premier League = 39).
       </p>
-      <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-2">
+      <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <select className={inputCls} value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })}>
             <option value="api_football">API-Football</option>
@@ -130,7 +130,7 @@ function FeaturedFixturesTab() {
         Muayyan o'yinni "Featured" sifatida belgilash — o'yin ma'lumotlari provayderdan jonli
         olinadi, bu yerda faqat qaysi o'yin va tahririyat izohi saqlanadi.
       </p>
-      <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-2">
+      <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <select className={inputCls} value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })}>
             <option value="api_football">API-Football</option>
@@ -196,7 +196,7 @@ function VideosTab() {
 
   return (
     <div>
-      <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-2">
+      <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <input className={inputCls} placeholder="Video sarlavhasi" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
         <input className={inputCls} placeholder="Video URL (YouTube va h.k.)" value={form.video_url} onChange={(e) => setForm({ ...form, video_url: e.target.value })} />
         <textarea rows={2} className={inputCls} placeholder="Tavsif" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />

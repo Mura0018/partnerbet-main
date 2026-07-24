@@ -58,7 +58,7 @@ export default function TelegramBotAdminPage() {
       <p className="text-[13px] text-muted mb-5">{t("tgb.sub")}</p>
 
       {/* Ixcham segment tablar */}
-      <div className="inline-flex gap-1 p-1 mb-6 max-w-full overflow-x-auto rounded-xl bg-white/[0.03] border border-white/8">
+      <div className="inline-flex gap-1 p-1 mb-6 max-w-full overflow-x-auto rounded-xl glass-card">
         {TABS.map((tb) => {
           const btn = (
             <button

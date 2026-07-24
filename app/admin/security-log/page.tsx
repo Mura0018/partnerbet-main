@@ -97,14 +97,14 @@ export default function SecurityLogPage() {
               <div className="text-[22px] font-extrabold text-[#F4C76A]">{mediumCount}</div>
               <div className="text-[11px] text-muted mt-0.5">Tekshirish kerak</div>
             </div>
-            <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+            <div className="rounded-xl glass-card p-4">
               <div className="text-[22px] font-extrabold">{blocked.length}</div>
               <div className="text-[11px] text-muted mt-0.5">Bloklangan IP</div>
             </div>
           </div>
 
           {blocked.length > 0 && (
-            <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 mb-6">
+            <div className="rounded-xl glass-card p-4 mb-6">
               <div className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-3">Bloklangan IP manzillar</div>
               <div className="space-y-2">
                 {blocked.map((b) => (
@@ -153,7 +153,7 @@ export default function SecurityLogPage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+            <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
               Bu toifada hodisa yo'q.
             </div>
           ) : (
