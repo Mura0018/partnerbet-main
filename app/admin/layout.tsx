@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, Activity,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -24,6 +24,7 @@ const NAV_GROUPS = [
     { href: "/admin/customers", label: "Mijozlar", icon: Contact, permission: "customers.manage" },
     { href: "/admin/cashdesks", label: "Kassalar", icon: Landmark, permission: "cashdesks.manage" },
     { href: "/admin/operator-rating", label: "Operator reytingi", icon: Gauge, permission: "operators.oversight" },
+    { href: "/admin/staff-monitor", label: "Xodimlar nazorati", icon: Activity, permission: "operators.oversight" },
     { href: "/admin/promo", label: "Sovrinli karta", icon: Trophy, permission: "promo.manage" },
     { href: "/admin/promo/scan", label: "QR Skaner", icon: QrCode, permission: "telegram_orders.manage" },
     { href: "/admin/promo/banners", label: "Reklama banner", icon: Megaphone, permission: "promo.manage" },

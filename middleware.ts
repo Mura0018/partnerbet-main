@@ -30,6 +30,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: string }[] = [
   { prefix: "/admin/promo/scan", permission: "telegram_orders.manage" },
   { prefix: "/admin/promo", permission: "promo.manage" },
   { prefix: "/admin/operator-rating", permission: "operators.oversight" },
+  { prefix: "/admin/staff-monitor", permission: "operators.oversight" },
   { prefix: "/admin/reports", permission: "reports.view" },
 ];
 
