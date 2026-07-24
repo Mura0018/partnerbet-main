@@ -8,6 +8,7 @@ import {
 import { applyAppTheme } from "@/lib/telegram/appThemes";
 import { PrizeCard } from "./PrizeCard";
 import { PromoBanner } from "./PromoBanner";
+import { WithdrawWizard } from "./WithdrawWizard";
 
 declare global {
   interface Window {
@@ -1802,45 +1803,12 @@ export default function TelegramAppPage() {
         <div className="relative z-10">
         <ScreenHeader title="Pul yechish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <WithdrawCodeGuide />
-        <form onSubmit={submitWithdraw}>
-          <PlatformField platform={wdPlatform} setPlatform={setWdPlatform} customPlatform={wdCustomPlatform} setCustomPlatform={setWdCustomPlatform} />
-          <AccountIdVerifyField accountId={wdAccountId} setAccountId={setWdAccountId} getInitData={getInitData} />
-          <div className="mb-3.5">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Pul yechish kodi</label>
-            <PasswordInput className={inputCls} placeholder="Masalan: A1b2" value={wdCode} onChange={(e) => setWdCode(e.target.value)} />
-          </div>
-          <div className="mb-3.5">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Summa</label>
-            <input className={inputCls} type="number" min={1} placeholder="Masalan: 50000" value={wdAmount} onChange={(e) => setWdAmount(e.target.value)} />
-          </div>
-          <div className="mb-3.5">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Pulni qabul qilish usuli</label>
-            <div className="grid grid-cols-2 gap-2">
-              {PAYMENT_METHODS.map((m) => (
-                <button
-                  key={m.id} type="button" onClick={() => setWdMethod(m.id)}
-                  className={`py-2.5 rounded-xl text-[13px] font-semibold border transition-colors ${
-                    wdMethod === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="mb-3.5">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Qabul qiluvchi raqam/karta</label>
-            <input className={inputCls} placeholder="Karta/Click/Payme raqamingiz" value={wdPayoutDetails} onChange={(e) => setWdPayoutDetails(e.target.value)} />
-          </div>
-          <div className="mb-4">
-            <label className="block text-[12px] text-[#93a5ba] mb-1.5">Karta/hisob egasining F.I.Sh.</label>
-            <input className={inputCls} placeholder="Masalan: Aliyev Vali" value={wdRecipientName} onChange={(e) => setWdRecipientName(e.target.value)} />
-          </div>
-          {error && <p className="text-[12px] text-[#FF6B85] text-center mb-3">{error}</p>}
-          <button type="submit" disabled={submitting} className={buttonCls}>
-            {submitting ? <Loader2 size={16} className="animate-spin" /> : "Buyurtma berish"}
-          </button>
-        </form>
+        <WithdrawWizard
+          getInitData={getInitData}
+          inputCls={inputCls}
+          buttonCls={buttonCls}
+          onDone={() => { setSuccessLabel("Pul yechish"); resetForms(); setScreen("order-success"); }}
+        />
         </div>
       </div>
     );
