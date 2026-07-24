@@ -183,6 +183,13 @@ export const dictionaries = {
       lastLogins: "Oxirgi kirishlar", unknownDevice: "noma'lum qurilma", unknown: "noma'lum", browser: "brauzer",
       emailSent: "Tasdiqlash havolasi {email} manziliga yuborildi. Havolani bosgach email o'zgaradi.",
     },
+    sec: {
+      title: "Xavfsizlik jurnali", sub: "So'nggi 7 kunlik kirish urinishlari — oddiy tilda. Xavfli holatlarda darhol chora ko'rishingiz mumkin.", loading: "Yuklanmoqda...",
+      statHigh: "Xavfli holat", statMedium: "Tekshirish kerak", statBlocked: "Bloklangan IP",
+      blockedList: "Bloklangan IP manzillar", permanent: "Doimiy", until: "{date} gacha", unblock: "Blokdan chiqarish",
+      fAll: "Barchasi", fHigh: "Xavfli", fMedium: "Tekshirish kerak", noEvents: "Bu toifada hodisa yo'q.",
+      unknownIp: "noma'lum", blockIp: "IP'ni bloklash", blockReason: "Xavfsizlik jurnalidan bloklandi",
+    },
     prm: {
       mgrTitle: "Sovrinli aksiya", mgrSub: "Muddat, sovrinlar, naqd/onlayn reyting va g'oliblar",
       settings: "Aksiya sozlamasi", on: "Aksiya yoniq", off: "Aksiya o'chiq",
@@ -822,6 +829,13 @@ export const dictionaries = {
       email: "Email адрес", enterNewEmail: "Введите новый email.", emailErr: "Ошибка при смене email.", send: "Отправить",
       lastLogins: "Последние входы", unknownDevice: "неизв. устройство", unknown: "неизвестно", browser: "браузер",
       emailSent: "Ссылка подтверждения отправлена на {email}. После перехода по ссылке email изменится.",
+    },
+    sec: {
+      title: "Журнал безопасности", sub: "Попытки входа за последние 7 дней — простым языком. При опасных ситуациях можно сразу принять меры.", loading: "Загрузка...",
+      statHigh: "Опасная ситуация", statMedium: "Требует проверки", statBlocked: "Заблок. IP",
+      blockedList: "Заблокированные IP адреса", permanent: "Постоянно", until: "до {date}", unblock: "Разблокировать",
+      fAll: "Все", fHigh: "Опасные", fMedium: "Требует проверки", noEvents: "В этой категории событий нет.",
+      unknownIp: "неизвестно", blockIp: "Заблокировать IP", blockReason: "Заблокирован из журнала безопасности",
     },
     prm: {
       mgrTitle: "Призовая акция", mgrSub: "Срок, призы, рейтинг нал/онлайн и победители",
