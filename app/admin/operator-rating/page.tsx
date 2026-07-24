@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import { Gauge, Loader2, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 
@@ -14,6 +15,7 @@ const levelBadge = (l: number) =>
 
 export default function OperatorRatingPage() {
   const [data, setData] = useState<{ operators: Operator[]; events: Event[]; alerts: Alert[] } | null>(null);
+  const { t } = useLocale();
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"events" | "alerts">("events");
 
@@ -37,8 +39,8 @@ export default function OperatorRatingPage() {
       <div className="flex items-center gap-2.5 mb-5">
         <span className="p-2 rounded-xl bg-[#1CE0C3]/10 text-[#1CE0C3]"><Gauge size={20} /></span>
         <div>
-          <h1 className="text-lg font-semibold text-white">Operator reytingi</h1>
-          <p className="text-xs text-white/40">Ishonch bali, alertlar va e'tiborsizlik tarixi</p>
+          <h1 className="text-lg font-semibold text-white">{t("mon.ratingTitle")}</h1>
+          <p className="text-xs text-white/40">{t("mon.ratingSubtitle")}</p>
         </div>
       </div>
 
@@ -47,9 +49,9 @@ export default function OperatorRatingPage() {
         <table className="w-full text-sm">
           <thead className="text-white/40 text-xs border-b border-white/10">
             <tr>
-              <th className="text-left font-medium px-4 py-3">Operator</th>
-              <th className="text-center font-medium px-4 py-3">Holat</th>
-              <th className="text-right font-medium px-4 py-3">Reyting</th>
+              <th className="text-left font-medium px-4 py-3">{t("mon.colOperator")}</th>
+              <th className="text-center font-medium px-4 py-3">{t("mon.colStatus")}</th>
+              <th className="text-right font-medium px-4 py-3">{t("mon.colRating")}</th>
             </tr>
           </thead>
           <tbody>
@@ -64,7 +66,7 @@ export default function OperatorRatingPage() {
               </tr>
             ))}
             {data.operators.length === 0 && (
-              <tr><td colSpan={3} className="px-4 py-8 text-center text-white/40 text-sm">Operator yo'q.</td></tr>
+              <tr><td colSpan={3} className="px-4 py-8 text-center text-white/40 text-sm">{t("mon.noOperator")}</td></tr>
             )}
           </tbody>
         </table>
@@ -72,8 +74,8 @@ export default function OperatorRatingPage() {
 
       {/* Tarix: hodisalar / alertlar */}
       <div className="flex gap-1.5 mb-3">
-        <button onClick={() => setTab("events")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium ${tab === "events" ? "bg-[#1CE0C3]/20 text-white" : "text-white/50 hover:bg-white/5"}`}>Reyting hodisalari</button>
-        <button onClick={() => setTab("alerts")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium ${tab === "alerts" ? "bg-[#1CE0C3]/20 text-white" : "text-white/50 hover:bg-white/5"}`}>Alertlar</button>
+        <button onClick={() => setTab("events")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium ${tab === "events" ? "bg-[#1CE0C3]/20 text-white" : "text-white/50 hover:bg-white/5"}`}>{t("mon.tabEvents")}</button>
+        <button onClick={() => setTab("alerts")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium ${tab === "alerts" ? "bg-[#1CE0C3]/20 text-white" : "text-white/50 hover:bg-white/5"}`}>{t("mon.tabAlerts")}</button>
       </div>
 
       {tab === "events" ? (
@@ -91,21 +93,21 @@ export default function OperatorRatingPage() {
               </div>
             </div>
           ))}
-          {data.events.length === 0 && <div className="text-white/40 text-sm text-center py-8">Hodisa yo'q.</div>}
+          {data.events.length === 0 && <div className="text-white/40 text-sm text-center py-8">{t("mon.noEvents")}</div>}
         </div>
       ) : (
         <div className="space-y-1.5">
           {data.alerts.map((a) => (
             <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3.5 py-2.5 text-[12px]">
               <div className="min-w-0 flex items-center gap-2">
-                <span className={`px-2 py-0.5 rounded-full border text-[10px] ${levelBadge(a.level)}`}>{a.level}-daraja</span>
+                <span className={`px-2 py-0.5 rounded-full border text-[10px] ${levelBadge(a.level)}`}>{t("mon.levelBadge", { n: a.level })}</span>
                 <span className="text-white font-medium">{a.operator_name}</span>
                 <span className="text-white/40 truncate"> · {a.reason || "—"}</span>
               </div>
               <span className="text-white/30 shrink-0">{fmtDt(a.created_at)}</span>
             </div>
           ))}
-          {data.alerts.length === 0 && <div className="text-white/40 text-sm text-center py-8">Alert yo'q.</div>}
+          {data.alerts.length === 0 && <div className="text-white/40 text-sm text-center py-8">{t("mon.noAlerts")}</div>}
         </div>
       )}
     </div>

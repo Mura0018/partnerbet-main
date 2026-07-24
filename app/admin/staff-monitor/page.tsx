@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import { ShieldCheck, Loader2, AlertTriangle } from "lucide-react";
 
@@ -16,6 +17,7 @@ const fmtDt = (s: string | null) => (s ? new Date(s).toLocaleString("ru-RU") : "
 
 export default function StaffMonitorPage() {
   const [ops, setOps] = useState<Op[]>([]);
+  const { t } = useLocale();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,30 +39,30 @@ export default function StaffMonitorPage() {
       <div className="flex items-center gap-2.5 mb-5">
         <span className="p-2 rounded-xl bg-[#1CE0C3]/10 text-[#1CE0C3]"><ShieldCheck size={20} /></span>
         <div>
-          <h1 className="text-lg font-semibold text-white">Xodimlar nazorati</h1>
-          <p className="text-xs text-white/40">Faollik, kirish tarixi va shubhali harakatlar (muammoli operatorlar yuqorida)</p>
+          <h1 className="text-lg font-semibold text-white">{t("mon.monTitle")}</h1>
+          <p className="text-xs text-white/40">{t("mon.monSubtitle")}</p>
         </div>
       </div>
 
       {ops.length === 0 ? (
-        <div className="text-center py-16 text-white/40 text-sm border border-white/10 rounded-2xl">Operator yo'q.</div>
+        <div className="text-center py-16 text-white/40 text-sm border border-white/10 rounded-2xl">{t("mon.noOperator")}</div>
       ) : (
         <div className="overflow-x-auto border border-white/10 rounded-2xl">
           <table className="w-full text-sm whitespace-nowrap">
             <thead className="text-white/40 text-xs border-b border-white/10">
               <tr>
-                <th className="text-left font-medium px-3 py-3">Operator</th>
-                <th className="text-center font-medium px-3 py-3">Holat</th>
-                <th className="text-right font-medium px-3 py-3">Reyting</th>
-                <th className="text-right font-medium px-3 py-3">Bajardi</th>
-                <th className="text-right font-medium px-3 py-3">Rad etdi</th>
-                <th className="text-right font-medium px-3 py-3">Aylanma</th>
-                <th className="text-right font-medium px-3 py-3">Qarz</th>
-                <th className="text-right font-medium px-3 py-3">Alert</th>
-                <th className="text-right font-medium px-3 py-3">Skaner</th>
-                <th className="text-left font-medium px-3 py-3">Oxirgi kirish</th>
-                <th className="text-right font-medium px-3 py-3">Xato kirish (7k)</th>
-                <th className="text-left font-medium px-3 py-3">Shubhali</th>
+                <th className="text-left font-medium px-3 py-3">{t("mon.colOperator")}</th>
+                <th className="text-center font-medium px-3 py-3">{t("mon.colStatus")}</th>
+                <th className="text-right font-medium px-3 py-3">{t("mon.colRating")}</th>
+                <th className="text-right font-medium px-3 py-3">{t("mon.cDid")}</th>
+                <th className="text-right font-medium px-3 py-3">{t("mon.cRejected")}</th>
+                <th className="text-right font-medium px-3 py-3">{t("mon.cVolume")}</th>
+                <th className="text-right font-medium px-3 py-3">{t("mon.cDebt")}</th>
+                <th className="text-right font-medium px-3 py-3">{t("mon.cAlert")}</th>
+                <th className="text-right font-medium px-3 py-3">{t("mon.cScan")}</th>
+                <th className="text-left font-medium px-3 py-3">{t("mon.cLastLogin")}</th>
+                <th className="text-right font-medium px-3 py-3">{t("mon.cFailedLogin")}</th>
+                <th className="text-left font-medium px-3 py-3">{t("mon.cSuspicious")}</th>
               </tr>
             </thead>
             <tbody>
@@ -72,7 +74,7 @@ export default function StaffMonitorPage() {
                   </td>
                   <td className="px-3 py-2.5 text-center">
                     <span className={`inline-block w-2 h-2 rounded-full ${o.is_online ? "bg-[#4ADE80]" : "bg-white/25"}`} />
-                    {o.is_busy && <span className="text-[10px] text-[#FF6B85] ml-1">band</span>}
+                    {o.is_busy && <span className="text-[10px] text-[#FF6B85] ml-1">{t("mon.busy")}</span>}
                   </td>
                   <td className={`px-3 py-2.5 text-right font-bold ${o.rating > 0 ? "text-[#4ADE80]" : o.rating < 0 ? "text-[#FF6B85]" : "text-white/60"}`}>{o.rating > 0 ? `+${o.rating}` : o.rating}</td>
                   <td className="px-3 py-2.5 text-right text-[#4ADE80]">{o.completed}</td>
@@ -86,11 +88,11 @@ export default function StaffMonitorPage() {
                   <td className="px-3 py-2.5">
                     {o.flags.length === 0 ? <span className="text-white/25 text-[11px]">—</span> : (
                       <div className="flex flex-wrap gap-1">
-                        {o.flags.map((f, i) => (
+                        {o.flags.map((f, i) => { const FM: Record<string,string> = { low_rating: "mon.flagLowRating", many_rejects: "mon.flagManyRejects", many_failed: "mon.flagManyFailed", open_debt: "mon.flagOpenDebt" }; return (
                           <span key={i} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[#FF6B85]/15 text-[#FF6B85] border border-[#FF6B85]/30">
-                            <AlertTriangle size={10} />{f}
+                            <AlertTriangle size={10} />{t(FM[f] as any) || f}
                           </span>
-                        ))}
+                        ); })}
                       </div>
                     )}
                   </td>

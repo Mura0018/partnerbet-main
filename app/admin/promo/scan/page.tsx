@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useRef, useState } from "react";
 import { QrCode, Loader2, Camera, X, User, Search } from "lucide-react";
 
@@ -13,14 +14,15 @@ type Result = {
 
 const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
 const fmtDt = (s: string | null) => (s ? new Date(s).toLocaleString("ru-RU") : "—");
-const STATUS: Record<string, { label: string; cls: string }> = {
-  pending: { label: "Kutilmoqda", cls: "text-[#F4C76A]" },
-  completed: { label: "Bajarildi", cls: "text-[#4ADE80]" },
-  rejected: { label: "Rad etildi", cls: "text-[#FF6B85]" },
+const STATUS: Record<string, { labelKey: string; cls: string }> = {
+  pending: { labelKey: "ord.statusPending", cls: "text-[#F4C76A]" },
+  completed: { labelKey: "ord.statusCompleted", cls: "text-[#4ADE80]" },
+  rejected: { labelKey: "ord.statusRejected", cls: "text-[#FF6B85]" },
 };
 
 export default function PromoScanPage() {
   const [code, setCode] = useState("");
+  const { t } = useLocale();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
@@ -45,12 +47,12 @@ export default function PromoScanPage() {
       });
       const d = await res.json();
       if (!res.ok || !d.ok) {
-        setError(d.error === "not_found" ? "Bunday kod topilmadi. Kartani tekshiring." : "Xatolik. Qayta urinib ko'ring.");
+        setError(d.error === "not_found" ? t("mon.errNotFound") : t("mon.errGeneric"));
         return;
       }
       setResult(d);
     } catch {
-      setError("Ulanishда xatolik.");
+      setError(t("mon.errConn"));
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ export default function PromoScanPage() {
       requestAnimationFrame(loop);
     } catch {
       setScanning(false);
-      setError("Kamera ochilmadi. Ruxsat bering yoki kodni qo'lда kiriting.");
+      setError(t("mon.errCamera"));
     }
   };
 
@@ -105,8 +107,8 @@ export default function PromoScanPage() {
       <div className="flex items-center gap-2.5 mb-5">
         <span className="p-2 rounded-xl bg-[#1CE0C3]/10 text-[#1CE0C3]"><QrCode size={20} /></span>
         <div>
-          <h1 className="text-lg font-semibold text-white">Sovrin karta skaneri</h1>
-          <p className="text-xs text-white/40">Mijoz QR yoki kodini o'qing — har skaner qayd etiladi</p>
+          <h1 className="text-lg font-semibold text-white">{t("mon.scanTitle")}</h1>
+          <p className="text-xs text-white/40">{t("mon.scanSubtitle")}</p>
         </div>
       </div>
 
@@ -122,7 +124,7 @@ export default function PromoScanPage() {
       ) : (
         cameraSupported && (
           <button onClick={startCamera} className="w-full mb-4 py-3 rounded-2xl bg-[#1CE0C3] text-[#04231F] font-semibold flex items-center justify-center gap-2">
-            <Camera size={18} /> Kamerани yoqish
+            <Camera size={18} /> {t("mon.enableCamera")}
           </button>
         )
       )}
@@ -133,14 +135,14 @@ export default function PromoScanPage() {
           value={code}
           onChange={(e) => setCode(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && lookup(code)}
-          placeholder="Karta kodini kiriting (masalan A1B2C3D4E5)"
+          placeholder={t("mon.scanPlaceholder")}
           className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-white text-sm outline-none focus:border-accent font-mono"
         />
         <button onClick={() => lookup(code)} disabled={loading} className="px-4 rounded-lg bg-accent/20 text-white font-medium hover:bg-accent/30 disabled:opacity-50 flex items-center gap-1.5">
-          {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} Qidirish
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} {t("mon.search")}
         </button>
       </div>
-      {!cameraSupported && <p className="text-[11px] text-white/30 mb-2">Kamera skaneri bu qurilmaда qo'llab-quvvatlanmaydi — kodni qo'lда kiriting.</p>}
+      {!cameraSupported && <p className="text-[11px] text-white/30 mb-2">{t("mon.cameraUnsupported")}</p>}
       {error && <div className="rounded-lg bg-[#FF6B85]/10 border border-[#FF6B85]/30 text-[#FF6B85] text-[12.5px] px-3 py-2.5 mb-2">{error}</div>}
 
       {/* Natija — mijoz kuzatuvi */}
@@ -155,30 +157,30 @@ export default function PromoScanPage() {
           </div>
           <div className="grid grid-cols-3 divide-x divide-white/8 border-b border-white/8">
             <div className="p-3 text-center">
-              <div className="text-[10px] text-white/40">Faollik (so'm)</div>
+              <div className="text-[10px] text-white/40">{t("mon.activity")}</div>
               <div className="text-[15px] font-bold text-[#4ADE80]">{fmt(result.activity.volume)}</div>
             </div>
             <div className="p-3 text-center">
-              <div className="text-[10px] text-white/40">Buyurtma</div>
+              <div className="text-[10px] text-white/40">{t("mon.orders")}</div>
               <div className="text-[15px] font-bold text-white">{result.activity.orders_count}</div>
             </div>
             <div className="p-3 text-center">
-              <div className="text-[10px] text-white/40">Skaner</div>
+              <div className="text-[10px] text-white/40">{t("mon.scanCount")}</div>
               <div className="text-[15px] font-bold text-[#F4C76A]">{result.scanCount}</div>
             </div>
           </div>
           <div className="p-3">
-            <div className="text-[11px] text-white/40 mb-1.5">So'nggi buyurtmalar</div>
+            <div className="text-[11px] text-white/40 mb-1.5">{t("mon.recentOrders")}</div>
             {result.orders.length === 0 ? (
-              <div className="text-[12px] text-white/30 py-2">Buyurtma yo'q.</div>
+              <div className="text-[12px] text-white/30 py-2">{t("mon.noOrders")}</div>
             ) : (
               <div className="space-y-1.5">
                 {result.orders.map((o) => (
                   <div key={o.id} className="flex items-center justify-between text-[12px]">
-                    <span className="text-white/70">{o.type === "topup" ? "To'ldirish" : "Yechish"} · {o.platform}</span>
+                    <span className="text-white/70">{o.type === "topup" ? t("ord.topup") : t("ord.withdraw")} · {o.platform}</span>
                     <span className="flex items-center gap-3">
                       <span className="text-white">{fmt(o.amount)}</span>
-                      <span className={STATUS[o.status]?.cls ?? "text-white/50"}>{STATUS[o.status]?.label ?? o.status}</span>
+                      <span className={STATUS[o.status]?.cls ?? "text-white/50"}>{STATUS[o.status] ? t(STATUS[o.status].labelKey as any) : o.status}</span>
                     </span>
                   </div>
                 ))}
