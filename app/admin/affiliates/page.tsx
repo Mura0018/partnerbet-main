@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import {
   Plus, Trash2, Pencil, X, Star, ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Tag, Route, Activity,
@@ -65,12 +66,14 @@ const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 function LinkHealthBadge({ result }: { result?: { status: string } }) {
+  const { t } = useLocale();
   if (!result) return <ShieldQuestion size={13} className="text-[#5b6f85]" />;
   if (result.status === "ok") return <ShieldCheck size={13} className="text-[#4ADE80]" />;
   return <ShieldAlert size={13} className="text-[#FF6B85]" />;
 }
 
 export default function AffiliatesPage() {
+  const { t } = useLocale();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -101,7 +104,7 @@ export default function AffiliatesPage() {
     load();
   };
   const remove = async (id: string) => {
-    if (!confirm("Hamkor o'chirilsinmi?")) return;
+    if (!confirm(t("aff.confirmDel"))) return;
     await supabase.from("affiliate_partners").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     load();
   };
@@ -110,15 +113,15 @@ export default function AffiliatesPage() {
     <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[22px] font-bold">Affiliate Manager</h1>
-          <p className="text-[13px] text-muted mt-1">Hamkorlar, promo-kodlar, smart redirect va link salomatligi.</p>
+          <h1 className="text-[22px] font-bold">{t("aff.title")}</h1>
+          <p className="text-[13px] text-muted mt-1">{t("aff.sub")}</p>
         </div>
         <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
           <Plus size={15} /> Yangi hamkor
         </button>
       </div>
 
-      {loading && <p className="text-[13px] text-muted">Yuklanmoqda…</p>}
+      {loading && <p className="text-[13px] text-muted">{t("common.loading")}</p>}
 
       <div className="space-y-3">
         {partners.map((p) => (
@@ -180,6 +183,7 @@ export default function AffiliatesPage() {
 type ModalTab = "details" | "promos" | "rules" | "health";
 
 function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLocale();
   const [tab, setTab] = useState<ModalTab>("details");
   const [currentPartner, setCurrentPartner] = useState<Partner | null>(partner);
   const [form, setForm] = useState<any>(
@@ -282,10 +286,10 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
 
         <div className="flex gap-1 px-6 mt-4 border-b border-white/8">
           {[
-            { id: "details" as ModalTab, label: "Ma'lumotlar", icon: Pencil, disabled: false },
-            { id: "promos" as ModalTab, label: "Promo-kodlar", icon: Tag, disabled: !currentPartner },
-            { id: "rules" as ModalTab, label: "Smart Redirect", icon: Route, disabled: !currentPartner },
-            { id: "health" as ModalTab, label: "Link Health", icon: Activity, disabled: !currentPartner },
+            { id: "details" as ModalTab, label: t("aff.tabInfo"), icon: Pencil, disabled: false },
+            { id: "promos" as ModalTab, label: t("aff.tabPromo"), icon: Tag, disabled: !currentPartner },
+            { id: "rules" as ModalTab, label: t("aff.tabRedirect"), icon: Route, disabled: !currentPartner },
+            { id: "health" as ModalTab, label: t("aff.tabHealth"), icon: Activity, disabled: !currentPartner },
           ].map((t) => (
             <button
               key={t.id}
@@ -315,55 +319,55 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Nomi *</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fName")}</label>
                   <input className={inputCls} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Slug (/go/...)</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fSlug")}</label>
                   <input className={inputCls} value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} placeholder={slugify(form.name || "")} />
                 </div>
               </div>
 
-              <label className="block text-[11px] text-muted mb-1 mt-3">Tavsif</label>
+              <label className="block text-[11px] text-muted mb-1 mt-3">{t("aff.fDesc")}</label>
               <textarea rows={2} className={inputCls} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />
 
-              <label className="block text-[11px] text-muted mb-1 mt-3">Bonus tavsifi</label>
+              <label className="block text-[11px] text-muted mb-1 mt-3">{t("aff.fBonus")}</label>
               <textarea rows={2} className={inputCls} value={form.bonus_description ?? ""} onChange={(e) => setForm({ ...form, bonus_description: e.target.value })} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Website URL</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fWebsite")}</label>
                   <input className={inputCls} value={form.website_url ?? ""} onChange={(e) => setForm({ ...form, website_url: e.target.value })} placeholder="https://..." />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Affiliate URL *</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fAff")}</label>
                   <input className={inputCls} value={form.affiliate_url ?? ""} onChange={(e) => setForm({ ...form, affiliate_url: e.target.value })} placeholder="https://..." />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">APK URL</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fApk")}</label>
                   <input className={inputCls} value={form.apk_url ?? ""} onChange={(e) => setForm({ ...form, apk_url: e.target.value })} placeholder="https://..." />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Google Play URL</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fGP")}</label>
                   <input className={inputCls} value={form.google_play_url ?? ""} onChange={(e) => setForm({ ...form, google_play_url: e.target.value })} placeholder="https://..." />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">App Store URL</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fAS")}</label>
                   <input className={inputCls} value={form.app_store_url ?? ""} onChange={(e) => setForm({ ...form, app_store_url: e.target.value })} placeholder="https://..." />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Deep Link</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fDeep")}</label>
                   <input className={inputCls} value={form.deep_link ?? ""} onChange={(e) => setForm({ ...form, deep_link: e.target.value })} placeholder="myapp://open" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Mamlakatlar (vergul bilan, bo'sh = hammasi)</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fCountries")}</label>
                   <input className={inputCls} value={countriesInput} onChange={(e) => setCountriesInput(e.target.value)} placeholder="UZ, RU, KZ" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Tillar</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fLangs")}</label>
                   <div className="flex gap-2 mt-1">
                     {LANG_OPTIONS.map((l) => (
                       <button key={l} type="button" onClick={() => toggleLanguage(l)}
@@ -379,11 +383,11 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Reyting (0-5)</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fRating")}</label>
                   <input type="number" min={0} max={5} step={0.1} className={inputCls} value={form.rating ?? ""} onChange={(e) => setForm({ ...form, rating: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">Tartib (priority)</label>
+                  <label className="block text-[11px] text-muted mb-1">{t("aff.fOrder")}</label>
                   <input type="number" className={inputCls} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} />
                 </div>
                 <div className="flex items-end gap-4 pb-1">
@@ -409,6 +413,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
 }
 
 function PromoCodesTab({ partnerId }: { partnerId: string }) {
+  const { t } = useLocale();
   const [codes, setCodes] = useState<PromoCode[]>([]);
   const [form, setForm] = useState({ code: "", bonus_description: "", is_featured: false, expires_at: "" });
   const [error, setError] = useState("");
@@ -449,13 +454,13 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
     <div>
       <form onSubmit={add} className="rounded-lg border border-white/8 p-4 mb-4 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <input className={inputCls} placeholder="Promo kod (masalan: WELCOME100)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+          <input className={inputCls} placeholder={t("aff.phPromo")} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
           <input type="date" className={inputCls} value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} />
         </div>
-        <input className={inputCls} placeholder="Bonus tavsifi" value={form.bonus_description} onChange={(e) => setForm({ ...form, bonus_description: e.target.value })} />
+        <input className={inputCls} placeholder={t("aff.phBonus")} value={form.bonus_description} onChange={(e) => setForm({ ...form, bonus_description: e.target.value })} />
         <label className="flex items-center gap-1.5 text-[12px]"><input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} /> Featured</label>
         {error && <p className="text-[12px] text-[#FF6B85]">{error}</p>}
-        <button type="submit" className="px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold">Kod qo'shish</button>
+        <button type="submit" className="px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold">{t("aff.addCode")}</button>
       </form>
 
       <div className="space-y-2">
@@ -474,13 +479,14 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
             </div>
           </div>
         ))}
-        {codes.length === 0 && <p className="text-[12px] text-[#5b6f85] text-center py-4">Hozircha promo-kod yo'q.</p>}
+        {codes.length === 0 && <p className="text-[12px] text-[#5b6f85] text-center py-4">{t("aff.noPromo")}</p>}
       </div>
     </div>
   );
 }
 
 function RedirectRulesTab({ partnerId }: { partnerId: string }) {
+  const { t } = useLocale();
   const [rules, setRules] = useState<RedirectRule[]>([]);
   const [form, setForm] = useState({ match_type: "country" as RedirectRule["match_type"], match_value: "", target_url: "", priority: 0 });
   const [error, setError] = useState("");
@@ -518,16 +524,16 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
       <form onSubmit={add} className="rounded-lg border border-white/8 p-4 mb-4 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <select className={inputCls} value={form.match_type} onChange={(e) => setForm({ ...form, match_type: e.target.value as any })}>
-            <option value="country">Mamlakat</option>
-            <option value="language">Til</option>
-            <option value="device">Qurilma</option>
+            <option value="country">{t("aff.rCountry")}</option>
+            <option value="language">{t("aff.rLang")}</option>
+            <option value="device">{t("aff.rDevice")}</option>
           </select>
           <input className={inputCls} placeholder={form.match_type === "device" ? "mobile/desktop/tablet" : form.match_type === "country" ? "UZ" : "uz"} value={form.match_value} onChange={(e) => setForm({ ...form, match_value: e.target.value })} />
-          <input type="number" className={inputCls} placeholder="Priority" value={form.priority} onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })} />
+          <input type="number" className={inputCls} placeholder={t("aff.phPriority")} value={form.priority} onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })} />
         </div>
         <input className={inputCls} placeholder="Target URL (https://...)" value={form.target_url} onChange={(e) => setForm({ ...form, target_url: e.target.value })} />
         {error && <p className="text-[12px] text-[#FF6B85]">{error}</p>}
-        <button type="submit" className="px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold">Qoida qo'shish</button>
+        <button type="submit" className="px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold">{t("aff.addRule")}</button>
       </form>
 
       <div className="space-y-2">
@@ -540,13 +546,14 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
             <button onClick={() => remove(r.id)} className="p-1 rounded-md hover:bg-white/10 text-[#FF6B85]"><Trash2 size={13} /></button>
           </div>
         ))}
-        {rules.length === 0 && <p className="text-[12px] text-[#5b6f85] text-center py-4">Hozircha maxsus qoida yo'q — standart URL ishlatiladi.</p>}
+        {rules.length === 0 && <p className="text-[12px] text-[#5b6f85] text-center py-4">{t("aff.noRule")}</p>}
       </div>
     </div>
   );
 }
 
 function LinkHealthTab({ partner, onChecked }: { partner: Partner; onChecked: (p: Partner) => void }) {
+  const { t } = useLocale();
   const [checking, setChecking] = useState(false);
   const supabase = createClient();
 
@@ -597,7 +604,7 @@ function LinkHealthTab({ partner, onChecked }: { partner: Partner; onChecked: (p
               {result ? (
                 <span className={`text-[11px] px-2 py-0.5 rounded-full border ${statusColor[result.status]}`}>{statusLabel[result.status] ?? result.status}</span>
               ) : (
-                <span className="text-[11px] text-[#5b6f85]">Tekshirilmagan</span>
+                <span className="text-[11px] text-[#5b6f85]">{t("aff.unchecked")}</span>
               )}
             </div>
           );

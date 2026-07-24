@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Eye, EyeOff, Upload, Loader2, Search, Copy, CheckSquare, Square } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -37,6 +38,7 @@ const EMPTY = {
 };
 
 export default function BannersManager() {
+  const { t } = useLocale();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [form, setForm] = useState(EMPTY);
@@ -120,7 +122,7 @@ export default function BannersManager() {
     load();
   };
   const remove = async (id: string) => {
-    if (!confirm("O'chirilsinmi?")) return;
+    if (!confirm(t("bnr.confirmDel"))) return;
     await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     load();
   };
@@ -174,55 +176,55 @@ export default function BannersManager() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
-      <h1 className="text-[22px] font-bold mb-1">Banner Manager</h1>
-      <p className="text-[13px] text-muted mb-6">Har qanday o'lchamdagi bannerlar — yuklash, maqsadlash, rejalashtirish.</p>
+      <h1 className="text-[22px] font-bold mb-1">{t("bnr.title")}</h1>
+      <p className="text-[13px] text-muted mb-6">{t("bnr.sub")}</p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
           <div className="text-[20px] font-bold">{totalViews.toLocaleString()}</div>
-          <div className="text-[11px] text-muted mt-1">Jami ko'rishlar</div>
+          <div className="text-[11px] text-muted mt-1">{t("bnr.totalViews")}</div>
         </div>
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
           <div className="text-[20px] font-bold">{totalClicks.toLocaleString()}</div>
-          <div className="text-[11px] text-muted mt-1">Jami kliklar</div>
+          <div className="text-[11px] text-muted mt-1">{t("bnr.totalClicks")}</div>
         </div>
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
           <div className="text-[20px] font-bold">{overallCtr.toFixed(2)}%</div>
-          <div className="text-[11px] text-muted mt-1">Umumiy CTR</div>
+          <div className="text-[11px] text-muted mt-1">{t("bnr.ctr")}</div>
         </div>
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
           <div className="text-[20px] font-bold">{banners.length}</div>
-          <div className="text-[11px] text-muted mt-1">Jami bannerlar</div>
+          <div className="text-[11px] text-muted mt-1">{t("bnr.totalBanners")}</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-          <div className="text-[11px] text-muted mb-2">Holat</div>
-          <div className="flex items-center justify-between text-[12px] mb-1"><span>Faol</span><span className="text-[#17C964] font-semibold">{activeCount}</span></div>
-          <div className="flex items-center justify-between text-[12px] mb-1"><span>Rejalashtirilgan</span><span className="text-accent font-semibold">{scheduledCount}</span></div>
-          <div className="flex items-center justify-between text-[12px]"><span>Muddati tugagan</span><span className="text-[#FF6B85] font-semibold">{expiredCount}</span></div>
+          <div className="text-[11px] text-muted mb-2">{t("bnr.status")}</div>
+          <div className="flex items-center justify-between text-[12px] mb-1"><span>{t("bnr.active")}</span><span className="text-[#17C964] font-semibold">{activeCount}</span></div>
+          <div className="flex items-center justify-between text-[12px] mb-1"><span>{t("bnr.scheduled")}</span><span className="text-accent font-semibold">{scheduledCount}</span></div>
+          <div className="flex items-center justify-between text-[12px]"><span>{t("bnr.expired")}</span><span className="text-[#FF6B85] font-semibold">{expiredCount}</span></div>
         </div>
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-          <div className="text-[11px] text-muted mb-2">Eng yaxshi ishlagan (20+ ko'rish)</div>
+          <div className="text-[11px] text-muted mb-2">{t("bnr.best")}</div>
           {topBanner ? (
             <>
               <div className="text-[13px] font-semibold">{partnerName(topBanner.partner_id) ?? topBanner.placement}</div>
               <div className="text-[11px] text-[#5b6f85] mt-1">{topBanner.ctr.toFixed(2)}% CTR · {topBanner.views} ko'rish · {topBanner.clicks} klik</div>
             </>
           ) : (
-            <p className="text-[11px] text-[#5b6f85]">Hali yetarli ma'lumot yo'q.</p>
+            <p className="text-[11px] text-[#5b6f85]">{t("bnr.notEnough")}</p>
           )}
         </div>
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-          <div className="text-[11px] text-muted mb-2">Eng past ishlagan (20+ ko'rish)</div>
+          <div className="text-[11px] text-muted mb-2">{t("bnr.worst")}</div>
           {worstBanner ? (
             <>
               <div className="text-[13px] font-semibold">{partnerName(worstBanner.partner_id) ?? worstBanner.placement}</div>
               <div className="text-[11px] text-[#5b6f85] mt-1">{worstBanner.ctr.toFixed(2)}% CTR · {worstBanner.views} ko'rish · {worstBanner.clicks} klik</div>
             </>
           ) : (
-            <p className="text-[11px] text-[#5b6f85]">Hali yetarli ma'lumot yo'q.</p>
+            <p className="text-[11px] text-[#5b6f85]">{t("bnr.notEnough")}</p>
           )}
         </div>
       </div>
@@ -230,8 +232,8 @@ export default function BannersManager() {
       <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })} className={inputCls}>
-            <option value="image">Rasm banner</option>
-            <option value="embed">HTML/JS kod</option>
+            <option value="image">{t("bnr.typeImage")}</option>
+            <option value="embed">{t("bnr.typeCode")}</option>
           </select>
           <select value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })} className={inputCls}>
             {PLACEMENTS.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -251,11 +253,11 @@ export default function BannersManager() {
             </label>
           </div>
         ) : (
-          <textarea rows={4} placeholder="Hamkordan olingan HTML/JS kod" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className={`${inputCls} font-mono`} />
+          <textarea rows={4} placeholder={t("bnr.phCode")} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className={`${inputCls} font-mono`} />
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <input placeholder="Target URL (ixtiyoriy — /go/hamkor-slug tavsiya etiladi)" value={form.target_url} onChange={(e) => setForm({ ...form, target_url: e.target.value })} className={inputCls} />
+          <input placeholder={t("bnr.phTarget")} value={form.target_url} onChange={(e) => setForm({ ...form, target_url: e.target.value })} className={inputCls} />
           <select value={form.partner_id} onChange={(e) => setForm({ ...form, partner_id: e.target.value })} className={inputCls}>
             <option value="">— hamkor tanlanmagan —</option>
             {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -263,7 +265,7 @@ export default function BannersManager() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <input placeholder="Mamlakatlar (UZ, RU — bo'sh = hammasi)" value={form.countriesInput} onChange={(e) => setForm({ ...form, countriesInput: e.target.value })} className={inputCls} />
+          <input placeholder={t("bnr.phCountries")} value={form.countriesInput} onChange={(e) => setForm({ ...form, countriesInput: e.target.value })} className={inputCls} />
           <div className="flex gap-2 items-center">
             {["uz", "ru", "en"].map((l) => (
               <button key={l} type="button" onClick={() => toggleLanguage(l)} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border uppercase ${form.languages.includes(l) ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>{l}</button>
@@ -273,11 +275,11 @@ export default function BannersManager() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
-            <label className="block text-[11px] text-muted mb-1">Boshlanish sanasi</label>
+            <label className="block text-[11px] text-muted mb-1">{t("bnr.startDate")}</label>
             <input type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} className={inputCls} />
           </div>
           <div>
-            <label className="block text-[11px] text-muted mb-1">Tugash sanasi</label>
+            <label className="block text-[11px] text-muted mb-1">{t("bnr.endDate")}</label>
             <input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} className={inputCls} />
           </div>
         </div>
@@ -291,33 +293,33 @@ export default function BannersManager() {
       <div className="flex flex-col sm:flex-row gap-2 mb-3">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
-          <input placeholder="Qidirish (joylashuv, hamkor, o'lcham...)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`${inputCls} pl-9`} />
+          <input placeholder={t("bnr.phSearch")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`${inputCls} pl-9`} />
         </div>
         <select value={filterPlacement} onChange={(e) => setFilterPlacement(e.target.value)} className={inputCls}>
-          <option value="">Barcha joylashuvlar</option>
+          <option value="">{t("bnr.allPlacements")}</option>
           {PLACEMENTS.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
         <select value={filterKind} onChange={(e) => setFilterKind(e.target.value)} className={inputCls}>
-          <option value="">Barcha turlar</option>
-          <option value="image">Rasm</option>
-          <option value="embed">HTML/JS kod</option>
+          <option value="">{t("bnr.allTypes")}</option>
+          <option value="image">{t("bnr.image")}</option>
+          <option value="embed">{t("bnr.typeCode")}</option>
         </select>
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={inputCls}>
-          <option value="">Barcha holatlar</option>
-          <option value="active">Faol</option>
-          <option value="inactive">O'chirilgan</option>
-          <option value="scheduled">Rejalashtirilgan</option>
-          <option value="expired">Muddati tugagan</option>
+          <option value="">{t("bnr.allStatuses")}</option>
+          <option value="active">{t("bnr.active")}</option>
+          <option value="inactive">{t("bnr.disabled")}</option>
+          <option value="scheduled">{t("bnr.scheduled")}</option>
+          <option value="expired">{t("bnr.expired")}</option>
         </select>
       </div>
 
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 mb-3 px-4 py-2.5 rounded-xl border border-accent/30 bg-accent/10">
           <span className="text-[12px] font-medium">{selectedIds.size} ta tanlandi</span>
-          <button onClick={() => bulkSetActive(true)} className="text-[12px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20">Yoqish</button>
-          <button onClick={() => bulkSetActive(false)} className="text-[12px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20">O'chirish (yashirish)</button>
-          <button onClick={bulkDelete} className="text-[12px] px-3 py-1.5 rounded-lg bg-[#FF3B5C]/20 text-[#FF6B85] hover:bg-[#FF3B5C]/30">Butunlay o'chirish</button>
-          <button onClick={() => setSelectedIds(new Set())} className="text-[12px] text-muted ml-auto">Bekor qilish</button>
+          <button onClick={() => bulkSetActive(true)} className="text-[12px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20">{t("bnr.enable")}</button>
+          <button onClick={() => bulkSetActive(false)} className="text-[12px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20">{t("bnr.hide")}</button>
+          <button onClick={bulkDelete} className="text-[12px] px-3 py-1.5 rounded-lg bg-[#FF3B5C]/20 text-[#FF6B85] hover:bg-[#FF3B5C]/30">{t("bnr.deleteAll")}</button>
+          <button onClick={() => setSelectedIds(new Set())} className="text-[12px] text-muted ml-auto">{t("bnr.cancel")}</button>
         </div>
       )}
 
