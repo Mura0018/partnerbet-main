@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2, Pencil, X, Upload, Loader2 } from "lucide-react";
@@ -26,11 +27,11 @@ type NewsItem = {
 type Category = { id: string; name: string };
 
 const STATUSES: NewsItem["status"][] = ["draft", "scheduled", "published", "archived"];
-const STATUS_LABEL: Record<NewsItem["status"], { label: string; className: string }> = {
-  draft: { label: "Qoralama", className: "bg-white/5 text-[#5b6f85] border-white/10" },
-  scheduled: { label: "Rejalashtirilgan", className: "bg-vip/10 text-vip border-vip/30" },
-  published: { label: "Nashr etilgan", className: "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" },
-  archived: { label: "Arxivlangan", className: "bg-white/5 text-[#5b6f85] border-white/10" },
+const STATUS_LABEL: Record<NewsItem["status"], { labelKey: string; className: string }> = {
+  draft: { labelKey: "post.draft", className: "bg-white/5 text-[#5b6f85] border-white/10" },
+  scheduled: { labelKey: "post.scheduled", className: "bg-vip/10 text-vip border-vip/30" },
+  published: { labelKey: "post.published", className: "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" },
+  archived: { labelKey: "post.archived", className: "bg-white/5 text-[#5b6f85] border-white/10" },
 };
 
 const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
@@ -42,6 +43,7 @@ const EMPTY: any = {
 };
 
 export default function FootballNewsManager() {
+  const { t } = useLocale();
   const [items, setItems] = useState<NewsItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<any>(EMPTY);
@@ -115,7 +117,7 @@ export default function FootballNewsManager() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Yangilik o'chirilsinmi?")) return;
+    if (!confirm(t("post.confirmDelNews"))) return;
     await supabase.from("football_news").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     load();
   };
@@ -126,8 +128,8 @@ export default function FootballNewsManager() {
     <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[22px] font-bold">Football News</h1>
-          <p className="text-[13px] text-muted mt-1"><Link href="/admin/categories" className="text-accent hover:underline">Kategoriyalar</Link> (Football News turi)</p>
+          <h1 className="text-[22px] font-bold">{t("post.newsTitle")}</h1>
+          <p className="text-[13px] text-muted mt-1"><Link href="/admin/categories" className="text-accent hover:underline">{t("post.tabCategories")}</Link> (Football News turi)</p>
         </div>
         <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
           <Plus size={15} /> Yangi yangilik
@@ -142,7 +144,7 @@ export default function FootballNewsManager() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-[12px] mb-1 flex-wrap">
                   <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/30">{categoryName(n.category_id)}</span>
-                  <span className={`px-2 py-0.5 rounded-full border ${STATUS_LABEL[n.status].className}`}>{STATUS_LABEL[n.status].label}</span>
+                  <span className={`px-2 py-0.5 rounded-full border ${STATUS_LABEL[n.status].className}`}>{t(STATUS_LABEL[n.status].labelKey as any)}</span>
                   {n.league && <span className="text-[#5b6f85]">{n.league}</span>}
                 </div>
                 <div className="font-semibold text-[14px] truncate">{n.title}</div>
@@ -154,7 +156,7 @@ export default function FootballNewsManager() {
             </div>
           </div>
         ))}
-        {items.length === 0 && <div className="rounded-xl glass-card p-8 text-center text-[13px] text-[#5b6f85]">Hozircha yangilik yo'q.</div>}
+        {items.length === 0 && <div className="rounded-xl glass-card p-8 text-center text-[13px] text-[#5b6f85]">{t("post.noNews")}</div>}
       </div>
 
       {showForm && (
@@ -165,13 +167,13 @@ export default function FootballNewsManager() {
               <button type="button" onClick={() => setShowForm(false)} aria-label="Yopish"><X size={18} /></button>
             </div>
 
-            <label className="block text-[12px] text-muted mb-1">Sarlavha</label>
+            <label className="block text-[12px] text-muted mb-1">{t("post.fTitle")}</label>
             <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={`${inputCls} mb-3`} />
 
-            <label className="block text-[12px] text-muted mb-1">Qisqacha tavsif</label>
+            <label className="block text-[12px] text-muted mb-1">{t("post.fExcerpt")}</label>
             <textarea rows={2} value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} className={`${inputCls} mb-3`} />
 
-            <label className="block text-[12px] text-muted mb-1">Muqova rasmi</label>
+            <label className="block text-[12px] text-muted mb-1">{t("post.fCover")}</label>
             <div className="flex items-center gap-3 mb-3">
               {form.cover_url && <img src={form.cover_url} alt="" className="w-14 h-14 rounded-lg object-cover border border-white/10" />}
               <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-[12px] cursor-pointer hover:bg-white/5">
@@ -183,39 +185,39 @@ export default function FootballNewsManager() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-[12px] text-muted mb-1">Kategoriya</label>
+                <label className="block text-[12px] text-muted mb-1">{t("post.fCategory")}</label>
                 <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputCls}>
                   <option value="">— tanlanmagan —</option>
                   {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[12px] text-muted mb-1">Liga (ixtiyoriy)</label>
-                <input value={form.league} onChange={(e) => setForm({ ...form, league: e.target.value })} className={inputCls} placeholder="Premier League" />
+                <label className="block text-[12px] text-muted mb-1">{t("post.fLeague")}</label>
+                <input value={form.league} onChange={(e) => setForm({ ...form, league: e.target.value })} className={inputCls} placeholder={t("post.phLeague")} />
               </div>
             </div>
 
-            <label className="block text-[12px] text-muted mb-1">Matn</label>
+            <label className="block text-[12px] text-muted mb-1">{t("post.fBody")}</label>
             <div className="mb-3">
               <RichTextEditor value={form.content} onChange={(html) => setForm({ ...form, content: html })} />
             </div>
 
             <details className="mb-3">
-              <summary className="text-[12px] text-muted cursor-pointer mb-2">SEO sozlamalari (ixtiyoriy)</summary>
-              <input placeholder="SEO sarlavha" value={form.seo_title} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} className={`${inputCls} mb-2`} />
-              <textarea rows={2} placeholder="SEO tavsif" value={form.seo_description} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} className={inputCls} />
+              <summary className="text-[12px] text-muted cursor-pointer mb-2">{t("post.seo")}</summary>
+              <input placeholder={t("post.phSeoTitle")} value={form.seo_title} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} className={`${inputCls} mb-2`} />
+              <textarea rows={2} placeholder={t("post.phSeoDesc")} value={form.seo_description} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} className={inputCls} />
             </details>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-[12px] text-muted mb-1">Holat</label>
+                <label className="block text-[12px] text-muted mb-1">{t("post.fStatus")}</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s].label}</option>)}
+                  {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_LABEL[s].labelKey as any)}</option>)}
                 </select>
               </div>
               {form.status === "scheduled" && (
                 <div>
-                  <label className="block text-[12px] text-muted mb-1">Rejalashtirilgan vaqt</label>
+                  <label className="block text-[12px] text-muted mb-1">{t("post.fScheduledAt")}</label>
                   <input type="datetime-local" value={form.scheduled_at} onChange={(e) => setForm({ ...form, scheduled_at: e.target.value })} className={inputCls} />
                 </div>
               )}

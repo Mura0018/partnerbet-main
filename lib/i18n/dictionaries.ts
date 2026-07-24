@@ -155,6 +155,21 @@ export const dictionaries = {
       phFixtureId: "O'yin (fixture) ID", phEditorNote: "Tahririyat izohi (ixtiyoriy)", noFixtures: "Hozircha ajratilgan o'yin yo'q.",
       phVideoTitle: "Video sarlavhasi", phVideoUrl: "Video URL (YouTube va h.k.)", phVideoDesc: "Tavsif", noVideos: "Hozircha video yo'q.",
     },
+    post: {
+      draft: "Qoralama", scheduled: "Rejalashtirilgan", published: "Nashr etilgan", archived: "Arxivlangan",
+      blogTitle: "Blog", tabCategories: "Kategoriyalar", tabTags: "Teglar", confirmDelPost: "Post o'chirilsinmi?", noArticles: "Hozircha maqola yo'q.",
+      fTitle: "Sarlavha", fExcerpt: "Qisqacha tavsif", fCover: "Muqova rasmi", fCategory: "Kategoriya", fLang: "Til", fTags: "Teglar", fBody: "Matn",
+      seo: "SEO sozlamalari (ixtiyoriy)", phSeoTitle: "SEO sarlavha", phSeoDesc: "SEO tavsif", phKeywords: "Kalit so'zlar (vergul bilan)", fStatus: "Holat", fScheduledAt: "Rejalashtirilgan vaqt",
+      newsTitle: "Football News", confirmDelNews: "Yangilik o'chirilsinmi?", noNews: "Hozircha yangilik yo'q.", fLeague: "Liga (ixtiyoriy)", phLeague: "Premier League",
+    },
+    strm: {
+      title: "Live Streaming", confirmDel: "Provider o'chirilsinmi?", noProviders: "Hozircha provider yo'q.",
+      connected: "Ulangan", error: "Xato", unknown: "Noma'lum",
+      fName: "Nomi", fSlug: "Slug (ixtiyoriy, avtomatik)", baseUrl: "Base API URL", priority: "Priority", save: "Saqlash",
+      saveHint: "Saqlagandan so'ng, API kalit/sirni kiritish uchun ro'yxatdagi kalit belgisini bosing.",
+      apiKeys: "API Kalitlari", apiKey: "API Key", apiSecret: "API Secret (ixtiyoriy)",
+      phFixtureId: "O'yin (fixture) ID", phStreamId: "Provайderdagi stream ID (ixtiyoriy)", startAt: "Boshlanish (ixtiyoriy)", endAt: "Tugash (ixtiyoriy)", noStreams: "Hozircha o'yin uchun oqim belgilanmagan.",
+    },
     prm: {
       mgrTitle: "Sovrinli aksiya", mgrSub: "Muddat, sovrinlar, naqd/onlayn reyting va g'oliblar",
       settings: "Aksiya sozlamasi", on: "Aksiya yoniq", off: "Aksiya o'chiq",
@@ -766,6 +781,21 @@ export const dictionaries = {
       phLeagueId: "ID лиги (у провайдера)", phName: "Название (например: Premier League)", phCountry: "Страна", phSeason: "Сезон", noLeagues: "Лига пока не выбрана.",
       phFixtureId: "ID матча (fixture)", phEditorNote: "Редакторская заметка (необязательно)", noFixtures: "Выделенных матчей пока нет.",
       phVideoTitle: "Заголовок видео", phVideoUrl: "URL видео (YouTube и т.д.)", phVideoDesc: "Описание", noVideos: "Видео пока нет.",
+    },
+    post: {
+      draft: "Черновик", scheduled: "Запланирован", published: "Опубликован", archived: "Архив",
+      blogTitle: "Блог", tabCategories: "Категории", tabTags: "Теги", confirmDelPost: "Удалить пост?", noArticles: "Статей пока нет.",
+      fTitle: "Заголовок", fExcerpt: "Краткое описание", fCover: "Обложка", fCategory: "Категория", fLang: "Язык", fTags: "Теги", fBody: "Текст",
+      seo: "SEO настройки (необязательно)", phSeoTitle: "SEO заголовок", phSeoDesc: "SEO описание", phKeywords: "Ключевые слова (через запятую)", fStatus: "Статус", fScheduledAt: "Запланированное время",
+      newsTitle: "Football News", confirmDelNews: "Удалить новость?", noNews: "Новостей пока нет.", fLeague: "Лига (необязательно)", phLeague: "Premier League",
+    },
+    strm: {
+      title: "Live Streaming", confirmDel: "Удалить провайдера?", noProviders: "Провайдеров пока нет.",
+      connected: "Подключено", error: "Ошибка", unknown: "Неизвестно",
+      fName: "Название", fSlug: "Slug (необязательно, авто)", baseUrl: "Base API URL", priority: "Priority", save: "Сохранить",
+      saveHint: "После сохранения нажмите значок ключа в списке, чтобы ввести API ключ/секрет.",
+      apiKeys: "API ключи", apiKey: "API Key", apiSecret: "API Secret (необязательно)",
+      phFixtureId: "ID матча (fixture)", phStreamId: "ID стрима у провайдера (необязательно)", startAt: "Начало (необязательно)", endAt: "Окончание (необязательно)", noStreams: "Стримов для матча пока нет.",
     },
     prm: {
       mgrTitle: "Призовая акция", mgrSub: "Срок, призы, рейтинг нал/онлайн и победители",
