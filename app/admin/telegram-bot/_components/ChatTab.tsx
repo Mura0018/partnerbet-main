@@ -9,6 +9,7 @@ import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useV
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -17,11 +18,11 @@ const ROLE_COLOR: Record<string, string> = {
 };
 
 // 8-BOSQICH: tizim hodisalari turlari (rang/yorliq bilan ajratish).
-const EVENT_META: Record<string, { label: string; color: string }> = {
-  handoff: { label: "Handoff", color: "#3D7FFF" },
-  debt: { label: "Qarz", color: "#F4C76A" },
-  alert: { label: "Alert", color: "#FF6B85" },
-  status: { label: "Holat", color: "#93a5ba" },
+const EVENT_META: Record<string, { labelKey: string; color: string }> = {
+  handoff: { labelKey: "cht.evHandoff", color: "#3D7FFF" },
+  debt: { labelKey: "cht.evDebt", color: "#F4C76A" },
+  alert: { labelKey: "cht.evAlert", color: "#FF6B85" },
+  status: { labelKey: "cht.evStatus", color: "#93a5ba" },
 };
 
 
@@ -42,6 +43,7 @@ type ChatMessage = {
 
 
 export function ChatTab() {
+  const { t } = useLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -180,7 +182,7 @@ export function ChatTab() {
     if (user) {
       const { error } = await supabase.from("team_chat_messages").insert({ sender_id: user.id, message: text.trim(), reply_to_id: replyTo?.id ?? null });
       if (error) {
-        alert("Xabar yuborilmadi: " + error.message);
+        alert(t("cht.eSend") + error.message);
         setSending(false);
         return;
       }
@@ -192,7 +194,7 @@ export function ChatTab() {
   };
 
   const removeMessage = async (id: string) => {
-    if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
+    if (!confirm(t("cht.confirmDelete"))) return;
     await supabase.from("team_chat_messages").delete().eq("id", id);
     await load();
   };
@@ -259,7 +261,7 @@ export function ChatTab() {
           <input
             autoFocus
             className="flex-1 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-1.5 px-3 text-[12px] outline-none focus:border-accent"
-            placeholder="Xabar yoki fayl nomini qidirish..."
+            placeholder={t("cht.phSearch")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -271,20 +273,20 @@ export function ChatTab() {
             >
               <Lock size={12} className="text-[#7db8ff]" />
             </span>
-            <span className="text-[13px] font-bold"><span className="text-white">Maxfiy</span> <span className="text-accent">chat</span></span>
+            <span className="text-[13px] font-bold"><span className="text-white">{t("cht.secret")}</span> <span className="text-accent">{t("cht.chat")}</span></span>
           </div>
         )}
         <button
           onClick={() => { setShowSearch((v) => !v); setSearch(""); }}
           className="p-1.5 rounded-md hover:bg-white/10 text-muted shrink-0"
-          aria-label="Qidirish"
+          aria-label={t("cht.search")}
         >
           <Search size={15} />
         </button>
         <button
           onClick={() => setShowThemePicker((v) => !v)}
           className="p-1.5 rounded-md hover:bg-white/10 text-muted shrink-0"
-          aria-label="Mavzu"
+          aria-label={t("cht.theme")}
         >
           <Palette size={15} />
         </button>
@@ -308,15 +310,15 @@ export function ChatTab() {
                 className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-[11px] outline-none focus:border-accent"
               />
               <div className="flex gap-1.5 mt-1.5">
-                <button onClick={saveRules} disabled={savingRules} className="text-[11px] px-2.5 py-1 rounded-lg bg-accent/20 text-white disabled:opacity-50">Saqlash</button>
-                <button onClick={() => setEditingRules(false)} className="text-[11px] px-2.5 py-1 rounded-lg text-muted hover:bg-white/5">Bekor</button>
+                <button onClick={saveRules} disabled={savingRules} className="text-[11px] px-2.5 py-1 rounded-lg bg-accent/20 text-white disabled:opacity-50">{t("cht.save")}</button>
+                <button onClick={() => setEditingRules(false)} className="text-[11px] px-2.5 py-1 rounded-lg text-muted hover:bg-white/5">{t("cht.cancel")}</button>
               </div>
             </div>
           ) : (
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] text-[#cdd7e5] whitespace-pre-wrap">{rules || "Qoidalar belgilanmagan."}</div>
+              <div className="text-[11px] text-[#cdd7e5] whitespace-pre-wrap">{rules || t("cht.noRules")}</div>
               <Can permission="operators.oversight">
-                <button onClick={() => { setRulesDraft(rules); setEditingRules(true); }} className="text-[10px] text-accent mt-0.5">Tahrirlash</button>
+                <button onClick={() => { setRulesDraft(rules); setEditingRules(true); }} className="text-[10px] text-accent mt-0.5">{t("cht.edit")}</button>
               </Can>
             </div>
           )}
@@ -325,18 +327,18 @@ export function ChatTab() {
 
       {/* 8-BOSQICH: tur filtri + faol (smenada) operatorlar */}
       <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] backdrop-blur-md border-b border-white/[0.06]">
-        {([["all", "Hammasi"], ["chat", "Suhbat"], ["system", "Tizim"]] as const).map(([id, label]) => (
+        {([["all", "cht.fAll"], ["chat", "cht.fChat"], ["system", "cht.fSystem"]] as const).map(([id, labelKey]) => (
           <button
             key={id}
             onClick={() => setTypeFilter(id)}
             className={`text-[11px] px-2.5 py-1 rounded-lg ${typeFilter === id ? "bg-accent/20 text-white" : "text-muted hover:bg-white/5"}`}
           >
-            {label}
+            {t(labelKey as any)}
           </button>
         ))}
         {onlineCount != null && (
           <span className="ml-auto text-[11px] text-[#4ADE80] flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />Faol: {onlineCount}
+            <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />{t("cht.online")} {onlineCount}
           </span>
         )}
       </div>
@@ -347,7 +349,7 @@ export function ChatTab() {
       >
         {filtered.length === 0 && (
           <p className="text-[12px] text-muted text-center mt-8">
-            {search ? "Hech narsa topilmadi." : "Hozircha xabar yo'q. Birinchi bo'lib yozing."}
+            {search ? t("cht.notFound") : t("cht.empty")}
           </p>
         )}
         {filtered.map((m) => {
@@ -361,7 +363,7 @@ export function ChatTab() {
                     ? { color: meta.color, borderColor: `${meta.color}55`, background: `${meta.color}14` }
                     : { color: "#93a5ba", borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)" }}
                 >
-                  {meta && <span className="font-bold mr-1">[{meta.label}]</span>}
+                  {meta && <span className="font-bold mr-1">[{t(meta.labelKey as any)}]</span>}
                   {m.message}
                 </span>
               </div>
@@ -374,7 +376,7 @@ export function ChatTab() {
           const imageUrl = m.image_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.image_path).data.publicUrl : null;
           const voiceUrl = m.voice_path ? supabase.storage.from("team-chat-attachments").getPublicUrl(m.voice_path).data.publicUrl : null;
           const quoted = messageById(m.reply_to_id);
-          const quotedName = quoted ? (quoted.sender_id === currentUserId ? "Siz" : quoted.profiles?.display_name || quoted.profiles?.full_name || "?") : null;
+          const quotedName = quoted ? (quoted.sender_id === currentUserId ? t("cht.you") : quoted.profiles?.display_name || quoted.profiles?.full_name || "?") : null;
           return (
             <div key={m.id} className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
               <div className="relative shrink-0">
@@ -390,12 +392,12 @@ export function ChatTab() {
                 )}
                 <span
                   className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#0a1224] ${m.profiles?.is_online ? "bg-[#4ADE80]" : "bg-[#5b6f85]"}`}
-                  title={m.profiles?.is_online ? "Faol" : "Band"}
+                  title={m.profiles?.is_online ? t("cht.opActive") : t("cht.opBusy")}
                 />
               </div>
               <div className={`min-w-0 max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                 <div className={`flex items-baseline gap-1.5 mb-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
-                  <span className="text-[10px] font-bold" style={{ color }}>{isMe ? "Siz" : name}</span>
+                  <span className="text-[10px] font-bold" style={{ color }}>{isMe ? t("cht.you") : name}</span>
                   <span className="text-[9px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
                 <div
@@ -405,7 +407,7 @@ export function ChatTab() {
                   {quoted && (
                     <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${isMe ? "border-white/50" : "border-accent/50"}`}>
                       <span className="font-semibold">{quotedName}</span>{" "}
-                      {quoted.message || (quoted.image_path ? "📷 Rasm" : quoted.voice_path ? "🎤 Ovozli xabar" : "")}
+                      {quoted.message || (quoted.image_path ? t("cht.image") : quoted.voice_path ? t("cht.voice") : "")}
                     </div>
                   )}
                   {voiceUrl ? (
@@ -421,11 +423,11 @@ export function ChatTab() {
                 </div>
                 <div className={`flex items-center gap-2.5 mt-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
                   <button onClick={() => setReplyTo(m)} className="text-[9px] text-[#5b6f85] hover:text-white flex items-center gap-0.5">
-                    <Reply size={9} /> Javob
+                    <Reply size={9} /> {t("cht.reply")}
                   </button>
                   {isMe && (
                     <button onClick={() => removeMessage(m.id)} className="text-[9px] text-[#5b6f85] hover:text-[#FF6B85] flex items-center gap-0.5">
-                      <Trash2 size={9} /> O'chirish
+                      <Trash2 size={9} /> {t("cht.del")}
                     </button>
                   )}
                 </div>
@@ -439,7 +441,7 @@ export function ChatTab() {
         <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-white/[0.06]">
           <Reply size={12} className="text-accent shrink-0" />
           <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
-            {replyTo.message || (replyTo.image_path ? "📷 Rasm" : replyTo.voice_path ? "🎤 Ovozli xabar" : "")}
+            {replyTo.message || (replyTo.image_path ? t("cht.image") : replyTo.voice_path ? t("cht.voice") : "")}
           </div>
           <button onClick={() => setReplyTo(null)} className="shrink-0 p-1 rounded hover:bg-white/10 text-muted">
             <X size={12} />
@@ -450,10 +452,10 @@ export function ChatTab() {
         <div className="flex items-center gap-2.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
           <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
-          <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
+          <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label={t("cht.cancelRec")}>
             <Trash2 size={13} />
           </button>
-          <button onClick={stopAndSendVoice} disabled={sending} className="p-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label="Yuborish">
+          <button onClick={stopAndSendVoice} disabled={sending} className="p-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label={t("cht.send")}>
             <Check size={13} />
           </button>
         </div>
@@ -463,12 +465,12 @@ export function ChatTab() {
           <Paperclip size={13} className="text-muted" />
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendImage} disabled={sending} />
         </label>
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] hover:bg-white/10 disabled:opacity-50" aria-label={t("cht.voiceMsg")}>
           <Mic size={13} className="text-muted" />
         </button>
         <input
           className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
-          placeholder="Xabar yozing..."
+          placeholder={t("cht.phMessage")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
