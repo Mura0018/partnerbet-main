@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import {
   Plus, Trash2, Pencil, X, Radio, Zap, CheckCircle2, XCircle, HelpCircle, Loader2, KeyRound, ListVideo,
@@ -25,12 +26,13 @@ type Provider = {
 type Tab = "providers" | "matches";
 
 export default function StreamingAdminPage() {
+  const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("providers");
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 mb-1">
         <Radio size={20} className="text-accent" />
-        <h1 className="text-[22px] font-bold">Live Streaming</h1>
+        <h1 className="text-[22px] font-bold">{t("strm.title")}</h1>
       </div>
       <p className="text-[13px] text-muted mb-6">
         Faqat rasmiy, litsenziyalangan oqim (stream) provayderlarini qo'shing. Ruxsatsiz manbalar taqiqlanadi.
@@ -52,12 +54,14 @@ export default function StreamingAdminPage() {
 }
 
 function StatusBadge({ status }: { status: Provider["connection_status"] }) {
-  if (status === "connected") return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/30"><CheckCircle2 size={11} /> Connected</span>;
-  if (status === "error") return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#FF3B5C]/10 text-[#FF6B85] border border-[#FF3B5C]/30"><XCircle size={11} /> Error</span>;
-  return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 text-muted border border-white/10"><HelpCircle size={11} /> Unknown</span>;
+  const { t } = useLocale();
+  if (status === "connected") return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/30"><CheckCircle2 size={11} /> {t("strm.connected")}</span>;
+  if (status === "error") return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#FF3B5C]/10 text-[#FF6B85] border border-[#FF3B5C]/30"><XCircle size={11} /> {t("strm.error")}</span>;
+  return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 text-muted border border-white/10"><HelpCircle size={11} /> {t("strm.unknown")}</span>;
 }
 
 function ProvidersTab() {
+  const { t } = useLocale();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -95,7 +99,7 @@ function ProvidersTab() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Provider o'chirilsinmi?")) return;
+    if (!confirm(t("strm.confirmDel"))) return;
     await supabase.from("streaming_providers").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     load();
   };
@@ -154,7 +158,7 @@ function ProvidersTab() {
             </div>
           </div>
         ))}
-        {providers.length === 0 && <p className="text-[12px] text-muted text-center py-8">Hozircha provider yo'q.</p>}
+        {providers.length === 0 && <p className="text-[12px] text-muted text-center py-8">{t("strm.noProviders")}</p>}
       </div>
 
       {showForm && (
@@ -164,17 +168,17 @@ function ProvidersTab() {
               <h2 className="font-bold text-[16px]">{editingId ? "Providerni tahrirlash" : "Yangi Provider"}</h2>
               <button type="button" onClick={() => setShowForm(false)} aria-label="Yopish"><X size={18} /></button>
             </div>
-            <label className="block text-[12px] text-muted mb-1">Nomi</label>
+            <label className="block text-[12px] text-muted mb-1">{t("strm.fName")}</label>
             <input className={`${inputCls} mb-3`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <label className="block text-[12px] text-muted mb-1">Slug (ixtiyoriy, avtomatik)</label>
+            <label className="block text-[12px] text-muted mb-1">{t("strm.fSlug")}</label>
             <input className={`${inputCls} mb-3`} value={form.key} onChange={(e) => setForm({ ...form, key: slugify(e.target.value) })} placeholder={slugify(form.name || "")} />
-            <label className="block text-[12px] text-muted mb-1">Base API URL</label>
+            <label className="block text-[12px] text-muted mb-1">{t("strm.baseUrl")}</label>
             <input className={`${inputCls} mb-3`} value={form.base_api_url} onChange={(e) => setForm({ ...form, base_api_url: e.target.value })} placeholder="https://api.provider.com" />
-            <label className="block text-[12px] text-muted mb-1">Priority</label>
+            <label className="block text-[12px] text-muted mb-1">{t("strm.priority")}</label>
             <input type="number" className={`${inputCls} mb-4`} value={form.priority} onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })} />
             {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
-            <button type="submit" className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px]">Saqlash</button>
-            {!editingId && <p className="text-[11px] text-muted mt-3">Saqlagandan so'ng, API kalit/sirni kiritish uchun ro'yxatdagi kalit belgisini bosing.</p>}
+            <button type="submit" className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px]">{t("strm.save")}</button>
+            {!editingId && <p className="text-[11px] text-muted mt-3">{t("strm.saveHint")}</p>}
           </form>
         </div>
       )}
@@ -187,6 +191,7 @@ function ProvidersTab() {
 }
 
 function CredentialsModal({ providerId, onClose }: { providerId: string; onClose: () => void }) {
+  const { t } = useLocale();
   const [status, setStatus] = useState<{ hasApiKey: boolean; hasApiSecret: boolean } | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
@@ -223,7 +228,7 @@ function CredentialsModal({ providerId, onClose }: { providerId: string; onClose
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-[16px]">API Kalitlari</h2>
+          <h2 className="font-bold text-[16px]">{t("strm.apiKeys")}</h2>
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
         </div>
         <p className="text-[11px] text-muted mb-4 leading-relaxed">
@@ -232,7 +237,7 @@ function CredentialsModal({ providerId, onClose }: { providerId: string; onClose
 
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1.5">
-            <label className="text-[12px] text-muted">API Key</label>
+            <label className="text-[12px] text-muted">{t("strm.apiKey")}</label>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${status?.hasApiKey ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>
               {status?.hasApiKey ? "Sozlangan" : "Sozlanmagan"}
             </span>
@@ -247,7 +252,7 @@ function CredentialsModal({ providerId, onClose }: { providerId: string; onClose
 
         <div className="mb-2">
           <div className="flex items-center gap-2 mb-1.5">
-            <label className="text-[12px] text-muted">API Secret (ixtiyoriy)</label>
+            <label className="text-[12px] text-muted">{t("strm.apiSecret")}</label>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${status?.hasApiSecret ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>
               {status?.hasApiSecret ? "Sozlangan" : "Sozlanmagan"}
             </span>
@@ -285,6 +290,7 @@ const FOOTBALL_PROVIDERS = [
 ];
 
 function MatchStreamsTab() {
+  const { t } = useLocale();
   const [streams, setStreams] = useState<MatchStream[]>([]);
   const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
   const [form, setForm] = useState({
@@ -345,22 +351,22 @@ function MatchStreamsTab() {
           <select className={inputCls} value={form.football_provider} onChange={(e) => setForm({ ...form, football_provider: e.target.value })}>
             {FOOTBALL_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
-          <input className={inputCls} placeholder="O'yin (fixture) ID" value={form.external_fixture_id} onChange={(e) => setForm({ ...form, external_fixture_id: e.target.value })} />
+          <input className={inputCls} placeholder={t("strm.phFixtureId")} value={form.external_fixture_id} onChange={(e) => setForm({ ...form, external_fixture_id: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <select className={inputCls} value={form.streaming_provider_id} onChange={(e) => setForm({ ...form, streaming_provider_id: e.target.value })}>
             <option value="">— Streaming provider tanlang —</option>
             {providers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <input className={inputCls} placeholder="Provайderdagi stream ID (ixtiyoriy)" value={form.external_stream_id} onChange={(e) => setForm({ ...form, external_stream_id: e.target.value })} />
+          <input className={inputCls} placeholder={t("strm.phStreamId")} value={form.external_stream_id} onChange={(e) => setForm({ ...form, external_stream_id: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
-            <label className="block text-[11px] text-muted mb-1">Boshlanish (ixtiyoriy)</label>
+            <label className="block text-[11px] text-muted mb-1">{t("strm.startAt")}</label>
             <input type="datetime-local" className={inputCls} value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} />
           </div>
           <div>
-            <label className="block text-[11px] text-muted mb-1">Tugash (ixtiyoriy)</label>
+            <label className="block text-[11px] text-muted mb-1">{t("strm.endAt")}</label>
             <input type="datetime-local" className={inputCls} value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} />
           </div>
         </div>
@@ -385,7 +391,7 @@ function MatchStreamsTab() {
             </div>
           </div>
         ))}
-        {streams.length === 0 && <p className="text-[12px] text-muted text-center py-6">Hozircha o'yin uchun oqim belgilanmagan.</p>}
+        {streams.length === 0 && <p className="text-[12px] text-muted text-center py-6">{t("strm.noStreams")}</p>}
       </div>
     </div>
   );
