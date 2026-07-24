@@ -3,9 +3,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
-  Handshake, Sparkles, ShieldCheck, Globe, Rocket, ArrowRight, Building2, Users, Wallet,
+  Handshake, Sparkles, ShieldCheck, Globe, Rocket, ArrowRight, Building2, Users, Wallet, Gift,
 } from "lucide-react";
 import { applyAppTheme } from "@/lib/telegram/appThemes";
+import { PrizeCard } from "./PrizeCard";
 
 declare global {
   interface Window {
@@ -14,7 +15,7 @@ declare global {
 }
 
 type Customer = { id: string; full_name: string | null; phone: string };
-type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success" | "forgot-password" | "hamkorlik" | "blocked";
+type Screen = "loading" | "auth" | "menu" | "topup" | "withdraw" | "orders" | "support" | "order-success" | "forgot-password" | "hamkorlik" | "promo" | "blocked";
 type PaymentMethod = "click" | "payme" | "card" | "crypto";
 
 type Order = {
@@ -453,7 +454,7 @@ export default function TelegramAppPage() {
   useEffect(() => {
     const tg = (window as any)?.Telegram?.WebApp;
     if (!tg?.BackButton) return;
-    const isInner = screen === "topup" || screen === "withdraw" || screen === "orders" || screen === "support" || screen === "order-success" || screen === "forgot-password" || screen === "hamkorlik";
+    const isInner = screen === "topup" || screen === "withdraw" || screen === "orders" || screen === "support" || screen === "order-success" || screen === "forgot-password" || screen === "hamkorlik" || screen === "promo";
     const goBack = () => {
       // F2b: avval ochiq overlay (to'liq rasm / rasm preview) yopiladi.
       if (overlayCloserRef.current) { overlayCloserRef.current(); return; }
@@ -2147,6 +2148,15 @@ export default function TelegramAppPage() {
     );
   }
 
+  if (screen === "promo") {
+    return (
+      <div className={`${bgCls} p-5`}>
+        <ScreenHeader title="Sovrin kartasi" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+        <PrizeCard initData={getInitData()} />
+      </div>
+    );
+  }
+
   // menu
   return (
     <div className={`${bgCls} p-5 relative`}>
@@ -2205,6 +2215,26 @@ export default function TelegramAppPage() {
           <div className="min-w-0 flex-1">
             <div className="text-[14px] font-extrabold flex items-center gap-1.5">Hamkor bo'ling <Sparkles size={13} className="text-[#F4C76A]" /></div>
             <div className="text-[11px] text-[#93a5ba] mt-0.5">O'z biznesingizni bizning platformamiz bilan yuriting</div>
+          </div>
+          <ArrowRight size={18} className="shrink-0 text-[#93a5ba] group-active:translate-x-0.5 transition-transform" />
+        </div>
+      </button>
+      )}
+
+      {/* Sovrin kartasi — aksiya bannerи (bizning app) */}
+      {!partnerId && (
+      <button
+        onClick={() => { setError(""); setScreen("promo"); }}
+        className="group relative w-full mt-3.5 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(28,224,195,0.12)] active:translate-y-[2px] transition-all"
+        style={{ background: "linear-gradient(120deg,#1CE0C3,#F4C76A,#1CE0C3)", backgroundSize: "300% 100%", animation: "hkShimmer 6s linear infinite" }}
+      >
+        <div className="relative rounded-2xl bg-gradient-to-br from-[#04231F] to-[#0a2e28] px-4 py-3.5 flex items-center gap-3.5">
+          <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#1CE0C3] to-[#0a8f7d] flex items-center justify-center shadow-[3px_3px_10px_rgba(0,0,0,0.45)]" style={{ animation: "hkFloat 3.4s ease-in-out infinite" }}>
+            <Gift size={20} className="text-[#04231F]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[14px] font-extrabold flex items-center gap-1.5">Sovrin kartangiz <Sparkles size={13} className="text-[#F4C76A]" /></div>
+            <div className="text-[11px] text-[#93a5ba] mt-0.5">Faol bo'ling — katta sovrinlar sizni kutmoqda</div>
           </div>
           <ArrowRight size={18} className="shrink-0 text-[#93a5ba] group-active:translate-x-0.5 transition-transform" />
         </div>
