@@ -156,6 +156,10 @@ export function ChatTab() {
   useEffect(() => {
     const bottom = bottomRef.current;
     if (!bottom) return;
+    // Bo'sh ro'yxatда (mount, hali xabar yuklanmagan) firstScrollRef'ни
+    // sarflab yubormaymiz — aks holda haqiqiy xabarlar kelganда "first" emas
+    // deb pastga surilmay yuqorида qoladi (bug). Xabar bo'lgачgina scroll.
+    if (messages.length === 0) return;
     // Birinchi ochilishda darhol (animatsiyasiz) pastga.
     if (firstScrollRef.current) {
       firstScrollRef.current = false;
@@ -249,7 +253,7 @@ export function ChatTab() {
   });
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col h-full min-w-0">
+    <div className="flex flex-col h-full min-w-0">
       <div className="flex items-center gap-2 p-2.5 border-b border-white/8">
         {showSearch ? (
           <input

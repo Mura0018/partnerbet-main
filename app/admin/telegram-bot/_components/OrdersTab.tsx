@@ -498,7 +498,15 @@ function MyStatusToggle() {
     const { data: profile } = await supabase.from("profiles").select("display_name, full_name").eq("id", user.id).maybeSingle();
     const name = profile?.display_name || profile?.full_name || "Operator";
 
-    await supabase.from("profiles").update({ is_online: next }).eq("id", user.id);
+    // DB'ga yozilishini TASDIQLAB, keyin UI'ni almashtiramiz — aks holda
+    // yozish jim fail bo'lса (RLS/trigger rollback) UI yolg'on "band" ko'rsatib,
+    // refreshда qaytardi. Endi xato bo'lsa UI o'zgarmaydi.
+    const { error } = await supabase.from("profiles").update({ is_online: next }).eq("id", user.id);
+    if (error) {
+      alert("Holat saqlanmadi: " + error.message);
+      setSaving(false);
+      return;
+    }
     await supabase.from("team_chat_messages").insert({
       sender_id: user.id,
       message: next ? `🟢 ${name} endi faol.` : `🔴 ${name} band holatiga o'tdi.`,
@@ -559,7 +567,12 @@ function MyBusyToggle() {
     const name = profile?.display_name || profile?.full_name || "Operator";
     const nextReason = next ? reason.trim() : "";
 
-    await supabase.from("profiles").update({ is_busy: next, busy_reason: nextReason || null }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ is_busy: next, busy_reason: nextReason || null }).eq("id", user.id);
+    if (error) {
+      alert("Saqlanmadi: " + error.message);
+      setSaving(false);
+      return;
+    }
     await supabase.from("team_chat_messages").insert({
       sender_id: user.id,
       is_system: true,
