@@ -9,6 +9,7 @@ import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useV
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type SupportThread = {
   customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string;
@@ -19,13 +20,13 @@ type SupportMsg = {
   file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; reply_to_id: string | null; created_at: string;
 };
 
-const REPLY_TEMPLATES = [
-  "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
-  "So'rovingiz ko'rib chiqilmoqda, biroz kuting.",
-  "Iltimos, to'lov chekining aniqroq skrinshotini yuboring.",
-  "Ma'lumotlaringiz uchun rahmat, tekshirib ko'ramiz.",
-  "Muammo hal qilindi. Yana savollaringiz bo'lsa, murojaat qiling.",
-  "Kechirasiz, kutish uchun rahmat — operator tez orada javob beradi.",
+const REPLY_TEMPLATE_KEYS = [
+  "sup.tpl1",
+  "sup.tpl2",
+  "sup.tpl3",
+  "sup.tpl4",
+  "sup.tpl5",
+  "sup.tpl6",
 ];
 
 function SupportImage({ path }: { path: string }) {
@@ -69,6 +70,7 @@ function SupportVoice({ path }: { path: string }) {
 }
 
 function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thread: SupportThread; currentUserId: string | null; onBack: () => void; onArchived: () => void }) {
+  const { t } = useLocale();
   const [msgs, setMsgs] = useState<SupportMsg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -112,8 +114,8 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   };
   useEffect(() => {
     loadLinkedOrder();
-    const t = setInterval(loadLinkedOrder, 5000);
-    return () => clearInterval(t);
+    const iv = setInterval(loadLinkedOrder, 5000);
+    return () => clearInterval(iv);
   }, [thread.customer_id]);
 
   useEffect(() => {
@@ -161,7 +163,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   };
 
   const deleteMessage = async (id: string) => {
-    if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
+    if (!confirm(t("sup.confirmDeleteMsg"))) return;
     await fetch("/api/admin/telegram-orders/support-delete-message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -204,7 +206,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   };
 
   const endChat = async () => {
-    if (!confirm("Suhbatni yakunlashni tasdiqlaysizmi? Mijozga tasdiqlash so'rovi yuboriladi.")) return;
+    if (!confirm(t("sup.confirmEnd"))) return;
     setArchiving(true);
     try {
       const res = await fetch("/api/admin/telegram-orders/support-end", {
@@ -214,9 +216,9 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert("Xato: " + JSON.stringify(data));
+        alert(t("sup.errPrefix") + JSON.stringify(data));
       } else {
-        alert("Yakunlash so'rovi yuborildi!");
+        alert(t("sup.endSent"));
       }
     } finally {
       setArchiving(false);
@@ -236,7 +238,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   return (
     <div className="fixed inset-0 z-50 bg-bg flex flex-col">
       <div className="flex items-center gap-2 px-5 py-4 bg-white/[0.04] backdrop-blur-md border-b border-white/[0.06] shrink-0">
-        <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10" aria-label="Orqaga">
+        <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10" aria-label={t("sup.back")}>
           <ChevronLeft size={20} />
         </button>
         <div className="flex-1 min-w-0">
@@ -247,25 +249,25 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           disabled={archiving}
           className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-accent/15 border border-accent/25 text-accent hover:bg-accent/25 disabled:opacity-50"
         >
-          Yakunlash
+          {t("sup.end")}
         </button>
         <button
           onClick={archive}
           disabled={archiving}
           className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white disabled:opacity-50"
         >
-          {archiving ? "…" : "Arxivlash"}
+          {archiving ? "…" : t("sup.archive")}
         </button>
       </div>
 
       {claimedBy && claimedBy !== currentUserId ? (
         <div className="flex items-center justify-between gap-2 px-5 py-2 bg-[#F4C76A]/10 backdrop-blur-md border-b border-[#F4C76A]/15 shrink-0">
-          <span className="text-[11px] text-[#F4C76A]">🔵 {claimedByName || "Boshqa operator"} bu mijozga javob bermoqda</span>
-          <button onClick={takeOver} className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white">O'zimga olish</button>
+          <span className="text-[11px] text-[#F4C76A]">🔵 {claimedByName || t("sup.otherOp")} {t("sup.answering")}</span>
+          <button onClick={takeOver} className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white">{t("sup.takeOver")}</button>
         </div>
       ) : claimedBy === currentUserId ? (
         <div className="px-5 py-1.5 bg-accent/10 backdrop-blur-md border-b border-accent/10 shrink-0">
-          <span className="text-[10.5px] text-accent">🔵 Siz bu mijozga javob berayapsiz</span>
+          <span className="text-[10.5px] text-accent">🔵 {t("sup.youAnswering")}</span>
         </div>
       ) : null}
 
@@ -278,20 +280,20 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
             <div style={{ position: "relative", transformStyle: "preserve-3d", transition: "transform 0.6s cubic-bezier(0.22,1,0.36,1)", transform: orderFlipped ? "rotateY(180deg)" : "rotateY(0deg)", minHeight: 82 }}>
               <div style={{ backfaceVisibility: "hidden" }} className="rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-3">
                 <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-[12.5px] font-semibold text-white">{linkedOrder.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"}</span>
+                  <span className="text-[12.5px] font-semibold text-white">{linkedOrder.type === "topup" ? t("sup.topup") : t("sup.withdraw")}</span>
                   <span className="text-[11px] font-semibold" style={{ color: linkedOrder.status === "completed" ? "#4ADE80" : linkedOrder.status === "rejected" ? "#FF6B85" : "#F4C76A" }}>
-                    {linkedOrder.status === "completed" ? "Bajarildi" : linkedOrder.status === "rejected" ? "Rad etildi" : "Kutilmoqda"}
+                    {linkedOrder.status === "completed" ? t("sup.stCompleted") : linkedOrder.status === "rejected" ? t("sup.stRejected") : t("sup.stPending")}
                   </span>
                 </div>
                 <div className="text-[11px] text-white/40">{linkedOrder.platform} · ID {linkedOrder.account_id}</div>
-                <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} so'm</div>
-                <div className="text-[9px] text-white/30 mt-1">Bosing — holat/izoh</div>
+                <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} {t("sup.som")}</div>
+                <div className="text-[9px] text-white/30 mt-1">{t("sup.tapHint")}</div>
               </div>
               <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }} className="rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-3 flex flex-col justify-center">
                 <div className="text-[11.5px] font-semibold" style={{ color: linkedOrder.status === "completed" ? "#4ADE80" : linkedOrder.status === "rejected" ? "#FF6B85" : "#F4C76A" }}>
-                  {linkedOrder.status === "completed" ? "✓ Bajarilgan" : linkedOrder.status === "rejected" ? "✕ Rad etilgan" : "⏳ Kutilmoqda"}
+                  {linkedOrder.status === "completed" ? t("sup.doneMark") : linkedOrder.status === "rejected" ? t("sup.rejMark") : t("sup.pendMark")}
                 </div>
-                <div className="text-[11.5px] text-white/70 mt-1 leading-snug">{linkedOrder.operator_note || "Izoh yo'q."}</div>
+                <div className="text-[11.5px] text-white/70 mt-1 leading-snug">{linkedOrder.operator_note || t("sup.noNote")}</div>
               </div>
             </div>
           </button>
@@ -303,13 +305,13 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
       >
-        {msgs.length === 0 && <p className="text-[12px] text-muted text-center mt-8">Hozircha xabar yo'q.</p>}
+        {msgs.length === 0 && <p className="text-[12px] text-muted text-center mt-8">{t("sup.noMessages")}</p>}
         {msgs.map((m) => {
           const quoted = messageById(m.reply_to_id);
-          const quotedLabel = quoted ? (quoted.sender === "operator" ? "Operator" : "Mijoz") : null;
+          const quotedLabel = quoted ? (quoted.sender === "operator" ? t("sup.operator") : t("sup.customer")) : null;
           return (
           <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
-            <span className="text-[9px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? "Siz (operator)" : "Mijoz"}</span>
+            <span className="text-[9px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? t("sup.youOperator") : t("sup.customer")}</span>
             <div
               className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "operator" ? "text-white shadow-lg shadow-black/20" : "bg-white/10 backdrop-blur-md border border-white/[0.06]"}`}
               style={m.sender === "operator" ? { background: chatThemeGradient(myTheme) } : undefined}
@@ -318,7 +320,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
                 <div className={`mb-1.5 rounded-lg border-l-[3px] pl-2.5 pr-2 py-1 ${m.sender === "operator" ? "border-white/70 bg-white/10" : "border-accent/70 bg-accent/10"}`}>
                   <div className={`text-[10px] font-semibold ${m.sender === "operator" ? "text-white/90" : "text-accent"}`}>{quotedLabel}</div>
                   <div className="text-[10.5px] opacity-70 line-clamp-2 break-words">
-                    {quoted.message || (quoted.image_path ? "📷 Rasm" : quoted.voice_path ? "🎤 Ovozli xabar" : "")}
+                    {quoted.message || (quoted.image_path ? t("sup.image") : quoted.voice_path ? t("sup.voice") : "")}
                   </div>
                 </div>
               )}
@@ -336,11 +338,11 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
             </div>
             <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "operator" ? "flex-row-reverse" : ""}`}>
               <button onClick={() => setReplyTo(m)} className="text-[9px] text-[#5b6f85] hover:text-white flex items-center gap-0.5">
-                <Reply size={9} /> Javob
+                <Reply size={9} /> {t("sup.reply")}
               </button>
               {m.sender === "operator" && (
                 <button onClick={() => deleteMessage(m.id)} className="text-[9px] text-[#5b6f85] hover:text-[#FF6B85] flex items-center gap-0.5">
-                  <Trash2 size={9} /> O'chirish
+                  <Trash2 size={9} /> {t("sup.del")}
                 </button>
               )}
             </div>
@@ -351,7 +353,9 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
       </div>
 
       <div className="flex gap-1.5 px-3 py-2 overflow-x-auto shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
-        {REPLY_TEMPLATES.map((tpl, i) => (
+        {REPLY_TEMPLATE_KEYS.map((tk, i) => {
+          const tpl = t(tk as any);
+          return (
           <button
             key={i}
             onClick={() => setText(tpl)}
@@ -359,13 +363,14 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           >
             {tpl.length > 28 ? tpl.slice(0, 28) + "…" : tpl}
           </button>
-        ))}
+          );
+        })}
       </div>
       {replyTo && (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-white/[0.06] shrink-0">
           <Reply size={12} className="text-accent shrink-0" />
           <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
-            {replyTo.message || (replyTo.image_path ? "📷 Rasm" : replyTo.voice_path ? "🎤 Ovozli xabar" : "")}
+            {replyTo.message || (replyTo.image_path ? t("sup.image") : replyTo.voice_path ? t("sup.voice") : "")}
           </div>
           <button onClick={() => setReplyTo(null)} className="shrink-0 p-1 rounded hover:bg-white/10 text-muted">
             <X size={12} />
@@ -376,21 +381,21 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         <div className="flex items-center gap-2.5 px-3 py-2 shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
           <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
-          <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
+          <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label={t("sup.cancelRec")}>
             <Trash2 size={13} />
           </button>
-          <button onClick={stopAndSendVoice} disabled={sending} className="p-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label="Yuborish">
+          <button onClick={stopAndSendVoice} disabled={sending} className="p-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim" aria-label={t("sup.send")}>
             <Check size={13} />
           </button>
         </div>
       ) : (
       <div className="flex items-center gap-1.5 px-3 py-2 shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] hover:bg-white/10 disabled:opacity-50" aria-label={t("sup.voiceMsg")}>
           <Mic size={13} className="text-muted" />
         </button>
         <input
           className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
-          placeholder="Javob yozing..."
+          placeholder={t("sup.phReply")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && reply()}
@@ -406,6 +411,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
 }
 
 export function SupportTab() {
+  const { t } = useLocale();
   const [threads, setThreads] = useState<SupportThread[]>([]);
   const [archivedIds, setArchivedIds] = useState<Set<string>>(new Set());
   const [activeCustomer, setActiveCustomer] = useState<SupportThread | null>(null);
@@ -489,20 +495,20 @@ export function SupportTab() {
     );
   }
 
-  if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda...</p>;
+  if (loading) return <p className="text-[13px] text-muted">{t("sup.loading")}</p>;
 
   const visibleThreads = threads
-    .filter((t) => archivedIds.has(t.customer_id) === showArchived)
-    .filter((t) => !onlyMine || t.claimed_by === currentUserId);
+    .filter((th) => archivedIds.has(th.customer_id) === showArchived)
+    .filter((th) => !onlyMine || th.claimed_by === currentUserId);
   const filteredThreads = search.trim()
-    ? visibleThreads.filter((t) => `${t.full_name ?? ""} ${t.phone}`.toLowerCase().includes(search.trim().toLowerCase()))
+    ? visibleThreads.filter((th) => `${th.full_name ?? ""} ${th.phone}`.toLowerCase().includes(search.trim().toLowerCase()))
     : visibleThreads;
 
   return (
     <div>
       <input
         className="w-full mb-3 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3.5 text-[13px] outline-none focus:border-accent"
-        placeholder="Mijozni qidirish: ism yoki telefon..."
+        placeholder={t("sup.phSearch")}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -511,45 +517,45 @@ export function SupportTab() {
           onClick={() => setShowArchived(false)}
           className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${!showArchived ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
         >
-          Faol
+          {t("sup.fActive")}
         </button>
         <button
           onClick={() => setShowArchived(true)}
           className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${showArchived ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
         >
-          Arxiv
+          {t("sup.fArchive")}
         </button>
         <button
           onClick={() => setOnlyMine((v) => !v)}
           className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${onlyMine ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
         >
-          Faqat mening
+          {t("sup.fOnlyMine")}
         </button>
       </div>
 
       {filteredThreads.length === 0 ? (
         <div className="rounded-xl bg-white/[0.03] backdrop-blur-md border border-white/[0.06] p-8 text-center text-[13px] text-muted">
-          {search ? "Hech narsa topilmadi." : showArchived ? "Arxiv bo'sh." : "Hozircha murojaat yo'q."}
+          {search ? t("sup.notFound") : showArchived ? t("sup.archiveEmpty") : t("sup.noThreads")}
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredThreads.map((t) => (
+          {filteredThreads.map((th) => (
             <button
-              key={t.customer_id}
-              onClick={() => openThread(t)}
+              key={th.customer_id}
+              onClick={() => openThread(th)}
               className="w-full text-left p-3.5 rounded-xl bg-white/[0.03] backdrop-blur-md border border-white/[0.06] hover:border-accent/40 hover:bg-white/[0.05]"
             >
               <div className="flex items-center justify-between gap-2 mb-0.5">
-                <div className="text-[13px] font-semibold truncate">{t.full_name || t.phone}</div>
-                {t.claimed_by && (
+                <div className="text-[13px] font-semibold truncate">{th.full_name || th.phone}</div>
+                {th.claimed_by && (
                   <span className={`shrink-0 text-[9.5px] px-2 py-0.5 rounded-full border ${
-                    t.claimed_by === currentUserId ? "bg-accent/15 border-accent/40 text-accent" : "bg-white/5 border-white/10 text-muted"
+                    th.claimed_by === currentUserId ? "bg-accent/15 border-accent/40 text-accent" : "bg-white/5 border-white/10 text-muted"
                   }`}>
-                    🔵 {t.claimed_by === currentUserId ? "Siz javob berasiz" : `${t.claimed_by_name || "Operator"} javob bermoqda`}
+                    🔵 {th.claimed_by === currentUserId ? t("sup.youAnswer") : t("sup.isAnswering", { name: th.claimed_by_name || t("sup.operator") })}
                   </span>
                 )}
               </div>
-              <div className="text-[12px] text-muted truncate mt-0.5">{t.last_image ? "📷 Rasm" : t.last_message}</div>
+              <div className="text-[12px] text-muted truncate mt-0.5">{th.last_image ? t("sup.image") : th.last_message}</div>
             </button>
           ))}
         </div>
