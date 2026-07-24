@@ -696,7 +696,7 @@ export default function TelegramAppPage() {
       (window as any)?.Telegram?.WebApp?.disableVerticalSwipes?.();
       const initData = getInitData();
       if (!initData) {
-        setError("Bu ilova faqat Telegram ichida ochilishi kerak.");
+        setError(t("tg.eTgOnly"));
         setScreen("auth");
         return;
       }
@@ -724,7 +724,7 @@ export default function TelegramAppPage() {
           setScreen("auth");
         }
       } catch {
-        setError("Ulanishda xatolik. Qayta urinib ko'ring.");
+        setError(t("tg.eConn"));
         setScreen("auth");
       }
     };
@@ -736,7 +736,7 @@ export default function TelegramAppPage() {
     setError("");
     setAuthInfo("");
     if (!phone.trim() || !password.trim()) {
-      setError("Telefon raqami va parolni kiriting.");
+      setError(t("tg.eNeedPhonePass"));
       return;
     }
     setSubmitting(true);
@@ -764,7 +764,7 @@ export default function TelegramAppPage() {
       setCustomer(data.customer);
       setScreen("menu");
     } catch {
-      setError("Ulanishda xatolik. Qayta urinib ko'ring.");
+      setError(t("tg.eConn"));
     } finally {
       setSubmitting(false);
     }
@@ -845,11 +845,11 @@ export default function TelegramAppPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      setError("Faqat rasm fayli (PNG/JPEG/WEBP) yuklash mumkin.");
+      setError(t("tg.eImgOnly"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Rasm hajmi 5MB dan oshmasligi kerak.");
+      setError(t("tg.eImg5MB"));
       return;
     }
     setError("");
@@ -866,7 +866,7 @@ export default function TelegramAppPage() {
   const verifyTopupId = async () => {
     setError("");
     const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
-    if (!platform || !tuAccountId.trim()) { setError("Platforma va ID ni kiriting."); return; }
+    if (!platform || !tuAccountId.trim()) { setError(t("tg.ePlatformId")); return; }
     setTuVerifying(true);
     try {
       const res = await fetch("/api/telegram/miniapp/verify-player", {
@@ -875,7 +875,7 @@ export default function TelegramAppPage() {
       });
       const d = await res.json();
       if (!res.ok || d.error) {
-        setError(d.error === "not_found" ? "Bunday hisob ID topilmadi." : d.error === "not_configured" ? "Kassa hozircha ulanmagan." : "Tekshirishда xatolik.");
+        setError(d.error === "not_found" ? t("tg.eIdNotFound2") : d.error === "not_configured" ? t("tg.eCdOff") : t("tg.eVerify"));
         return;
       }
       setTuStep(2);
@@ -890,11 +890,11 @@ export default function TelegramAppPage() {
     setSuccessWarning(null);
     const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
     if (!platform || !tuAccountId.trim() || !tuAmount || Number(tuAmount) <= 0) {
-      setError("Barcha maydonlarni to'ldiring.");
+      setError(t("tg.eAllFields"));
       return;
     }
     if (!tuReceiptBase64) {
-      setError("To'lov chekining skrinshotini yuklang.");
+      setError(t("tg.eReceipt"));
       return;
     }
     setSubmitting(true);
@@ -918,19 +918,19 @@ export default function TelegramAppPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         if (data.error === "player_not_found") {
-          setError("Bunday hisob ID topilmadi. Platforma va ID raqamini tekshiring.");
+          setError(t("tg.eIdNotFound"));
         } else if (data.error === "order_limit_exceeded") {
           setError(`Bitta buyurtma uchun maksimal summa: ${Number(data.limit).toLocaleString("ru-RU")} so'm.`);
         } else if (data.error === "daily_limit_exceeded") {
           setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
         } else if (data.error === "too_many_pending_orders") {
-          setError("Sizda hozircha ko'rib chiqilayotgan buyurtmalar bor. Iltimos ular yakunlanishini kuting.");
+          setError(t("tg.ePendingOrders"));
         } else if (data.error === "topup_disabled") {
-          setError("Hisob to'ldirish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
+          setError(t("tg.eTopupOff"));
         } else if (data.error === "withdraw_disabled") {
-          setError("Pul yechish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
+          setError(t("tg.eWithdrawOff"));
         } else {
-          setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
+          setError(t("tg.eOrderSend"));
         }
         return;
       }
@@ -944,14 +944,14 @@ export default function TelegramAppPage() {
         }),
       });
       if (!receiptRes.ok) {
-        setSuccessWarning("Buyurtma yaratildi, lekin chek yuklanmadi. \"Operator bilan aloqa\" orqali chekni yuboring.");
+        setSuccessWarning(t("tg.wReceipt"));
       }
 
-      setSuccessLabel("Hisob to'ldirish");
+      setSuccessLabel(t("tg.topupTitle"));
       resetForms();
       setScreen("order-success");
     } catch {
-      setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
+      setError(t("tg.eOrderSend"));
     } finally {
       setSubmitting(false);
     }
@@ -992,11 +992,11 @@ export default function TelegramAppPage() {
         } else if (data.error === "withdraw_disabled") {
           setError("Pul yechish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
         } else {
-          setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
+          setError(t("tg.eOrderSend"));
         }
         return;
       }
-      setSuccessLabel("Pul yechish");
+      setSuccessLabel(t("tg.withdrawTitle"));
       resetForms();
       setScreen("order-success");
     } catch {
@@ -1813,7 +1813,7 @@ export default function TelegramAppPage() {
       <div className={`${bgCls} p-5 relative`}>
         <FloatingAmbience />
         <div className="relative z-10">
-        <ScreenHeader title="Hisob to'ldirish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+        <ScreenHeader title={t("tg.topupTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <div>
           <div className="flex items-center gap-1.5 mb-4">
             {[1, 2, 3].map((n) => <div key={n} className={`h-1.5 flex-1 rounded-full ${n <= tuStep ? "bg-accent" : "bg-white/10"}`} />)}
@@ -1823,12 +1823,12 @@ export default function TelegramAppPage() {
             <div>
               <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
               <div className="mb-3.5">
-                <label className="block text-[12px] text-[#93a5ba] mb-1.5">Hisob ID</label>
-                <input className={inputCls} placeholder="Masalan: 123456789" value={tuAccountId} onChange={(e) => setTuAccountId(e.target.value)} />
+                <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.accId")}</label>
+                <input className={inputCls} placeholder={t("tg.accIdPh")} value={tuAccountId} onChange={(e) => setTuAccountId(e.target.value)} />
               </div>
               {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
               <button type="button" onClick={verifyTopupId} disabled={tuVerifying} className={buttonCls}>
-                {tuVerifying ? <Loader2 size={16} className="animate-spin" /> : "Tekshirish"}
+                {tuVerifying ? <Loader2 size={16} className="animate-spin" /> : t("tg.verify")}
               </button>
             </div>
           )}
@@ -1836,31 +1836,31 @@ export default function TelegramAppPage() {
           {tuStep === 2 && (
             <div>
               <div className="mb-3.5">
-                <label className="block text-[12px] text-[#93a5ba] mb-1.5">Summa</label>
-                <input className={inputCls} type="number" min={1} placeholder="Masalan: 50000" value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
+                <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.sum")}</label>
+                <input className={inputCls} type="number" min={1} placeholder={t("tg.phSum")} value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
               </div>
               <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} paymentInfo={paymentInfo} />
               {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
-              <button type="button" onClick={() => { if (!tuAmount || Number(tuAmount) <= 0) { setError("Summani kiriting."); return; } setError(""); setTuStep(3); }} className={buttonCls}>Davom etish</button>
+              <button type="button" onClick={() => { if (!tuAmount || Number(tuAmount) <= 0) { setError(t("tg.eAmount")); return; } setError(""); setTuStep(3); }} className={buttonCls}>{t("tg.continueBtn")}</button>
             </div>
           )}
 
           {tuStep === 3 && (
             <form onSubmit={submitTopup}>
               <div className="mb-4">
-                <label className="block text-[12px] text-[#93a5ba] mb-1.5">To'lov cheki (skrinshot)</label>
+                <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.receipt")}</label>
                 <label className="flex items-center justify-center gap-2 w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]">
                   <Upload size={15} />
-                  {tuReceiptFileName || "Rasm tanlash"}
+                  {tuReceiptFileName || t("tg.pickImage")}
                   <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleReceiptSelect} />
                 </label>
               </div>
               <p className="text-[11px] text-[#5b7089] mb-4 leading-relaxed">
-                Ko'rsatilgan raqamga to'lovni amalga oshirib, chek skrinshotini yuklang va quyidagi tugmani bosing — operator to'lovni tekshirib, hisobingizni to'ldiradi.
+                {t("tg.receiptHint")}
               </p>
               {error && <p className="text-[12px] text-[#FF6B85] text-center mb-3">{error}</p>}
               <button type="submit" disabled={submitting} className={buttonCls}>
-                {submitting ? <Loader2 size={16} className="animate-spin" /> : "To'ladim, buyurtma berish"}
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : t("tg.paid")}
               </button>
             </form>
           )}
@@ -1875,7 +1875,7 @@ export default function TelegramAppPage() {
       <div className={`${bgCls} p-5 relative`}>
         <FloatingAmbience />
         <div className="relative z-10">
-        <ScreenHeader title="Pul yechish" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+        <ScreenHeader title={t("tg.withdrawTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <WithdrawCodeGuide />
         <WithdrawWizard
           getInitData={getInitData}
@@ -1890,15 +1890,15 @@ export default function TelegramAppPage() {
 
   if (screen === "orders") {
     const ORDER_FILTERS: { id: "all" | "pending" | "completed" | "rejected"; label: string }[] = [
-      { id: "all", label: "Barchasi" },
-      { id: "pending", label: "Kutilmoqda" },
-      { id: "completed", label: "Bajarildi" },
-      { id: "rejected", label: "Rad etildi" },
+      { id: "all", label: t("tg.fAll") },
+      { id: "pending", label: t("tg.stPending") },
+      { id: "completed", label: t("tg.stCompleted") },
+      { id: "rejected", label: t("tg.stRejected") },
     ];
     const filteredOrders = ordersFilter === "all" ? orders : orders.filter((o) => o.status === ordersFilter);
     return (
       <div className={`${bgCls} p-5`}>
-        <ScreenHeader title="Buyurtmalarim" onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+        <ScreenHeader title={t("tg.ordersTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <div className="flex gap-2 mb-4 overflow-x-auto">
           {ORDER_FILTERS.map((f) => (
             <button
@@ -1916,7 +1916,7 @@ export default function TelegramAppPage() {
           <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-accent" /></div>
         ) : filteredOrders.length === 0 ? (
           <p className="text-[13px] text-[#93a5ba] text-center mt-8">
-            {orders.length === 0 ? "Hozircha buyurtmalar yo'q." : "Bu holatda buyurtmalar yo'q."}
+            {orders.length === 0 ? t("tg.noOrders") : t("tg.noInStatus")}
           </p>
         ) : (
           <div className="space-y-3">
@@ -1926,20 +1926,20 @@ export default function TelegramAppPage() {
               return (
                 <div key={o.id} className="rounded-xl bg-gradient-to-b from-[#0e2038] to-[#0a1a30] p-4 shadow-[5px_5px_14px_rgba(0,0,0,0.4)]">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[13px] font-bold">{o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"}</span>
+                    <span className="text-[13px] font-bold">{o.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")}</span>
                     <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: s.color }}>
                       <Icon size={12} /> {t(s.labelKey as any)}
                     </span>
                   </div>
                   <div className="text-[12px] text-[#93a5ba]">{o.platform} · ID: {o.account_id}</div>
-                  <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} so'm</div>
+                  <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")}</div>
 
                   {/* S1: bosqich progress (Yaratildi -> Ko'rilmoqda -> Bajarildi/Rad etildi) */}
                   {(() => {
                     const rejected = o.status === "rejected";
                     const done = o.status === "completed";
                     const idx = done || rejected ? 2 : o.operator_name ? 1 : 0;
-                    const labels = ["Yaratildi", o.operator_name ? `${o.operator_name}` : "Ko'rilmoqda", rejected ? "Rad etildi" : "Bajarildi"];
+                    const labels = [t("tg.stCreated"), o.operator_name ? `${o.operator_name}` : t("tg.stReviewing"), rejected ? t("tg.stRejected") : t("tg.stCompleted")];
                     const finalColor = rejected ? "#FF6B85" : "#4ADE80";
                     return (
                       <div className="mt-3 flex items-start">
@@ -1967,7 +1967,7 @@ export default function TelegramAppPage() {
                     onClick={() => openSupport(o.id)}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold py-2 rounded-lg bg-white/[0.04] border border-white/10 text-[#93a5ba] active:bg-white/[0.08]"
                   >
-                    <Headset size={13} /> Shu buyurtma bo'yicha yozish
+                    <Headset size={13} /> {t("tg.writeAbout")}
                   </button>
                 </div>
               );
@@ -1986,8 +1986,8 @@ export default function TelegramAppPage() {
         {imageDraft && (
           <div className="fixed inset-0 z-[65] bg-black/85 flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 shrink-0">
-              <button onClick={cancelImageDraft} className="text-[13px] text-white/80 active:text-white">Bekor</button>
-              <span className="text-[13px] font-semibold">Rasm yuborish</span>
+              <button onClick={cancelImageDraft} className="text-[13px] text-white/80 active:text-white">{t("tg.cancel")}</button>
+              <span className="text-[13px] font-semibold">{t("tg.sendImage")}</span>
               <span className="w-12" />
             </div>
             <div className="flex-1 flex items-center justify-center p-4 min-h-0">
@@ -1998,10 +1998,10 @@ export default function TelegramAppPage() {
                 value={imageCaption}
                 onChange={(e) => setImageCaption(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") confirmSendImage(); }}
-                placeholder="Izoh (ixtiyoriy)..."
+                placeholder={t("tg.phCaption")}
                 className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2.5 px-3 text-[13px] text-white outline-none placeholder:text-[#5b7089]"
               />
-              <button onMouseDown={(e) => e.preventDefault()} onClick={confirmSendImage} className="shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center" aria-label="Yuborish">
+              <button onMouseDown={(e) => e.preventDefault()} onClick={confirmSendImage} className="shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center" aria-label={t("tg.send")}>
                 <Send size={18} />
               </button>
             </div>
@@ -2163,7 +2163,7 @@ export default function TelegramAppPage() {
         {/* F2b: "Nusxalandi" bildirishnomasi. */}
         {copiedToast && (
           <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[80] px-3 py-1.5 rounded-full bg-black/80 text-white text-[12px] shadow-lg">
-            Nusxalandi ✓
+            {t("tg.copied")}
           </div>
         )}
 
