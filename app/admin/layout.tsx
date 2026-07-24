@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, Activity, MessageCircle,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, Activity, MessageCircle, ChevronDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -81,7 +81,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { t } = useLocale();
   const { profile } = useCurrentProfile();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const settings = useSiteSettings();
+
+  // Guruh yig'ilgan/ochiq holati — localStorage'da saqlanadi (reload'dan keyin ham).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("admin_nav_collapsed");
+      if (raw) setCollapsed(JSON.parse(raw));
+    } catch {
+      /* skip */
+    }
+  }, []);
+  const toggleGroup = (id: string) =>
+    setCollapsed((c) => {
+      const next = { ...c, [id]: !c[id] };
+      try {
+        localStorage.setItem("admin_nav_collapsed", JSON.stringify(next));
+      } catch {
+        /* skip */
+      }
+      return next;
+    });
   const siteName: string = settings.site_identity?.site_name?.trim() || "WINORA";
   const logoUrl: string | null = settings.branding?.logo_media_id_url ?? null;
   const logoPos: { x: number; y: number } = settings.branding?.logo_media_id_position ?? { x: 50, y: 50 };
@@ -119,37 +140,51 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto relative">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.labelKey} className="mb-1">
-            <div className="px-3 pt-3 pb-1.5 text-[9px] font-bold tracking-[0.14em] text-[#4a5f7a] uppercase font-mono">
-              <span className="opacity-50">// </span>{t(group.labelKey as any)}
+        {NAV_GROUPS.map((group) => {
+          const isCollapsed = !!collapsed[group.id];
+          const g = group.color;
+          return (
+            <div key={group.labelKey} className="mb-1" style={{ ["--g" as any]: g }}>
+              <button
+                onClick={() => toggleGroup(group.id)}
+                className="w-full flex items-center gap-2 px-3 pt-3 pb-1.5 text-[9px] font-bold tracking-[0.14em] text-[#4a5f7a] uppercase font-mono hover:text-[#6b80a0] transition-colors"
+              >
+                <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: g, boxShadow: `0 0 8px ${g}` }} />
+                <ChevronDown size={10} className="shrink-0 opacity-60 transition-transform duration-200" style={{ transform: isCollapsed ? "rotate(-90deg)" : "none" }} />
+                {t(group.labelKey as any)}
+              </button>
+              <div
+                className="overflow-hidden transition-[max-height] duration-200 ease-out"
+                style={{ maxHeight: isCollapsed ? 0 : group.items.length * 46 + 4 }}
+              >
+                {group.items.map((item) => {
+                  // Query'li havola (masalan ?chat=1) — "ishga tushiruvchi", hech qachon
+                  // active bo'lmaydi (aks holda bir sahifada 2 ta item yonardi).
+                  const active = !item.href.includes("?") && pathname.startsWith(item.href);
+                  const link = (
+                    <Link
+                      key={item.href} href={item.href}
+                      className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                        active ? "text-white" : "text-muted hover:text-white hover:bg-white/[0.04] hover:translate-x-1"
+                      }`}
+                      style={active ? { background: `linear-gradient(95deg, ${g}26, transparent 82%)`, boxShadow: `0 4px 16px -6px ${g}8c, inset 0 1px 0 rgba(255,255,255,0.07)` } : undefined}
+                    >
+                      {active && <span className="absolute -left-2 top-[9px] bottom-[9px] w-[3px] rounded-r" style={{ background: g, boxShadow: `0 0 10px ${g}` }} />}
+                      <item.icon size={16} className="transition-transform group-hover:scale-110" style={active ? { color: g, filter: `drop-shadow(0 0 6px ${g}b3)` } : undefined} />
+                      {t(item.labelKey as any)}
+                      {active && <span className="ml-auto w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: g, boxShadow: `0 0 10px ${g}` }} />}
+                    </Link>
+                  );
+                  return item.permission ? (
+                    <Can key={item.href} permission={item.permission}>{link}</Can>
+                  ) : (
+                    link
+                  );
+                })}
+              </div>
             </div>
-            {group.items.map((item) => {
-              // Query'li havola (masalan ?chat=1) — "ishga tushiruvchi", hech qachon
-              // active bo'lmaydi (aks holda bir sahifada 2 ta item yonardi).
-              const active = !item.href.includes("?") && pathname.startsWith(item.href);
-              const link = (
-                <Link
-                  key={item.href} href={item.href}
-                  className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
-                    active
-                      ? "text-white bg-gradient-to-r from-accent/25 to-accent-dim/10 shadow-[0_4px_16px_rgba(61,127,255,0.18),inset_0_1px_0_rgba(255,255,255,0.08)]"
-                      : "text-muted hover:text-white hover:bg-white/[0.04] hover:translate-x-1"
-                  }`}
-                >
-                  <item.icon size={16} className={`transition-transform group-hover:scale-110 ${active ? "text-[#6ba4ff] drop-shadow-[0_0_6px_rgba(61,127,255,0.7)]" : ""}`} />
-                  {t(item.labelKey as any)}
-                  {active && <span className="ml-auto w-[7px] h-[7px] rounded-full bg-accent shadow-[0_0_10px_rgba(61,127,255,0.9)] animate-pulse" />}
-                </Link>
-              );
-              return item.permission ? (
-                <Can key={item.href} permission={item.permission}>{link}</Can>
-              ) : (
-                link
-              );
-            })}
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="p-3 border-t border-white/8 space-y-1 shrink-0">
