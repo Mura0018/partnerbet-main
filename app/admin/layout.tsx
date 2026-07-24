@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, Activity,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, Activity, MessageCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -14,42 +14,51 @@ import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
 import { Toaster } from "@/lib/ui/toast";
 
+// 7 rangli guruh (mockup v3 IA). Rang = bo'lim (bezak emas) — 2-bosqichda
+// ikonka/chap chiziq/badge shu rangdan oladi. Barcha 30 sahifa saqlangan.
 const NAV_GROUPS = [
-  { labelKey: "nav.g_main", items: [
+  { id: "main", color: "#2E8FFF", labelKey: "nav.g_main", items: [
     { href: "/admin/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard, permission: null },
     { href: "/admin/reports", labelKey: "nav.reports", icon: BarChart3, permission: "reports.view" },
-    { href: "/admin/telegram-bot", labelKey: "nav.betcore", icon: Wallet, permission: "telegram_orders.manage" },
-    { href: "/admin/partners", labelKey: "nav.partners", icon: Building2, permission: "partners.manage" },
-    { href: "/admin/tariffs", labelKey: "nav.tariffs", icon: Receipt, permission: "partners.manage" },
+  ]},
+  { id: "pay", color: "#12D9A0", labelKey: "nav.g_pay", items: [
+    { href: "/admin/telegram-bot", labelKey: "nav.orders", icon: Wallet, permission: "telegram_orders.manage" },
     { href: "/admin/customers", labelKey: "nav.customers", icon: Contact, permission: "customers.manage" },
     { href: "/admin/cashdesks", labelKey: "nav.cashdesks", icon: Landmark, permission: "cashdesks.manage" },
+    { href: "/admin/promo/scan", labelKey: "nav.promoScan", icon: QrCode, permission: "telegram_orders.manage" },
+  ]},
+  { id: "team", color: "#8B5CFF", labelKey: "nav.g_team", items: [
     { href: "/admin/operator-rating", labelKey: "nav.operatorRating", icon: Gauge, permission: "operators.oversight" },
     { href: "/admin/staff-monitor", labelKey: "nav.staffMonitor", icon: Activity, permission: "operators.oversight" },
+    { href: "/admin/telegram-bot?chat=1", labelKey: "nav.teamChat", icon: MessageCircle, permission: "telegram_orders.manage" },
+  ]},
+  { id: "partner", color: "#22D3EE", labelKey: "nav.g_partner", items: [
+    { href: "/admin/partners", labelKey: "nav.partners", icon: Building2, permission: "partners.manage" },
+    { href: "/admin/tariffs", labelKey: "nav.tariffs", icon: Receipt, permission: "partners.manage" },
+  ]},
+  { id: "marketing", color: "#FFB020", labelKey: "nav.g_marketing", items: [
     { href: "/admin/promo", labelKey: "nav.promo", icon: Trophy, permission: "promo.manage" },
-    { href: "/admin/promo/scan", labelKey: "nav.promoScan", icon: QrCode, permission: "telegram_orders.manage" },
     { href: "/admin/promo/banners", labelKey: "nav.promoBanners", icon: Megaphone, permission: "promo.manage" },
-  ]},
-  { labelKey: "nav.g_content", items: [
-    { href: "/admin/football", labelKey: "nav.football", icon: Trophy, permission: "football.manage" },
-    { href: "/admin/football-news", labelKey: "nav.footballNews", icon: Newspaper, permission: "football_news.manage" },
-    { href: "/admin/insights", labelKey: "nav.insights", icon: Newspaper, permission: "match_insights.manage" },
-    { href: "/admin/blog", labelKey: "nav.blog", icon: FileText, permission: "posts.manage" },
-    { href: "/admin/media", labelKey: "nav.media", icon: ImageIcon, permission: "media.manage" },
-  ]},
-  { labelKey: "nav.g_marketing", items: [
     { href: "/admin/banners", labelKey: "nav.banners", icon: Megaphone, permission: "advertisements.manage" },
     { href: "/admin/affiliates", labelKey: "nav.affiliates", icon: Handshake, permission: "promotions.manage" },
     { href: "/admin/donations", labelKey: "nav.donations", icon: Heart, permission: "donations.manage" },
     { href: "/admin/streaming", labelKey: "nav.streaming", icon: Radio, permission: "streaming.manage" },
     { href: "/admin/push", labelKey: "nav.push", icon: BellRing, permission: "settings.manage" },
   ]},
-  { labelKey: "nav.g_system", items: [
+  { id: "kontent", color: "#FF6FB3", labelKey: "nav.g_content", items: [
+    { href: "/admin/blog", labelKey: "nav.blog", icon: FileText, permission: "posts.manage" },
+    { href: "/admin/football", labelKey: "nav.football", icon: Trophy, permission: "football.manage" },
+    { href: "/admin/football-news", labelKey: "nav.footballNews", icon: Newspaper, permission: "football_news.manage" },
+    { href: "/admin/insights", labelKey: "nav.insights", icon: Newspaper, permission: "match_insights.manage" },
+    { href: "/admin/media", labelKey: "nav.media", icon: ImageIcon, permission: "media.manage" },
+    { href: "/admin/faq", labelKey: "nav.faq", icon: HelpCircle, permission: "faqs.manage" },
+  ]},
+  { id: "system", color: "#7D8CA6", labelKey: "nav.g_system", items: [
     { href: "/admin/users", labelKey: "nav.users", icon: Users, permission: "users.manage" },
     { href: "/admin/roles", labelKey: "nav.roles", icon: KeyRound, permission: "roles.manage" },
     { href: "/admin/security-log", labelKey: "nav.securityLog", icon: ShieldAlert, permission: "security.manage" },
     { href: "/admin/categories", labelKey: "nav.categories", icon: FolderTree, permission: "taxonomy.manage" },
     { href: "/admin/tags", labelKey: "nav.tags", icon: Tag, permission: "taxonomy.manage" },
-    { href: "/admin/faq", labelKey: "nav.faq", icon: HelpCircle, permission: "faqs.manage" },
     { href: "/admin/apk", labelKey: "nav.apk", icon: Smartphone, permission: "apk.manage" },
     { href: "/admin/control", labelKey: "nav.control", icon: SlidersHorizontal, permission: "settings.manage" },
     { href: "/admin/settings", labelKey: "nav.settings", icon: Settings, permission: "settings.manage" },
@@ -116,7 +125,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="opacity-50">// </span>{t(group.labelKey as any)}
             </div>
             {group.items.map((item) => {
-              const active = pathname.startsWith(item.href);
+              // Query'li havola (masalan ?chat=1) — "ishga tushiruvchi", hech qachon
+              // active bo'lmaydi (aks holda bir sahifada 2 ta item yonardi).
+              const active = !item.href.includes("?") && pathname.startsWith(item.href);
               const link = (
                 <Link
                   key={item.href} href={item.href}

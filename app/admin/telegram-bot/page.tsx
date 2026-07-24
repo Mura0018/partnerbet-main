@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Wallet, Users as UsersIcon, MessageCircle, CreditCard, Headset, X, ClipboardList } from "lucide-react";
 import { Can } from "@/lib/auth/permissions";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -23,6 +23,13 @@ export default function TelegramBotAdminPage() {
   const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("orders");
   const [chatOpen, setChatOpen] = useState(false);
+
+  // Menyudagi "Jamoa chati" havolasi (?chat=1) — kirilganda chat drawer'ini ochadi.
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1") {
+      setChatOpen(true);
+    }
+  }, []);
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto">
