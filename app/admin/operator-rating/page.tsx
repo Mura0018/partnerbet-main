@@ -81,7 +81,7 @@ export default function OperatorRatingPage() {
       {tab === "events" ? (
         <div className="space-y-1.5">
           {data.events.map((e) => (
-            <div key={e.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3.5 py-2.5 text-[12px]">
+            <div key={e.id} className="flex items-center justify-between gap-3 rounded-lg glass-card px-3.5 py-2.5 text-[12px]">
               <div className="min-w-0">
                 <span className="text-white font-medium">{e.operator_name}</span>
                 <span className="text-white/40"> · {e.reason || "—"}</span>
@@ -98,7 +98,7 @@ export default function OperatorRatingPage() {
       ) : (
         <div className="space-y-1.5">
           {data.alerts.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3.5 py-2.5 text-[12px]">
+            <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg glass-card px-3.5 py-2.5 text-[12px]">
               <div className="min-w-0 flex items-center gap-2">
                 <span className={`px-2 py-0.5 rounded-full border text-[10px] ${levelBadge(a.level)}`}>{t("mon.levelBadge", { n: a.level })}</span>
                 <span className="text-white font-medium">{a.operator_name}</span>

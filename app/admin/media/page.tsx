@@ -131,14 +131,14 @@ export default function MediaLibraryPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-10 text-center text-[13px] text-[#5b6f85]">
+        <div className="rounded-xl glass-card p-10 text-center text-[13px] text-[#5b6f85]">
           <ImageIcon size={22} className="mx-auto mb-2 text-[#3d4d5f]" />
           {t("med.notFound")}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
           {filtered.map((item) => (
-            <div key={item.id} className="group relative rounded-lg border border-white/8 bg-white/[0.02] overflow-hidden">
+            <div key={item.id} className="group relative rounded-lg glass-card overflow-hidden">
               <img src={item.public_url} alt={item.file_name} className="w-full aspect-square object-cover" />
               <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-2">
                 <div className="text-[10px] text-white truncate">{item.file_name}</div>

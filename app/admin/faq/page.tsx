@@ -68,7 +68,7 @@ export default function FaqAdminPage() {
       <h1 className="text-[22px] font-bold mb-1">{t("cnt.faqTitle")}</h1>
       <p className="text-[13px] text-muted mb-6">{t("cnt.faqSub")}</p>
 
-      <form onSubmit={save} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-2">
+      <form onSubmit={save} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <input className={inputCls} placeholder={t("cnt.faqPhQ")} value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} />
         <textarea rows={3} className={inputCls} placeholder={t("cnt.faqPhA")} value={form.answer} onChange={(e) => setForm({ ...form, answer: e.target.value })} />
         <input className={inputCls} placeholder={t("cnt.faqPhCat")} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />

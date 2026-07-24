@@ -88,7 +88,7 @@ export default function ControlCenter() {
   );
 
   const Card = ({ icon, title, side, children }: { icon: React.ReactNode; title: string; side: string; children: React.ReactNode }) => (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-2xl glass-card p-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="p-1.5 rounded-lg bg-[#1CE0C3]/10 text-[#1CE0C3]">{icon}</span>
         <div>

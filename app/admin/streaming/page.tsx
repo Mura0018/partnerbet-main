@@ -129,7 +129,7 @@ function ProvidersTab() {
 
       <div className="space-y-3">
         {providers.map((p) => (
-          <div key={p.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={p.id} className="rounded-xl glass-card p-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ function MatchStreamsTab() {
         ishlatiladi.
       </p>
 
-      <form onSubmit={add} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-2">
+      <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <select className={inputCls} value={form.football_provider} onChange={(e) => setForm({ ...form, football_provider: e.target.value })}>
             {FOOTBALL_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}

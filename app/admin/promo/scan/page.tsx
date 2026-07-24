@@ -147,7 +147,7 @@ export default function PromoScanPage() {
 
       {/* Natija — mijoz kuzatuvi */}
       {result && (
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
+        <div className="mt-4 rounded-2xl glass-card overflow-hidden">
           <div className="p-4 border-b border-white/8 flex items-center gap-3">
             <span className="w-11 h-11 rounded-full bg-[#1CE0C3]/10 flex items-center justify-center text-[#1CE0C3]"><User size={20} /></span>
             <div className="min-w-0">

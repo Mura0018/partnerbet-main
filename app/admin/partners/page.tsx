@@ -192,7 +192,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                 <div className="flex items-center gap-2 mb-2"><Check size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hServices")}</h3></div>
                 <div className="space-y-1.5">
                   {services.map((s) => (
-                    <label key={s.id} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2.5 cursor-pointer">
+                    <label key={s.id} className="flex items-center gap-3 rounded-lg glass-card px-3 py-2.5 cursor-pointer">
                       <input type="checkbox" checked={!!assign[s.id]} onChange={() => toggleService(s.id)} className="accent-accent" />
                       <div className="min-w-0"><div className="text-[13px] font-medium">{s.name}</div>{s.description && <div className="text-[11px] text-muted truncate">{s.description}</div>}</div>
                     </label>
@@ -204,7 +204,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                 <div className="flex items-center gap-2 mb-2"><Palette size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hThemes")}</h3></div>
                 <div className="space-y-1.5">
                   {themes.map((thm) => (
-                    <div key={thm.id} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2.5">
+                    <div key={thm.id} className="flex items-center gap-3 rounded-lg glass-card px-3 py-2.5">
                       <span className="w-4 h-4 rounded-full shrink-0" style={{ background: thm.accent || "#3D7FFF" }} />
                       <div className="flex-1 min-w-0"><span className="text-[13px] font-medium">{thm.name}</span></div>
                       {thm.is_premium ? (
@@ -223,7 +223,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                   <button onClick={() => { setShowAddMember((v) => !v); setMError(""); }} className="text-[11.5px] px-2.5 py-1 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25">{t("prt.addMember")}</button>
                 </div>
                 {showAddMember && (
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 mb-2.5 space-y-2">
+                  <div className="rounded-lg glass-card p-3 mb-2.5 space-y-2">
                     <input placeholder={t("prt.phFullName")} value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <input placeholder={t("prt.phEmail")} type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <p className="text-[11px] text-muted">{t("prt.noPassNote")}</p>
@@ -251,7 +251,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                   {members.length === 0 ? (
                     <p className="text-[12px] text-muted">{t("prt.noMembers")}</p>
                   ) : members.map((m) => (
-                    <div key={m.id} className="flex items-center gap-2 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2">
+                    <div key={m.id} className="flex items-center gap-2 rounded-lg glass-card px-3 py-2">
                       <div className="flex-1 min-w-0">
                         <span className="text-[13px] font-medium">{m.profiles?.full_name || "—"}</span>
                         <span className="text-[10.5px] text-muted"> · {m.partner_role === "partner_admin" ? t("prt.mAdmin") : t("prt.mStaff")}</span>
@@ -265,7 +265,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 
               <div>
                 <div className="flex items-center gap-2 mb-2"><CalendarClock size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hBilling")}</h3></div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 mb-2.5 space-y-2">
+                <div className="rounded-lg glass-card p-3 mb-2.5 space-y-2">
                   <div className="flex gap-2">
                     <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
                     <select value={invForm.model} onChange={(e) => setInvForm((p) => ({ ...p, model: e.target.value }))} className="bg-white/5 border border-white/10 rounded-lg py-2 px-2 text-[12px] outline-none focus:border-accent">
@@ -280,7 +280,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                   {invoices.length === 0 ? (
                     <p className="text-[12px] text-muted">{t("prt.noInvoices")}</p>
                   ) : invoices.map((inv) => (
-                    <div key={inv.id} className="flex items-center gap-2 rounded-lg bg-white/[0.02] border border-white/8 px-3 py-2">
+                    <div key={inv.id} className="flex items-center gap-2 rounded-lg glass-card px-3 py-2">
                       <div className="flex-1 min-w-0">
                         <span className="text-[12.5px] font-medium">{inv.period}</span>
                         <span className="text-[10.5px] text-muted"> · {inv.model === "commission" ? t("prt.commission") : t("prt.subscription")} · {Math.round(inv.amount).toLocaleString("ru-RU")} {inv.currency}</span>
@@ -507,7 +507,7 @@ export default function PartnersManager() {
       <p className="text-[13px] text-muted mb-5">{t("prt.sub")}</p>
 
       {/* Tablar */}
-      <div className="inline-flex gap-1 p-1 mb-6 rounded-xl bg-white/[0.03] border border-white/8">
+      <div className="inline-flex gap-1 p-1 mb-6 rounded-xl glass-card">
         <button onClick={() => setView("partners")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium transition-all ${view === "partners" ? "bg-accent/20 text-white" : "text-muted hover:text-white"}`}>
           <Building2 size={14} /> {t("prt.tabPartners")}
         </button>
@@ -528,7 +528,7 @@ export default function PartnersManager() {
         <p className="text-[13px] text-muted">{t("prt.loading")}</p>
       ) : view === "partners" ? (
         partners.length === 0 ? (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
             {t("prt.emptyPartners")}
           </div>
         ) : (
@@ -536,7 +536,7 @@ export default function PartnersManager() {
             {partners.map((p) => {
               const st = STATUS_META[p.status] ?? STATUS_META.pending;
               return (
-                <div key={p.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-4 flex flex-col">
+                <div key={p.id} className="rounded-xl glass-card p-4 flex flex-col">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
                       <div className="text-[14px] font-bold truncate">{p.name}</div>
@@ -571,7 +571,7 @@ export default function PartnersManager() {
         )
       ) : (
         leads.length === 0 ? (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
             {t("prt.emptyLeads")}
           </div>
         ) : (
@@ -579,7 +579,7 @@ export default function PartnersManager() {
             {leads.map((l) => {
               const st = LEAD_STATUS[l.status] ?? LEAD_STATUS.new;
               return (
-                <div key={l.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+                <div key={l.id} className="rounded-xl glass-card p-4">
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div className="min-w-0">
                       <div className="text-[14px] font-bold truncate">{l.company || l.name || "—"}</div>

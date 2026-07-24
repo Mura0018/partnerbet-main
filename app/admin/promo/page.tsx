@@ -162,7 +162,7 @@ export default function PromoManagePage() {
       </div>
 
       {/* Aksiya sozlash */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 mb-6">
+      <div className="rounded-2xl glass-card p-4 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-[14px] font-semibold text-white">{t("prm.settings")}</h2>
           <button

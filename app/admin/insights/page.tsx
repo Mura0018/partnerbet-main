@@ -86,7 +86,7 @@ export default function InsightsManager() {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {insights.map((i) => (
-          <div key={i.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+          <div key={i.id} className="rounded-xl glass-card p-5">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/30">{i.league}</span>
               <div className="flex gap-1">

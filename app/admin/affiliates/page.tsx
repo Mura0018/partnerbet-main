@@ -125,7 +125,7 @@ export default function AffiliatesPage() {
 
       <div className="space-y-3">
         {partners.map((p) => (
-          <div key={p.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+          <div key={p.id} className="rounded-xl glass-card p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 {p.logo_url ? (
@@ -163,7 +163,7 @@ export default function AffiliatesPage() {
           </div>
         ))}
         {!loading && partners.length === 0 && (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-[#5b6f85]">
+          <div className="rounded-xl glass-card p-8 text-center text-[13px] text-[#5b6f85]">
             Hozircha hamkor yo'q. "Yangi hamkor" tugmasi orqali qo'shing.
           </div>
         )}

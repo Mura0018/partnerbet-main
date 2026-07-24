@@ -56,7 +56,7 @@ export default function TagsPage() {
       <h1 className="text-[22px] font-bold mb-1">{t("cnt.tagTitle")}</h1>
       <p className="text-[13px] text-muted mb-6">{t("cnt.tagSub")}</p>
 
-      <form onSubmit={save} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 flex gap-2">
+      <form onSubmit={save} className="rounded-xl glass-card p-5 mb-6 flex gap-2">
         <input className={inputCls} placeholder={t("cnt.tagPh")} value={name} onChange={(e) => setName(e.target.value)} />
         <button type="submit" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold shrink-0">
           <Plus size={14} /> {editingId ? t("cnt.save") : t("cnt.add")}

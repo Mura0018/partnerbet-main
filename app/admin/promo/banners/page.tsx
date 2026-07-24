@@ -91,7 +91,7 @@ export default function PromoBannersPage() {
       ) : (
         <div className="space-y-2.5">
           {rows.map((b) => (
-            <div key={b.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <div key={b.id} className="flex items-center gap-3 rounded-xl glass-card p-3">
               {b.image_url ? <img src={b.image_url} alt="" className="w-16 h-10 rounded-lg object-cover shrink-0" /> : <div className="w-16 h-10 rounded-lg bg-white/5 shrink-0" />}
               <div className="min-w-0 flex-1">
                 <div className="text-white text-[13px] font-semibold truncate">{b.title || "—"}</div>

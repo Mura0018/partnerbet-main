@@ -89,7 +89,7 @@ export default function CategoriesPage() {
         <button onClick={() => setContentType("football_news")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${contentType === "football_news" ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>{t("cnt.catTabNews")}</button>
       </div>
 
-      <form onSubmit={save} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-2">
+      <form onSubmit={save} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input className={inputCls} placeholder={t("cnt.catPhName")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className={inputCls} placeholder={t("cnt.catPhSlug")} value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} />

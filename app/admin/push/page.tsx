@@ -61,14 +61,14 @@ export default function PushNotificationsPage() {
         <a href="/admin/settings" className="text-accent hover:underline">{t("cnt.pushSubLink")}</a>{t("cnt.pushSubP2")}
       </p>
 
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 mb-6 flex items-center gap-3">
+      <div className="rounded-xl glass-card p-4 mb-6 flex items-center gap-3">
         <Users size={16} className="text-accent" />
         <span className="text-[13px]">
           <span className="font-bold">{subscriberCount ?? "…"}</span> {t("cnt.pushSubscribers")}
         </span>
       </div>
 
-      <form onSubmit={send} className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-6 space-y-3">
+      <form onSubmit={send} className="rounded-xl glass-card p-5 mb-6 space-y-3">
         <input className={inputCls} placeholder={t("cnt.pushPhTitle")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
         <textarea rows={3} className={inputCls} placeholder={t("cnt.pushPhBody")} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
         <input className={inputCls} placeholder={t("cnt.pushPhUrl")} value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />

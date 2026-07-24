@@ -130,7 +130,7 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
   };
 
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
+    <div className="rounded-xl glass-card p-3.5 mb-4">
       <div className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-2.5">📞 {t("ord.phoneConfirm")}</div>
       <div className="flex items-center gap-2 mb-2">
         <input
@@ -249,7 +249,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         )}
 
         {/* Verification checks — the things an operator must actually look at */}
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
+        <div className="rounded-xl glass-card p-3.5 mb-4">
           <div className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-2.5">{t("ord.checks")}</div>
 
           <div className="flex items-center gap-2 mb-3">
@@ -310,7 +310,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         </div>
 
         {/* Order details */}
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5 mb-4">
+        <div className="rounded-xl glass-card p-3.5 mb-4">
           <Row label={t("ord.customer")} value={order.customers?.full_name || order.customers?.phone || "—"} />
           <Row label={t("ord.platform")} value={order.platform} />
           <Row label={t("ord.accountId")} value={order.account_id} />
@@ -367,7 +367,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         </div>
         </>
         ) : (
-          <div className="rounded-lg bg-white/[0.03] border border-white/10 px-3.5 py-3 text-[13px]">
+          <div className="rounded-lg glass-card px-3.5 py-3 text-[13px]">
             <span className={`font-semibold ${order.status === "completed" ? "text-[#4ADE80]" : "text-[#FF6B85]"}`}>
               {order.status === "completed" ? t("ord.doneOrder") : t("ord.rejectedOrder")}
             </span>
@@ -393,7 +393,7 @@ function CashdeskBalanceBadge() {
   if (!state || !state.configured) return null;
 
   return (
-    <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2.5 text-[12px] flex items-center gap-4">
+    <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] flex items-center gap-4">
       <span className="text-muted">{t("ord.cdBalance")}</span>
       <span className="font-semibold">{state.balance != null ? Number(state.balance).toLocaleString("ru-RU") : "—"}</span>
       {state.limit != null && (
@@ -451,7 +451,7 @@ function LimitsEditor() {
   if (loading) return null;
 
   return (
-    <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-3">
+    <div className="mb-4 rounded-lg glass-card px-3.5 py-3">
       <div className="text-[11px] text-muted mb-2">{t("wid.limitsTitle")}</div>
       <div className="flex flex-wrap items-end gap-3">
         <div>
@@ -676,7 +676,7 @@ function DebtsSection() {
   const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
 
   return (
-    <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-3">
+    <div className="mb-4 rounded-lg glass-card px-3.5 py-3">
       <div className="flex items-center justify-between mb-2">
         <div className="text-[12px] font-semibold">💳 {t("wid.debts")}</div>
         <button onClick={announce} disabled={announcing} className="text-[11px] px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-50">
@@ -743,7 +743,7 @@ function MyRatingBadge() {
   }, []);
   if (rating === null) return null;
   return (
-    <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2 text-[12px] flex items-center gap-2">
+    <div className="mb-4 rounded-lg glass-card px-3.5 py-2 text-[12px] flex items-center gap-2">
       <span className="text-muted">{t("wid.trustRating")}</span>
       <span className={`font-semibold ${rating > 0 ? "text-[#4ADE80]" : rating < 0 ? "text-[#FF6B85]" : "text-white"}`}>
         {rating > 0 ? `+${rating}` : rating}
@@ -805,7 +805,7 @@ function TelegramLinkWidget() {
 
   if (statusError) {
     return (
-      <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2.5 text-[12px] text-muted">
+      <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] text-muted">
         {t("wid.tgCheckFailed")}
       </div>
     );
@@ -813,7 +813,7 @@ function TelegramLinkWidget() {
 
   if (linked === null) {
     return (
-      <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2.5 text-[12px] text-muted">
+      <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] text-muted">
         Telegram ulanish holati tekshirilmoqda…
       </div>
     );
@@ -942,7 +942,7 @@ export function OrdersTab() {
       <CashdeskBalanceBadge />
 
       {/* Minimal boshqaruv paneli: qidiruv + filtrlar */}
-      <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3 mb-4">
+      <div className="rounded-xl glass-card p-3 mb-4">
         <div className="relative mb-2.5">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           <input
@@ -997,7 +997,7 @@ export function OrdersTab() {
       {loading ? (
         <p className="text-[13px] text-muted">{t("common.loading")}</p>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+        <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
           {t("ord.noOrders")}
         </div>
       ) : (
@@ -1009,7 +1009,7 @@ export function OrdersTab() {
               <button
                 key={o.id}
                 onClick={() => openOrder(o)}
-                className="w-full flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4 text-left hover:border-accent/40 cursor-pointer"
+                className="w-full flex items-center justify-between gap-3 rounded-xl glass-card p-4 text-left hover:border-accent/40 cursor-pointer"
               >
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold flex items-center gap-1.5">
