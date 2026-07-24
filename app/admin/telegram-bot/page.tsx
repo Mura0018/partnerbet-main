@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Wallet, Users as UsersIcon, MessageCircle, CreditCard, Headset, X, ClipboardList } from "lucide-react";
 import { Can } from "@/lib/auth/permissions";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { ChatTab } from "./_components/ChatTab";
 import { OrdersTab } from "./_components/OrdersTab";
 import { SupportTab } from "./_components/SupportTab";
@@ -11,14 +12,15 @@ import { MyPaymentMethodsTab } from "./_components/MyPaymentMethodsTab";
 
 type Tab = "orders" | "support" | "operators" | "my-payments";
 
-const TABS: { id: Tab; label: string; icon: any; permission?: string }[] = [
-  { id: "orders", label: "Buyurtmalar", icon: ClipboardList },
-  { id: "support", label: "Murojaatlar", icon: Headset },
-  { id: "operators", label: "Operatorlar", icon: UsersIcon, permission: "telegram_operators.manage" },
-  { id: "my-payments", label: "To'lovlarim", icon: CreditCard },
+const TABS: { id: Tab; labelKey: string; icon: any; permission?: string }[] = [
+  { id: "orders", labelKey: "tgb.tabOrders", icon: ClipboardList },
+  { id: "support", labelKey: "tgb.tabSupport", icon: Headset },
+  { id: "operators", labelKey: "tgb.tabOperators", icon: UsersIcon, permission: "telegram_operators.manage" },
+  { id: "my-payments", labelKey: "tgb.tabMyPayments", icon: CreditCard },
 ];
 
 export default function TelegramBotAdminPage() {
+  const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("orders");
   const [chatOpen, setChatOpen] = useState(false);
 
@@ -33,27 +35,27 @@ export default function TelegramBotAdminPage() {
 
       <div className="flex items-center gap-2 mb-1">
         <Wallet size={20} className="text-accent" />
-        <h1 className="text-[22px] font-bold">BetCore Pay</h1>
+        <h1 className="text-[22px] font-bold">{t("tgb.title")}</h1>
       </div>
-      <p className="text-[13px] text-muted mb-5">Telegram Mini App orqali hisob to'ldirish/yechish xizmatini boshqarish.</p>
+      <p className="text-[13px] text-muted mb-5">{t("tgb.sub")}</p>
 
       {/* Ixcham segment tablar */}
       <div className="inline-flex gap-1 p-1 mb-6 max-w-full overflow-x-auto rounded-xl bg-white/[0.03] border border-white/8">
-        {TABS.map((t) => {
+        {TABS.map((tb) => {
           const btn = (
             <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+              key={tb.id}
+              onClick={() => setTab(tb.id)}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium whitespace-nowrap transition-all duration-200 ${
-                tab === t.id
+                tab === tb.id
                   ? "bg-accent/20 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                   : "text-muted hover:text-white hover:bg-white/5"
               }`}
             >
-              <t.icon size={14} /> {t.label}
+              <tb.icon size={14} /> {t(tb.labelKey as any)}
             </button>
           );
-          return t.permission ? <Can key={t.id} permission={t.permission}>{btn}</Can> : btn;
+          return tb.permission ? <Can key={tb.id} permission={tb.permission}>{btn}</Can> : btn;
         })}
       </div>
 
@@ -68,7 +70,7 @@ export default function TelegramBotAdminPage() {
       <Can permission="team_chat.use">
         <button
           onClick={() => setChatOpen(true)}
-          aria-label="Jamoa chati"
+          aria-label={t("tgb.teamChat")}
           className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-transform"
           style={{ animation: "bcFabPulse 2.6s ease-in-out infinite" }}
         >
@@ -92,8 +94,8 @@ export default function TelegramBotAdminPage() {
             >
               <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/8 shrink-0">
                 <MessageCircle size={18} className="text-accent" />
-                <h2 className="text-[15px] font-bold flex-1">Jamoa chati</h2>
-                <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10" aria-label="Yopish">
+                <h2 className="text-[15px] font-bold flex-1">{t("tgb.teamChat")}</h2>
+                <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10" aria-label={t("tgb.close")}>
                   <X size={18} />
                 </button>
               </div>

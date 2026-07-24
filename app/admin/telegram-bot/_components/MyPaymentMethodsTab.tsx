@@ -9,6 +9,7 @@ import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useV
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type OperatorPaymentMethod = {
   id: string;
@@ -20,14 +21,15 @@ type OperatorPaymentMethod = {
   usage_limit: number | null;
 };
 
-const METHOD_TYPE_LABELS: Record<OperatorPaymentMethod["method_type"], string> = {
-  card: "Bank kartasi",
-  click: "Click",
-  payme: "Payme",
-  crypto: "USDT (TRC20)",
+const METHOD_TYPE_KEYS: Record<OperatorPaymentMethod["method_type"], string> = {
+  card: "pay.mCard",
+  click: "pay.mClick",
+  payme: "pay.mPayme",
+  crypto: "pay.mCrypto",
 };
 
 export function MyPaymentMethodsTab() {
+  const { t } = useLocale();
   const [methods, setMethods] = useState<OperatorPaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -85,7 +87,7 @@ export function MyPaymentMethodsTab() {
     setSaving(false);
     if (opError) {
       // Xato bo'lsa formani ochiq qoldiramiz — operator soxta "saqlandi" ko'rmasin.
-      setError("Saqlashda xatolik yuz berdi. Qayta urinib ko'ring.");
+      setError(t("pay.eSave"));
       return;
     }
     setForm({ method_type: "card", account_number: "", holder_name: "", usage_limit: "" });
@@ -109,26 +111,24 @@ export function MyPaymentMethodsTab() {
   const toggleActive = async (m: OperatorPaymentMethod) => {
     setError(null);
     const { error } = await supabase.from("telegram_operator_payment_methods").update({ is_active: !m.is_active }).eq("id", m.id);
-    if (error) { setError("Holatni o'zgartirib bo'lmadi. Qayta urinib ko'ring."); return; }
+    if (error) { setError(t("pay.eStatus")); return; }
     load();
   };
 
   const remove = async (id: string) => {
-    if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+    if (!confirm(t("pay.confirmDelete"))) return;
     setError(null);
     const { error } = await supabase.from("telegram_operator_payment_methods").delete().eq("id", id);
-    if (error) { setError("O'chirib bo'lmadi. Qayta urinib ko'ring."); return; }
+    if (error) { setError(t("pay.eDelete")); return; }
     load();
   };
 
-  if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda...</p>;
+  if (loading) return <p className="text-[13px] text-muted">{t("pay.loading")}</p>;
 
   return (
     <div className="max-w-lg">
       <p className="text-[12px] text-muted mb-4 leading-relaxed">
-        Bu — sizning shaxsiy to'lov rekvizitlaringiz. Mijoz Mini App'da hisob to'ldirishni tanlaganda, faol
-        rekvizitlar orasidan tasodifiy biri ko'rsatiladi — shu bilan to'lovlar operatorlar orasida taqsimlanadi.
-        Rekvizitni istalgan vaqt tahrirlab (masalan har kuni boshqa kartaga) almashtira olasiz.
+        {t("pay.intro")}
       </p>
 
       {error && (
@@ -137,7 +137,7 @@ export function MyPaymentMethodsTab() {
 
       {methods.length === 0 && !showForm && (
         <div className="rounded-xl border border-white/8 bg-white/[0.02] p-6 text-center text-[13px] text-muted mb-4">
-          Hali rekvizit qo'shmagansiz.
+          {t("pay.empty")}
         </div>
       )}
 
@@ -145,7 +145,7 @@ export function MyPaymentMethodsTab() {
         {methods.map((m) => (
           <div key={m.id}>
             <LuxuryCard
-              typeLabel={METHOD_TYPE_LABELS[m.method_type]}
+              typeLabel={t(METHOD_TYPE_KEYS[m.method_type] as any)}
               number={m.account_number}
               holderName={m.holder_name}
               active={m.is_active}
@@ -155,7 +155,7 @@ export function MyPaymentMethodsTab() {
             />
             {m.usage_limit != null && (
               <div className="text-[11px] text-muted mt-1.5 max-w-[340px]">
-                Ishlatilgan: <span className={m.usage_count >= m.usage_limit ? "text-[#FF6B85] font-semibold" : "text-white font-semibold"}>{m.usage_count}</span> / {m.usage_limit}
+                {t("pay.used")} <span className={m.usage_count >= m.usage_limit ? "text-[#FF6B85] font-semibold" : "text-white font-semibold"}>{m.usage_count}</span> / {m.usage_limit}
               </div>
             )}
           </div>
@@ -164,56 +164,56 @@ export function MyPaymentMethodsTab() {
 
       {showForm ? (
         <form onSubmit={submitForm} className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-          <div className="text-[13px] font-semibold mb-3">{editingId ? "Rekvizitni tahrirlash" : "Yangi rekvizit"}</div>
+          <div className="text-[13px] font-semibold mb-3">{editingId ? t("pay.editTitle") : t("pay.newTitle")}</div>
           <div className="mb-3">
-            <label className="block text-[12px] text-muted mb-1.5">Turi</label>
+            <label className="block text-[12px] text-muted mb-1.5">{t("pay.fType")}</label>
             <select
               className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]"
               value={form.method_type}
               onChange={(e) => setForm((prev) => ({ ...prev, method_type: e.target.value as OperatorPaymentMethod["method_type"] }))}
             >
-              {(Object.keys(METHOD_TYPE_LABELS) as OperatorPaymentMethod["method_type"][]).map((k) => (
-                <option key={k} value={k}>{METHOD_TYPE_LABELS[k]}</option>
+              {(Object.keys(METHOD_TYPE_KEYS) as OperatorPaymentMethod["method_type"][]).map((k) => (
+                <option key={k} value={k}>{t(METHOD_TYPE_KEYS[k] as any)}</option>
               ))}
             </select>
           </div>
           <div className="mb-3">
-            <label className="block text-[12px] text-muted mb-1.5">Raqam / manzil</label>
+            <label className="block text-[12px] text-muted mb-1.5">{t("pay.fNumber")}</label>
             <input
               className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
               value={form.account_number}
               onChange={(e) => setForm((prev) => ({ ...prev, account_number: e.target.value }))}
-              placeholder={form.method_type === "crypto" ? "T..." : "+998 90 123 45 67"}
+              placeholder={form.method_type === "crypto" ? t("pay.phCrypto") : t("pay.phPhone")}
             />
           </div>
           {form.method_type !== "crypto" && (
             <div className="mb-4">
-              <label className="block text-[12px] text-muted mb-1.5">Egasining F.I.Sh.</label>
+              <label className="block text-[12px] text-muted mb-1.5">{t("pay.fHolder")}</label>
               <input
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
                 value={form.holder_name}
                 onChange={(e) => setForm((prev) => ({ ...prev, holder_name: e.target.value }))}
-                placeholder="Masalan: Aliyev Vali"
+                placeholder={t("pay.phHolder")}
               />
             </div>
           )}
           <div className="mb-4">
-            <label className="block text-[12px] text-muted mb-1.5">Ishlatilish limiti (ixtiyoriy)</label>
+            <label className="block text-[12px] text-muted mb-1.5">{t("pay.fLimit")}</label>
             <input
               type="number"
               min={1}
               className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
               value={form.usage_limit}
               onChange={(e) => setForm((prev) => ({ ...prev, usage_limit: e.target.value }))}
-              placeholder="Masalan: 20 — shuncha marta ishlatilgach o'chiriladi"
+              placeholder={t("pay.phLimit")}
             />
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[13px]">
-              Bekor qilish
+              {t("pay.cancel")}
             </button>
             <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
-              {saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : editingId ? "Saqlash" : "Qo'shish"}
+              {saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : editingId ? t("pay.save") : t("pay.add")}
             </button>
           </div>
         </form>
@@ -222,7 +222,7 @@ export function MyPaymentMethodsTab() {
           onClick={startAdd}
           className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]"
         >
-          <CreditCard size={15} /> Yangi rekvizit qo'shish
+          <CreditCard size={15} /> {t("pay.addNew")}
         </button>
       )}
     </div>
