@@ -15,44 +15,44 @@ import { useSiteSettings } from "@/lib/site/useSiteSettings";
 import { Toaster } from "@/lib/ui/toast";
 
 const NAV_GROUPS = [
-  { label: "Asosiy", items: [
-    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: null },
-    { href: "/admin/reports", label: "Hisobotlar", icon: BarChart3, permission: "reports.view" },
-    { href: "/admin/telegram-bot", label: "BetCore Pay", icon: Wallet, permission: "telegram_orders.manage" },
-    { href: "/admin/partners", label: "Hamkorlar", icon: Building2, permission: "partners.manage" },
-    { href: "/admin/tariffs", label: "Tariflar", icon: Receipt, permission: "partners.manage" },
-    { href: "/admin/customers", label: "Mijozlar", icon: Contact, permission: "customers.manage" },
-    { href: "/admin/cashdesks", label: "Kassalar", icon: Landmark, permission: "cashdesks.manage" },
-    { href: "/admin/operator-rating", label: "Operator reytingi", icon: Gauge, permission: "operators.oversight" },
-    { href: "/admin/staff-monitor", label: "Xodimlar nazorati", icon: Activity, permission: "operators.oversight" },
-    { href: "/admin/promo", label: "Sovrinli karta", icon: Trophy, permission: "promo.manage" },
-    { href: "/admin/promo/scan", label: "QR Skaner", icon: QrCode, permission: "telegram_orders.manage" },
-    { href: "/admin/promo/banners", label: "Reklama banner", icon: Megaphone, permission: "promo.manage" },
+  { labelKey: "nav.g_main", items: [
+    { href: "/admin/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard, permission: null },
+    { href: "/admin/reports", labelKey: "nav.reports", icon: BarChart3, permission: "reports.view" },
+    { href: "/admin/telegram-bot", labelKey: "nav.betcore", icon: Wallet, permission: "telegram_orders.manage" },
+    { href: "/admin/partners", labelKey: "nav.partners", icon: Building2, permission: "partners.manage" },
+    { href: "/admin/tariffs", labelKey: "nav.tariffs", icon: Receipt, permission: "partners.manage" },
+    { href: "/admin/customers", labelKey: "nav.customers", icon: Contact, permission: "customers.manage" },
+    { href: "/admin/cashdesks", labelKey: "nav.cashdesks", icon: Landmark, permission: "cashdesks.manage" },
+    { href: "/admin/operator-rating", labelKey: "nav.operatorRating", icon: Gauge, permission: "operators.oversight" },
+    { href: "/admin/staff-monitor", labelKey: "nav.staffMonitor", icon: Activity, permission: "operators.oversight" },
+    { href: "/admin/promo", labelKey: "nav.promo", icon: Trophy, permission: "promo.manage" },
+    { href: "/admin/promo/scan", labelKey: "nav.promoScan", icon: QrCode, permission: "telegram_orders.manage" },
+    { href: "/admin/promo/banners", labelKey: "nav.promoBanners", icon: Megaphone, permission: "promo.manage" },
   ]},
-  { label: "Kontent", items: [
-    { href: "/admin/football", label: "Football Center", icon: Trophy, permission: "football.manage" },
-    { href: "/admin/football-news", label: "Football News", icon: Newspaper, permission: "football_news.manage" },
-    { href: "/admin/insights", label: "Insights", icon: Newspaper, permission: "match_insights.manage" },
-    { href: "/admin/blog", label: "Blog", icon: FileText, permission: "posts.manage" },
-    { href: "/admin/media", label: "Media", icon: ImageIcon, permission: "media.manage" },
+  { labelKey: "nav.g_content", items: [
+    { href: "/admin/football", labelKey: "nav.football", icon: Trophy, permission: "football.manage" },
+    { href: "/admin/football-news", labelKey: "nav.footballNews", icon: Newspaper, permission: "football_news.manage" },
+    { href: "/admin/insights", labelKey: "nav.insights", icon: Newspaper, permission: "match_insights.manage" },
+    { href: "/admin/blog", labelKey: "nav.blog", icon: FileText, permission: "posts.manage" },
+    { href: "/admin/media", labelKey: "nav.media", icon: ImageIcon, permission: "media.manage" },
   ]},
-  { label: "Marketing", items: [
-    { href: "/admin/banners", label: "Banners", icon: Megaphone, permission: "advertisements.manage" },
-    { href: "/admin/affiliates", label: "Affiliates", icon: Handshake, permission: "promotions.manage" },
-    { href: "/admin/donations", label: "Donations", icon: Heart, permission: "donations.manage" },
-    { href: "/admin/streaming", label: "Live Streaming", icon: Radio, permission: "streaming.manage" },
-    { href: "/admin/push", label: "Push", icon: BellRing, permission: "settings.manage" },
+  { labelKey: "nav.g_marketing", items: [
+    { href: "/admin/banners", labelKey: "nav.banners", icon: Megaphone, permission: "advertisements.manage" },
+    { href: "/admin/affiliates", labelKey: "nav.affiliates", icon: Handshake, permission: "promotions.manage" },
+    { href: "/admin/donations", labelKey: "nav.donations", icon: Heart, permission: "donations.manage" },
+    { href: "/admin/streaming", labelKey: "nav.streaming", icon: Radio, permission: "streaming.manage" },
+    { href: "/admin/push", labelKey: "nav.push", icon: BellRing, permission: "settings.manage" },
   ]},
-  { label: "Tizim", items: [
-    { href: "/admin/users", label: "Foydalanuvchilar", icon: Users, permission: "users.manage" },
-    { href: "/admin/roles", label: "Rollar", icon: KeyRound, permission: "roles.manage" },
-    { href: "/admin/security-log", label: "Xavfsizlik jurnali", icon: ShieldAlert, permission: "security.manage" },
-    { href: "/admin/categories", label: "Kategoriyalar", icon: FolderTree, permission: "taxonomy.manage" },
-    { href: "/admin/tags", label: "Teglar", icon: Tag, permission: "taxonomy.manage" },
-    { href: "/admin/faq", label: "FAQ", icon: HelpCircle, permission: "faqs.manage" },
-    { href: "/admin/apk", label: "APK", icon: Smartphone, permission: "apk.manage" },
-    { href: "/admin/control", label: "Boshqaruv markazi", icon: SlidersHorizontal, permission: "settings.manage" },
-    { href: "/admin/settings", label: "Sozlamalar", icon: Settings, permission: "settings.manage" },
+  { labelKey: "nav.g_system", items: [
+    { href: "/admin/users", labelKey: "nav.users", icon: Users, permission: "users.manage" },
+    { href: "/admin/roles", labelKey: "nav.roles", icon: KeyRound, permission: "roles.manage" },
+    { href: "/admin/security-log", labelKey: "nav.securityLog", icon: ShieldAlert, permission: "security.manage" },
+    { href: "/admin/categories", labelKey: "nav.categories", icon: FolderTree, permission: "taxonomy.manage" },
+    { href: "/admin/tags", labelKey: "nav.tags", icon: Tag, permission: "taxonomy.manage" },
+    { href: "/admin/faq", labelKey: "nav.faq", icon: HelpCircle, permission: "faqs.manage" },
+    { href: "/admin/apk", labelKey: "nav.apk", icon: Smartphone, permission: "apk.manage" },
+    { href: "/admin/control", labelKey: "nav.control", icon: SlidersHorizontal, permission: "settings.manage" },
+    { href: "/admin/settings", labelKey: "nav.settings", icon: Settings, permission: "settings.manage" },
   ]},
 ];
 
@@ -111,9 +111,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto relative">
         {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="mb-1">
+          <div key={group.labelKey} className="mb-1">
             <div className="px-3 pt-3 pb-1.5 text-[9px] font-bold tracking-[0.14em] text-[#4a5f7a] uppercase font-mono">
-              <span className="opacity-50">// </span>{group.label}
+              <span className="opacity-50">// </span>{t(group.labelKey as any)}
             </div>
             {group.items.map((item) => {
               const active = pathname.startsWith(item.href);
@@ -127,7 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   }`}
                 >
                   <item.icon size={16} className={`transition-transform group-hover:scale-110 ${active ? "text-[#6ba4ff] drop-shadow-[0_0_6px_rgba(61,127,255,0.7)]" : ""}`} />
-                  {item.label}
+                  {t(item.labelKey as any)}
                   {active && <span className="ml-auto w-[7px] h-[7px] rounded-full bg-accent shadow-[0_0_10px_rgba(61,127,255,0.9)] animate-pulse" />}
                 </Link>
               );
@@ -148,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             pathname === "/admin/profile" ? "bg-accent/10 text-accent" : "text-muted hover:bg-white/5 hover:text-white"
           }`}
         >
-          <UserCircle size={16} /> Profil
+          <UserCircle size={16} /> {t("nav.profile" as any)}
           {profile?.roles?.key && (
             <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-muted">
               {t(`roles.${profile.roles.key}` as any)}

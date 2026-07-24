@@ -13,6 +13,16 @@ export const LOCALE_LABELS: Record<Locale, string> = {
 // three languages — no partial translations, no fallback-to-English gaps.
 export const dictionaries = {
   uz: {
+    nav: {
+      g_main: "Asosiy", g_content: "Kontent", g_marketing: "Marketing", g_system: "Tizim",
+      dashboard: "Boshqaruv paneli", reports: "Hisobotlar", betcore: "BetCore Pay", partners: "Hamkorlar",
+      tariffs: "Tariflar", customers: "Mijozlar", cashdesks: "Kassalar", operatorRating: "Operator reytingi",
+      staffMonitor: "Xodimlar nazorati", promo: "Sovrinli karta", promoScan: "QR Skaner", promoBanners: "Reklama banner",
+      football: "Football markazi", footballNews: "Football yangiliklari", insights: "Tahlillar", blog: "Blog", media: "Media",
+      banners: "Bannerlar", affiliates: "Affiliatlar", donations: "Xayriyalar", streaming: "Jonli translyatsiya", push: "Push",
+      users: "Foydalanuvchilar", roles: "Rollar", securityLog: "Xavfsizlik jurnali", categories: "Kategoriyalar",
+      tags: "Teglar", faq: "FAQ", apk: "APK", control: "Boshqaruv markazi", settings: "Sozlamalar", profile: "Profil",
+    },
     common: {
       loading: "Yuklanmoqda…",
       save: "Saqlash",
@@ -120,6 +130,16 @@ export const dictionaries = {
     },
   },
   ru: {
+    nav: {
+      g_main: "Основное", g_content: "Контент", g_marketing: "Маркетинг", g_system: "Система",
+      dashboard: "Панель управления", reports: "Отчёты", betcore: "BetCore Pay", partners: "Партнёры",
+      tariffs: "Тарифы", customers: "Клиенты", cashdesks: "Кассы", operatorRating: "Рейтинг операторов",
+      staffMonitor: "Мониторинг сотрудников", promo: "Призовая карта", promoScan: "QR Сканер", promoBanners: "Рекламный баннер",
+      football: "Футбол центр", footballNews: "Футбол новости", insights: "Аналитика", blog: "Блог", media: "Медиа",
+      banners: "Баннеры", affiliates: "Аффилиаты", donations: "Пожертвования", streaming: "Прямая трансляция", push: "Push",
+      users: "Пользователи", roles: "Роли", securityLog: "Журнал безопасности", categories: "Категории",
+      tags: "Теги", faq: "FAQ", apk: "APK", control: "Центр управления", settings: "Настройки", profile: "Профиль",
+    },
     common: {
       loading: "Загрузка…",
       save: "Сохранить",
