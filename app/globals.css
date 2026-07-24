@@ -150,3 +150,14 @@ html {
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* Glass panel — oq chiziqli ramka o'rniga yumshoq shisha yuza.
+   Sahifa kartalarida ishlatiladi: className="glass-card p-4" */
+.glass-card {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.014));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 12px 34px -16px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}

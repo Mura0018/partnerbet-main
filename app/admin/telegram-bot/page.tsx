@@ -89,7 +89,7 @@ export default function TelegramBotAdminPage() {
         <button
           onClick={() => setChatOpen(true)}
           aria-label={t("tgb.teamChat")}
-          className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-transform"
+          className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent-dim hidden md:flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-transform"
           style={{ animation: "bcFabPulse 2.6s ease-in-out infinite" }}
         >
           <MessageCircle size={22} />

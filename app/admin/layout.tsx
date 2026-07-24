@@ -249,29 +249,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         })}
       </nav>
 
-      <div className="p-3 border-t border-white/8 space-y-1 shrink-0">
+      <div className="p-2 border-t border-white/8 flex items-center gap-1.5 shrink-0">
         <Link
           href="/admin/profile"
-          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition ${
-            pathname === "/admin/profile" ? "bg-accent/10 text-accent" : "text-muted hover:bg-white/5 hover:text-white"
+          className={`flex items-center gap-2 min-w-0 flex-1 rounded-lg px-1.5 py-1.5 transition ${
+            pathname === "/admin/profile" ? "bg-accent/10" : "hover:bg-white/5"
           }`}
         >
-          <UserCircle size={16} /> {t("nav.profile" as any)}
-          {profile?.roles?.key && (
-            <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-muted">
-              {t(`roles.${profile.roles.key}` as any)}
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+          ) : (
+            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-accent-dim grid place-items-center text-[12px] font-bold text-white shrink-0">
+              {(profile?.display_name || profile?.full_name || "?").charAt(0).toUpperCase()}
             </span>
           )}
+          <span className="min-w-0 leading-tight">
+            <span className="block text-[12.5px] font-semibold text-white truncate">{profile?.display_name || profile?.full_name || t("nav.profile" as any)}</span>
+            {profile?.roles?.key && <span className="block text-[10px] text-muted truncate">{t(`roles.${profile.roles.key}` as any)}</span>}
+          </span>
         </Link>
+        <LocaleSwitcher />
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium text-[#FF6B85] hover:bg-[#FF3B5C]/10"
+          className="w-8 h-8 rounded-lg grid place-items-center text-[#FF6B85] hover:bg-[#FF3B5C]/10 shrink-0"
+          aria-label={t("common.logout")}
         >
-          <LogOut size={16} /> {t("common.logout")}
+          <LogOut size={16} />
         </button>
-        <div className="px-3 pt-2">
-          <LocaleSwitcher />
-        </div>
       </div>
     </>
   );
