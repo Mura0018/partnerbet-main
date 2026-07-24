@@ -218,7 +218,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
 
   return (
     <div className="fixed inset-0 z-50 bg-bg flex flex-col">
-      <div className="flex items-center gap-2 px-5 py-4 border-b border-white/8 shrink-0">
+      <div className="flex items-center gap-2 px-5 py-4 bg-white/[0.04] backdrop-blur-md border-b border-white/[0.06] shrink-0">
         <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10" aria-label="Orqaga">
           <ChevronLeft size={20} />
         </button>
@@ -242,12 +242,12 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
       </div>
 
       {claimedBy && claimedBy !== currentUserId ? (
-        <div className="flex items-center justify-between gap-2 px-5 py-2 bg-[#F4C76A]/10 border-b border-[#F4C76A]/20 shrink-0">
+        <div className="flex items-center justify-between gap-2 px-5 py-2 bg-[#F4C76A]/10 backdrop-blur-md border-b border-[#F4C76A]/15 shrink-0">
           <span className="text-[11px] text-[#F4C76A]">🔵 {claimedByName || "Boshqa operator"} bu mijozga javob bermoqda</span>
           <button onClick={takeOver} className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white">O'zimga olish</button>
         </div>
       ) : claimedBy === currentUserId ? (
-        <div className="px-5 py-1.5 bg-accent/10 border-b border-accent/15 shrink-0">
+        <div className="px-5 py-1.5 bg-accent/10 backdrop-blur-md border-b border-accent/10 shrink-0">
           <span className="text-[10.5px] text-accent">🔵 Siz bu mijozga javob berayapsiz</span>
         </div>
       ) : null}
@@ -267,7 +267,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
             <span className="text-[9px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? "Siz (operator)" : "Mijoz"}</span>
             <div
-              className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "operator" ? "text-white" : "bg-white/[0.08]"}`}
+              className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "operator" ? "text-white shadow-lg shadow-black/20" : "bg-white/10 backdrop-blur-md border border-white/[0.06]"}`}
               style={m.sender === "operator" ? { background: chatThemeGradient(myTheme) } : undefined}
             >
               {quoted && (
@@ -306,19 +306,19 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto shrink-0 border-t border-white/8">
+      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
         {REPLY_TEMPLATES.map((tpl, i) => (
           <button
             key={i}
             onClick={() => setText(tpl)}
-            className="shrink-0 text-[10px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
+            className="shrink-0 text-[10px] px-2 py-1 rounded-full bg-white/[0.06] backdrop-blur-md border border-white/[0.08] text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
           >
             {tpl.length > 28 ? tpl.slice(0, 28) + "…" : tpl}
           </button>
         ))}
       </div>
       {replyTo && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-white/8 bg-white/[0.03] shrink-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-white/[0.06] shrink-0">
           <Reply size={12} className="text-accent shrink-0" />
           <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
             {replyTo.message || (replyTo.image_path ? "📷 Rasm" : replyTo.voice_path ? "🎤 Ovozli xabar" : "")}
@@ -329,7 +329,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         </div>
       )}
       {voiceRecorder.recording ? (
-        <div className="flex items-center gap-2.5 px-3 py-2 shrink-0 border-t border-white/8">
+        <div className="flex items-center gap-2.5 px-3 py-2 shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
           <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
           <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
@@ -340,12 +340,12 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           </button>
         </div>
       ) : (
-      <div className="flex items-center gap-1.5 px-3 py-2 shrink-0 border-t border-white/8">
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
+      <div className="flex items-center gap-1.5 px-3 py-2 shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
           <Mic size={13} className="text-muted" />
         </button>
         <input
-          className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
+          className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
           placeholder="Javob yozing..."
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -457,7 +457,7 @@ export function SupportTab() {
   return (
     <div>
       <input
-        className="w-full mb-3 bg-white/5 border border-white/10 rounded-lg py-2 px-3.5 text-[13px] outline-none focus:border-accent"
+        className="w-full mb-3 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3.5 text-[13px] outline-none focus:border-accent"
         placeholder="Mijozni qidirish: ism yoki telefon..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -484,7 +484,7 @@ export function SupportTab() {
       </div>
 
       {filteredThreads.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+        <div className="rounded-xl bg-white/[0.03] backdrop-blur-md border border-white/[0.06] p-8 text-center text-[13px] text-muted">
           {search ? "Hech narsa topilmadi." : showArchived ? "Arxiv bo'sh." : "Hozircha murojaat yo'q."}
         </div>
       ) : (
@@ -493,7 +493,7 @@ export function SupportTab() {
             <button
               key={t.customer_id}
               onClick={() => openThread(t)}
-              className="w-full text-left p-3.5 rounded-xl border border-white/8 bg-white/[0.02] hover:border-accent/40"
+              className="w-full text-left p-3.5 rounded-xl bg-white/[0.03] backdrop-blur-md border border-white/[0.06] hover:border-accent/40 hover:bg-white/[0.05]"
             >
               <div className="flex items-center justify-between gap-2 mb-0.5">
                 <div className="text-[13px] font-semibold truncate">{t.full_name || t.phone}</div>
