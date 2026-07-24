@@ -55,10 +55,10 @@ export async function GET() {
     const rejectRatio = total >= 3 ? Number(r.rejected) / total : 0;
 
     const flags: string[] = [];
-    if (Number(r.rating) < 0) flags.push("Past reyting");
-    if (rejectRatio > 0.4) flags.push("Ko'p rad etish");
-    if (failed >= 5) flags.push("Ko'p muvaffaqiyatsiz kirish");
-    if (Number(r.open_debt) > 0) flags.push("Ochiq qarz");
+    if (Number(r.rating) < 0) flags.push("low_rating");
+    if (rejectRatio > 0.4) flags.push("many_rejects");
+    if (failed >= 5) flags.push("many_failed");
+    if (Number(r.open_debt) > 0) flags.push("open_debt");
 
     return {
       ...r,
