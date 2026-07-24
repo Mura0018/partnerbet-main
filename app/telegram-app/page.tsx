@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { applyAppTheme } from "@/lib/telegram/appThemes";
 import { PrizeCard } from "./PrizeCard";
+import { PromoBanner } from "./PromoBanner";
 
 declare global {
   interface Window {
@@ -2240,6 +2241,9 @@ export default function TelegramAppPage() {
         </div>
       </button>
       )}
+
+      {/* Reklama banner (bizning app) */}
+      {!partnerId && <PromoBanner />}
 
       <style>{`
         @keyframes hkShimmer { 0%{background-position:0% 0} 100%{background-position:300% 0} }

@@ -26,6 +26,7 @@ const NAV_GROUPS = [
     { href: "/admin/operator-rating", label: "Operator reytingi", icon: Gauge, permission: "operators.oversight" },
     { href: "/admin/promo", label: "Sovrinli karta", icon: Trophy, permission: "promo.manage" },
     { href: "/admin/promo/scan", label: "QR Skaner", icon: QrCode, permission: "telegram_orders.manage" },
+    { href: "/admin/promo/banners", label: "Reklama banner", icon: Megaphone, permission: "promo.manage" },
   ]},
   { label: "Kontent", items: [
     { href: "/admin/football", label: "Football Center", icon: Trophy, permission: "football.manage" },
