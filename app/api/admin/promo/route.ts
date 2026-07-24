@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 
-// B7 (A): mijozlar faollik reytingi (bajarilgan buyurtmalar summasi bo'yicha)
-// + kim karta olgan. Faqat promo.manage (super_admin). Server agregatsiya (RPC).
+// B7 (D): aksiya sozlamasi + davr/segment reytingi (naqd=skanerlangan) +
+// tasdiqlangan g'oliblar. Faqat promo.manage (super_admin).
 export async function GET() {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -12,6 +12,19 @@ export async function GET() {
   if (!allowed) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const admin = createAdminClient();
-  const { data: ranking } = await admin.rpc("promo_activity_ranking", { p_limit: 200 });
-  return NextResponse.json({ ranking: ranking ?? [] });
+
+  const { data: pRow } = await admin.from("site_settings").select("value").eq("key", "promo").maybeSingle();
+  const settings = (pRow?.value as any) ?? {};
+  const start = settings.start || null;
+  const end = settings.end || null;
+
+  const { data: ranking } = await admin.rpc("promo_activity_ranking_v2", { p_start: start, p_end: end });
+
+  const { data: winners } = await admin
+    .from("promo_winners")
+    .select("id, customer_id, segment, place, note, confirmed_at, customers(full_name, phone)")
+    .order("segment", { ascending: true })
+    .order("place", { ascending: true });
+
+  return NextResponse.json({ settings, ranking: ranking ?? [], winners: winners ?? [] });
 }
