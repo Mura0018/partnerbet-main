@@ -27,15 +27,15 @@ export const env = {
   },
   // --- EMAIL (ixtiyoriy — sozlanmasa email yuborilmaydi, oqim buzilmaydi) ---
   get emailProvider() {
-    return (process.env.EMAIL_PROVIDER || "resend").toLowerCase();
+    return (process.env.EMAIL_PROVIDER || "resend").trim().toLowerCase();
   },
   get resendApiKey() {
-    return process.env.RESEND_API_KEY || "";
+    return (process.env.RESEND_API_KEY || "").trim();
   },
   get brevoApiKey() {
-    return process.env.BREVO_API_KEY || "";
+    return (process.env.BREVO_API_KEY || "").trim();
   },
   get emailFrom() {
-    return process.env.EMAIL_FROM || "";
+    return (process.env.EMAIL_FROM || "").trim();
   },
 } as const;

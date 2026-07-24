@@ -13,8 +13,23 @@ export type EmailInput = { to: string; subject: string; html: string; text?: str
 export async function sendEmail({ to, subject, html, text }: EmailInput): Promise<boolean> {
   const provider = env.emailProvider;
   const from = env.emailFrom;
+
+  // DIAGNOSTIKA: runtime env holatини aniq ko'rsatamiz (from maxfiy emas;
+  // kalitlar faqat bor/yo'q sifatida — qiymat oshkor qilinmaydi).
+  console.log(
+    `[email] config -> provider="${provider}", ` +
+    `EMAIL_FROM=${from ? `"${from}"` : "BO'SH/YO'Q"}, ` +
+    `RESEND_API_KEY=${env.resendApiKey ? "bor" : "YO'Q"}, ` +
+    `BREVO_API_KEY=${env.brevoApiKey ? "bor" : "YO'Q"}, ` +
+    `to="${to}"`
+  );
+
   if (!from) {
-    console.warn("[email] EMAIL_FROM sozlanmagan — email yuborilmadi");
+    console.warn(
+      "[email] EMAIL_FROM runtime'да BO'SH. Vercel > Settings > Environment Variables'да " +
+      "EMAIL_FROM qo'yilganini (va PRODUCTION muhitiga belgilanganini) tekshiring, so'ng " +
+      "yangi DEPLOY qiling (eski build'ni qayta ishga tushirish yetmasligi mumkin)."
+    );
     return false;
   }
 
