@@ -87,7 +87,7 @@ export default function TelegramBotAdminPage() {
               aria-hidden="true"
             />
             <div
-              className="absolute inset-y-0 right-0 w-full sm:w-[440px] bg-bg border-l border-white/10 flex flex-col shadow-2xl"
+              className="absolute inset-0 bg-bg flex flex-col shadow-2xl"
               style={{ animation: "bcDrawerIn 0.28s cubic-bezier(0.22,1,0.36,1)" }}
             >
               <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/8 shrink-0">
@@ -97,7 +97,7 @@ export default function TelegramBotAdminPage() {
                   <X size={18} />
                 </button>
               </div>
-              <div className="flex-1 min-h-0 p-3">
+              <div className="flex-1 min-h-0">
                 <ChatTab />
               </div>
             </div>

@@ -110,6 +110,9 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   useEffect(() => {
     const bottom = bottomRef.current;
     if (!bottom) return;
+    // Bo'sh ro'yxatда firstScrollRef sarflanmasin — xabar yuklangaндан keyin
+    // pastga (oxirgi xabarga) tushsin (aks holda yuqorида qolib ketardi).
+    if (msgs.length === 0) return;
     // Birinchi ochilishda darhol (animatsiyasiz) pastga.
     if (firstScrollRef.current) {
       firstScrollRef.current = false;
@@ -214,7 +217,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-bg flex flex-col">
+    <div className="fixed inset-0 z-50 bg-bg flex flex-col">
       <div className="flex items-center gap-2 px-5 py-4 border-b border-white/8 shrink-0">
         <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10" aria-label="Orqaga">
           <ChevronLeft size={20} />
