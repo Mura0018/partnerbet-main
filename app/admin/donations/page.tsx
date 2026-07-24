@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import { Heart, LayoutDashboard, CreditCard, Download, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -7,14 +8,15 @@ import { createClient } from "@/lib/supabase";
 type Tab = "dashboard" | "methods";
 
 export default function DonationsAdminPage() {
+  const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("dashboard");
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 mb-1">
         <Heart size={20} className="text-cta" />
-        <h1 className="text-[22px] font-bold">Donations</h1>
+        <h1 className="text-[22px] font-bold">{t("don.title")}</h1>
       </div>
-      <p className="text-[13px] text-muted mb-6">Homiylik statistikasi va to'lov usullarini boshqarish.</p>
+      <p className="text-[13px] text-muted mb-6">{t("don.sub")}</p>
 
       <div className="flex gap-1 mb-6 border-b border-white/8">
         <button onClick={() => setTab("dashboard")} className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[13px] font-medium border-b-2 ${tab === "dashboard" ? "border-accent text-accent" : "border-transparent text-muted hover:text-white"}`}>
@@ -32,6 +34,7 @@ export default function DonationsAdminPage() {
 }
 
 function DashboardTab() {
+  const { t } = useLocale();
   const [stats, setStats] = useState({ total: 0, today: 0, week: 0, month: 0 });
   const [recent, setRecent] = useState<any[]>([]);
   const [topSupporters, setTopSupporters] = useState<any[]>([]);
@@ -69,7 +72,7 @@ function DashboardTab() {
     window.location.href = "/api/admin/donations/export";
   };
 
-  if (loading) return <p className="text-[13px] text-muted">Yuklanmoqda…</p>;
+  if (loading) return <p className="text-[13px] text-muted">{t("don.loading")}</p>;
 
   return (
     <div>
@@ -81,10 +84,10 @@ function DashboardTab() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Jami daromad", value: stats.total },
-          { label: "Bugun", value: stats.today },
-          { label: "So'nggi 7 kun", value: stats.week },
-          { label: "So'nggi 30 kun", value: stats.month },
+          { label: t("don.totalRevenue"), value: stats.total },
+          { label: t("don.today"), value: stats.today },
+          { label: t("don.last7"), value: stats.week },
+          { label: t("don.last30"), value: stats.month },
         ].map((c) => (
           <div key={c.label} className="rounded-xl glass-card p-4">
             <TrendingUp size={15} className="text-cta mb-2" />
@@ -96,7 +99,7 @@ function DashboardTab() {
 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <h2 className="text-[14px] font-bold mb-3">So'nggi homiyliklar</h2>
+          <h2 className="text-[14px] font-bold mb-3">{t("don.recent")}</h2>
           <div className="space-y-2">
             {recent.map((d) => (
               <div key={d.id} className="rounded-lg border border-white/8 p-3 text-[12px] flex items-center justify-between">
@@ -114,11 +117,11 @@ function DashboardTab() {
                 </div>
               </div>
             ))}
-            {recent.length === 0 && <p className="text-[12px] text-muted">Hozircha homiylik yo'q.</p>}
+            {recent.length === 0 && <p className="text-[12px] text-muted">{t("don.noDonations")}</p>}
           </div>
         </div>
         <div>
-          <h2 className="text-[14px] font-bold mb-3">Top Supporters</h2>
+          <h2 className="text-[14px] font-bold mb-3">{t("don.topSupporters")}</h2>
           <div className="space-y-2">
             {topSupporters.map((s, i) => (
               <div key={i} className="rounded-lg border border-white/8 p-3 text-[12px] flex items-center justify-between">
@@ -126,7 +129,7 @@ function DashboardTab() {
                 <span className="font-bold">${Number(s.amount).toFixed(2)}</span>
               </div>
             ))}
-            {topSupporters.length === 0 && <p className="text-[12px] text-muted">Ma'lumot yo'q.</p>}
+            {topSupporters.length === 0 && <p className="text-[12px] text-muted">{t("don.noData")}</p>}
           </div>
         </div>
       </div>
@@ -150,6 +153,7 @@ const CREDENTIAL_FIELDS: Record<string, { field: string; label: string }[]> = {
 };
 
 function PaymentMethodsTab() {
+  const { t } = useLocale();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -209,7 +213,7 @@ function PaymentMethodsTab() {
     load();
   };
   const remove = async (id: string) => {
-    if (!confirm("To'lov usuli o'chirilsinmi?")) return;
+    if (!confirm(t("don.confirmDel"))) return;
     await supabase.from("payment_methods").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     load();
   };
@@ -245,15 +249,15 @@ function PaymentMethodsTab() {
               <button onClick={() => move(i, -1)} disabled={i === 0} className="text-[11px] px-2 py-1 rounded hover:bg-white/10 disabled:opacity-30">↑</button>
               <button onClick={() => move(i, 1)} disabled={i === methods.length - 1} className="text-[11px] px-2 py-1 rounded hover:bg-white/10 disabled:opacity-30">↓</button>
               {m.method_type === "gateway" && (
-                <button onClick={() => setCredentialsMethod(m)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] hover:bg-white/5">Kalitlar</button>
+                <button onClick={() => setCredentialsMethod(m)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] hover:bg-white/5">{t("don.keys")}</button>
               )}
               <button onClick={() => toggleActive(m)} className={`text-[10px] px-2 py-1 rounded-full border ${m.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>{m.is_active ? "Faol" : "Faolsiz"}</button>
-              <button onClick={() => openEdit(m)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] hover:bg-white/5">Tahrirlash</button>
-              <button onClick={() => remove(m.id)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] text-[#FF6B85] hover:bg-white/5">O'chirish</button>
+              <button onClick={() => openEdit(m)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] hover:bg-white/5">{t("don.edit")}</button>
+              <button onClick={() => remove(m.id)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] text-[#FF6B85] hover:bg-white/5">{t("don.del")}</button>
             </div>
           </div>
         ))}
-        {methods.length === 0 && <p className="text-[12px] text-muted text-center py-8">Hozircha to'lov usuli yo'q.</p>}
+        {methods.length === 0 && <p className="text-[12px] text-muted text-center py-8">{t("don.noMethods")}</p>}
       </div>
 
       {showForm && (
@@ -261,45 +265,45 @@ function PaymentMethodsTab() {
           <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="font-bold text-[16px] mb-4">{editingId ? "Tahrirlash" : "Yangi to'lov usuli"}</h2>
 
-            <label className="block text-[12px] text-muted mb-1">Nomi</label>
+            <label className="block text-[12px] text-muted mb-1">{t("don.fName")}</label>
             <input className={`${inputCls} mb-3`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
-            <label className="block text-[12px] text-muted mb-1">Turi</label>
+            <label className="block text-[12px] text-muted mb-1">{t("don.fType")}</label>
             <select className={`${inputCls} mb-3`} value={form.method_type} onChange={(e) => setForm({ ...form, method_type: e.target.value as any })}>
-              <option value="gateway">To'lov shlyuzi (Stripe/PayPal)</option>
-              <option value="crypto">Kripto hamyon</option>
+              <option value="gateway">{t("don.tGateway")}</option>
+              <option value="crypto">{t("don.tCrypto")}</option>
             </select>
 
             {form.method_type === "gateway" ? (
               <>
-                <label className="block text-[12px] text-muted mb-1">Provider</label>
+                <label className="block text-[12px] text-muted mb-1">{t("don.provider")}</label>
                 <select className={`${inputCls} mb-3`} value={form.provider_key} onChange={(e) => setForm({ ...form, provider_key: e.target.value })}>
                   <option value="stripe">Stripe</option>
                   <option value="paypal">PayPal</option>
-                  <option value="generic">Generic (kelajakda)</option>
+                  <option value="generic">{t("don.pGeneric")}</option>
                 </select>
                 {form.provider_key === "generic" && (
                   <>
-                    <label className="block text-[12px] text-muted mb-1">Base API URL</label>
+                    <label className="block text-[12px] text-muted mb-1">{t("don.baseUrl")}</label>
                     <input className={`${inputCls} mb-3`} value={form.base_api_url} onChange={(e) => setForm({ ...form, base_api_url: e.target.value })} placeholder="https://api.provider.com" />
                   </>
                 )}
               </>
             ) : (
               <>
-                <label className="block text-[12px] text-muted mb-1">Kripto belgisi (masalan USDT, BTC, ETH, SOL)</label>
+                <label className="block text-[12px] text-muted mb-1">{t("don.cryptoSymbol")}</label>
                 <input className={`${inputCls} mb-3`} value={form.crypto_symbol} onChange={(e) => setForm({ ...form, crypto_symbol: e.target.value })} />
-                <label className="block text-[12px] text-muted mb-1">Tarmoq (masalan TRC20, ERC20)</label>
+                <label className="block text-[12px] text-muted mb-1">{t("don.network")}</label>
                 <input className={`${inputCls} mb-3`} value={form.network} onChange={(e) => setForm({ ...form, network: e.target.value })} />
-                <label className="block text-[12px] text-muted mb-1">Wallet Address</label>
+                <label className="block text-[12px] text-muted mb-1">{t("don.walletAddress")}</label>
                 <input className={`${inputCls} mb-3 font-mono`} value={form.wallet_address} onChange={(e) => setForm({ ...form, wallet_address: e.target.value })} />
               </>
             )}
 
             {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
             <div className="flex gap-2">
-              <button type="submit" className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px]">Saqlash</button>
-              <button type="button" onClick={() => setShowForm(false)} className="px-4 rounded-lg border border-white/10 text-[13px]">Bekor qilish</button>
+              <button type="submit" className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px]">{t("don.save")}</button>
+              <button type="button" onClick={() => setShowForm(false)} className="px-4 rounded-lg border border-white/10 text-[13px]">{t("don.cancel")}</button>
             </div>
           </form>
         </div>
@@ -313,6 +317,7 @@ function PaymentMethodsTab() {
 }
 
 function GatewayCredentialsModal({ method, onClose }: { method: PaymentMethod; onClose: () => void }) {
+  const { t } = useLocale();
   const fields = CREDENTIAL_FIELDS[method.provider_key ?? ""] ?? [];
   const [statuses, setStatuses] = useState<Record<string, boolean>>({});
   const [values, setValues] = useState<Record<string, string>>({});
@@ -340,7 +345,7 @@ function GatewayCredentialsModal({ method, onClose }: { method: PaymentMethod; o
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6">
         <h2 className="font-bold text-[16px] mb-1">{method.name} — API kalitlari</h2>
-        <p className="text-[11px] text-muted mb-4">Shifrlanib saqlanadi, saqlangandan keyin qayta ko'rsatilmaydi.</p>
+        <p className="text-[11px] text-muted mb-4">{t("don.encHint")}</p>
         {fields.map((f) => (
           <div key={f.field} className="mb-4">
             <div className="flex items-center gap-2 mb-1.5">
@@ -357,7 +362,7 @@ function GatewayCredentialsModal({ method, onClose }: { method: PaymentMethod; o
             </div>
           </div>
         ))}
-        <button onClick={onClose} className="w-full py-2 rounded-lg border border-white/10 text-[13px] mt-2">Yopish</button>
+        <button onClick={onClose} className="w-full py-2 rounded-lg border border-white/10 text-[13px] mt-2">{t("don.close")}</button>
       </div>
     </div>
   );
