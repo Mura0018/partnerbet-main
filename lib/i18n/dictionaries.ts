@@ -18,6 +18,7 @@ export const dictionaries = {
   uz: {
     nav: {
       g_main: "Asosiy", g_content: "Kontent", g_marketing: "Marketing", g_system: "Tizim",
+      g_pay: "BetCore Pay", g_team: "Jamoa", g_partner: "Hamkorlik", orders: "Buyurtmalar", teamChat: "Jamoa chati",
       dashboard: "Boshqaruv paneli", reports: "Hisobotlar", betcore: "BetCore Pay", partners: "Hamkorlar",
       tariffs: "Tariflar", customers: "Mijozlar", cashdesks: "Kassalar", operatorRating: "Operator reytingi",
       staffMonitor: "Xodimlar nazorati", promo: "Sovrinli karta", promoScan: "QR Skaner", promoBanners: "Reklama banner",
@@ -591,6 +592,7 @@ export const dictionaries = {
   ru: {
     nav: {
       g_main: "Основное", g_content: "Контент", g_marketing: "Маркетинг", g_system: "Система",
+      g_pay: "BetCore Pay", g_team: "Команда", g_partner: "Партнёрство", orders: "Заказы", teamChat: "Командный чат",
       dashboard: "Панель управления", reports: "Отчёты", betcore: "BetCore Pay", partners: "Партнёры",
       tariffs: "Тарифы", customers: "Клиенты", cashdesks: "Кассы", operatorRating: "Рейтинг операторов",
       staffMonitor: "Мониторинг сотрудников", promo: "Призовая карта", promoScan: "QR Сканер", promoBanners: "Рекламный баннер",
