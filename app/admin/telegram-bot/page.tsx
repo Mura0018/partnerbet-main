@@ -31,6 +31,17 @@ export default function TelegramBotAdminPage() {
     }
   }, []);
 
+  // Chat ochilganda "ko'rildi" belgisi — sidebar'dagi yangilik nuqtasi o'chadi.
+  useEffect(() => {
+    if (chatOpen && typeof window !== "undefined") {
+      try {
+        localStorage.setItem("team_chat_seen_at", new Date().toISOString());
+      } catch {
+        /* skip */
+      }
+    }
+  }, [chatOpen]);
+
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto">
       <style>{`
