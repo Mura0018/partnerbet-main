@@ -70,6 +70,19 @@ export async function POST(req: NextRequest) {
   }
 
   const adminForLimits = createAdminClient();
+
+  // BOSHQARUV MARKAZI global kill-switch: super admin to'ldirish/yechish
+  // qabulини vaqtincha o'chira oladi. Kalit yo'q/xato -> ochiq (default).
+  // Best-effort — oqimни buzmaydi.
+  try {
+    const { data: swRow } = await adminForLimits.from("site_settings").select("value").eq("key", "betcore_switches").maybeSingle();
+    const sw = (swRow?.value as any) ?? {};
+    if (type === "topup" && sw.topup === false) return NextResponse.json({ error: "topup_disabled" }, { status: 403 });
+    if (type === "withdraw" && sw.withdraw === false) return NextResponse.json({ error: "withdraw_disabled" }, { status: 403 });
+  } catch {
+    /* kill-switch best-effort */
+  }
+
   const { count: pendingCountExact } = await adminForLimits
     .from("telegram_orders")
     .select("id", { count: "exact", head: true })

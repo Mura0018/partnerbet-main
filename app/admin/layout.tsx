@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -47,6 +47,7 @@ const NAV_GROUPS = [
     { href: "/admin/tags", label: "Teglar", icon: Tag, permission: "taxonomy.manage" },
     { href: "/admin/faq", label: "FAQ", icon: HelpCircle, permission: "faqs.manage" },
     { href: "/admin/apk", label: "APK", icon: Smartphone, permission: "apk.manage" },
+    { href: "/admin/control", label: "Boshqaruv markazi", icon: SlidersHorizontal, permission: "settings.manage" },
     { href: "/admin/settings", label: "Sozlamalar", icon: Settings, permission: "settings.manage" },
   ]},
 ];

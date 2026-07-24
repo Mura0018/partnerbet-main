@@ -891,6 +891,10 @@ export default function TelegramAppPage() {
           setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
         } else if (data.error === "too_many_pending_orders") {
           setError("Sizda hozircha ko'rib chiqilayotgan buyurtmalar bor. Iltimos ular yakunlanishini kuting.");
+        } else if (data.error === "topup_disabled") {
+          setError("Hisob to'ldirish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
+        } else if (data.error === "withdraw_disabled") {
+          setError("Pul yechish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
         } else {
           setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
         }
@@ -949,6 +953,10 @@ export default function TelegramAppPage() {
           setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
         } else if (data.error === "too_many_pending_orders") {
           setError("Sizda hozircha ko'rib chiqilayotgan buyurtmalar bor. Iltimos ular yakunlanishini kuting.");
+        } else if (data.error === "topup_disabled") {
+          setError("Hisob to'ldirish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
+        } else if (data.error === "withdraw_disabled") {
+          setError("Pul yechish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
         } else {
           setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
         }
