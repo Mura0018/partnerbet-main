@@ -19,6 +19,7 @@ type UserRow = {
 };
 
 function NameCell({ user, onSaved }: { user: UserRow; onSaved: () => void }) {
+  const { t } = useLocale();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(user.full_name ?? "");
   const [saving, setSaving] = useState(false);
@@ -49,7 +50,7 @@ function NameCell({ user, onSaved }: { user: UserRow; onSaved: () => void }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && save()}
-        placeholder="Ism familiya"
+        placeholder={t("usr.namePh")}
       />
       <button onClick={save} disabled={saving} className="p-1 rounded-md hover:bg-white/10 text-[#4ADE80]">
         {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
@@ -74,11 +75,11 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
     e.preventDefault();
     setError("");
     if (!fullName.trim() || !email.trim() || !roleId) {
-      setError("Barcha maydonlarni to'ldiring.");
+      setError(t("usr.eAllFields"));
       return;
     }
     if (!checkPasswordStrength(password, email.trim()).valid) {
-      setError("Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi).");
+      setError(t("usr.eWeak"));
       return;
     }
     setSubmitting(true);
@@ -91,17 +92,17 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
       const data = await res.json();
       if (!res.ok) {
         const messages: Record<string, string> = {
-          email_taken: "Bu email allaqachon ro'yxatdan o'tgan.",
-          weak_password: "Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi).",
-          forbidden: "Bu amal uchun ruxsatingiz yo'q.",
+          email_taken: t("usr.eEmailTaken"),
+          weak_password: t("usr.eWeak"),
+          forbidden: t("usr.eForbidden"),
         };
-        setError(messages[data.error] ?? "Xatolik yuz berdi.");
+        setError(messages[data.error] ?? t("usr.eGeneric"));
         return;
       }
       onCreated();
       onClose();
     } catch {
-      setError("Ulanishda xatolik. Qayta urinib ko'ring.");
+      setError(t("usr.eConn"));
     } finally {
       setSubmitting(false);
     }
@@ -111,19 +112,19 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-white/10 bg-panel p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-[16px]">Yangi foydalanuvchi</h2>
-          <button type="button" onClick={onClose} aria-label="Yopish"><X size={18} /></button>
+          <h2 className="font-bold text-[16px]">{t("usr.newUser")}</h2>
+          <button type="button" onClick={onClose} aria-label={t("usr.close")}><X size={18} /></button>
         </div>
 
         <div className="mb-3">
-          <label className="block text-[12px] text-muted mb-1">Ism familiya</label>
+          <label className="block text-[12px] text-muted mb-1">{t("usr.fName")}</label>
           <input
             className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
             value={fullName} onChange={(e) => setFullName(e.target.value)}
           />
         </div>
         <div className="mb-3">
-          <label className="block text-[12px] text-muted mb-1">Email</label>
+          <label className="block text-[12px] text-muted mb-1">{t("usr.fEmail")}</label>
           <input
             type="email"
             className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
@@ -131,14 +132,14 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
           />
         </div>
         <div className="mb-3">
-          <label className="block text-[12px] text-muted mb-1">Parol (kamida 10 belgi: harf, raqam, belgi)</label>
+          <label className="block text-[12px] text-muted mb-1">{t("usr.fPassword")}</label>
           <PasswordInput
             className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
             value={password} onChange={(e) => setPassword(e.target.value)}
           />
         </div>
         <div className="mb-5">
-          <label className="block text-[12px] text-muted mb-1">Rol</label>
+          <label className="block text-[12px] text-muted mb-1">{t("usr.fRole")}</label>
           <select
             className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]"
             value={roleId} onChange={(e) => setRoleId(e.target.value)}
@@ -150,7 +151,7 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
 
         <button type="submit" disabled={submitting} className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] disabled:opacity-50">
-          {submitting ? <Loader2 size={15} className="animate-spin mx-auto" /> : "Yaratish"}
+          {submitting ? <Loader2 size={15} className="animate-spin mx-auto" /> : t("usr.create")}
         </button>
       </form>
     </div>
@@ -188,8 +189,8 @@ export default function UsersManager() {
       const data = await res.json().catch(() => ({}));
       alert(
         data.error === "forbidden_role_assignment"
-          ? "Bu rolni berish uchun ruxsatingiz yetarli emas — o'zingizdan teng yoki yuqori kuchli rol bera olmaysiz."
-          : "Rolni o'zgartirishda xatolik yuz berdi."
+          ? t("usr.eRoleForbidden")
+          : t("usr.eRoleChange")
       );
     }
     load();
@@ -201,28 +202,28 @@ export default function UsersManager() {
   };
 
   const deleteUser = async (user: UserRow) => {
-    if (!confirm(`${user.full_name || "Bu foydalanuvchi"}ni butunlay o'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.`)) return;
+    if (!confirm(t("usr.confirmDelete", { name: user.full_name || t("usr.thisUser") }))) return;
     const res = await fetch("/api/admin/users/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id }),
     });
     if (res.ok) load();
-    else alert("O'chirishda xatolik yuz berdi.");
+    else alert(t("usr.eDelete"));
   };
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-[22px] font-bold">Foydalanuvchilar</h1>
+        <h1 className="text-[22px] font-bold">{t("usr.title")}</h1>
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]"
         >
-          <Plus size={15} /> Yangi foydalanuvchi
+          <Plus size={15} /> {t("usr.newUser")}
         </button>
       </div>
-      <p className="text-[13px] text-muted mb-6">Ism, rollarni boshqaring va hisoblarni faollashtiring/o'chiring.</p>
+      <p className="text-[13px] text-muted mb-6">{t("usr.sub")}</p>
 
       {loading && <p className="text-[13px] text-muted">{t("common.loading")}</p>}
 
@@ -230,11 +231,11 @@ export default function UsersManager() {
         <table className="w-full min-w-[560px] text-[13px]">
           <thead className="bg-white/[0.03] text-[11px] text-muted uppercase tracking-wide">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Ism</th>
-              <th className="text-left px-4 py-3 font-medium">Rol</th>
-              <th className="text-left px-4 py-3 font-medium">Holat</th>
-              <th className="text-left px-4 py-3 font-medium">Oxirgi kirish</th>
-              <th className="text-right px-4 py-3 font-medium">Amal</th>
+              <th className="text-left px-4 py-3 font-medium">{t("usr.colName")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("usr.colRole")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("usr.colStatus")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("usr.colLastLogin")}</th>
+              <th className="text-right px-4 py-3 font-medium">{t("usr.colAction")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -245,7 +246,7 @@ export default function UsersManager() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <NameCell user={u} onSaved={load} />
-                      {isSelf && <span className="text-[11px] text-[#5b6f85]">(siz)</span>}
+                      {isSelf && <span className="text-[11px] text-[#5b6f85]">{t("usr.you")}</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -262,7 +263,7 @@ export default function UsersManager() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-[11px] border ${u.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-white/10"}`}>
-                      {u.is_active ? "Faol" : "Faolsiz"}
+                      {u.is_active ? t("usr.active") : t("usr.inactive")}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-[#5b6f85]">{u.last_login_at ? new Date(u.last_login_at).toLocaleString() : "—"}</td>
@@ -272,17 +273,17 @@ export default function UsersManager() {
                         onClick={() => toggleActive(u)}
                         disabled={isSelf}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-[11px]"
-                        title={u.is_active ? "Faolsizlantirish (kirish taqiqlanadi)" : "Faollashtirish (kirishga ruxsat)"}
+                        title={u.is_active ? t("usr.tipDeactivate") : t("usr.tipActivate")}
                       >
                         {u.is_active ? <ShieldOff size={14} /> : <ShieldCheck size={14} className="text-[#4ADE80]" />}
-                        {u.is_active ? "Faolsizlantirish" : "Faollashtirish"}
+                        {u.is_active ? t("usr.deactivate") : t("usr.activate")}
                       </button>
                       <button
                         onClick={() => deleteUser(u)}
                         disabled={isSelf}
                         className="p-1.5 rounded-md hover:bg-[#FF6B85]/10 text-[#FF6B85] disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label="O'chirish"
-                        title="Butunlay o'chirish"
+                        aria-label={t("usr.del")}
+                        title={t("usr.tipDelete")}
                       >
                         <Trash2 size={14} />
                       </button>
