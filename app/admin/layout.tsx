@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, Activity, MessageCircle, ChevronDown,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, Activity, MessageCircle, ChevronDown, Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -14,6 +14,7 @@ import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
 import { useShellData } from "@/lib/admin/useShellData";
 import { ShellCard } from "./_components/ShellCard";
+import { CommandPalette } from "./_components/CommandPalette";
 import { Toaster } from "@/lib/ui/toast";
 
 // 7 rangli guruh (mockup v3 IA). Rang = bo'lim (bezak emas) — 2-bosqichda
@@ -84,6 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { profile } = useCurrentProfile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [cmdOpen, setCmdOpen] = useState(false);
   const { data: shell, refresh: refreshShell } = useShellData();
   const settings = useSiteSettings();
 
@@ -124,7 +126,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     setMobileOpen(false);
+    setCmdOpen(false);
   }, [pathname]);
+
+  // ⌘K / Ctrl+K — command palette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCmdOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const handleToggleBusy = async () => {
+    const supabase = createClient();
+    const { data: auth } = await supabase.auth.getUser();
+    if (auth.user) {
+      await supabase.from("profiles").update({ is_busy: !shell?.me?.isBusy }).eq("id", auth.user.id);
+      refreshShell();
+    }
+  };
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -155,6 +179,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       <ShellCard data={shell} onRefresh={refreshShell} />
+
+      <button
+        onClick={() => setCmdOpen(true)}
+        className="mx-3 mb-1 flex items-center gap-2 h-9 px-3 rounded-xl text-[13px] text-muted bg-white/[0.04] hover:bg-white/[0.07] transition-colors shrink-0"
+      >
+        <Search size={15} className="shrink-0" />
+        <span className="truncate">{t("shl.trigger")}</span>
+        <span className="ml-auto text-[10px] border border-white/10 rounded px-1.5 py-0.5 font-mono shrink-0 hidden md:inline">⌘K</span>
+      </button>
 
       <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto relative">
         {NAV_GROUPS.map((group) => {
@@ -284,6 +317,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Suspense>
         {children}
       </main>
+      {cmdOpen && (
+        <CommandPalette groups={NAV_GROUPS} perms={shell?.perms} onClose={() => setCmdOpen(false)} onToggleBusy={handleToggleBusy} />
+      )}
       <Toaster />
     </div>
   );

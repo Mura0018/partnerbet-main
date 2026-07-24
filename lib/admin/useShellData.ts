@@ -7,6 +7,7 @@ export type ShellData = {
   shell: boolean;
   isPartner?: boolean;
   role?: string | null;
+  perms?: string[];
   canManageOrders?: boolean;
   canOversight?: boolean;
   me?: { name: string; rating: number; isBusy: boolean; busyReason: string | null };

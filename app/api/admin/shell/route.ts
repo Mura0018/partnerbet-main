@@ -33,16 +33,18 @@ export async function GET() {
 
   // Rol + hamkormi
   let role: string | null = null;
+  let roleId: string | null = null;
   let isPartner = false;
   let me = { name: "", rating: 0, isBusy: false, busyReason: "" as string | null };
   try {
     const { data: prof } = await admin
       .from("profiles")
-      .select("display_name, full_name, rating, is_busy, busy_reason, roles(key)")
+      .select("display_name, full_name, rating, is_busy, busy_reason, role_id, roles(key)")
       .eq("id", user.id)
       .maybeSingle();
     if (prof) {
       role = (prof as any).roles?.key ?? null;
+      roleId = (prof as any).role_id ?? null;
       me = {
         name: (prof as any).display_name || (prof as any).full_name || "",
         rating: Number((prof as any).rating ?? 0),
@@ -52,6 +54,18 @@ export async function GET() {
     }
   } catch {
     /* profiles o'qilmadi */
+  }
+
+  // Foydalanuvchining barcha ruxsat kalitlari (command palette natijalarini
+  // filtrlash uchun — har biriga alohida RPC o'rniga bitta so'rov).
+  let perms: string[] = [];
+  try {
+    if (roleId) {
+      const { data: rp } = await admin.from("role_permissions").select("permissions(key)").eq("role_id", roleId);
+      perms = (rp ?? []).map((r: any) => r.permissions?.key).filter(Boolean);
+    }
+  } catch {
+    /* skip */
   }
   try {
     const { data: pm } = await admin.from("partner_members").select("id").eq("profile_id", user.id).maybeSingle();
@@ -195,6 +209,7 @@ export async function GET() {
       shell: true,
       isPartner: false,
       role,
+      perms,
       canManageOrders: !!canManageOrders,
       canOversight: !!canOversight,
       me,
