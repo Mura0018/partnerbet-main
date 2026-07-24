@@ -1,5 +1,8 @@
 export type Locale = "uz" | "ru" | "en";
 export const LOCALES: Locale[] = ["uz", "ru", "en"];
+// Admin panel + login faqat uz/ru da to'liq tarjima qilingan. Ingliz tili
+// huquqiy sahifalarda qoladi (u yerda to'liq matn bor).
+export const PANEL_LOCALES: Locale[] = ["uz", "ru"];
 export const DEFAULT_LOCALE: Locale = "uz";
 export const LOCALE_COOKIE = "partnerbet_locale";
 
@@ -360,6 +363,27 @@ export const dictionaries = {
       catNoParent: "— Ota kategoriyasiz —", catPhDesc: "Tavsif (ixtiyoriy)", catEName: "Nom kiriting.",
       catConfirmDel: "Kategoriya o'chirilsinmi? (Unga bog'langan postlar kategoriyasiz qoladi)",
       catPosts: "ta post", catEmpty: "Hozircha kategoriya yo'q.",
+    },
+    bnr: {
+      confirmDel: "O'chirilsinmi?", title: "Banner Manager", sub: "Har qanday o'lchamdagi bannerlar — yuklash, maqsadlash, rejalashtirish.",
+      totalViews: "Jami ko'rishlar", totalClicks: "Jami kliklar", ctr: "Umumiy CTR", totalBanners: "Jami bannerlar",
+      status: "Holat", active: "Faol", scheduled: "Rejalashtirilgan", expired: "Muddati tugagan", disabled: "O'chirilgan",
+      best: "Eng yaxshi ishlagan (20+ ko'rish)", worst: "Eng past ishlagan (20+ ko'rish)", notEnough: "Hali yetarli ma'lumot yo'q.",
+      typeImage: "Rasm banner", typeCode: "HTML/JS kod", image: "Rasm",
+      phCode: "Hamkordan olingan HTML/JS kod", phTarget: "Target URL (ixtiyoriy — /go/hamkor-slug tavsiya etiladi)", phCountries: "Mamlakatlar (UZ, RU — bo'sh = hammasi)", phSearch: "Qidirish (joylashuv, hamkor, o'lcham...)",
+      startDate: "Boshlanish sanasi", endDate: "Tugash sanasi",
+      allPlacements: "Barcha joylashuvlar", allTypes: "Barcha turlar", allStatuses: "Barcha holatlar",
+      enable: "Yoqish", hide: "O'chirish (yashirish)", deleteAll: "Butunlay o'chirish", cancel: "Bekor qilish",
+    },
+    aff: {
+      confirmDel: "Hamkor o'chirilsinmi?", title: "Affiliate Manager", sub: "Hamkorlar, promo-kodlar, smart redirect va link salomatligi.",
+      tabInfo: "Ma'lumotlar", tabPromo: "Promo-kodlar", tabRedirect: "Smart Redirect", tabHealth: "Link Health",
+      fName: "Nomi *", fSlug: "Slug (/go/...)", fDesc: "Tavsif", fBonus: "Bonus tavsifi", fWebsite: "Website URL", fAff: "Affiliate URL *",
+      fApk: "APK URL", fGP: "Google Play URL", fAS: "App Store URL", fDeep: "Deep Link",
+      fCountries: "Mamlakatlar (vergul bilan, bo'sh = hammasi)", fLangs: "Tillar", fRating: "Reyting (0-5)", fOrder: "Tartib (priority)",
+      phPromo: "Promo kod (masalan: WELCOME100)", phBonus: "Bonus tavsifi", addCode: "Kod qo'shish", noPromo: "Hozircha promo-kod yo'q.",
+      rCountry: "Mamlakat", rLang: "Til", rDevice: "Qurilma", phPriority: "Priority", addRule: "Qoida qo'shish", noRule: "Hozircha maxsus qoida yo'q — standart URL ishlatiladi.",
+      unchecked: "Tekshirilmagan",
     },
     common: {
       loading: "Yuklanmoqda…",
@@ -815,6 +839,27 @@ export const dictionaries = {
       catNoParent: "— Без родительской категории —", catPhDesc: "Описание (необязательно)", catEName: "Введите название.",
       catConfirmDel: "Удалить категорию? (Связанные посты останутся без категории)",
       catPosts: "постов", catEmpty: "Категорий пока нет.",
+    },
+    bnr: {
+      confirmDel: "Удалить?", title: "Менеджер баннеров", sub: "Баннеры любых размеров — загрузка, таргетинг, планирование.",
+      totalViews: "Всего показов", totalClicks: "Всего кликов", ctr: "Общий CTR", totalBanners: "Всего баннеров",
+      status: "Статус", active: "Активен", scheduled: "Запланирован", expired: "Срок истёк", disabled: "Отключён",
+      best: "Лучшие результаты (20+ показов)", worst: "Худшие результаты (20+ показов)", notEnough: "Пока недостаточно данных.",
+      typeImage: "Баннер-изображение", typeCode: "HTML/JS код", image: "Изображение",
+      phCode: "HTML/JS код от партнёра", phTarget: "Target URL (необязательно — рекомендуется /go/partner-slug)", phCountries: "Страны (UZ, RU — пусто = все)", phSearch: "Поиск (размещение, партнёр, размер...)",
+      startDate: "Дата начала", endDate: "Дата окончания",
+      allPlacements: "Все размещения", allTypes: "Все типы", allStatuses: "Все статусы",
+      enable: "Включить", hide: "Отключить (скрыть)", deleteAll: "Удалить полностью", cancel: "Отмена",
+    },
+    aff: {
+      confirmDel: "Удалить партнёра?", title: "Партнёрский менеджер", sub: "Партнёры, промокоды, smart redirect и здоровье ссылок.",
+      tabInfo: "Данные", tabPromo: "Промокоды", tabRedirect: "Smart Redirect", tabHealth: "Link Health",
+      fName: "Название *", fSlug: "Slug (/go/...)", fDesc: "Описание", fBonus: "Описание бонуса", fWebsite: "Website URL", fAff: "Affiliate URL *",
+      fApk: "APK URL", fGP: "Google Play URL", fAS: "App Store URL", fDeep: "Deep Link",
+      fCountries: "Страны (через запятую, пусто = все)", fLangs: "Языки", fRating: "Рейтинг (0-5)", fOrder: "Порядок (priority)",
+      phPromo: "Промокод (например: WELCOME100)", phBonus: "Описание бонуса", addCode: "Добавить код", noPromo: "Промокодов пока нет.",
+      rCountry: "Страна", rLang: "Язык", rDevice: "Устройство", phPriority: "Priority", addRule: "Добавить правило", noRule: "Особых правил пока нет — используется стандартный URL.",
+      unchecked: "Не проверено",
     },
     common: {
       loading: "Загрузка…",
