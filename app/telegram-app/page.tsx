@@ -454,7 +454,7 @@ function dayLabel(t: (k: any, v?: any) => string, iso: string): string {
 }
 
 export default function TelegramAppPage() {
-  const { t } = useLocale();
+  const { t, locale, setLocale } = useLocale();
   const [screen, setScreen] = useState<Screen>("loading");
   // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
   // BackButton avval shuni yopadi, keyin ekrandan chiqadi.
@@ -1564,6 +1564,18 @@ export default function TelegramAppPage() {
     return (
       <div className={`${bgCls} p-6 flex flex-col justify-center relative`}>
         <FloatingAmbience />
+        <div className="absolute top-4 right-4 z-20 flex items-center rounded-lg bg-white/[0.08] p-0.5 text-[11px] font-semibold">
+          {(["uz", "ru"] as const).map((lng) => (
+            <button
+              key={lng}
+              onClick={() => setLocale(lng)}
+              className={`px-2 py-1 rounded-md transition-colors ${locale === lng ? "bg-[#3D7FFF] text-white" : "text-[#93a5ba]"}`}
+              aria-label={lng === "uz" ? "O'zbekcha" : "Русский"}
+            >
+              {lng === "uz" ? "UZ" : "RU"}
+            </button>
+          ))}
+        </div>
         <div className="max-w-sm mx-auto w-full relative z-10">
           <div className="flex justify-center mb-2">
             {logoUrl ? (
@@ -2239,9 +2251,23 @@ export default function TelegramAppPage() {
             <p className="text-[11px] text-[#93a5ba] mb-1">{t("tg.welcome")}</p>
             <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
           </div>
-          <button onClick={logout} className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.08] text-[11px] text-[#93a5ba] active:bg-white/[0.14]" aria-label={t("tg.logout")}>
-            <LogOut size={13} /> Chiqish
-          </button>
+          <div className="shrink-0 flex items-center gap-1.5">
+            <div className="flex items-center rounded-lg bg-white/[0.08] p-0.5 text-[11px] font-semibold">
+              {(["uz", "ru"] as const).map((lng) => (
+                <button
+                  key={lng}
+                  onClick={() => setLocale(lng)}
+                  className={`px-2 py-1 rounded-md transition-colors ${locale === lng ? "bg-[#3D7FFF] text-white" : "text-[#93a5ba]"}`}
+                  aria-label={lng === "uz" ? "O'zbekcha" : "Русский"}
+                >
+                  {lng === "uz" ? "UZ" : "RU"}
+                </button>
+              ))}
+            </div>
+            <button onClick={logout} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.08] text-[11px] text-[#93a5ba] active:bg-white/[0.14]" aria-label={t("tg.logout")}>
+              <LogOut size={13} /> {t("tg.logout")}
+            </button>
+          </div>
         </div>
       </div>
 

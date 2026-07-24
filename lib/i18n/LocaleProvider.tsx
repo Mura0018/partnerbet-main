@@ -27,7 +27,21 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const cookieLocale = readCookieLocale();
-    if (cookieLocale) setLocaleState(cookieLocale);
+    if (cookieLocale) {
+      setLocaleState(cookieLocale);
+      return;
+    }
+    // Cookie yo'q — Telegram mini-app'да foydalanuvchi tilini avtomatik aniqlaymiz.
+    // ru* -> ru, aks holda DEFAULT (uz). Admin panelда Telegram yo'q, shu sabab
+    // bu hech narsani buzmaydi (uz'да qoladi). Cookie yozilmaydi — mijoz istalgan
+    // paytda qo'lда almashtira oladi.
+    try {
+      const tg = (window as any)?.Telegram?.WebApp;
+      const lang = String(tg?.initDataUnsafe?.user?.language_code ?? "").toLowerCase();
+      if (lang.startsWith("ru")) setLocaleState("ru");
+    } catch {
+      /* Telegram yo'q — DEFAULT_LOCALE qoladi */
+    }
   }, []);
 
   const setLocale = (next: Locale) => {
