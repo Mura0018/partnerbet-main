@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type Insight = {
   id: string;
@@ -23,6 +24,7 @@ const EMPTY: Omit<Insight, "id"> = {
 };
 
 export default function InsightsManager() {
+  const { t } = useLocale();
   const [insights, setInsights] = useState<Insight[]>([]);
   const [form, setForm] = useState<Omit<Insight, "id">>(EMPTY);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export default function InsightsManager() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+    if (!confirm(t("med.insConfirmDelete"))) return;
     // Soft delete: keeps the row (and its audit history) instead of erasing it.
     await supabase.from("match_insights").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     load();
@@ -72,15 +74,15 @@ export default function InsightsManager() {
     <div className="p-4 sm:p-6 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[22px] font-bold">Match Insights</h1>
-          <p className="text-[13px] text-muted mt-1">Kod yozmasdan match tahlillarini qo'shing va tahrirlang.</p>
+          <h1 className="text-[22px] font-bold">{t("med.insTitle")}</h1>
+          <p className="text-[13px] text-muted mt-1">{t("med.insSub")}</p>
         </div>
         <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
-          <Plus size={15} /> Yangi insight
+          <Plus size={15} /> {t("med.insNew")}
         </button>
       </div>
 
-      {loading && <p className="text-[13px] text-muted">Yuklanmoqda…</p>}
+      {loading && <p className="text-[13px] text-muted">{t("med.insLoading")}</p>}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {insights.map((i) => (
@@ -103,20 +105,20 @@ export default function InsightsManager() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
           <form onSubmit={save} className="w-full max-w-lg rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-[16px]">{editingId ? "Insightni tahrirlash" : "Yangi insight"}</h2>
-              <button type="button" onClick={() => setShowForm(false)} aria-label="Yopish"><X size={18} /></button>
+              <h2 className="font-bold text-[16px]">{editingId ? t("med.insEdit") : t("med.insNew")}</h2>
+              <button type="button" onClick={() => setShowForm(false)} aria-label={t("med.insClose")}><X size={18} /></button>
             </div>
 
             {[
-              { key: "league", label: "Liga", type: "text" },
-              { key: "home_team", label: "Uy egasi jamoa", type: "text" },
-              { key: "away_team", label: "Mehmon jamoa", type: "text" },
-              { key: "match_time", label: "Match vaqti", type: "datetime-local" },
-              { key: "expected_goals", label: "xG (masalan 2.1 – 1.4)", type: "text" },
-              { key: "possession_trend", label: "Possession (masalan 58% / 42%)", type: "text" },
+              { key: "league", labelKey: "med.fLeague", type: "text" },
+              { key: "home_team", labelKey: "med.fHome", type: "text" },
+              { key: "away_team", labelKey: "med.fAway", type: "text" },
+              { key: "match_time", labelKey: "med.fTime", type: "datetime-local" },
+              { key: "expected_goals", labelKey: "med.fXg", type: "text" },
+              { key: "possession_trend", labelKey: "med.fPossession", type: "text" },
             ].map((f) => (
               <div key={f.key} className="mb-3">
-                <label className="block text-[12px] text-muted mb-1">{f.label}</label>
+                <label className="block text-[12px] text-muted mb-1">{t(f.labelKey as any)}</label>
                 <input
                   type={f.type} required
                   value={(form as any)[f.key]}
@@ -127,7 +129,7 @@ export default function InsightsManager() {
             ))}
 
             <div className="mb-3">
-              <label className="block text-[12px] text-muted mb-1">Ishonch darajasi: {form.confidence}%</label>
+              <label className="block text-[12px] text-muted mb-1">{t("med.fConfidence")} {form.confidence}%</label>
               <input
                 type="range" min={0} max={100}
                 value={form.confidence}
@@ -137,7 +139,7 @@ export default function InsightsManager() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-[12px] text-muted mb-1">Status</label>
+              <label className="block text-[12px] text-muted mb-1">{t("med.fStatus")}</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -148,7 +150,7 @@ export default function InsightsManager() {
             </div>
 
             <div className="mb-5">
-              <label className="block text-[12px] text-muted mb-1">Tahlil matni</label>
+              <label className="block text-[12px] text-muted mb-1">{t("med.fAnalysis")}</label>
               <textarea
                 required rows={3}
                 value={form.analysis}
@@ -158,7 +160,7 @@ export default function InsightsManager() {
             </div>
 
             <button type="submit" className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px]">
-              Saqlash
+              {t("med.insSave")}
             </button>
           </form>
         </div>
