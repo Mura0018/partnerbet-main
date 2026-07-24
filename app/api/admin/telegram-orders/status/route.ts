@@ -58,14 +58,16 @@ export async function POST(req: NextRequest) {
   let orderCreds: Creds | undefined = undefined;
   let orderCashdeskId: string | null = null;
   let handoffFrom: string | null = null; // 6-BOSQICH: takeover bo'lган bo'lsa asl owner
+  let payoutDone = false; // WITHDRAW A-OQIMI: Payout mijoz kодида bajarilганmi
   try {
     const { data: cdRow } = await admin
       .from("telegram_orders")
-      .select("cashdesk_id, handoff_from_operator_id")
+      .select("cashdesk_id, handoff_from_operator_id, payout_done")
       .eq("id", orderId)
       .maybeSingle();
     orderCashdeskId = (cdRow as any)?.cashdesk_id ?? null;
     handoffFrom = (cdRow as any)?.handoff_from_operator_id ?? null;
+    payoutDone = !!(cdRow as any)?.payout_done;
     if (orderCashdeskId) {
       const c = await getCashdeskCredsById(orderCashdeskId);
       if (c) orderCreds = c;
@@ -75,20 +77,29 @@ export async function POST(req: NextRequest) {
   }
 
   if (status === "completed" && (await isCashdeskConfigured())) {
-    const result =
-      pendingOrder.type === "topup"
-        ? await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds)
-        : await cashdeskPayout(pendingOrder.account_id, pendingOrder.withdraw_code ?? "", orderCreds);
+    if (pendingOrder.type === "withdraw" && payoutDone) {
+      // WITHDRAW A-OQIMI: 1xbet Payout mijoz kодида ALLAQACHON bajarilган —
+      // QAYTA chaqirмаймиз (ikki marta pul chiqmasin). Operator faqat
+      // mijozга to'lovни tasdiqлади.
+      operatorNote = operatorNote
+        ? `${operatorNote} (1xbetдан yechilган — kod orqali)`
+        : "1xbetдан yechilган (kod orqali), operator to'lovни tasdiqлади";
+    } else {
+      // Topup (Deposit) yoki eski withdraw oqimi (Payout hozir chaqiriladi).
+      const result =
+        pendingOrder.type === "topup"
+          ? await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds)
+          : await cashdeskPayout(pendingOrder.account_id, pendingOrder.withdraw_code ?? "", orderCreds);
 
-    if (!result.ok) {
-      // Do NOT mark the order completed if the real money movement
-      // failed — the operator sees exactly why and can retry or escalate.
-      return NextResponse.json({ error: "cashdesk_failed", detail: result.error }, { status: 502 });
+      if (!result.ok) {
+        // Pul harakати muvaffaqiyatsiz bo'lса buyurtмани completed qilмаймиз.
+        return NextResponse.json({ error: "cashdesk_failed", detail: result.error }, { status: 502 });
+      }
+      autoProcessed = true;
+      operatorNote = operatorNote
+        ? `${operatorNote} (API orqali avtomatik bajarildi)`
+        : "API orqali avtomatik bajarildi";
     }
-    autoProcessed = true;
-    operatorNote = operatorNote
-      ? `${operatorNote} (API orqali avtomatik bajarildi)`
-      : "API orqali avtomatik bajarildi";
   }
 
   const { data: order, error } = await admin
