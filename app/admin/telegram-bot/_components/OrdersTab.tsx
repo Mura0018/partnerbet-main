@@ -406,6 +406,7 @@ function CashdeskBalanceBadge() {
 }
 
 function LimitsEditor() {
+  const { t } = useLocale();
   const [values, setValues] = useState({ max_order_amount: "", daily_customer_limit: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -450,10 +451,10 @@ function LimitsEditor() {
 
   return (
     <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-3">
-      <div className="text-[11px] text-muted mb-2">Xavfsizlik limitlari (so'mda)</div>
+      <div className="text-[11px] text-muted mb-2">{t("wid.limitsTitle")}</div>
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-[10px] text-[#5b6f85] mb-1">Bitta buyurtma maksimumi</label>
+          <label className="block text-[10px] text-[#5b6f85] mb-1">{t("wid.maxOrder")}</label>
           <input
             type="number"
             className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]"
@@ -462,7 +463,7 @@ function LimitsEditor() {
           />
         </div>
         <div>
-          <label className="block text-[10px] text-[#5b6f85] mb-1">Kunlik mijoz limiti</label>
+          <label className="block text-[10px] text-[#5b6f85] mb-1">{t("wid.dailyLimit")}</label>
           <input
             type="number"
             className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]"
@@ -475,15 +476,16 @@ function LimitsEditor() {
           disabled={saving}
           className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold disabled:opacity-60"
         >
-          {saving ? "…" : saved ? "Saqlandi ✓" : "Saqlash"}
+          {saving ? "…" : saved ? t("wid.saved") : t("common.save")}
         </button>
-        {saveError && <span className="text-[11px] text-[#FF6B85] self-center">Saqlanmadi. Qayta urinib ko'ring.</span>}
+        {saveError && <span className="text-[11px] text-[#FF6B85] self-center">{t("wid.saveFailed")}</span>}
       </div>
     </div>
   );
 }
 
 function MyStatusToggle() {
+  const { t } = useLocale();
   const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -511,13 +513,13 @@ function MyStatusToggle() {
     // refreshда qaytardi. Endi xato bo'lsa UI o'zgarmaydi.
     const { error } = await supabase.from("profiles").update({ is_online: next }).eq("id", user.id);
     if (error) {
-      alert("Holat saqlanmadi: " + error.message);
+      alert(t("wid.statusSaveFailed") + error.message);
       setSaving(false);
       return;
     }
     await supabase.from("team_chat_messages").insert({
       sender_id: user.id,
-      message: next ? `🟢 ${name} endi faol.` : `🔴 ${name} band holatiga o'tdi.`,
+      message: next ? `🟢 ${name} ${t("wid.nowActive")}` : `🔴 ${name} ${t("wid.wentBusy")}`,
       is_system: true,
       event_type: "status",
     });
@@ -534,7 +536,7 @@ function MyStatusToggle() {
       <div className="flex items-center gap-2">
         <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-[#4ADE80]" : "bg-[#F4C76A]"}`} />
         <span className={`text-[12px] ${isOnline ? "text-[#4ADE80]" : "text-[#F4C76A]"}`}>
-          Ish holatingiz: <span className="font-semibold">{isOnline ? "Faol" : "Band"}</span>
+          {t("wid.workStatus")} <span className="font-semibold">{isOnline ? t("wid.active") : t("wid.busy")}</span>
         </span>
       </div>
       <button
@@ -542,7 +544,7 @@ function MyStatusToggle() {
         disabled={saving}
         className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
       >
-        {saving ? "…" : isOnline ? "Band deb belgilash" : "Faol deb belgilash"}
+        {saving ? "…" : isOnline ? t("wid.markBusy") : t("wid.markActive")}
       </button>
     </div>
   );
@@ -551,6 +553,7 @@ function MyStatusToggle() {
 // 4-BOSQICH: operator band holati (is_busy + sabab). is_online dan alohida.
 // Band bo'lganда — buyurtmalari SLA/cron orqali boshqa operatorga o'tishi mumkin.
 function MyBusyToggle() {
+  const { t } = useLocale();
   const [isBusy, setIsBusy] = useState(false);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(true);
@@ -577,7 +580,7 @@ function MyBusyToggle() {
 
     const { error } = await supabase.from("profiles").update({ is_busy: next, busy_reason: nextReason || null }).eq("id", user.id);
     if (error) {
-      alert("Saqlanmadi: " + error.message);
+      alert(t("wid.saveFailed2") + error.message);
       setSaving(false);
       return;
     }
@@ -586,8 +589,8 @@ function MyBusyToggle() {
       is_system: true,
       event_type: "status",
       message: next
-        ? `⛔ ${name} bandman deb belgiladi${nextReason ? ` (${nextReason})` : ""} — buyurtmalari boshqa operatorga o'tishi mumkin.`
-        : `✅ ${name} yana bo'sh.`,
+        ? `⛔ ${name} ${t("wid.busyMarked")}${nextReason ? ` (${nextReason})` : ""} ${t("wid.ordersMayMove")}`
+        : `✅ ${name} ${t("wid.nowFree")}`,
     });
     setIsBusy(next);
     setSaving(false);
@@ -601,7 +604,7 @@ function MyBusyToggle() {
         <div className="flex items-center gap-2">
           <span className={`w-2.5 h-2.5 rounded-full ${isBusy ? "bg-[#FF6B85]" : "bg-[#4ADE80]"}`} />
           <span className={`text-[12px] ${isBusy ? "text-[#FF6B85]" : "text-muted"}`}>
-            Bandlik: <span className="font-semibold">{isBusy ? "Bandman" : "Bo'shman"}</span>
+            {t("wid.busyLabel")} <span className="font-semibold">{isBusy ? t("wid.busyMan") : t("wid.freeMan")}</span>
             {isBusy && reason ? <span className="text-[11px]"> — {reason}</span> : null}
           </span>
         </div>
@@ -610,14 +613,14 @@ function MyBusyToggle() {
           disabled={saving}
           className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
         >
-          {saving ? "…" : isBusy ? "Bo'shman deb belgilash" : "Bandman deb belgilash"}
+          {saving ? "…" : isBusy ? t("wid.markFree") : t("wid.markBusyMan")}
         </button>
       </div>
       {!isBusy && (
         <input
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Band sababi (ixtiyoriy) — masalan: tushlik, boshqa ish"
+          placeholder={t("wid.busyReasonPh")}
           className="mt-2 w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
         />
       )}
@@ -629,6 +632,7 @@ function MyBusyToggle() {
 // qarzdor / sof balans) va ikki tomon tasdig'i (To'ladim / Oldim). Qarz
 // bo'lmasa umuman ko'rinmaydi.
 function DebtsSection() {
+  const { t } = useLocale();
   const [data, setData] = useState<{ me: string; debts: any[]; summary: { iOwe: number; owedToMe: number; net: number } } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [announcing, setAnnouncing] = useState(false);
@@ -673,15 +677,15 @@ function DebtsSection() {
   return (
     <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-3">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[12px] font-semibold">💳 Qarzlar</div>
+        <div className="text-[12px] font-semibold">💳 {t("wid.debts")}</div>
         <button onClick={announce} disabled={announcing} className="text-[11px] px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-50">
-          {announcing ? "…" : "Smenani yakunlash"}
+          {announcing ? "…" : t("wid.endShift")}
         </button>
       </div>
       <div className="flex flex-wrap gap-4 text-[11px] mb-2.5">
-        <span className="text-[#4ADE80]">Menga haq: {fmt(data.summary.owedToMe)}</span>
-        <span className="text-[#FF6B85]">Men qarzdorman: {fmt(data.summary.iOwe)}</span>
-        <span className={data.summary.net >= 0 ? "text-[#4ADE80]" : "text-[#FF6B85]"}>Sof: {fmt(data.summary.net)}</span>
+        <span className="text-[#4ADE80]">{t("wid.owedToMe")} {fmt(data.summary.owedToMe)}</span>
+        <span className="text-[#FF6B85]">{t("wid.iOwe")} {fmt(data.summary.iOwe)}</span>
+        <span className={data.summary.net >= 0 ? "text-[#4ADE80]" : "text-[#FF6B85]"}>{t("wid.net")} {fmt(data.summary.net)}</span>
       </div>
       <div className="space-y-1.5">
         {data.debts.map((d: any) => {
@@ -689,29 +693,29 @@ function DebtsSection() {
           const canPay = d.i_am_debtor && !d.debtor_confirmed_at && !paid;
           const canReceive = d.i_am_creditor && !d.creditor_confirmed_at && !paid;
           const statusLabel = paid
-            ? "✅ Yopilgan"
+            ? t("wid.closed")
             : d.status === "debtor_confirmed"
-            ? "Qarzdor tasdiqladi"
+            ? t("wid.debtorConfirmed")
             : d.status === "creditor_confirmed"
-            ? "Haqdor tasdiqladi"
-            : "Ochiq";
+            ? t("wid.creditorConfirmed")
+            : t("wid.open");
           return (
             <div key={d.id} className="flex items-center justify-between gap-2 text-[11px] border-b border-white/5 pb-1.5 last:border-0">
               <div className="min-w-0">
                 <span className={d.i_am_debtor ? "text-[#FF6B85]" : "text-[#4ADE80]"}>
-                  {d.i_am_debtor ? `${d.creditor_name}ga ${fmt(d.amount)} so'm` : `${d.debtor_name}dan ${fmt(d.amount)} so'm`}
+                  {`${d.i_am_debtor ? d.creditor_name : d.debtor_name}: ${fmt(d.amount)} ${t("ord.sum")}`}
                 </span>
                 <span className="text-muted"> · {statusLabel}</span>
               </div>
               <div className="flex gap-1 shrink-0">
                 {canPay && (
                   <button onClick={() => confirm(d.id)} disabled={busyId === d.id} className="px-2 py-1 rounded-lg bg-[#4ADE80]/15 border border-[#4ADE80]/40 text-[#4ADE80] disabled:opacity-50">
-                    To'ladim
+                    {t("wid.iPaid")}
                   </button>
                 )}
                 {canReceive && (
                   <button onClick={() => confirm(d.id)} disabled={busyId === d.id} className="px-2 py-1 rounded-lg bg-[#4ADE80]/15 border border-[#4ADE80]/40 text-[#4ADE80] disabled:opacity-50">
-                    Oldim
+                    {t("wid.iReceived")}
                   </button>
                 )}
               </div>
@@ -726,6 +730,7 @@ function DebtsSection() {
 // 7-BOSQICH: operator o'z ishonch reytingini ko'radi (ixtiyoriy; asosiy
 // nazorat super_admin panelida /admin/operator-rating).
 function MyRatingBadge() {
+  const { t } = useLocale();
   const [rating, setRating] = useState<number | null>(null);
   const supabase = createClient();
   useEffect(() => {
@@ -738,7 +743,7 @@ function MyRatingBadge() {
   if (rating === null) return null;
   return (
     <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2 text-[12px] flex items-center gap-2">
-      <span className="text-muted">Ishonch reytingi:</span>
+      <span className="text-muted">{t("wid.trustRating")}</span>
       <span className={`font-semibold ${rating > 0 ? "text-[#4ADE80]" : rating < 0 ? "text-[#FF6B85]" : "text-white"}`}>
         {rating > 0 ? `+${rating}` : rating}
       </span>
@@ -747,6 +752,7 @@ function MyRatingBadge() {
 }
 
 function TelegramLinkWidget() {
+  const { t } = useLocale();
   const [linked, setLinked] = useState<boolean | null>(null);
   const [statusError, setStatusError] = useState(false);
   const [code, setCode] = useState("");
@@ -788,9 +794,9 @@ function TelegramLinkWidget() {
   if (linked === true) {
     return (
       <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80] flex items-center justify-between gap-3">
-        <span>✓ Telegram ulangan — yangi buyurtmalar haqida xabar kelib turadi.</span>
+        <span>{t("wid.tgLinked")}</span>
         <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">
-          {unlinking ? "…" : "Uzish"}
+          {unlinking ? "…" : t("wid.unlink")}
         </button>
       </div>
     );
@@ -799,7 +805,7 @@ function TelegramLinkWidget() {
   if (statusError) {
     return (
       <div className="mb-4 rounded-lg bg-white/[0.02] border border-white/8 px-3.5 py-2.5 text-[12px] text-muted">
-        Telegram ulanish holatini tekshirib bo'lmadi.
+        {t("wid.tgCheckFailed")}
       </div>
     );
   }
@@ -814,14 +820,14 @@ function TelegramLinkWidget() {
 
   return (
     <div className="mb-4 rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
-      <div className="mb-2">Telegram ulanmagan — yangi buyurtmalar haqida xabar olmaysiz.</div>
+      <div className="mb-2">{t("wid.tgNotLinked")}</div>
       {code ? (
         <div className="text-white/90">
           Botga yuboring: <span className="font-mono font-bold">/link {code}</span> (10 daqiqa amal qiladi)
         </div>
       ) : (
         <button onClick={generate} disabled={generating} className="px-3 py-1.5 rounded-lg bg-[#F4C76A]/20 border border-[#F4C76A]/40 text-[11px] font-semibold">
-          {generating ? "…" : "Kod olish"}
+          {generating ? "…" : t("wid.getCode")}
         </button>
       )}
     </div>
@@ -897,7 +903,7 @@ export function OrdersTab() {
         body: JSON.stringify({ orderId: o.id }),
       });
       const data = await res.json();
-      if (!data.ok) alert("Boshqa operator ulgurdi yoki buyurtma allaqachon hal qilingan.");
+      if (!data.ok) alert(t("wid.takeoverTaken"));
     } catch {
       /* tarmoq xatosi — jim */
     } finally {
