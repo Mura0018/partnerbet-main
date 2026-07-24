@@ -22,6 +22,7 @@ const ROLE_COLOR: Record<string, string> = {
 type MfaFactor = { id: string; status: string };
 
 function TwoFactorSection() {
+  const { t } = useLocale();
   const [factors, setFactors] = useState<MfaFactor[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
@@ -49,7 +50,7 @@ function TwoFactorSection() {
     const supabase = createClient();
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
     if (error || !data) {
-      setVerifyError("Xatolik yuz berdi. Qayta urinib ko'ring.");
+      setVerifyError(t("prof.err"));
       setEnrolling(false);
       return;
     }
@@ -75,7 +76,7 @@ function TwoFactorSection() {
     e.preventDefault();
     setVerifyError("");
     if (verifyCode.trim().length !== 6) {
-      setVerifyError("6 xonali kodni kiriting.");
+      setVerifyError(t("prof.enterCode6"));
       return;
     }
     setVerifying(true);
@@ -83,12 +84,12 @@ function TwoFactorSection() {
       const supabase = createClient();
       const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: newFactorId });
       if (challengeError || !challenge) {
-        setVerifyError("Xatolik yuz berdi. Qayta urinib ko'ring.");
+        setVerifyError(t("prof.err"));
         return;
       }
       const { error: verifyErr } = await supabase.auth.mfa.verify({ factorId: newFactorId, challengeId: challenge.id, code: verifyCode.trim() });
       if (verifyErr) {
-        setVerifyError("Kod noto'g'ri. Qayta urinib ko'ring.");
+        setVerifyError(t("prof.wrongCode"));
         return;
       }
       setEnrolling(false);
@@ -103,7 +104,7 @@ function TwoFactorSection() {
   };
 
   const unenroll = async (factorId: string) => {
-    if (!confirm("Ikki bosqichli tasdiqlashni o'chirishni tasdiqlaysizmi? Bu hisobingiz xavfsizligini pasaytiradi.")) return;
+    if (!confirm(t("prof.confirmDisable2fa"))) return;
     setUnenrolling(factorId);
     const supabase = createClient();
     await supabase.auth.mfa.unenroll({ factorId });
@@ -115,9 +116,9 @@ function TwoFactorSection() {
 
   return (
     <div className="rounded-xl glass-card p-5 mb-6">
-      <h2 className="text-[15px] font-semibold mb-1">Ikki bosqichli tasdiqlash (2FA)</h2>
+      <h2 className="text-[15px] font-semibold mb-1">{t("prof.twoFa")}</h2>
       <p className="text-[12px] text-muted mb-4 leading-relaxed">
-        Yoqilsa, kirishda parolingizdan tashqari, telefoningizdagi autentifikator ilova (Google Authenticator, Authy va h.k.) kodi ham so'raladi.
+        {t("prof.twoFaDesc")}
       </p>
 
       {factors.length > 0 ? (
@@ -128,12 +129,12 @@ function TwoFactorSection() {
             disabled={unenrolling === factors[0].id}
             className="text-[12px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white disabled:opacity-50"
           >
-            {unenrolling === factors[0].id ? "…" : "O'chirish"}
+            {unenrolling === factors[0].id ? "…" : t("prof.disable")}
           </button>
         </div>
       ) : !enrolling ? (
         <button onClick={startEnroll} className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
-          Yoqish
+          {t("prof.enable")}
         </button>
       ) : (
         <form onSubmit={confirmEnroll}>
@@ -143,10 +144,10 @@ function TwoFactorSection() {
                 Autentifikator ilovangiz bilan QR kodni skanerlang, yoki kalitni qo'lda kiriting:
               </p>
               <div className="bg-white p-3 rounded-lg w-fit mb-3">
-                <img src={qrCode} alt="2FA QR kod" className="w-40 h-40" />
+                <img src={qrCode} alt={t("prof.qrAlt")} className="w-40 h-40" />
               </div>
               <div className="text-[11px] font-mono text-muted mb-4 break-all bg-white/5 rounded-lg p-2.5">{secret}</div>
-              <label className="block text-[12px] text-muted mb-1.5">Ilovadagi 6 xonali kodni kiriting</label>
+              <label className="block text-[12px] text-muted mb-1.5">{t("prof.enterAppCode")}</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -162,12 +163,12 @@ function TwoFactorSection() {
                   Bekor qilish
                 </button>
                 <button type="submit" disabled={verifying} className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
-                  {verifying ? "…" : "Tasdiqlash"}
+                  {verifying ? "…" : t("prof.confirm")}
                 </button>
               </div>
             </>
           ) : (
-            <p className="text-[13px] text-muted">Yuklanmoqda…</p>
+            <p className="text-[13px] text-muted">{t("prof.loading")}</p>
           )}
         </form>
       )}
@@ -177,6 +178,7 @@ function TwoFactorSection() {
 
 
 function StatsSection() {
+  const { t } = useLocale();
   const [stats, setStats] = useState<{ resolvedOrders: number; supportReplies: number } | null>(null);
 
   React.useEffect(() => {
@@ -190,15 +192,15 @@ function StatsSection() {
 
   return (
     <div className="rounded-xl glass-card p-5 mb-6">
-      <h2 className="text-[15px] font-semibold mb-4 flex items-center gap-2"><TrendingUp size={16} className="text-accent" /> Shu oylik statistika</h2>
+      <h2 className="text-[15px] font-semibold mb-4 flex items-center gap-2"><TrendingUp size={16} className="text-accent" /> {t("prof.stats")}</h2>
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg bg-white/[0.03] p-3.5">
           <div className="text-[22px] font-extrabold text-accent">{stats.resolvedOrders}</div>
-          <div className="text-[11px] text-muted mt-0.5">Bajarilgan buyurtma</div>
+          <div className="text-[11px] text-muted mt-0.5">{t("prof.statDone")}</div>
         </div>
         <div className="rounded-lg bg-white/[0.03] p-3.5">
           <div className="text-[22px] font-extrabold text-accent">{stats.supportReplies}</div>
-          <div className="text-[11px] text-muted mt-0.5">Murojaatga javob</div>
+          <div className="text-[11px] text-muted mt-0.5">{t("prof.statReplies")}</div>
         </div>
       </div>
     </div>
@@ -206,6 +208,7 @@ function StatsSection() {
 }
 
 function ChatThemeSection() {
+  const { t } = useLocale();
   const [theme, setTheme] = useState("blue");
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -234,16 +237,17 @@ function ChatThemeSection() {
 
   return (
     <div className="rounded-xl glass-card p-5 mb-6">
-      <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-accent" /> Chat mavzusi</h2>
-      <p className="text-[12px] text-muted mb-3">O'zingiz yozgan xabarlar rangini tanlang — Jamoa chati va Murojaatlarda shu rang ishlatiladi.</p>
+      <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-accent" /> {t("prof.chatTheme")}</h2>
+      <p className="text-[12px] text-muted mb-3">{t("prof.chatThemeHint")}</p>
       <ThemePicker value={theme} onChange={change} />
-      {saved && <p className="text-[11px] text-[#4ADE80] mt-2">Saqlandi ✓</p>}
+      {saved && <p className="text-[11px] text-[#4ADE80] mt-2">{t("prof.saved")}</p>}
     </div>
   );
 }
 
 
 function NotificationPrefsSection() {
+  const { t } = useLocale();
   const [notifyOrders, setNotifyOrders] = useState(true);
   const [notifySecurityPref, setNotifySecurityPref] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -292,17 +296,18 @@ function NotificationPrefsSection() {
 
   return (
     <div className="rounded-xl glass-card p-5 mb-6">
-      <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><Bell size={16} className="text-accent" /> Telegram bildirishnomalari</h2>
-      <p className="text-[12px] text-muted mb-2">Botga ulangan bo'lsangiz, qaysi xabarlarni olishni tanlang.</p>
+      <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><Bell size={16} className="text-accent" /> {t("prof.notif")}</h2>
+      <p className="text-[12px] text-muted mb-2">{t("prof.notifHint")}</p>
       <div className="divide-y divide-white/5">
-        <Toggle checked={notifyOrders} onChange={(v) => { setNotifyOrders(v); save(v, notifySecurityPref); }} label="Yangi buyurtma xabarlari" />
-        <Toggle checked={notifySecurityPref} onChange={(v) => { setNotifySecurityPref(v); save(notifyOrders, v); }} label="Xavfsizlik ogohlantirishlari" />
+        <Toggle checked={notifyOrders} onChange={(v) => { setNotifyOrders(v); save(v, notifySecurityPref); }} label={t("prof.notifOrders")} />
+        <Toggle checked={notifySecurityPref} onChange={(v) => { setNotifySecurityPref(v); save(notifyOrders, v); }} label={t("prof.notifSecurity")} />
       </div>
     </div>
   );
 }
 
 function EmailChangeSection() {
+  const { t } = useLocale();
   const [currentEmail, setCurrentEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [editing, setEditing] = useState(false);
@@ -320,7 +325,7 @@ function EmailChangeSection() {
     setError("");
     setMessage("");
     if (!newEmail.trim() || newEmail.trim() === currentEmail) {
-      setError("Yangi email kiriting.");
+      setError(t("prof.enterNewEmail"));
       return;
     }
     setSaving(true);
@@ -328,10 +333,10 @@ function EmailChangeSection() {
       const supabase = createClient();
       const { error: updateError } = await supabase.auth.updateUser({ email: newEmail.trim() });
       if (updateError) {
-        setError("Email o'zgartirishda xatolik yuz berdi.");
+        setError(t("prof.emailErr"));
         return;
       }
-      setMessage(`Tasdiqlash havolasi ${newEmail.trim()} manziliga yuborildi. Havolani bosgach email o'zgaradi.`);
+      setMessage(t("prof.emailSent", { email: newEmail.trim() }));
       setEditing(false);
       setNewEmail("");
     } finally {
@@ -341,7 +346,7 @@ function EmailChangeSection() {
 
   return (
     <div className="rounded-xl glass-card p-5 mb-6">
-      <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><Mail size={16} className="text-accent" /> Email manzil</h2>
+      <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><Mail size={16} className="text-accent" /> {t("prof.email")}</h2>
       {!editing ? (
         <div className="flex items-center justify-between">
           <span className="text-[13px] text-muted">{currentEmail}</span>
@@ -365,7 +370,7 @@ function EmailChangeSection() {
               Bekor qilish
             </button>
             <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
-              {saving ? "…" : "Yuborish"}
+              {saving ? "…" : t("prof.send")}
             </button>
           </div>
         </form>
@@ -378,15 +383,16 @@ function EmailChangeSection() {
 
 type LoginHistoryRow = { ip_address: string | null; user_agent: string | null; success: boolean; created_at: string };
 
-function describeDeviceSimple(userAgent: string | null): string {
-  if (!userAgent) return "noma'lum qurilma";
+function describeDeviceSimple(userAgent: string | null, t: (k: any, v?: any) => string): string {
+  if (!userAgent) return t("prof.unknownDevice");
   const ua = userAgent.toLowerCase();
-  const os = ua.includes("android") ? "Android" : ua.includes("iphone") || ua.includes("ipad") ? "iPhone/iPad" : ua.includes("windows") ? "Windows" : ua.includes("macintosh") ? "Mac" : "noma'lum";
-  const browser = ua.includes("edg/") ? "Edge" : ua.includes("chrome") ? "Chrome" : ua.includes("firefox") ? "Firefox" : ua.includes("safari") ? "Safari" : "brauzer";
+  const os = ua.includes("android") ? "Android" : ua.includes("iphone") || ua.includes("ipad") ? "iPhone/iPad" : ua.includes("windows") ? "Windows" : ua.includes("macintosh") ? "Mac" : t("prof.unknown");
+  const browser = ua.includes("edg/") ? "Edge" : ua.includes("chrome") ? "Chrome" : ua.includes("firefox") ? "Firefox" : ua.includes("safari") ? "Safari" : t("prof.browser");
   return `${os}, ${browser}`;
 }
 
 function LoginHistorySection() {
+  const { t } = useLocale();
   const [history, setHistory] = useState<LoginHistoryRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -401,12 +407,12 @@ function LoginHistorySection() {
 
   return (
     <div className="rounded-xl glass-card p-5 mb-6">
-      <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><ShieldAlert size={16} className="text-accent" /> Oxirgi kirishlar</h2>
+      <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><ShieldAlert size={16} className="text-accent" /> {t("prof.lastLogins")}</h2>
       <div className="space-y-2">
         {history.map((h, i) => (
           <div key={i} className="flex items-center justify-between gap-2 text-[12px] py-1 border-b border-white/5 last:border-0">
             <span className={h.success ? "text-[#4ADE80] shrink-0" : "text-[#FF6B85] shrink-0"}>{h.success ? "✅" : "❌"}</span>
-            <span className="text-muted flex-1 min-w-0 truncate">{h.ip_address ?? "—"} · {describeDeviceSimple(h.user_agent)}</span>
+            <span className="text-muted flex-1 min-w-0 truncate">{h.ip_address ?? "—"} · {describeDeviceSimple(h.user_agent, t)}</span>
             <span className="text-muted shrink-0 text-[11px]">{new Date(h.created_at).toLocaleDateString()}</span>
           </div>
         ))}
@@ -512,8 +518,8 @@ export default function ProfilePage() {
 
   return (
     <div className="p-8 max-w-lg">
-      <h1 className="text-[22px] font-bold mb-1">Profil</h1>
-      <p className="text-[13px] text-muted mb-6">Hisob ma'lumotlari va xavfsizlik sozlamalari.</p>
+      <h1 className="text-[22px] font-bold mb-1">{t("prof.title")}</h1>
+      <p className="text-[13px] text-muted mb-6">{t("prof.sub")}</p>
 
       {!profileLoading && profile && (
         <div className="rounded-xl glass-card p-5 mb-6">
@@ -557,7 +563,7 @@ export default function ProfilePage() {
                 </div>
               )}
               <div className="text-[12px] text-muted mt-0.5">{t(`roles.${roleKey}` as any)}</div>
-              {displaySaved && <div className="text-[11px] text-[#4ADE80] mt-0.5">Saqlandi ✓</div>}
+              {displaySaved && <div className="text-[11px] text-[#4ADE80] mt-0.5">{t("prof.saved")}</div>}
             </div>
           </div>
 
