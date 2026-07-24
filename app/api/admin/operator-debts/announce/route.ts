@@ -37,6 +37,7 @@ export async function POST() {
     await admin.from("team_chat_messages").insert({
       sender_id: user.id,
       is_system: true,
+      event_type: "debt",
       message: `🧾 Tizim: ${meName} smenani yakunladi. Ochiq qarzlar:\n${lines.join("\n")}\n\nTaraflar "Qarzlar" bo'limida To'ladim/Oldim bilan tasdiqlasin.`,
     });
   } catch {

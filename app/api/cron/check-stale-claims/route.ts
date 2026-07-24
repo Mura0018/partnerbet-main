@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
       await admin.from("team_chat_messages").insert({
         sender_id: superAdmin.id,
         is_system: true,
+        event_type: "handoff",
         message: `🔁 Tizim: ${opName} ${typeLabel} buyurtmasini (${Number(order.amount).toLocaleString("ru-RU")} so'm) ${reason} — boshqa operator "Olaman" bilan o'z zimmasiga olishi mumkin.`,
       });
 
@@ -94,6 +95,7 @@ export async function GET(req: NextRequest) {
           await admin.from("team_chat_messages").insert({
             sender_id: superAdmin.id,
             is_system: true,
+            event_type: "alert",
             message: `🟥 Tizim: ${opName} takroriy e'tiborsizlik (${n} handoff/${alertSettings.windowHours}s) — super_admin nazoratiga olindi.`,
           });
           await Promise.all(superAdminChats.map((c: number) => sendTelegramMessage(c, `🟥 BETCORE PAY\n\n${opName} takroriy e'tiborsizlik (${n} handoff) — nazorat kerak.`, undefined)));
@@ -103,6 +105,7 @@ export async function GET(req: NextRequest) {
           await admin.from("team_chat_messages").insert({
             sender_id: superAdmin.id,
             is_system: true,
+            event_type: "alert",
             message: `🟧 Tizim: ${opName} takror e'tiborsiz (${n} handoff/${alertSettings.windowHours}s) — admin e'tiboriga.`,
           });
         }
@@ -160,7 +163,7 @@ export async function GET(req: NextRequest) {
       const creditorName = nameById.get(d.creditor_operator_id) ?? "Operator";
       const text = `⏰ Qarz to'lanmadi: ${debtorName} → ${creditorName}: ${Number(d.amount || 0).toLocaleString("ru-RU")} so'm (${escalationHours} soatdan oshdi).`;
 
-      await admin.from("team_chat_messages").insert({ sender_id: superAdmin.id, is_system: true, message: `🟥 Tizim: ${text}` });
+      await admin.from("team_chat_messages").insert({ sender_id: superAdmin.id, is_system: true, event_type: "debt", message: `🟥 Tizim: ${text}` });
       await Promise.all(superAdminChats.map((c: number) => sendTelegramMessage(c, `🟥 BETCORE PAY\n\n${text}`, undefined)));
       await admin.from("operator_debts").update({ escalated_at: new Date().toISOString() }).eq("id", d.id);
       debtEscalated++;

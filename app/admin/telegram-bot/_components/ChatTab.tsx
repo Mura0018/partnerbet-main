@@ -16,6 +16,14 @@ const ROLE_COLOR: Record<string, string> = {
   operator: "#4ADE80",
 };
 
+// 8-BOSQICH: tizim hodisalari turlari (rang/yorliq bilan ajratish).
+const EVENT_META: Record<string, { label: string; color: string }> = {
+  handoff: { label: "Handoff", color: "#3D7FFF" },
+  debt: { label: "Qarz", color: "#F4C76A" },
+  alert: { label: "Alert", color: "#FF6B85" },
+  status: { label: "Holat", color: "#93a5ba" },
+};
+
 
 type ChatMessage = {
   id: string;
@@ -28,6 +36,7 @@ type ChatMessage = {
   sender_id: string;
   reply_to_id: string | null;
   is_system: boolean;
+  event_type: string | null;
   profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; is_online: boolean | null; roles: { key: string } | null } | null;
 };
 
@@ -42,6 +51,12 @@ export function ChatTab() {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [myTheme, setMyTheme] = useState<string>("blue");
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<"all" | "chat" | "system">("all");
+  const [rules, setRules] = useState<string>("");
+  const [editingRules, setEditingRules] = useState(false);
+  const [rulesDraft, setRulesDraft] = useState("");
+  const [savingRules, setSavingRules] = useState(false);
+  const [onlineCount, setOnlineCount] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const firstScrollRef = useRef(true);
@@ -51,7 +66,7 @@ export function ChatTab() {
   const load = async () => {
     const { data } = await supabase
       .from("team_chat_messages")
-      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, is_system, profiles!sender_id(full_name, display_name, avatar_url, is_online, roles(key))")
+      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, is_system, event_type, profiles!sender_id(full_name, display_name, avatar_url, is_online, roles(key))")
       .order("created_at", { ascending: true })
       .limit(100);
     setMessages((data as any[]) ?? []);
@@ -101,6 +116,35 @@ export function ChatTab() {
     const interval = setInterval(load, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  // 8-BOSQICH: pinned qoidalar + faol (smenada) operatorlar soni.
+  useEffect(() => {
+    fetch("/api/admin/team-chat-rules")
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.text === "string") setRules(d.text); })
+      .catch(() => {});
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true)
+      .eq("is_online", true)
+      .then(({ count }) => setOnlineCount(count ?? 0));
+  }, []);
+
+  const saveRules = async () => {
+    setSavingRules(true);
+    try {
+      const res = await fetch("/api/admin/team-chat-rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: rulesDraft }),
+      });
+      const d = await res.json();
+      if (res.ok) { setRules(d.text ?? rulesDraft); setEditingRules(false); }
+    } finally {
+      setSavingRules(false);
+    }
+  };
 
   const changeMyTheme = async (next: string) => {
     setMyTheme(next);
@@ -194,9 +238,15 @@ export function ChatTab() {
     }
   };
 
-  const filtered = search.trim()
-    ? messages.filter((m) => `${m.message ?? ""} ${m.file_name ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()))
-    : messages;
+  const filtered = messages.filter((m) => {
+    if (typeFilter === "chat" && m.is_system) return false;
+    if (typeFilter === "system" && !m.is_system) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      if (!`${m.message ?? ""} ${m.file_name ?? ""}`.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] flex flex-col h-full min-w-0">
@@ -240,6 +290,52 @@ export function ChatTab() {
           <ThemePicker value={myTheme} onChange={changeMyTheme} />
         </div>
       )}
+
+      {/* 8-BOSQICH: pinned qoidalar */}
+      <div className="px-3 py-2 border-b border-white/8 bg-white/[0.02]">
+        <div className="flex items-start gap-2">
+          <span className="text-[11px] shrink-0">📌</span>
+          {editingRules ? (
+            <div className="flex-1 min-w-0">
+              <textarea
+                rows={3}
+                value={rulesDraft}
+                onChange={(e) => setRulesDraft(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-[11px] outline-none focus:border-accent"
+              />
+              <div className="flex gap-1.5 mt-1.5">
+                <button onClick={saveRules} disabled={savingRules} className="text-[11px] px-2.5 py-1 rounded-lg bg-accent/20 text-white disabled:opacity-50">Saqlash</button>
+                <button onClick={() => setEditingRules(false)} className="text-[11px] px-2.5 py-1 rounded-lg text-muted hover:bg-white/5">Bekor</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] text-[#cdd7e5] whitespace-pre-wrap">{rules || "Qoidalar belgilanmagan."}</div>
+              <Can permission="operators.oversight">
+                <button onClick={() => { setRulesDraft(rules); setEditingRules(true); }} className="text-[10px] text-accent mt-0.5">Tahrirlash</button>
+              </Can>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 8-BOSQICH: tur filtri + faol (smenada) operatorlar */}
+      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/8">
+        {([["all", "Hammasi"], ["chat", "Suhbat"], ["system", "Tizim"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setTypeFilter(id)}
+            className={`text-[11px] px-2.5 py-1 rounded-lg ${typeFilter === id ? "bg-accent/20 text-white" : "text-muted hover:bg-white/5"}`}
+          >
+            {label}
+          </button>
+        ))}
+        {onlineCount != null && (
+          <span className="ml-auto text-[11px] text-[#4ADE80] flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />Faol: {onlineCount}
+          </span>
+        )}
+      </div>
       <div
         ref={listRef}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-w-0 min-h-0"
@@ -252,9 +348,16 @@ export function ChatTab() {
         )}
         {filtered.map((m) => {
           if (m.is_system) {
+            const meta = m.event_type ? EVENT_META[m.event_type] : null;
             return (
               <div key={m.id} className="flex justify-center py-1">
-                <span className="text-[10.5px] text-[#93a5ba] bg-white/[0.05] border border-white/8 rounded-full px-3 py-1">
+                <span
+                  className="text-[10.5px] rounded-full px-3 py-1 border max-w-[90%] text-center whitespace-pre-wrap"
+                  style={meta
+                    ? { color: meta.color, borderColor: `${meta.color}55`, background: `${meta.color}14` }
+                    : { color: "#93a5ba", borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)" }}
+                >
+                  {meta && <span className="font-bold mr-1">[{meta.label}]</span>}
                   {m.message}
                 </span>
               </div>

@@ -104,6 +104,16 @@ export async function POST(req: NextRequest) {
     if (!linkedOrderId) linkedOrderId = lastOrder?.id ?? null;
   }
 
+  // 8-BOSQICH: mijozning OWNER operatori (2-bosqich egaligi) bор bo'lsa,
+  // support unga yo'naltiriladi (ustunlik). Owner yo'q bo'lsa yuqoridagi
+  // mavjud mantiq (tanlangan/oxirgi buyurtma operatori) — umumiy oqim.
+  try {
+    const { data: cust } = await supabase.from("customers").select("owner_operator_id").eq("id", customerId).maybeSingle();
+    if ((cust as any)?.owner_operator_id) servedBy = (cust as any).owner_operator_id;
+  } catch {
+    /* owner ustuni yo'q -> mavjud mantiq */
+  }
+
   const { data: existingThread } = await supabase
     .from("telegram_support_threads")
     .select("claimed_by, auto_greeted, status")

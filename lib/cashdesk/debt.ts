@@ -59,6 +59,7 @@ export async function enforceDebtLimit(admin: ReturnType<typeof createAdminClien
       await admin.from("team_chat_messages").insert({
         sender_id: poster,
         is_system: true,
+        event_type: "alert",
         message: `⚠️ Tizim: ${name} qarz limitidan oshdi (${total.toLocaleString("ru-RU")} so'm) va avtomatik band qilindi.`,
       });
     }

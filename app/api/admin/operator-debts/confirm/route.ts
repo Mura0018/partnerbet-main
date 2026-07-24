@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       await admin.from("team_chat_messages").insert({
         sender_id: user.id,
         is_system: true,
+        event_type: "debt",
         message: `💚 Tizim: ${nm((debt as any).debtor_operator_id)} → ${nm((debt as any).creditor_operator_id)} qarzi ikki tomon tasdig'i bilan yopildi.`,
       });
     } catch {
