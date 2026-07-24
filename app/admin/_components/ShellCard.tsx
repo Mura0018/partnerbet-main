@@ -54,6 +54,7 @@ export function ShellCard({ data, onRefresh }: { data: ShellData | null; onRefre
   const isBusy = !!me?.isBusy;
 
   const onMove = (e: React.PointerEvent) => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const r = cardRef.current?.getBoundingClientRect();
     if (!r) return;
     const px = (e.clientX - r.left) / r.width;
@@ -106,7 +107,7 @@ export function ShellCard({ data, onRefresh }: { data: ShellData | null; onRefre
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 text-[9.5px] font-bold tracking-[0.12em] uppercase text-[#5A6982]">
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: isBusy ? "#FFB020" : "#28C76F" }} />
-                {t("shl.deskGeneral")}
+                {data.deskName || t("shl.deskGeneral")}
               </div>
               <div className="mt-1 font-mono font-semibold text-[22px] leading-none tabular-nums text-white" style={{ textShadow: "0 3px 12px rgba(0,0,0,.55)" }}>
                 {bal?.configured === false ? t("shl.notConfigured") : fmt(balance)}
