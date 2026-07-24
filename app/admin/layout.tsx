@@ -13,6 +13,7 @@ import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
 import { useShellData } from "@/lib/admin/useShellData";
+import { ShellCard } from "./_components/ShellCard";
 import { Toaster } from "@/lib/ui/toast";
 
 // 7 rangli guruh (mockup v3 IA). Rang = bo'lim (bezak emas) — 2-bosqichda
@@ -83,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { profile } = useCurrentProfile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const { data: shell } = useShellData();
+  const { data: shell, refresh: refreshShell } = useShellData();
   const settings = useSiteSettings();
 
   // Menyu havolasi -> jonli badge (aniq sanoq). Chat "yangilik" nuqtasi alohida.
@@ -152,6 +153,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <X size={18} />
         </button>
       </div>
+
+      <ShellCard data={shell} onRefresh={refreshShell} />
 
       <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto relative">
         {NAV_GROUPS.map((group) => {

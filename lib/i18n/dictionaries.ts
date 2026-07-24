@@ -117,6 +117,11 @@ export const dictionaries = {
       activity: "Faollik (so'm)", orders: "Buyurtma", scanCount: "Skaner", recentOrders: "So'nggi buyurtmalar", noOrders: "Buyurtma yo'q.",
       errNotFound: "Bunday kod topilmadi. Kartani tekshiring.", errGeneric: "Xatolik. Qayta urinib ko'ring.", errCamera: "Kamera ochilmadi. Ruxsat bering yoki kodni qo'lda kiriting.", errConn: "Ulanishda xatolik.",
     },
+    shl: {
+      deskGeneral: "Umumiy kassa", faol: "faol", som: "so'm", busy: "BANDMAN", free: "BO'SH",
+      sla: "SLA", slaOver: "o'tdi", notConfigured: "Kassa ulanmagan", lowCashdesk: "{n} kassa limitdan past",
+      toFill: "To'ldirish", rating: "Reyting",
+    },
     prm: {
       mgrTitle: "Sovrinli aksiya", mgrSub: "Muddat, sovrinlar, naqd/onlayn reyting va g'oliblar",
       settings: "Aksiya sozlamasi", on: "Aksiya yoniq", off: "Aksiya o'chiq",
@@ -690,6 +695,11 @@ export const dictionaries = {
       cameraUnsupported: "Сканер камеры не поддерживается на этом устройстве — введите код вручную.",
       activity: "Активность (сум)", orders: "Заказы", scanCount: "Скан", recentOrders: "Последние заказы", noOrders: "Заказов нет.",
       errNotFound: "Такой код не найден. Проверьте карту.", errGeneric: "Ошибка. Попробуйте снова.", errCamera: "Камера не открылась. Дайте доступ или введите код вручную.", errConn: "Ошибка подключения.",
+    },
+    shl: {
+      deskGeneral: "Общая касса", faol: "актив", som: "сум", busy: "ЗАНЯТ", free: "СВОБОДЕН",
+      sla: "SLA", slaOver: "истёк", notConfigured: "Касса не подключена", lowCashdesk: "{n} касса ниже лимита",
+      toFill: "Пополнить", rating: "Рейтинг",
     },
     prm: {
       mgrTitle: "Призовая акция", mgrSub: "Срок, призы, рейтинг нал/онлайн и победители",
