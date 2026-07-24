@@ -24,6 +24,7 @@ const NAV_GROUPS = [
     { href: "/admin/customers", label: "Mijozlar", icon: Contact, permission: "customers.manage" },
     { href: "/admin/cashdesks", label: "Kassalar", icon: Landmark, permission: "cashdesks.manage" },
     { href: "/admin/operator-rating", label: "Operator reytingi", icon: Gauge, permission: "operators.oversight" },
+    { href: "/admin/promo", label: "Sovrinli karta", icon: Trophy, permission: "promo.manage" },
   ]},
   { label: "Kontent", items: [
     { href: "/admin/football", label: "Football Center", icon: Trophy, permission: "football.manage" },
