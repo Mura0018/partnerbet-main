@@ -268,9 +268,11 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
               style={m.sender === "operator" ? { background: chatThemeGradient(myTheme) } : undefined}
             >
               {quoted && (
-                <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${m.sender === "operator" ? "border-white/50" : "border-accent/50"}`}>
-                  <span className="font-semibold">{quotedLabel}</span>{" "}
-                  {quoted.message || (quoted.image_path ? "📷 Rasm" : quoted.voice_path ? "🎤 Ovozli xabar" : "")}
+                <div className={`mb-1.5 rounded-lg border-l-[3px] pl-2.5 pr-2 py-1 ${m.sender === "operator" ? "border-white/70 bg-white/10" : "border-accent/70 bg-accent/10"}`}>
+                  <div className={`text-[10px] font-semibold ${m.sender === "operator" ? "text-white/90" : "text-accent"}`}>{quotedLabel}</div>
+                  <div className="text-[10.5px] opacity-70 line-clamp-2 break-words">
+                    {quoted.message || (quoted.image_path ? "📷 Rasm" : quoted.voice_path ? "🎤 Ovozli xabar" : "")}
+                  </div>
                 </div>
               )}
               {m.voice_path ? (
@@ -301,7 +303,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex gap-1.5 px-3 pt-2 overflow-x-auto shrink-0">
+      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto shrink-0 border-t border-white/8">
         {REPLY_TEMPLATES.map((tpl, i) => (
           <button
             key={i}
@@ -324,7 +326,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         </div>
       )}
       {voiceRecorder.recording ? (
-        <div className="flex items-center gap-2.5 px-3 py-2 shrink-0">
+        <div className="flex items-center gap-2.5 px-3 py-2 shrink-0 border-t border-white/8">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
           <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
           <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label="Bekor qilish">
@@ -335,7 +337,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           </button>
         </div>
       ) : (
-      <div className="flex items-center gap-1.5 px-3 py-2 shrink-0">
+      <div className="flex items-center gap-1.5 px-3 py-2 shrink-0 border-t border-white/8">
         <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50" aria-label="Ovozli xabar">
           <Mic size={13} className="text-muted" />
         </button>
