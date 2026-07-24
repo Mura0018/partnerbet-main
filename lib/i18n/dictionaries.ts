@@ -183,6 +183,15 @@ export const dictionaries = {
       eProtected: "super_admin roli himoyalangan.", eOwnRole: "O'z rolingizni o'zgartira olmaysiz.",
       eGrantMissing: "O'zingizda yo'q ruxsatni bera olmaysiz.", eNotSaved: "Saqlanmadi.",
     },
+    trf: {
+      title: "Tariflar", sub: "Premium tema, obuna va boshqa xizmat narxlari. Bir marta belgilaysiz — barcha hamkorlarga amal qiladi.",
+      monthly: "oylik", oneTime: "bir martalik",
+      active: "Faol", price: "Narx", currency: "Valyuta", save: "Saqlash", saved: "Saqlandi",
+      loading: "Yuklanmoqda...", empty: "Tarif yo'q.",
+      missingTitle: "Tariflar jadvali topilmadi",
+      missingPre: "Iltimos ", missingPost: " migratsiyasini Supabase'da ishga tushiring, so'ng sahifani yangilang.",
+      tSaved: "\"{name}\" narxi saqlandi ✅", tSaveErr: "Saqlashda xatolik: ",
+    },
     common: {
       loading: "Yuklanmoqda…",
       save: "Saqlash",
@@ -459,6 +468,15 @@ export const dictionaries = {
       eForbidden: "У вас нет прав.", eGeneric: "Произошла ошибка.", eConn: "Ошибка подключения.", tCreated: "Роль создана ✅",
       eProtected: "Роль super_admin защищена.", eOwnRole: "Вы не можете изменять свою роль.",
       eGrantMissing: "Нельзя выдать право, которого нет у вас.", eNotSaved: "Не сохранено.",
+    },
+    trf: {
+      title: "Тарифы", sub: "Цены на премиум-тему, подписку и другие услуги. Задаёте один раз — действует для всех партнёров.",
+      monthly: "ежемесячно", oneTime: "разово",
+      active: "Активен", price: "Цена", currency: "Валюта", save: "Сохранить", saved: "Сохранено",
+      loading: "Загрузка...", empty: "Тарифов нет.",
+      missingTitle: "Таблица тарифов не найдена",
+      missingPre: "Пожалуйста, выполните миграцию ", missingPost: " в Supabase, затем обновите страницу.",
+      tSaved: "Цена «{name}» сохранена ✅", tSaveErr: "Ошибка сохранения: ",
     },
     common: {
       loading: "Загрузка…",
