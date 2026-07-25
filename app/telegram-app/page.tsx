@@ -593,6 +593,9 @@ export default function TelegramAppPage() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportSending, setSupportSending] = useState(false);
+  // Yuqoriga scroll qilib eski tarixni yuklash (oxirgi 50 dan tashqarisi).
+  const [supportHasMore, setSupportHasMore] = useState(true);
+  const [supportLoadingMore, setSupportLoadingMore] = useState(false);
   // Support ekraniga xos xato (rasm/ovoz) — umumiy `error`dan ajratilgan,
   // shunda support ekranida ko'rsatiladi va boshqa ekranlarga sizmaydi.
   const [supportError, setSupportError] = useState("");
@@ -1087,6 +1090,7 @@ export default function TelegramAppPage() {
       const res = await fetch(`/api/telegram/miniapp/support?initData=${encodeURIComponent(getInitData())}`);
       const data = await res.json();
       const msgs: SupportMessage[] = data.messages ?? [];
+      setSupportHasMore(!!data.hasMore);
       // F1 merge-reconcile: hali serverда yo'q optimistik (sending/failed)
       // xabarlarni saqlab qolamiz, aks holda 4s poll ularni o'chirib yuboradi.
       // Server versiyasi (real id) paydo bo'lса, optimistik nusxa tushib qoladi
@@ -1102,13 +1106,21 @@ export default function TelegramAppPage() {
             !serverIds.has(m.id) &&
             !msgs.some((s) => optimisticMatchesServer(m, s))
         );
+        // F3: endpoint endi FAQAT oxirgi 50 tani qaytaradi (chat darhol
+        // ochilishi uchun) — yuqoriga scroll qilib oldin yuklangan, shu
+        // javobda yo'q (eskiroq) xabarlarni saqlab qolamiz.
+        const earliestNewTs = msgs.length ? new Date(msgs[0].created_at).getTime() : Infinity;
+        const olderPreserved = prev.filter(
+          (m) => !m.clientId && !serverIds.has(m.id) && new Date(m.created_at).getTime() < earliestNewTs
+        );
+        const merged = [...olderPreserved, ...msgs];
         const last = msgs[msgs.length - 1];
-        const sig = `${msgs.length}:${last?.id ?? ""}:${last?.created_at ?? ""}|${pending
+        const sig = `${merged.length}:${last?.id ?? ""}:${last?.created_at ?? ""}|${pending
           .map((p) => `${p.clientId}:${p.status}`)
           .join(",")}`;
         if (sig === supportSigRef.current) return prev;
         supportSigRef.current = sig;
-        return pending.length ? [...msgs, ...pending] : msgs;
+        return pending.length ? [...merged, ...pending] : merged;
       });
     } catch {
       if (!silent) {
@@ -1120,6 +1132,37 @@ export default function TelegramAppPage() {
       }
     } finally {
       if (!silent) setSupportLoading(false);
+    }
+  };
+
+  // F3: chat tepasiga scroll qilinganda oldingi (50 tadan eski) xabarlarni
+  // yuklaydi. Kontent tepaga qo'shilgandagi vizual "sakrash"ni oldini olish
+  // uchun eski scrollHeight bilan yangisi orasidagi farqga scrollTop
+  // qo'lda moslashtiriladi.
+  const loadMoreSupport = async () => {
+    if (supportLoadingMore || !supportHasMore || supportMessages.length === 0) return;
+    const list = supportListRef.current;
+    const prevScrollHeight = list?.scrollHeight ?? 0;
+    setSupportLoadingMore(true);
+    try {
+      const oldest = supportMessages[0];
+      const res = await fetch(
+        `/api/telegram/miniapp/support?initData=${encodeURIComponent(getInitData())}&before=${encodeURIComponent(oldest.created_at)}`
+      );
+      const data = await res.json();
+      const older: SupportMessage[] = data.messages ?? [];
+      setSupportHasMore(!!data.hasMore);
+      if (older.length > 0) {
+        setSupportMessages((prev) => [...older, ...prev]);
+        requestAnimationFrame(() => {
+          const el = supportListRef.current;
+          if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
+        });
+      }
+    } catch {
+      /* jim */
+    } finally {
+      setSupportLoadingMore(false);
     }
   };
 
@@ -1136,12 +1179,14 @@ export default function TelegramAppPage() {
     // loadSupport xabarlarni qayta o'rnatib pastga surishini ta'minlaymiz.
     supportFirstScrollRef.current = true;
     supportSigRef.current = "";
-    // Buyurtma tanlash uchun mijozning buyurtmalarini yuklaymiz.
-    try {
-      const ordRes = await fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`);
-      const ordData = await ordRes.json();
-      setOrders(ordData.orders ?? []);
-    } catch {}
+    setSupportHasMore(true);
+    // Buyurtma tanlash uchun mijozning buyurtmalarini yuklaymiz — bu xabarlar
+    // ko'rinishini KUTIB TURMAYDI (parallel, fon rejimida), aks holda chat
+    // ekrani bitta qo'shimcha tarmoq safaridan keyin ochilardi.
+    fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`)
+      .then((r) => r.json())
+      .then((ordData) => setOrders(ordData.orders ?? []))
+      .catch(() => {});
     // Mijoz 5 daqiqadan ko'p tashqarida bo'lgan bo'lsa — eski suhbatni tozalaymiz.
     try {
       const leftRaw = localStorage.getItem("supportLeftAt");
@@ -2064,7 +2109,12 @@ export default function TelegramAppPage() {
         </div>
         <div
           ref={supportListRef}
-          onScroll={(e) => { const el = e.currentTarget; setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240); }}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240);
+            // Tepaga yaqinlashganda eski (oldingi 50 tadan tashqari) xabarlarni yuklaymiz.
+            if (el.scrollTop < 60) void loadMoreSupport();
+          }}
           className="flex-1 overflow-y-auto px-4 pt-2 space-y-2 min-h-0"
           style={{
             backgroundImage: "radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)",
@@ -2078,7 +2128,11 @@ export default function TelegramAppPage() {
           ) : supportMessages.length === 0 ? (
             <p className="text-[12px] text-[#93a5ba] text-center mt-8">{t("tg.chatEmpty")}</p>
           ) : (
-            supportMessages.map((m, i) => {
+            <>
+            {supportLoadingMore && (
+              <div className="flex justify-center py-2"><Loader2 size={16} className="animate-spin text-accent" /></div>
+            )}
+            {supportMessages.map((m, i) => {
               const prev = i > 0 ? supportMessages[i - 1] : null;
               const showDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString();
               const quoted = supportMessageById(m.reply_to_id);
@@ -2157,7 +2211,8 @@ export default function TelegramAppPage() {
               </div>
               </React.Fragment>
               );
-            })
+            })}
+            </>
           )}
           <div ref={supportBottomRef} />
         </div>

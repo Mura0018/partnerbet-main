@@ -17,12 +17,18 @@ async function resolveCustomerId(initData: string): Promise<string | null> {
   return customer?.id ?? null;
 }
 
+const PAGE_SIZE = 50;
+
 export async function GET(req: NextRequest) {
   const botToken = await getApiCredential("telegram_bot_token");
   if (!botToken) return NextResponse.json({ error: "not_configured" }, { status: 500 });
 
   const initData = req.nextUrl.searchParams.get("initData");
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  // `before` — shu sanadan OLDINGI 50 ta xabar (yuqoriga scroll qilib eski
+  // tarixni yuklash uchun). Bo'lmasa — oxirgi 50 ta (chat darhol ochilishi
+  // uchun; ilgari har safar 200 tagacha yuklanardi).
+  const before = req.nextUrl.searchParams.get("before");
 
   const customerId = await resolveCustomerId(initData);
   if (!customerId) return NextResponse.json({ error: "not_registered" }, { status: 401 });
@@ -46,9 +52,15 @@ export async function GET(req: NextRequest) {
   if (thread?.ended_at) {
     query = query.gt("created_at", thread.ended_at);
   }
-  const { data: messages } = await query.order("created_at", { ascending: true }).limit(200);
+  if (before) {
+    query = query.lt("created_at", before);
+  }
+  // Oxiridan PAGE_SIZE tasini olamiz (desc), keyin ekranda ko'rinadigan
+  // tartibga (asc) qaytaramiz.
+  const { data: page } = await query.order("created_at", { ascending: false }).limit(PAGE_SIZE);
+  const messages = (page ?? []).slice().reverse();
 
-  return NextResponse.json({ messages: messages ?? [] });
+  return NextResponse.json({ messages, hasMore: messages.length === PAGE_SIZE });
 }
 
 export async function POST(req: NextRequest) {
