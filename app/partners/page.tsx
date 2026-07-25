@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getServerLocale } from "@/lib/i18n/getServerLocale";
+import { dictionaries } from "@/lib/i18n/dictionaries";
 import { Star, ExternalLink } from "lucide-react";
 import { createPublicServerClient } from "@/lib/supabasePublic";
 import { PublicHeader } from "@/lib/ui/PublicHeader";
@@ -20,6 +22,7 @@ async function getPartners() {
 }
 
 export default async function PartnersPage() {
+  const d = dictionaries[await getServerLocale()];
   const partners = await getPartners();
 
   return (
@@ -52,7 +55,7 @@ export default async function PartnersPage() {
                   <div className="flex items-center gap-2">
                     <Button href={`/partners/${p.slug}`} variant="outline" size="sm" className="flex-1">Batafsil</Button>
                     <Button href={`/go/${p.slug}`} target="_blank" rel="noopener noreferrer sponsored" variant="cta" size="sm" icon={<ExternalLink size={13} />}>
-                      Open Partner
+                      {d.partners.openSite}
                     </Button>
                   </div>
                   {activeCodeCount > 0 && <p className="text-[11px] text-muted mt-3">{activeCodeCount} ta faol promo-kod</p>}

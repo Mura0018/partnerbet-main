@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { getServerLocale } from "@/lib/i18n/getServerLocale";
+import { dictionaries } from "@/lib/i18n/dictionaries";
 import type { Metadata } from "next";
 import { Star, ExternalLink, Globe, Smartphone, Copy, CheckCircle2 } from "lucide-react";
 import { createPublicServerClient } from "@/lib/supabasePublic";
@@ -29,6 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function PartnerDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const d = dictionaries[await getServerLocale()];
   const { slug } = await params;
   const partner = await getPartner(slug);
   if (!partner) notFound();
@@ -63,7 +66,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           <div className="text-[13px] font-semibold mb-2">Bonus</div>
           <p className="text-[14px] text-muted leading-relaxed">{partner.bonus_description || "—"}</p>
           <Button href={`/go/${partner.slug}`} target="_blank" rel="noopener noreferrer sponsored" variant="cta" size="lg" icon={<ExternalLink size={16} />} className="w-full mt-5">
-            Open Partner
+            {d.partners.openSite}
           </Button>
         </Card>
 

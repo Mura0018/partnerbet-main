@@ -33,6 +33,9 @@ export const dictionaries = {
       helpCta: "Savolingiz bormi? Yordam bo'limiga o'ting",
       disclaimer: "18+. Qimor o'yinlari qaramlik keltirishi mumkin — mas'uliyat bilan o'ynang. {site} — mustaqil futbol tahlil platformasi va litsenziyalangan hamkor; tikish qabul qilmaydi. To'liq ma'lumot footerda.",
     },
+    partners: {
+      openSite: "Saytga o'tish",
+    },
     nav: {
       g_main: "Asosiy", g_content: "Kontent", g_marketing: "Marketing", g_system: "Tizim",
       g_pay: "BetCore Pay", g_team: "Jamoa", g_partner: "Hamkorlik", orders: "Buyurtmalar", teamChat: "Jamoa chati",
@@ -696,6 +699,9 @@ export const dictionaries = {
       helpCta: "Есть вопрос? Перейдите в раздел помощи",
       disclaimer: "18+. Азартные игры могут вызывать зависимость — играйте ответственно. {site} — независимая платформа футбольной аналитики и лицензированный партнёр; ставки не принимает. Полная информация в футере.",
     },
+    partners: {
+      openSite: "Перейти на сайт",
+    },
     nav: {
       g_main: "Основное", g_content: "Контент", g_marketing: "Маркетинг", g_system: "Система",
       g_pay: "BetCore Pay", g_team: "Команда", g_partner: "Партнёрство", orders: "Заказы", teamChat: "Командный чат",
@@ -1358,6 +1364,9 @@ export const dictionaries = {
       apkVerified: "Verified build · checksum published on the install guide",
       helpCta: "Have a question? Go to the help section",
       disclaimer: "18+. Gambling can be addictive — please play responsibly. {site} is an independent football analytics platform and a licensed affiliate partner; it does not accept wagers. Full details in the footer.",
+    },
+    partners: {
+      openSite: "Open site",
     },
     common: {
       loading: "Loading…",
