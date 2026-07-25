@@ -111,8 +111,6 @@ const inputCls =
   "w-full bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-xl py-3.5 px-4 text-[14px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-3)] transition-colors " +
   "focus:border-[var(--em)] focus:shadow-[0_0_0_2px_rgba(18,217,160,0.25),0_0_16px_rgba(18,217,160,0.15)]";
 
-const selectCls = inputCls + " appearance-none";
-
 const buttonCls =
   "w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-[15px] text-[var(--bg)] " +
   "bg-gradient-to-r from-[var(--em)] to-[var(--cy)] " +
@@ -325,10 +323,10 @@ function AccountIdVerifyField({
             </button>
           </div>
           <div
-            className="absolute inset-0 flex items-center gap-3 bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-xl px-4"
+            className="absolute inset-0 flex items-center gap-3 bg-[var(--surf-2)] border border-[var(--em)]/40 shadow-[0_0_0_1px_rgba(18,217,160,0.12),0_0_16px_rgba(18,217,160,0.15)] rounded-xl px-4"
             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
-            <div className="w-9 h-9 rounded-full bg-[#4ADE80]/15 flex items-center justify-center text-[#4ADE80] shrink-0">
+            <div className="w-9 h-9 rounded-full bg-[var(--em)]/15 flex items-center justify-center text-[var(--em)] shrink-0">
               <CheckCircle2 size={18} />
             </div>
             <div className="flex-1 min-w-0">
@@ -431,11 +429,18 @@ function PlatformField({
     <>
       <div className="mb-3.5">
         <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.platform")}</label>
-        <select className={selectCls} value={platform} onChange={(e) => setPlatform(e.target.value)}>
+        <div className="grid grid-cols-2 gap-2">
           {PLATFORMS.map((p) => (
-            <option key={p} value={p}>{p === "Boshqa" ? t("tg.platformOther") : p}</option>
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPlatform(p)}
+              className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"}`}
+            >
+              {p === "Boshqa" ? t("tg.platformOther") : p}
+            </button>
           ))}
-        </select>
+        </div>
       </div>
       {platform === "Boshqa" && (
         <input
