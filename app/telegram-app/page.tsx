@@ -36,6 +36,8 @@ type Order = {
   created_at: string;
   // F2b: kartaning orqasida "qaysi operator" ni ko'rsatish uchun.
   operator_name?: string | null;
+  // MoneyRail 3-bekat — order_confirmations'da haqiqiy tasdiq bormi.
+  payment_confirmed?: boolean;
 };
 
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";

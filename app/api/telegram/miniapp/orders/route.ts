@@ -223,10 +223,25 @@ export async function GET(req: NextRequest) {
     const { data: profs } = await supabase.from("profiles").select("id, display_name, full_name").in("id", opIds);
     for (const p of profs ?? []) nameById.set(p.id, p.display_name || p.full_name || "Operator");
   }
+
+  // MoneyRail 3-bekat ("To'lov tasdiqlandi") — order_confirmations'da shu
+  // buyurtma uchun HAQIQIY tasdiq (confirmed=true) bormi. Operator/izoh/summa
+  // kabi ichki tafsilotlar mijozga chiqarilmaydi — faqat bitta bool.
+  const orderIds = (orders ?? []).map((o: any) => o.id);
+  const confirmedIds = new Set<string>();
+  if (orderIds.length) {
+    const { data: confirmations } = await supabase
+      .from("order_confirmations")
+      .select("order_id")
+      .in("order_id", orderIds)
+      .eq("confirmed", true);
+    for (const c of (confirmations ?? []) as any[]) confirmedIds.add(c.order_id);
+  }
+
   const withNames = (orders ?? []).map((o: any) => {
     const opId = o.operator_id ?? o.claimed_by;
     const { operator_id, claimed_by, ...rest } = o;
-    return { ...rest, operator_name: opId ? nameById.get(opId) ?? null : null };
+    return { ...rest, operator_name: opId ? nameById.get(opId) ?? null : null, payment_confirmed: confirmedIds.has(o.id) };
   });
 
   return NextResponse.json({ orders: withNames });
