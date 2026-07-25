@@ -1133,6 +1133,16 @@ export default function TelegramAppPage() {
       .catch(() => {});
   };
 
+  // Pastki nav tabi. "Yordam" va "Buyurtma" oddiy setScreen bilan ochilsa,
+  // ochish mantiqi (buyurtmalarni yuklash, eski suhbatni tozalash, scroll
+  // imzosini tiklash) chetlab o'tiladi — shuning uchun o'z ochuvchilariga
+  // yo'naltiramiz. Yangi ekran/sahifa yaratilmaydi.
+  const navigateTab = (s: string) => {
+    if (s === "support") { void openSupport(null); return; }
+    if (s === "orders") { void openOrders(); return; }
+    setScreen(s as any);
+  };
+
   useEffect(() => {
     if (screen !== "support") return;
     const interval = setInterval(() => loadSupport(true), 4000);
@@ -1974,7 +1984,7 @@ export default function TelegramAppPage() {
             })}
           </div>
         )}
-        <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
+        <BottomNav current={screen} onNavigate={navigateTab} />
       </div>
     );
   }
@@ -2225,7 +2235,7 @@ export default function TelegramAppPage() {
       <div className={`${bgCls} p-5 pb-24`}>
         <ScreenHeader title={t("tg.prizeTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <PrizeCard initData={getInitData()} />
-        <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
+        <BottomNav current={screen} onNavigate={navigateTab} />
       </div>
     );
   }
@@ -2346,7 +2356,7 @@ export default function TelegramAppPage() {
         @keyframes hkRise { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
       </div>
-      <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
+      <BottomNav current={screen} onNavigate={navigateTab} />
     </div>
   );
 }
