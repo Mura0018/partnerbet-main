@@ -443,7 +443,7 @@ export default function Home() {
             <Badge tone="gold"><Flame size={11} /> Latest version</Badge>
             <h2 className="text-[26px] md:text-[32px] font-bold mt-4">Get the WINORA app</h2>
             <p className="text-[14px] text-muted mt-2 max-w-md leading-relaxed">
-              Live scores, push alerts and match insights in your pocket.
+              {t("home.apkSub")}
             </p>
             <div className="flex flex-wrap gap-3 mt-6">
               <Link
@@ -454,7 +454,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex items-center gap-2 mt-5 text-[11px] text-muted">
-              <Shield size={13} /> Verified build · checksum published on the install guide
+              <Shield size={13} /> {t("home.apkVerified")}
             </div>
           </div>
         </div>

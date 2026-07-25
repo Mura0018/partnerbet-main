@@ -28,6 +28,8 @@ export const dictionaries = {
       downloadApp: "Ilovani yuklab olish",
       openPartner: "Hamkor paneli",
       navSupport: "Yordam",
+      apkSub: "Jonli natijalar, bildirishnomalar va o'yin tahlillari — telefoningizda.",
+      apkVerified: "Tekshirilgan build · nazorat summasi o'rnatish qo'llanmasida",
       disclaimer: "18+. Qimor o'yinlari qaramlik keltirishi mumkin — mas'uliyat bilan o'ynang. {site} — mustaqil futbol tahlil platformasi va litsenziyalangan hamkor; tikish qabul qilmaydi. To'liq ma'lumot footerda.",
     },
     nav: {
@@ -688,6 +690,8 @@ export const dictionaries = {
       downloadApp: "Скачать приложение",
       openPartner: "Партнёрская панель",
       navSupport: "Помощь",
+      apkSub: "Живые счета, уведомления и разборы матчей — в вашем телефоне.",
+      apkVerified: "Проверенная сборка · контрольная сумма в руководстве по установке",
       disclaimer: "18+. Азартные игры могут вызывать зависимость — играйте ответственно. {site} — независимая платформа футбольной аналитики и лицензированный партнёр; ставки не принимает. Полная информация в футере.",
     },
     nav: {
@@ -1348,6 +1352,8 @@ export const dictionaries = {
       downloadApp: "Download App",
       openPartner: "Open Partner",
       navSupport: "Support",
+      apkSub: "Live scores, push alerts and match insights in your pocket.",
+      apkVerified: "Verified build · checksum published on the install guide",
       disclaimer: "18+. Gambling can be addictive — please play responsibly. {site} is an independent football analytics platform and a licensed affiliate partner; it does not accept wagers. Full details in the footer.",
     },
     common: {
