@@ -125,9 +125,8 @@ const titleShadow = {
 };
 
 const menuCardCls =
-  "rounded-2xl app-card-bg p-4 text-left " +
-  "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.08)] " +
-  "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4)] transition-all";
+  "rounded-2xl bg-[var(--surf-2)] border border-[var(--border-subtle)] p-4 text-left " +
+  "active:scale-[0.98] transition-all";
 
 const bgCls = "min-h-screen text-[var(--ink)]";
 
