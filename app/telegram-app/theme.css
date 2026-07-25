@@ -64,6 +64,51 @@
   pointer-events: none;
 }
 
+/* 3D sovrinli karta (hero) — golografik yuza */
+.m-prizecard {
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  border-radius: 19px;
+  overflow: hidden;
+}
+.m-prizecard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--px, 50%) var(--py, 28%), rgba(255, 255, 255, 0.22), transparent 46%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 2;
+}
+.m-prizecard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 7px);
+  mix-blend-mode: overlay;
+  opacity: 0.28;
+  pointer-events: none;
+  z-index: 1;
+}
+.m-prizecard-content {
+  transform: translateZ(28px);
+}
+
+/* skeleton shimmer */
+.m-skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+  background-size: 200% 100%;
+  animation: mSkeleton 1.6s ease-in-out infinite;
+}
+@keyframes mSkeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .miniapp-root * {
     animation: none !important;

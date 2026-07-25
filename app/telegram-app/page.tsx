@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { applyAppTheme } from "@/lib/telegram/appThemes";
 import { PrizeCard } from "./PrizeCard";
+import { PrizeCard as HeroPrizeCard } from "./components/PrizeCard";
 import { PromoBanner } from "./PromoBanner";
 import { WithdrawWizard } from "./WithdrawWizard";
 
@@ -2269,6 +2270,10 @@ export default function TelegramAppPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <HeroPrizeCard initData={getInitData()} />
       </div>
 
       <div className="grid grid-cols-2 gap-3.5">
