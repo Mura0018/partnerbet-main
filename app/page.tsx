@@ -461,23 +461,18 @@ export default function Home() {
       </section>
 
       <section className="max-w-7xl mx-auto px-5 md:px-8 pb-20">
-        <div className="rounded-2xl border border-subtle bg-white/[0.02] p-8 flex flex-col md:flex-row items-center justify-between gap-5">
+        <Link
+          href="/support"
+          className="rounded-2xl border border-subtle bg-white/[0.02] p-8 flex items-center justify-between gap-5 transition-colors hover:border-accent/30 hover:bg-white/[0.04]"
+        >
           <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
               <MessageCircle size={18} className="text-accent" />
             </div>
-            <div>
-              <div className="font-semibold text-[15px]">Need help? We're online.</div>
-              <div className="text-[13px] text-muted">Average reply time under 3 minutes.</div>
-            </div>
+            <div className="font-semibold text-[15px]">{t("home.helpCta")}</div>
           </div>
-          <span
-            title="Support chat Phase 4'da qo'shiladi"
-            className="px-5 py-2.5 rounded-lg border border-subtle text-muted font-semibold text-[13px] cursor-not-allowed select-none"
-          >
-            Tez orada
-          </span>
-        </div>
+          <ChevronRight size={18} className="text-muted shrink-0" />
+        </Link>
       </section>
 
       <footer className="border-t border-subtle mt-4 bg-white/[0.015]">

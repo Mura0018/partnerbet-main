@@ -30,6 +30,7 @@ export const dictionaries = {
       navSupport: "Yordam",
       apkSub: "Jonli natijalar, bildirishnomalar va o'yin tahlillari — telefoningizda.",
       apkVerified: "Tekshirilgan build · nazorat summasi o'rnatish qo'llanmasida",
+      helpCta: "Savolingiz bormi? Yordam bo'limiga o'ting",
       disclaimer: "18+. Qimor o'yinlari qaramlik keltirishi mumkin — mas'uliyat bilan o'ynang. {site} — mustaqil futbol tahlil platformasi va litsenziyalangan hamkor; tikish qabul qilmaydi. To'liq ma'lumot footerda.",
     },
     nav: {
@@ -692,6 +693,7 @@ export const dictionaries = {
       navSupport: "Помощь",
       apkSub: "Живые счета, уведомления и разборы матчей — в вашем телефоне.",
       apkVerified: "Проверенная сборка · контрольная сумма в руководстве по установке",
+      helpCta: "Есть вопрос? Перейдите в раздел помощи",
       disclaimer: "18+. Азартные игры могут вызывать зависимость — играйте ответственно. {site} — независимая платформа футбольной аналитики и лицензированный партнёр; ставки не принимает. Полная информация в футере.",
     },
     nav: {
@@ -1354,6 +1356,7 @@ export const dictionaries = {
       navSupport: "Support",
       apkSub: "Live scores, push alerts and match insights in your pocket.",
       apkVerified: "Verified build · checksum published on the install guide",
+      helpCta: "Have a question? Go to the help section",
       disclaimer: "18+. Gambling can be addictive — please play responsibly. {site} is an independent football analytics platform and a licensed affiliate partner; it does not accept wagers. Full details in the footer.",
     },
     common: {
