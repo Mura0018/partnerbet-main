@@ -9,12 +9,11 @@ import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 
-// labelKey bo'lsa — lug'atdan olinadi, aks holda label ishlatiladi.
-const NAV_ITEMS: { href: string; label?: string; labelKey?: string }[] = [
-  { href: "/football", label: "Football Center" },
-  { href: "/blog", label: "News" },
-  { href: "/partners", label: "Partners" },
-  { href: "/apk", label: "App" },
+const NAV_ITEMS: { href: string; labelKey: string }[] = [
+  { href: "/football", labelKey: "home.navFootball" },
+  { href: "/blog", labelKey: "home.navNews" },
+  { href: "/partners", labelKey: "home.navPartners" },
+  { href: "/apk", labelKey: "home.navApp" },
   { href: "/support", labelKey: "home.navSupport" },
 ];
 
@@ -47,7 +46,7 @@ export function PublicHeader({ active }: { active?: string }) {
         <nav className="hidden md:flex items-center gap-7 text-[13px] font-medium text-muted">
           {NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} className={`transition-colors hover:text-white ${active === item.href ? "text-white" : ""}`}>
-              {item.labelKey ? t(item.labelKey) : item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>
@@ -65,7 +64,7 @@ export function PublicHeader({ active }: { active?: string }) {
         <nav className="md:hidden border-t border-subtle px-5 py-3 flex flex-col gap-1 animate-fade-in-up">
           {NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="py-2.5 text-[14px] font-medium text-muted hover:text-white">
-              {item.labelKey ? t(item.labelKey) : item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>
