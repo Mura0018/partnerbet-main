@@ -16,6 +16,16 @@ export const LOCALE_LABELS: Record<Locale, string> = {
 // three languages — no partial translations, no fallback-to-English gaps.
 export const dictionaries = {
   uz: {
+    home: {
+      liveNone: "Hozir jonli o'yin yo'q",
+      liveCount: "{n} ta jonli o'yin",
+      heroSub: "Kunlik futbol tahlillari, jonli natijalar, APK va professional o'yin sharhlari.",
+      claimBonus: "Bonusni olish",
+      downloadApp: "Ilovani yuklab olish",
+      openPartner: "Hamkor paneli",
+      navSupport: "Yordam",
+      disclaimer: "18+. Qimor o'yinlari qaramlik keltirishi mumkin — mas'uliyat bilan o'ynang. {site} — mustaqil futbol tahlil platformasi va litsenziyalangan hamkor; tikish qabul qilmaydi. To'liq ma'lumot footerda.",
+    },
     nav: {
       g_main: "Asosiy", g_content: "Kontent", g_marketing: "Marketing", g_system: "Tizim",
       g_pay: "BetCore Pay", g_team: "Jamoa", g_partner: "Hamkorlik", orders: "Buyurtmalar", teamChat: "Jamoa chati",
@@ -131,7 +141,7 @@ export const dictionaries = {
     don: {
       title: "Homiyliklar", sub: "Homiylik statistikasi va to'lov usullarini boshqarish.", loading: "Yuklanmoqda…",
       totalRevenue: "Jami daromad", today: "Bugun", last7: "So'nggi 7 kun", last30: "So'nggi 30 kun",
-      recent: "So'nggi homiyliklar", noDonations: "Hozircha homiylik yo'q.", topSupporters: "Top Supporters", noData: "Ma'lumot yo'q.",
+      recent: "So'nggi homiyliklar", noDonations: "Hozircha homiylik yo'q.", topSupporters: "Top homiylar", noData: "Ma'lumot yo'q.",
       confirmDel: "To'lov usuli o'chirilsinmi?", keys: "Kalitlar", edit: "Tahrirlash", del: "O'chirish", noMethods: "Hozircha to'lov usuli yo'q.",
       fName: "Nomi", fType: "Turi", tGateway: "To'lov shlyuzi (Stripe/PayPal)", tCrypto: "Kripto hamyon", provider: "Provider", pGeneric: "Generic (kelajakda)",
       baseUrl: "Base API URL", cryptoSymbol: "Kripto belgisi (masalan USDT, BTC, ETH, SOL)", network: "Tarmoq (masalan TRC20, ERC20)", walletAddress: "Wallet Address",
@@ -649,7 +659,7 @@ export const dictionaries = {
       donorName: "Ismingiz (ixtiyoriy)",
       message: "Xabar (ixtiyoriy)",
       anonymous: "Anonim qoldirish",
-      showPublicly: "Ismimni Top Supporters'da ko'rsatish",
+      showPublicly: "Ismimni Top homiylar ro'yxatida ko'rsatish",
       donateNow: "Homiylik qilish",
       processing: "Yuborilmoqda…",
       cryptoInstructions: "Quyidagi manzilga kiritilgan miqdorni yuboring, so'ng pastdagi formani to'ldiring.",
@@ -659,13 +669,23 @@ export const dictionaries = {
       thankYouTitle: "Rahmat!",
       thankYouMessage: "Homiyligingiz uchun tashakkur. Sizning yordamingiz biz uchun muhim.",
       backHome: "Bosh sahifaga qaytish",
-      topSupportersTitle: "Top Supporters",
+      topSupportersTitle: "Top homiylar",
       noSupportersYet: "Hozircha homiylar yo'q.",
       invalidAmount: "To'g'ri miqdor kiriting.",
       genericError: "Xatolik yuz berdi. Qayta urinib ko'ring.",
     },
   },
   ru: {
+    home: {
+      liveNone: "Сейчас нет матчей в прямом эфире",
+      liveCount: "{n} матчей в прямом эфире",
+      heroSub: "Ежедневная футбольная аналитика, живые счета, APK и профессиональные разборы матчей.",
+      claimBonus: "Получить бонус",
+      downloadApp: "Скачать приложение",
+      openPartner: "Партнёрская панель",
+      navSupport: "Помощь",
+      disclaimer: "18+. Азартные игры могут вызывать зависимость — играйте ответственно. {site} — независимая платформа футбольной аналитики и лицензированный партнёр; ставки не принимает. Полная информация в футере.",
+    },
     nav: {
       g_main: "Основное", g_content: "Контент", g_marketing: "Маркетинг", g_system: "Система",
       g_pay: "BetCore Pay", g_team: "Команда", g_partner: "Партнёрство", orders: "Заказы", teamChat: "Командный чат",
@@ -1299,7 +1319,7 @@ export const dictionaries = {
       donorName: "Ваше имя (необязательно)",
       message: "Сообщение (необязательно)",
       anonymous: "Оставить анонимно",
-      showPublicly: "Показать моё имя в Top Supporters",
+      showPublicly: "Показать моё имя в Топ спонсорах",
       donateNow: "Поддержать",
       processing: "Отправка…",
       cryptoInstructions: "Отправьте указанную сумму на адрес ниже, затем заполните форму.",
@@ -1309,13 +1329,23 @@ export const dictionaries = {
       thankYouTitle: "Спасибо!",
       thankYouMessage: "Благодарим за вашу поддержку. Ваша помощь важна для нас.",
       backHome: "Вернуться на главную",
-      topSupportersTitle: "Top Supporters",
+      topSupportersTitle: "Топ спонсоры",
       noSupportersYet: "Пока нет спонсоров.",
       invalidAmount: "Введите корректную сумму.",
       genericError: "Произошла ошибка. Попробуйте снова.",
     },
   },
   en: {
+    home: {
+      liveNone: "No live matches right now",
+      liveCount: "{n} live matches",
+      heroSub: "Daily football analytics, live scores, APK access, and professional match insights.",
+      claimBonus: "Claim Bonus",
+      downloadApp: "Download App",
+      openPartner: "Open Partner",
+      navSupport: "Support",
+      disclaimer: "18+. Gambling can be addictive — please play responsibly. {site} is an independent football analytics platform and a licensed affiliate partner; it does not accept wagers. Full details in the footer.",
+    },
     common: {
       loading: "Loading…",
       save: "Save",

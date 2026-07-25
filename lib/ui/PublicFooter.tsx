@@ -8,6 +8,7 @@ import {
   FileText, ShieldCheck, Cookie, HeartHandshake, AlertTriangle, Copyright,
 } from "lucide-react";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { BrandName } from "@/lib/ui/BrandName";
 
 const BLOCKS = [
@@ -46,6 +47,7 @@ const BLOCKS = [
 ];
 
 export function PublicFooter() {
+  const { t } = useLocale();
   const settings = useSiteSettings();
   const siteName: string | null = settings.site_identity?.site_name ?? null;
   const footerDescription: string | null = settings.footer?.description ?? null;
@@ -116,9 +118,7 @@ export function PublicFooter() {
 
         {/* Compliance line */}
         <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-subtle">
-          <span className="font-semibold text-white/60">18+ only.</span> Gambling can be addictive — please play
-          responsibly. {siteName || "WINORA"} is a licensed affiliate marketing platform and does not itself accept
-          wagers or hold client funds. Promo codes are issued by third-party licensed operators.
+          {t("home.disclaimer", { site: siteName || "WINORA" })}
         </p>
 
         {/* Bottom bar */}

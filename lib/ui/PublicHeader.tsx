@@ -7,16 +7,19 @@ import { NotificationBell } from "@/lib/push/NotificationBell";
 import { Button } from "@/lib/ui/Button";
 import { BrandName } from "@/lib/ui/BrandName";
 import { useSiteSettings } from "@/lib/site/useSiteSettings";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 
-const NAV_ITEMS = [
+// labelKey bo'lsa — lug'atdan olinadi, aks holda label ishlatiladi.
+const NAV_ITEMS: { href: string; label?: string; labelKey?: string }[] = [
   { href: "/football", label: "Football Center" },
   { href: "/blog", label: "News" },
   { href: "/partners", label: "Partners" },
   { href: "/apk", label: "App" },
-  { href: "/support", label: "Support" },
+  { href: "/support", labelKey: "home.navSupport" },
 ];
 
 export function PublicHeader({ active }: { active?: string }) {
+  const { t } = useLocale();
   const settings = useSiteSettings();
   const siteName: string | null = settings.site_identity?.site_name ?? null;
   const logoUrl: string | null = settings.branding?.logo_media_id_url ?? null;
@@ -44,14 +47,14 @@ export function PublicHeader({ active }: { active?: string }) {
         <nav className="hidden md:flex items-center gap-7 text-[13px] font-medium text-muted">
           {NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} className={`transition-colors hover:text-white ${active === item.href ? "text-white" : ""}`}>
-              {item.label}
+              {item.labelKey ? t(item.labelKey) : item.label}
             </Link>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
           <NotificationBell />
-          <Button href="/#promos" variant="cta" size="sm" className="hidden sm:inline-flex">Claim Bonus</Button>
+          <Button href="/#promos" variant="cta" size="sm" className="hidden sm:inline-flex">{t("home.claimBonus")}</Button>
           <button onClick={() => setMobileOpen((v) => !v)} className="md:hidden p-2 rounded-lg hover:bg-white/5" aria-label="Menyu">
             {mobileOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -62,7 +65,7 @@ export function PublicHeader({ active }: { active?: string }) {
         <nav className="md:hidden border-t border-subtle px-5 py-3 flex flex-col gap-1 animate-fade-in-up">
           {NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="py-2.5 text-[14px] font-medium text-muted hover:text-white">
-              {item.label}
+              {item.labelKey ? t(item.labelKey) : item.label}
             </Link>
           ))}
         </nav>

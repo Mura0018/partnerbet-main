@@ -4,6 +4,8 @@ import { PublicHeader } from "@/lib/ui/PublicHeader";
 import { PublicFooter } from "@/lib/ui/PublicFooter";
 import { Container, Card, Badge, EmptyState } from "@/lib/ui/primitives";
 import { Button } from "@/lib/ui/Button";
+import { getServerLocale } from "@/lib/i18n/getServerLocale";
+import { dictionaries } from "@/lib/i18n/dictionaries";
 
 export const metadata = { title: "Ilovani yuklab olish" };
 
@@ -20,6 +22,7 @@ async function getActiveRelease() {
 
 export default async function ApkPage() {
   const release = await getActiveRelease();
+  const d = dictionaries[await getServerLocale()];
 
   return (
     <div className="min-h-screen bg-bg text-white">
@@ -49,7 +52,7 @@ export default async function ApkPage() {
             )}
 
             <Button href={release.download_url} variant="cta" size="lg" icon={<Download size={17} />} className="w-full mt-6">
-              Download App {release.file_size_bytes ? `(${(release.file_size_bytes / (1024 * 1024)).toFixed(1)} MB)` : ""}
+              {d.home.downloadApp} {release.file_size_bytes ? `(${(release.file_size_bytes / (1024 * 1024)).toFixed(1)} MB)` : ""}
             </Button>
 
             <div className="flex items-center justify-center gap-2 mt-4 text-[11px] text-muted">

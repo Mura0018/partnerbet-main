@@ -7,6 +7,7 @@ import {
   MessageCircle, Shield, Flame,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { NotificationBell } from "@/lib/push/NotificationBell";
 import { BrandName } from "@/lib/ui/BrandName";
 import { BannerSlot } from "@/lib/ui/BannerSlot";
@@ -77,6 +78,7 @@ const NAV_LIVE: { label: string; href: string }[] = [
 ];
 
 export default function Home() {
+  const { t } = useLocale();
   const [insights, setInsights] = useState<Insight[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [liveScores, setLiveScores] = useState<any[]>([]);
@@ -250,7 +252,7 @@ export default function Home() {
               onClick={() => scrollTo("promos")}
               className="text-[13px] font-semibold px-4 py-2.5 rounded-xl bg-gradient-to-r from-cta to-cta-dim hover:brightness-110 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(23,201,100,0.35)]"
             >
-              Open Partner
+              {t("home.openPartner")}
             </button>
           </div>
         </div>
@@ -275,26 +277,26 @@ export default function Home() {
           />
         )}
         <div className="relative z-10">
-          <Badge tone="live"><Radio size={11} className="animate-pulse" /> {liveScores.length} matches live now</Badge>
+          <Badge tone="live"><Radio size={11} className="animate-pulse" /> {liveScores.length === 0 ? t("home.liveNone") : t("home.liveCount", { n: liveScores.length })}</Badge>
           <h1 className="mt-5 text-[42px] leading-[1.05] md:text-[64px] font-extrabold tracking-tight">
             BET SMARTER<br />
             <span className="bg-gradient-to-r from-accent to-vip bg-clip-text text-transparent">WIN BIGGER</span>
           </h1>
           <p className="mt-5 text-muted text-[16px] leading-relaxed max-w-md">
-            Daily football analytics, live scores, APK access, and professional match insights.
+            {t("home.heroSub")}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <button
               onClick={() => scrollTo("promos")}
               className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-cta to-cta-dim font-semibold text-[14px] shadow-[0_0_30px_rgba(23,201,100,0.4)] transition-all active:scale-[0.98] hover:brightness-110"
             >
-              Claim Bonus <ChevronRight size={16} />
+              {t("home.claimBonus")} <ChevronRight size={16} />
             </button>
             <Link
               href="/apk"
               className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-cta to-cta-dim font-semibold text-[14px] shadow-[0_0_24px_rgba(23,201,100,0.3)] hover:brightness-110 transition-all active:scale-[0.98]"
             >
-              <Download size={16} /> Download App
+              <Download size={16} /> {t("home.downloadApp")}
             </Link>
           </div>
           <p className="mt-6 text-[11px] text-muted leading-relaxed max-w-md">
@@ -450,7 +452,7 @@ export default function Home() {
                 href="/apk"
                 className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-cta to-cta-dim font-semibold text-[14px] shadow-[0_0_24px_rgba(23,201,100,0.3)] hover:brightness-110 transition-all active:scale-[0.98]"
               >
-                <Download size={16} /> Download App
+                <Download size={16} /> {t("home.downloadApp")}
               </Link>
             </div>
             <div className="flex items-center gap-2 mt-5 text-[11px] text-muted">
@@ -509,7 +511,7 @@ export default function Home() {
                 <Link href="/football" className="text-muted hover:text-white transition-colors">Football Center</Link>
                 <Link href="/blog" className="text-muted hover:text-white transition-colors">News</Link>
                 <Link href="/partners" className="text-muted hover:text-white transition-colors">Partners</Link>
-                <Link href="/apk" className="text-muted hover:text-white transition-colors">Download App</Link>
+                <Link href="/apk" className="text-muted hover:text-white transition-colors">{t("home.downloadApp")}</Link>
                 <Link href="/topup" className="flex items-center gap-1.5 text-muted hover:text-white transition-colors">
                   Top-Up
                   <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] border border-[#4ADE80]/30">Yangi</span>
@@ -545,9 +547,7 @@ export default function Home() {
           </div>
 
           <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-subtle">
-            <span className="font-semibold text-white/60">18+ only.</span> Gambling can be addictive — please play
-            responsibly. {siteSettings.identity.site_name || "WINORA"} is a licensed affiliate marketing platform and
-            does not itself accept wagers or hold client funds. Promo codes are issued by third-party licensed operators.
+            {t("home.disclaimer", { site: siteSettings.identity.site_name || "WINORA" })}
           </p>
 
           <div className="mt-6 pt-5 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
