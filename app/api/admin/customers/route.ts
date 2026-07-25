@@ -45,12 +45,16 @@ export async function GET(req: NextRequest) {
     for (const p of (partners ?? []) as any[]) nameById[p.id] = p.name;
   }
 
-  // Buyurtma soni (faqat shu sahifadagi mijozlar uchun)
+  // Buyurtma soni (faqat shu sahifadagi mijozlar uchun). Har mijoz uchun
+  // alohida COUNT so'rov — PAGE_SIZE kichik (50) bo'lgani uchun ishlaydi;
+  // sahifa hajmi sezilarli oshsa, bitta group-by RPC'ga o'tish kerak bo'ladi.
   const ids = list.map((c) => c.id);
   const orderCount: Record<string, number> = {};
   if (ids.length) {
-    const { data: ords } = await admin.from("telegram_orders").select("customer_id").in("customer_id", ids).limit(20000);
-    for (const o of (ords ?? []) as any[]) orderCount[o.customer_id] = (orderCount[o.customer_id] ?? 0) + 1;
+    const counts = await Promise.all(
+      ids.map((id) => admin.from("telegram_orders").select("id", { count: "exact", head: true }).eq("customer_id", id))
+    );
+    ids.forEach((id, i) => { orderCount[id] = counts[i].count ?? 0; });
   }
 
   // Filtr uchun barcha hamkorlar (kichik ro'yxat)
