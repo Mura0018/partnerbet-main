@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, ChevronRight, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -835,8 +835,12 @@ function TelegramLinkWidget() {
   );
 }
 
+const ORDERS_PAGE_SIZE = 100;
+
 export function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"pending" | "completed" | "rejected" | "all">("pending");
   const [selected, setSelected] = useState<Order | null>(null);
@@ -851,19 +855,39 @@ export function OrdersTab() {
   const { t } = useLocale();
   const isSuperAdmin = profile?.roles?.key === "super_admin";
 
-  const load = async () => {
+  // Qidiruv/filtr server tomonda (#16) — ilgari .limit(200) olib, qidiruv
+  // va filtrlarni FAQAT shu 200 qator ustida qilardi; 200 tadan eski
+  // buyurtma hech qanday filtr bilan topilmasdi.
+  const load = async (p = page) => {
     setLoading(true);
-    let query = supabase
-      .from("telegram_orders")
-      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, payout_done, handoff_open, sla_deadline, created_at, customers(phone, full_name)")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (filter !== "all") query = query.eq("status", filter);
-    const { data } = await query;
-    setOrders((data as any[]) ?? []);
+    try {
+      const params = new URLSearchParams({
+        status: filter,
+        page: String(p),
+        onlyToday: onlyToday ? "1" : "0",
+        onlyUnclaimed: onlyUnclaimed ? "1" : "0",
+        operatorId: operatorFilter,
+        search,
+      });
+      const res = await fetch(`/api/admin/telegram-orders/list?${params.toString()}`);
+      const data = await res.json();
+      if (res.ok) {
+        setOrders((data.orders as any[]) ?? []);
+        setTotal(data.total ?? 0);
+      }
+    } catch { /* ignore */ }
     setLoading(false);
   };
-  useEffect(() => { load(); }, [filter]);
+
+  // Qidiruv/filtr o'zgarganda 0-sahifadan qayta yuklaymiz (customers/page.tsx
+  // bilan bir xil naqsh — 300ms debounce, har tugma bosilganda emas).
+  useEffect(() => {
+    const tm = setTimeout(() => { setPage(0); load(0); }, 300);
+    return () => clearTimeout(tm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, operatorFilter, onlyToday, onlyUnclaimed, search]);
+
+  useEffect(() => { load(page); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
@@ -912,23 +936,7 @@ export function OrdersTab() {
     }
   };
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  const filtered = orders.filter((o) => {
-    if (operatorFilter !== "all") {
-      const owner = o.status === "pending" ? o.claimed_by : o.operator_id;
-      if (owner !== operatorFilter) return false;
-    }
-    if (onlyToday && new Date(o.created_at) < todayStart) return false;
-    if (onlyUnclaimed && (o.status !== "pending" || o.claimed_by)) return false;
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      const haystack = `${o.account_id} ${o.platform} ${o.customers?.phone ?? ""} ${o.customers?.full_name ?? ""} ${o.player_name ?? ""}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
-    return true;
-  });
+  const lastPage = Math.max(0, Math.ceil(total / ORDERS_PAGE_SIZE) - 1);
 
   return (
     <div>
@@ -996,13 +1004,13 @@ export function OrdersTab() {
 
       {loading ? (
         <p className="text-[13px] text-muted">{t("common.loading")}</p>
-      ) : filtered.length === 0 ? (
+      ) : orders.length === 0 ? (
         <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
           {t("ord.noOrders")}
         </div>
       ) : (
         <div className="space-y-2.5">
-          {filtered.map((o) => {
+          {orders.map((o) => {
             const owner = o.status === "pending" ? o.claimed_by : o.operator_id;
             const ownerName = owner ? operatorNames[owner] : null;
             return (
@@ -1055,6 +1063,16 @@ export function OrdersTab() {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {!loading && total > ORDERS_PAGE_SIZE && (
+        <div className="flex items-center justify-between mt-3 text-[12px]">
+          <span className="text-muted">{page * ORDERS_PAGE_SIZE + 1}–{Math.min((page + 1) * ORDERS_PAGE_SIZE, total)} / {total}</span>
+          <div className="flex gap-1.5">
+            <button disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className="p-2 rounded-lg border border-subtle disabled:opacity-30 hover:bg-white/5"><ChevronLeft size={15} /></button>
+            <button disabled={page >= lastPage} onClick={() => setPage((p) => Math.min(lastPage, p + 1))} className="p-2 rounded-lg border border-subtle disabled:opacity-30 hover:bg-white/5"><ChevronRight size={15} /></button>
+          </div>
         </div>
       )}
 
