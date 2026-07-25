@@ -119,27 +119,23 @@ function BetCorePayMetrics({ period }: { period: Period }) {
   const [m, setM] = useState({ pending: 0, completed: 0, rejected: 0, volume: 0, topup: 0, withdraw: 0, customers: 0, openSupport: 0 });
   const [loading, setLoading] = useState(true);
 
+  // Server tomonda betcore_financial_report RPC'dan (/admin/reports bilan
+  // BIR XIL manba) — ilgari mijoz tomonda .limit(20000) bilan hisoblanardi
+  // va katta davrda son jim kamayardi.
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const supabase = createClient();
-      const start = periodStart(period);
-
-      // Snapshot (davrga bog'liq emas — "hozirgi" holat)
-      const pendingQ = supabase.from("telegram_orders").select("id", { count: "exact", head: true }).eq("status", "pending");
-      const openQ = supabase.from("telegram_support_threads").select("customer_id", { count: "exact", head: true }).eq("is_archived", false);
-      // Davr bo'yicha
-      let custQ = supabase.from("customers").select("id", { count: "exact", head: true });
-      let ordersQ = supabase.from("telegram_orders").select("type, status, amount").limit(20000);
-      if (start) { custQ = custQ.gte("created_at", start); ordersQ = ordersQ.gte("created_at", start); }
-
-      const [pend, open, cust, orders] = await Promise.all([pendingQ, openQ, custQ, ordersQ]);
-      let completed = 0, rejected = 0, volume = 0, topup = 0, withdraw = 0;
-      for (const o of (orders.data ?? []) as any[]) {
-        if (o.status === "completed") { completed++; volume += Number(o.amount || 0); if (o.type === "topup") topup++; else withdraw++; }
-        else if (o.status === "rejected") rejected++;
-      }
-      setM({ pending: pend.count ?? 0, openSupport: open.count ?? 0, customers: cust.count ?? 0, completed, rejected, volume, topup, withdraw });
+      try {
+        const res = await fetch(`/api/admin/dashboard/summary?period=${period}`);
+        const data = await res.json();
+        if (res.ok) {
+          setM({
+            pending: data.pending ?? 0, openSupport: data.openSupport ?? 0, customers: data.customers ?? 0,
+            completed: data.completed ?? 0, rejected: data.rejected ?? 0, volume: data.volume ?? 0,
+            topup: data.topup ?? 0, withdraw: data.withdraw ?? 0,
+          });
+        }
+      } catch { /* ignore */ }
       setLoading(false);
     })();
   }, [period]);
@@ -187,34 +183,18 @@ function StaffActivity({ period }: { period: Period }) {
   const [rows, setRows] = useState<{ id: string; name: string; completed: number; volume: number; replies: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // /api/admin/dashboard/summary bilan BIR marta so'ralgan ma'lumotni
+  // ikkala komponent alohida so'rashi mumkin edi, lekin bu yerda ham
+  // shu route'dan o'qiymiz — ilgari .limit(20000)/.limit(30000) bilan
+  // hisoblanardi va katta davrda kesilib qolardi.
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const supabase = createClient();
-      const start = periodStart(period);
-
-      let ordersQ = supabase.from("telegram_orders").select("operator_id, amount").eq("status", "completed").limit(20000);
-      let msgsQ = supabase.from("telegram_support_messages").select("operator_id").eq("sender", "operator").limit(30000);
-      if (start) { ordersQ = ordersQ.gte("created_at", start); msgsQ = msgsQ.gte("created_at", start); }
-
-      const [profRes, ordRes, msgRes] = await Promise.all([
-        supabase.from("profiles").select("id, display_name, full_name"),
-        ordersQ,
-        msgsQ,
-      ]);
-      const nameById = new Map<string, string>();
-      for (const p of (profRes.data ?? []) as any[]) nameById.set(p.id, p.display_name || p.full_name || "—");
-
-      const agg = new Map<string, { completed: number; volume: number; replies: number }>();
-      const get = (id: string) => { let a = agg.get(id); if (!a) { a = { completed: 0, volume: 0, replies: 0 }; agg.set(id, a); } return a; };
-      for (const o of (ordRes.data ?? []) as any[]) if (o.operator_id) { const a = get(o.operator_id); a.completed++; a.volume += Number(o.amount || 0); }
-      for (const msg of (msgRes.data ?? []) as any[]) if (msg.operator_id) get(msg.operator_id).replies++;
-
-      setRows(
-        Array.from(agg.entries())
-          .map(([id, a]) => ({ id, name: nameById.get(id) ?? "—", ...a }))
-          .sort((x, y) => y.completed - x.completed || y.replies - x.replies)
-      );
+      try {
+        const res = await fetch(`/api/admin/dashboard/summary?period=${period}`);
+        const data = await res.json();
+        if (res.ok) setRows(data.staff ?? []);
+      } catch { /* ignore */ }
       setLoading(false);
     })();
   }, [period]);
