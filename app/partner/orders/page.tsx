@@ -23,8 +23,8 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 };
 const FILTERS: { id: string; label: string }[] = [
   { id: "pending", label: "Kutilmoqda" },
-  { id: "completed", label: "Bajarilgan" },
-  { id: "rejected", label: "Rad etilgan" },
+  { id: "completed", label: "Bajarildi" },
+  { id: "rejected", label: "Rad etildi" },
   { id: "all", label: "Barchasi" },
 ];
 
