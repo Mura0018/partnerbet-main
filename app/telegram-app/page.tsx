@@ -1042,11 +1042,14 @@ export default function TelegramAppPage() {
   };
 
   // S1: real-time holat — buyurtмалар ekрани ochiq bo'lса jim yangilanadi.
+  // Faqat MUVAFFAQIYATLI va to'g'ri shakldagi javob kelganda almashtiramiz —
+  // aks holda (xato javob, kutilmagan shakl) eski ro'yxat ekranda qoladi va
+  // shartli render qilinadigan tugmalar bir lahzaga yo'qolib ketmaydi.
   const refreshOrders = async () => {
     try {
       const res = await fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`);
       const data = await res.json();
-      setOrders(data.orders ?? []);
+      if (res.ok && Array.isArray(data.orders)) setOrders(data.orders);
     } catch {
       /* jim */
     }
