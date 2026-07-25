@@ -95,7 +95,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
         </div>
 
         <p className="text-[11px] text-[#5b6f85] mt-8 leading-relaxed">
-          {d.home.disclaimer.replace("{site}", siteName)}
+          {d.partners.disclaimer.replace("{partner}", partner.name).replace("{site}", siteName)}
         </p>
       </Container>
       <PublicFooter />

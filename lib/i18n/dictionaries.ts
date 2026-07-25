@@ -39,6 +39,7 @@ export const dictionaries = {
     },
     partners: {
       openSite: "Saytga o'tish",
+      disclaimer: "18+. Qimor o'yinlari qaramlik keltirishi mumkin — mas'uliyat bilan o'ynang. {partner} — mustaqil litsenziyalangan operator. {site} tikish qabul qilmaydi va operator xizmatlari uchun javobgar emas.",
     },
     nav: {
       g_main: "Asosiy", g_content: "Kontent", g_marketing: "Marketing", g_system: "Tizim",
@@ -709,6 +710,7 @@ export const dictionaries = {
     },
     partners: {
       openSite: "Перейти на сайт",
+      disclaimer: "18+. Азартные игры могут вызывать зависимость — играйте ответственно. {partner} — независимый лицензированный оператор. {site} не принимает ставки и не несёт ответственности за услуги оператора.",
     },
     nav: {
       g_main: "Основное", g_content: "Контент", g_marketing: "Маркетинг", g_system: "Система",
@@ -1379,6 +1381,7 @@ export const dictionaries = {
     },
     partners: {
       openSite: "Open site",
+      disclaimer: "18+. Gambling can be addictive — play responsibly. {partner} is an independent licensed operator. {site} does not accept wagers and is not responsible for the operator's services.",
     },
     common: {
       loading: "Loading…",
