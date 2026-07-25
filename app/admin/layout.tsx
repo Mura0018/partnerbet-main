@@ -315,7 +315,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {sidebarContent}
       </aside>
 
-      <main className={`flex-1 min-w-0 overflow-x-hidden overflow-y-auto ${shell?.canManageOrders ? "pb-16 md:pb-0" : ""}`}>
+      <main className={`flex-1 min-w-0 overflow-x-hidden overflow-y-auto ${shell?.canManageOrders ? "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0" : ""}`}>
         <Suspense fallback={null}>
           <ForbiddenBanner />
         </Suspense>
@@ -324,7 +324,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobil pastki tab-bar — operator kunlik 4 + "Yana" (faqat BetCore foydalanuvchi) */}
       {shell?.canManageOrders && (
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 h-[62px] grid grid-cols-5 divider-gradient-top bg-panel/95 backdrop-blur-xl">
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 h-[calc(62px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] grid grid-cols-5 divider-gradient-top bg-panel/95 backdrop-blur-xl">
           {[
             { href: "/admin/dashboard", label: t("shl.tabPanel"), icon: LayoutDashboard, color: "#2E8FFF" },
             { href: "/admin/telegram-bot", label: t("shl.tabOrders"), icon: Wallet, color: "#12D9A0", badge: shell?.counts?.pendingOrders ?? 0 },
