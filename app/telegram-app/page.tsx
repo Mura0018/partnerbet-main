@@ -119,7 +119,7 @@ const buttonCls =
   "transition-all disabled:opacity-50";
 
 const titleShadow = {
-  textShadow: "4px 5px 10px rgba(0,0,0,0.6), -2px -2px 5px rgba(120,180,255,0.3), 0 0 20px rgba(80,150,255,0.25)",
+  textShadow: "0 2px 10px rgba(0,0,0,0.5)",
 };
 
 const menuCardCls =
