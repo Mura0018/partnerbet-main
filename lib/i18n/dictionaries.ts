@@ -22,7 +22,7 @@ export const dictionaries = {
   uz: {
     home: {
       liveNone: "Hozir jonli o'yin yo'q",
-      liveCount: "{n} ta jonli o'yin",
+      liveCount: "Jonli o'yinlar: {n}",
       heroSub: "Kunlik futbol tahlillari, jonli natijalar, APK va professional o'yin sharhlari.",
       claimBonus: "Bonusni olish",
       downloadApp: "Ilovani yuklab olish",
@@ -688,7 +688,7 @@ export const dictionaries = {
   ru: {
     home: {
       liveNone: "Сейчас нет матчей в прямом эфире",
-      liveCount: "{n} матчей в прямом эфире",
+      liveCount: "Матчей в эфире: {n}",
       heroSub: "Ежедневная футбольная аналитика, живые счета, APK и профессиональные разборы матчей.",
       claimBonus: "Получить бонус",
       downloadApp: "Скачать приложение",
@@ -1354,7 +1354,7 @@ export const dictionaries = {
   en: {
     home: {
       liveNone: "No live matches right now",
-      liveCount: "{n} live matches",
+      liveCount: "Live matches: {n}",
       heroSub: "Daily football analytics, live scores, APK access, and professional match insights.",
       claimBonus: "Claim Bonus",
       downloadApp: "Download App",
