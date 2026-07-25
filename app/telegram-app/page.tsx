@@ -326,7 +326,7 @@ function AccountIdVerifyField({
             </button>
           </div>
           <div
-            className="absolute inset-0 flex items-center gap-3 bg-[#0e2038] rounded-xl px-4 shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]"
+            className="absolute inset-0 flex items-center gap-3 bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-xl px-4"
             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
             <div className="w-9 h-9 rounded-full bg-[#4ADE80]/15 flex items-center justify-center text-[#4ADE80] shrink-0">
@@ -1957,7 +1957,7 @@ export default function TelegramAppPage() {
             <form onSubmit={submitTopup}>
               <div className="mb-4">
                 <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.receipt")}</label>
-                <label className="flex items-center justify-center gap-2 w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]">
+                <label className="flex items-center justify-center gap-2 w-full bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer">
                   <Upload size={15} />
                   {tuReceiptFileName || t("tg.pickImage")}
                   <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleReceiptSelect} />
@@ -2032,7 +2032,7 @@ export default function TelegramAppPage() {
               const s = STATUS_LABEL[o.status];
               const Icon = s.icon;
               return (
-                <div key={o.id} className="rounded-xl bg-gradient-to-b from-[#0e2038] to-[#0a1a30] p-4 shadow-[5px_5px_14px_rgba(0,0,0,0.4)]">
+                <div key={o.id} className="rounded-xl bg-gradient-to-b from-[var(--surf-2)] to-[var(--surf)] border border-[var(--border-subtle)] p-4">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[13px] font-bold">{o.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")}</span>
                     <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: s.color }}>
@@ -2084,7 +2084,7 @@ export default function TelegramAppPage() {
                 onChange={(e) => setImageCaption(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") confirmSendImage(); }}
                 placeholder={t("tg.phCaption")}
-                className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2.5 px-3 text-[13px] text-white outline-none placeholder:text-[#5b7089]"
+                className="flex-1 min-w-0 bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-[13px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-3)]"
               />
               <button onMouseDown={(e) => e.preventDefault()} onClick={confirmSendImage} className="shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center" aria-label={t("tg.send")}>
                 <Send size={18} />
@@ -2220,7 +2220,7 @@ export default function TelegramAppPage() {
         {showScrollDown && (
           <button
             onClick={() => { supportBottomRef.current?.scrollIntoView({ behavior: "smooth" }); setShowScrollDown(false); }}
-            className="fixed right-3 bottom-20 z-[60] w-10 h-10 rounded-full bg-[#0e2038]/90 backdrop-blur border m-divider flex items-center justify-center shadow-lg active:scale-95"
+            className="fixed right-3 bottom-20 z-[60] w-10 h-10 rounded-full bg-[var(--surf-3)]/90 backdrop-blur border m-divider flex items-center justify-center shadow-lg active:scale-95"
             aria-label={t("tg.scrollDown")}
           >
             <ChevronDown size={20} className="text-white" />
@@ -2232,7 +2232,7 @@ export default function TelegramAppPage() {
         {msgMenuFor && msgMenuPos && (
           <div className="fixed inset-0 z-[85]" onClick={() => setMsgMenuFor(null)}>
             <div
-              className={`absolute w-40 select-none bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border m-divider shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
+              className={`absolute w-40 select-none bg-[var(--surf-3)]/95 backdrop-blur-xl rounded-2xl border m-divider shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
               style={{
                 left: Math.max(8, Math.min(msgMenuPos.x - 80, (typeof window !== "undefined" ? window.innerWidth : 360) - 168)),
                 top: Math.max(8, msgMenuPos.y - 104),
@@ -2279,7 +2279,7 @@ export default function TelegramAppPage() {
           </div>
         )}
         {supportReplyTo && (
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-[#0e2038]">
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-[var(--surf-2)]">
             <Reply size={12} className="text-accent shrink-0" />
             <div className="flex-1 min-w-0 text-[11px] text-[#93a5ba] truncate">
               {supportReplyTo.message || (supportReplyTo.image_path ? t("tg.photo") : supportReplyTo.voice_path ? t("tg.voiceMsg") : "")}
@@ -2290,7 +2290,7 @@ export default function TelegramAppPage() {
           </div>
         )}
         {supportError && (
-          <p className="px-4 py-1.5 text-[11px] text-[#FF6B85] bg-[#0e2038]">{supportError}</p>
+          <p className="px-4 py-1.5 text-[11px] text-[var(--red)] bg-[var(--red)]/10">{supportError}</p>
         )}
         {/* Support chatda ovoz YO'Q — faqat rasm/fayl + matn. */}
         <div className="flex items-center gap-1.5 px-3 py-2.5">
@@ -2300,7 +2300,7 @@ export default function TelegramAppPage() {
           </label>
           <input
             ref={supportInputRef}
-            className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2 px-3 text-[12.5px] text-white outline-none placeholder:text-[#5b7089]"
+            className="flex-1 min-w-0 bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-lg py-2 px-3 text-[12.5px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-3)]"
             placeholder={t("tg.phMessage")}
             value={supportText}
             onChange={(e) => { setSupportText(e.target.value); setSupportError(""); }}
@@ -2329,7 +2329,7 @@ export default function TelegramAppPage() {
     <div className={`${bgCls} p-5 m-screen-pb relative`}>
       <FloatingAmbience />
       <div className="relative z-10">
-      <div className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5 shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]">
+      <div className="rounded-2xl bg-gradient-to-br from-[var(--surf-3)] to-[var(--surf)] border border-[var(--border-subtle)] p-5 mb-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] text-[#93a5ba] mb-1">{t("tg.welcome")}</p>
@@ -2397,7 +2397,7 @@ export default function TelegramAppPage() {
         className="group relative w-full mt-3.5 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)] active:translate-y-[2px] transition-all"
         style={{ background: "linear-gradient(120deg,#F4C76A,#3D7FFF,#7c3aed,#F4C76A)", backgroundSize: "300% 100%", animation: "hkShimmer 6s linear infinite" }}
       >
-        <div className="relative rounded-2xl bg-gradient-to-br from-[#0e2038] to-[#0a1a30] px-4 py-3.5 flex items-center gap-3.5">
+        <div className="relative rounded-2xl bg-gradient-to-br from-[var(--surf-2)] to-[var(--surf)] px-4 py-3.5 flex items-center gap-3.5">
           <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#F4C76A] to-[#c99a3e] flex items-center justify-center shadow-[3px_3px_10px_rgba(0,0,0,0.45)]" style={{ animation: "hkFloat 3.4s ease-in-out infinite" }}>
             <Handshake size={20} className="text-[#2a1e05]" />
           </div>
