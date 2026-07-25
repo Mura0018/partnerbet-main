@@ -10,6 +10,7 @@ import { applyAppTheme } from "@/lib/telegram/appThemes";
 import { PrizeCard } from "./PrizeCard";
 import { PrizeCard as HeroPrizeCard } from "./components/PrizeCard";
 import { MoneyRail } from "./components/MoneyRail";
+import { BottomNav } from "./components/BottomNav";
 import { PromoBanner } from "./PromoBanner";
 import { WithdrawWizard } from "./WithdrawWizard";
 
@@ -1920,7 +1921,7 @@ export default function TelegramAppPage() {
     ];
     const filteredOrders = ordersFilter === "all" ? orders : orders.filter((o) => o.status === ordersFilter);
     return (
-      <div className={`${bgCls} p-5`}>
+      <div className={`${bgCls} p-5 pb-24`}>
         <ScreenHeader title={t("tg.ordersTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <div className="flex gap-2 mb-4 overflow-x-auto">
           {ORDER_FILTERS.map((f) => (
@@ -1973,6 +1974,7 @@ export default function TelegramAppPage() {
             })}
           </div>
         )}
+        <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
       </div>
     );
   }
@@ -2220,16 +2222,17 @@ export default function TelegramAppPage() {
 
   if (screen === "promo") {
     return (
-      <div className={`${bgCls} p-5`}>
+      <div className={`${bgCls} p-5 pb-24`}>
         <ScreenHeader title={t("tg.prizeTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <PrizeCard initData={getInitData()} />
+        <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
       </div>
     );
   }
 
   // menu
   return (
-    <div className={`${bgCls} p-5 relative`}>
+    <div className={`${bgCls} p-5 pb-24 relative`}>
       <FloatingAmbience />
       <div className="relative z-10">
       <div className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5 shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]">
@@ -2237,6 +2240,10 @@ export default function TelegramAppPage() {
           <div>
             <p className="text-[11px] text-[#93a5ba] mb-1">{t("tg.welcome")}</p>
             <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
+            <span className="inline-flex items-center gap-1.5 mt-1.5 text-[10px] font-bold tracking-wide" style={{ color: "var(--em)" }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--em)", boxShadow: "0 0 6px var(--em)" }} />
+              {t("tg.onlineLabel")}
+            </span>
           </div>
           <div className="shrink-0 flex items-center gap-1.5">
             <div className="flex items-center rounded-lg bg-white/[0.08] p-0.5 text-[11px] font-semibold">
@@ -2339,6 +2346,7 @@ export default function TelegramAppPage() {
         @keyframes hkRise { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
       </div>
+      <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
     </div>
   );
 }
