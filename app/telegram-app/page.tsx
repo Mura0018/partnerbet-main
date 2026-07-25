@@ -115,10 +115,10 @@ const inputCls =
 const selectCls = inputCls + " appearance-none";
 
 const buttonCls =
-  "w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-[15px] text-white " +
-  "app-btn-bg " +
-  "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.15)] " +
-  "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4),inset_-2px_-2px_6px_rgba(255,255,255,0.05)] " +
+  "w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-[15px] text-[var(--bg)] " +
+  "bg-gradient-to-r from-[var(--em)] to-[var(--cy)] " +
+  "shadow-[0_6px_20px_rgba(18,217,160,0.3)] " +
+  "active:scale-[0.98] active:shadow-[0_3px_10px_rgba(18,217,160,0.2)] " +
   "transition-all disabled:opacity-50";
 
 const titleShadow = {
