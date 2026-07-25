@@ -12,8 +12,12 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
 };
 
-// Auth-flow + shared admin-chrome strings. Every key below exists in all
-// three languages — no partial translations, no fallback-to-English gaps.
+// Auth-flow + shared admin-chrome strings.
+// `uz` va `ru` — to'liq va bir xil hajmda (43 bo'lim). `en` esa QISMAN:
+// faqat home/common/auth/roles/donations bo'limlari bor, qolgani yo'q va
+// t() DEFAULT_LOCALE (uz) ga qaytadi. Shuning uchun `en` foydalanuvchiga
+// tanlash uchun taklif qilinmaydi — LegalLocaleSwitcher va LocaleSwitcher
+// ikkalasi ham PANEL_LOCALES (uz/ru) dan foydalanadi.
 export const dictionaries = {
   uz: {
     home: {
