@@ -21,6 +21,10 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   position: relative;
   z-index: 0;
+  /* Asosiy fon (--bg) shu yerda — aurora/grain (fixed, tepada) shundan
+     ustida joylashadi. Har ekranning o'z foni (bgCls) endi shaffof,
+     shuning uchun aurora hamma ekranda ko'rinadi. */
+  background: var(--bg);
 }
 
 /* Aurora fon — yashil chapdan, binafsha o'ngdan, faqat tepada.

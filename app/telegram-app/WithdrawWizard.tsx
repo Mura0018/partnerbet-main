@@ -125,7 +125,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
           <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.platform")}</label>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {PLATFORMS.map((p) => (
-              <button key={p} type="button" onClick={() => setPlatform(p)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"}`}>{p}</button>
+              <button key={p} type="button" onClick={() => setPlatform(p)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"}`}>{p === "Boshqa" ? t("tg.platformOther") : p}</button>
             ))}
           </div>
           {platform === "Boshqa" && <input className={`${inputCls} mb-3`} placeholder={t("wz.platformPh")} value={customPlatform} onChange={(e) => setCustomPlatform(e.target.value)} />}
