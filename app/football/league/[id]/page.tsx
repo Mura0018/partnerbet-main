@@ -63,8 +63,8 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           <div className="grid md:grid-cols-3 gap-5">
             <div className="md:col-span-2">
               <SectionHeading title="Turnir jadvali" />
-              <div className="rounded-2xl border border-subtle overflow-hidden">
-                <table className="w-full text-[13px]">
+              <div className="rounded-2xl border border-subtle overflow-x-auto">
+                <table className="w-full min-w-[460px] text-[13px]">
                   <thead className="bg-white/[0.03] text-[10px] text-muted uppercase">
                     <tr><th className="text-left px-4 py-3">#</th><th className="text-left px-4 py-3">Jamoa</th><th className="px-2 py-3">O</th><th className="px-2 py-3">G</th><th className="px-2 py-3">D</th><th className="px-2 py-3">M</th><th className="px-4 py-3">Ochko</th></tr>
                   </thead>
