@@ -34,6 +34,12 @@ Bu loyihada ishlashda quyidagi qoidalarga **har doim** amal qilinadi. Ular foyda
 
 - Foydalanuvchi bilan muloqot **o'zbek tilida** olib boriladi.
 
+## Divider qoidasi
+
+- Mini app ichida (`.miniapp-root`): `m-divider`
+- Qolgan hamma joyda: `border-subtle`
+- Qattiq oq border (`border-white`, `#fff`) **TAQIQ**
+
 ## Loyiha haqida qisqacha
 
 - **Stek:** Next.js + Supabase (TypeScript, Tailwind CSS).
