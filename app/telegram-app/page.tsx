@@ -1931,7 +1931,7 @@ export default function TelegramAppPage() {
     ];
     const filteredOrders = ordersFilter === "all" ? orders : orders.filter((o) => o.status === ordersFilter);
     return (
-      <div className={`${bgCls} p-5 pb-24`}>
+      <div className={`${bgCls} p-5 m-screen-pb`}>
         <ScreenHeader title={t("tg.ordersTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <div className="flex gap-2 mb-4 overflow-x-auto">
           {ORDER_FILTERS.map((f) => (
@@ -2232,7 +2232,7 @@ export default function TelegramAppPage() {
 
   if (screen === "promo") {
     return (
-      <div className={`${bgCls} p-5 pb-24`}>
+      <div className={`${bgCls} p-5 m-screen-pb`}>
         <ScreenHeader title={t("tg.prizeTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <PrizeCard initData={getInitData()} />
         <BottomNav current={screen} onNavigate={navigateTab} />
@@ -2242,7 +2242,7 @@ export default function TelegramAppPage() {
 
   // menu
   return (
-    <div className={`${bgCls} p-5 pb-24 relative`}>
+    <div className={`${bgCls} p-5 m-screen-pb relative`}>
       <FloatingAmbience />
       <div className="relative z-10">
       <div className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5 shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]">

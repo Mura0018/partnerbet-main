@@ -64,6 +64,12 @@
   pointer-events: none;
 }
 
+/* Ekran pastki bo'shlig'i — pastki nav (58px) ustidan + telefon safe-area.
+   Qat'iy pb-24 o'rniga: home-indikatorli qurilmalarda kontent kesilmaydi. */
+.miniapp-root .m-screen-pb {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
 /* 3D sovrinli karta (hero) — golografik yuza */
 .m-prizecard {
   position: relative;
