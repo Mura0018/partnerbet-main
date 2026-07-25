@@ -107,14 +107,19 @@ export function ChatTab() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    // currentUserId load()dan OLDIN o'rnatilishi shart — aks holda birinchi
+    // render xabarlarni currentUserId hali null bo'lganda chizadi va
+    // O'ZINING xabarlari ham chapga (isMe=false) tushib, keyin identifikatsiya
+    // kelgach o'ngga sakraydi (race condition, GlobalChat.tsx'da yo'q edi).
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id ?? null);
       if (user) {
         const { data } = await supabase.from("profiles").select("chat_theme").eq("id", user.id).maybeSingle();
         if (data?.chat_theme) setMyTheme(data.chat_theme);
       }
-    });
-    load();
+      await load();
+    })();
     const interval = setInterval(load, 4000);
     return () => clearInterval(interval);
   }, []);
