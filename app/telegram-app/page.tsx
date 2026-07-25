@@ -130,7 +130,7 @@ const menuCardCls =
   "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.08)] " +
   "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4)] transition-all";
 
-const bgCls = "min-h-screen app-bg text-white";
+const bgCls = "min-h-screen text-[var(--ink)]";
 
 function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => string }) {
   const { t } = useLocale();
