@@ -39,9 +39,9 @@ export default async function PartnersPage() {
                   {p.is_featured && <Badge tone="gold" className="mb-3"><Star size={11} fill="currentColor" /> Featured</Badge>}
                   <div className="flex items-center gap-3 mb-3">
                     {p.logo_url ? (
-                      <img src={p.logo_url} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-white/10" />
+                      <img src={p.logo_url} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-subtle" />
                     ) : (
-                      <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10" />
+                      <div className="w-12 h-12 rounded-xl bg-white/5 border border-subtle" />
                     )}
                     <div>
                       <div className="font-bold text-[16px]">{p.name}</div>

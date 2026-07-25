@@ -24,7 +24,7 @@ export function PublicHeader({ active }: { active?: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-white/5">
+    <header className="sticky top-0 z-50 glass border-b border-subtle">
       <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between gap-6">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           {logoUrl ? (
@@ -59,7 +59,7 @@ export function PublicHeader({ active }: { active?: string }) {
       </div>
 
       {mobileOpen && (
-        <nav className="md:hidden border-t border-white/5 px-5 py-3 flex flex-col gap-1 animate-fade-in-up">
+        <nav className="md:hidden border-t border-subtle px-5 py-3 flex flex-col gap-1 animate-fade-in-up">
           {NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="py-2.5 text-[14px] font-medium text-muted hover:text-white">
               {item.label}

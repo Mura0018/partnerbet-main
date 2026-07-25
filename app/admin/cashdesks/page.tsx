@@ -199,13 +199,13 @@ export default function CashdesksManager() {
       {loading ? (
         <div className="flex items-center justify-center py-20 text-white/40"><Loader2 className="animate-spin" /></div>
       ) : rows.length === 0 ? (
-        <div className="text-center py-16 text-white/40 text-sm border border-white/10 rounded-2xl">
+        <div className="text-center py-16 text-white/40 text-sm border border-subtle rounded-2xl">
           {t("csh.empty")}
         </div>
       ) : (
-        <div className="overflow-x-auto border border-white/10 rounded-2xl">
+        <div className="overflow-x-auto border border-subtle rounded-2xl">
           <table className="w-full text-sm">
-            <thead className="text-white/40 text-xs border-b border-white/10">
+            <thead className="text-white/40 text-xs border-b border-subtle">
               <tr>
                 <th className="text-left font-medium px-4 py-3">{t("csh.hName")}</th>
                 <th className="text-left font-medium px-4 py-3">{t("csh.hKrm")}</th>
@@ -221,7 +221,7 @@ export default function CashdesksManager() {
               {rows.map((c) => {
                 const b = balances[c.id];
                 return (
-                  <tr key={c.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
+                  <tr key={c.id} className="border-b border-subtle last:border-0 hover:bg-white/[0.02]">
                     <td className="px-4 py-3 text-white font-medium">{c.name}</td>
                     <td className="px-4 py-3 text-white/60">{c.cashdesk_id}</td>
                     <td className="px-4 py-3 text-white/60">{ownerName(c.owner_operator_id)}</td>
@@ -263,8 +263,8 @@ export default function CashdesksManager() {
 
       {form && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !saving && setForm(null)}>
-          <div className="bg-[#0E1518] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 sticky top-0 bg-[#0E1518]">
+          <div className="bg-[#0E1518] border border-subtle rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-subtle sticky top-0 bg-[#0E1518]">
               <h2 className="text-white font-semibold">{form.id ? t("csh.editTitle") : t("csh.newTitle")}</h2>
               <button onClick={() => !saving && setForm(null)} className="p-1 rounded-lg hover:bg-white/10 text-white/50"><X size={18} /></button>
             </div>
@@ -297,7 +297,7 @@ export default function CashdesksManager() {
                 {t("csh.activeCheckbox")}
               </label>
             </div>
-            <div className="flex justify-end gap-2 px-5 py-4 border-t border-white/10">
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-subtle">
               <button onClick={() => setForm(null)} disabled={saving} className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5">{t("csh.cancel")}</button>
               <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-[#1CE0C3] text-[#04231F] hover:brightness-110 disabled:opacity-50">
                 {saving && <Loader2 size={15} className="animate-spin" />} {t("csh.save")}
@@ -310,7 +310,7 @@ export default function CashdesksManager() {
   );
 }
 
-const inp = "w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-[#1CE0C3]/50 placeholder:text-white/25";
+const inp = "w-full px-3 py-2 rounded-xl bg-white/5 border border-subtle text-white text-sm outline-none focus:border-[#1CE0C3]/50 placeholder:text-white/25";
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">

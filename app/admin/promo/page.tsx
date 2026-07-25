@@ -10,7 +10,7 @@ type Winner = { id: string; customer_id: string; segment: string; place: number;
 type Settings = { enabled?: boolean; start?: string | null; end?: string | null; cash_multiplier?: number; prizes?: string[] };
 
 const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
-const inp = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-accent";
+const inp = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-accent";
 
 function toLocalInput(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -98,7 +98,7 @@ export default function PromoManagePage() {
   const winnerFor = (segment: string, place: number) => winners.find((w) => w.segment === segment && w.place === place);
 
   const RankTable = ({ rows, segment, title, boost }: { rows: Row[]; segment: "cash" | "online"; title: string; boost: boolean }) => (
-    <div className="rounded-2xl border border-white/10 overflow-hidden">
+    <div className="rounded-2xl border border-subtle overflow-hidden">
       <div className="px-4 py-2.5 bg-white/[0.03] text-[13px] font-semibold text-white flex items-center gap-2">
         {segment === "cash" ? <CreditCard size={15} className="text-[#F4C76A]" /> : <Trophy size={15} className="text-[#1CE0C3]" />}
         {title} {boost && <span className="text-[10px] text-[#F4C76A]">(×{multN})</span>}
@@ -108,7 +108,7 @@ export default function PromoManagePage() {
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-white/40 text-xs border-b border-white/10">
+            <thead className="text-white/40 text-xs border-b border-subtle">
               <tr>
                 <th className="text-left px-3 py-2 w-8">#</th>
                 <th className="text-left px-3 py-2">{t("prm.colMijoz")}</th>
@@ -119,7 +119,7 @@ export default function PromoManagePage() {
             </thead>
             <tbody>
               {rows.slice(0, 20).map((r, i) => (
-                <tr key={r.id} className="border-b border-white/5 last:border-0">
+                <tr key={r.id} className="border-b border-subtle last:border-0">
                   <td className="px-3 py-2 text-white/50">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</td>
                   <td className="px-3 py-2 text-white truncate max-w-[140px]">{r.full_name || r.phone}</td>
                   <td className="px-3 py-2 text-right text-[#4ADE80] font-semibold">{fmt(r.volume)}</td>

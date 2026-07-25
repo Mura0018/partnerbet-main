@@ -82,7 +82,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <span className="flex items-center gap-1.5"><Eye size={13} /> {post.view_count ?? 0}</span>
         </div>
 
-        {post.cover_url && <img src={post.cover_url} alt={post.title} className="w-full rounded-2xl mt-6 border border-white/10" />}
+        {post.cover_url && <img src={post.cover_url} alt={post.title} className="w-full rounded-2xl mt-6 border border-subtle" />}
 
         <div className="mt-8">
           <RichTextRenderer html={post.content} />
@@ -91,7 +91,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         {tagRows && tagRows.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-8">
             {tagRows.map((row: any) => row.tags && (
-              <Link key={row.tags.id} href={`/blog?tag=${row.tags.slug}`} className="px-3 py-1 rounded-full text-[11px] border border-white/10 text-muted hover:border-accent/30 hover:text-accent">
+              <Link key={row.tags.id} href={`/blog?tag=${row.tags.slug}`} className="px-3 py-1 rounded-full text-[11px] border border-subtle text-muted hover:border-accent/30 hover:text-accent">
                 #{row.tags.name}
               </Link>
             ))}
@@ -99,11 +99,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         )}
 
         {relatedPosts && relatedPosts.length > 0 && (
-          <div className="mt-12 pt-8 border-t border-white/5">
+          <div className="mt-12 pt-8 border-t border-subtle">
             <h2 className="text-[16px] font-bold mb-4">O'xshash maqolalar</h2>
             <div className="grid md:grid-cols-3 gap-4">
               {relatedPosts.map((p: any) => (
-                <Link key={p.id} href={`/blog/${p.slug}`} className="rounded-xl border border-white/8 bg-white/[0.02] overflow-hidden hover:border-accent/30 transition">
+                <Link key={p.id} href={`/blog/${p.slug}`} className="rounded-xl border border-subtle bg-white/[0.02] overflow-hidden hover:border-accent/30 transition">
                   {p.cover_url && <img src={p.cover_url} alt="" className="w-full h-28 object-cover" />}
                   <div className="p-3 text-[13px] font-medium line-clamp-2">{p.title}</div>
                 </Link>

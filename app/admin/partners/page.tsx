@@ -165,8 +165,8 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
-      <div className="absolute inset-y-0 right-0 w-full sm:w-[440px] bg-bg border-l border-white/10 flex flex-col shadow-2xl">
-        <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/8 shrink-0">
+      <div className="absolute inset-y-0 right-0 w-full sm:w-[440px] bg-bg border-l border-subtle flex flex-col shadow-2xl">
+        <div className="flex items-center gap-2 px-4 py-3.5 border-b border-subtle shrink-0">
           <SlidersHorizontal size={18} className="text-accent" />
           <h2 className="text-[15px] font-bold flex-1 truncate">{t("prt.setup")} — {partner.name}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10" aria-label={t("prt.close")}><X size={18} /></button>
@@ -183,7 +183,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
             <>
               <div>
                 <div className="flex items-center gap-2 mb-2"><Bot size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hBot")}</h3></div>
-                <div className={`rounded-lg px-3 py-2.5 text-[12.5px] border ${partner.bot_username ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/[0.03] border-white/10 text-muted"}`}>
+                <div className={`rounded-lg px-3 py-2.5 text-[12.5px] border ${partner.bot_username ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/[0.03] border-subtle text-muted"}`}>
                   {partner.bot_username ? `${t("prt.botConnected")} — @${partner.bot_username}` : t("prt.botNotConnected")}
                 </div>
               </div>
@@ -224,10 +224,10 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                 </div>
                 {showAddMember && (
                   <div className="rounded-lg glass-card p-3 mb-2.5 space-y-2">
-                    <input placeholder={t("prt.phFullName")} value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-                    <input placeholder={t("prt.phEmail")} type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <input placeholder={t("prt.phFullName")} value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <input placeholder={t("prt.phEmail")} type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <p className="text-[11px] text-muted">{t("prt.noPassNote")}</p>
-                    <select value={mForm.partnerRole} onChange={(e) => setMForm((p) => ({ ...p, partnerRole: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
+                    <select value={mForm.partnerRole} onChange={(e) => setMForm((p) => ({ ...p, partnerRole: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
                       <option value="partner_admin">{t("prt.roleAdmin")}</option>
                       <option value="staff">{t("prt.roleStaff")}</option>
                     </select>
@@ -241,7 +241,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                   <div className="rounded-lg border border-[#4ADE80]/30 bg-[#4ADE80]/10 p-3 mb-2.5">
                     <div className="text-[11px] text-[#4ADE80] font-semibold mb-1.5">{t("prt.inviteTitle")}</div>
                     <div className="flex items-center gap-2">
-                      <input readOnly value={inviteLink} onFocus={(e) => e.target.select()} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-md py-1.5 px-2 text-[11px] font-mono" />
+                      <input readOnly value={inviteLink} onFocus={(e) => e.target.select()} className="flex-1 min-w-0 bg-white/5 border border-subtle rounded-md py-1.5 px-2 text-[11px] font-mono" />
                       <button onClick={copyInvite} className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-md bg-accent/20 text-[#7db8ff] font-medium">{t("prt.copy")}</button>
                       <button onClick={() => setInviteLink(null)} className="shrink-0 p-1.5 rounded-md hover:bg-white/10 text-muted"><X size={13} /></button>
                     </div>
@@ -267,12 +267,12 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                 <div className="flex items-center gap-2 mb-2"><CalendarClock size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hBilling")}</h3></div>
                 <div className="rounded-lg glass-card p-3 mb-2.5 space-y-2">
                   <div className="flex gap-2">
-                    <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
-                    <select value={invForm.model} onChange={(e) => setInvForm((p) => ({ ...p, model: e.target.value }))} className="bg-white/5 border border-white/10 rounded-lg py-2 px-2 text-[12px] outline-none focus:border-accent">
+                    <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-subtle rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
+                    <select value={invForm.model} onChange={(e) => setInvForm((p) => ({ ...p, model: e.target.value }))} className="bg-white/5 border border-subtle rounded-lg py-2 px-2 text-[12px] outline-none focus:border-accent">
                       <option value="subscription">{t("prt.subscription")}</option>
                       <option value="commission">{t("prt.commission")}</option>
                     </select>
-                    <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={t("prt.phAmount", { cur: partner.currency })} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
+                    <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={t("prt.phAmount", { cur: partner.currency })} className="flex-1 min-w-0 bg-white/5 border border-subtle rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
                   </div>
                   <button onClick={createInvoice} disabled={invSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[12.5px] disabled:opacity-50">{invSaving ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("prt.createInvoice")}</button>
                 </div>
@@ -371,7 +371,7 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-      <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
+      <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-subtle bg-panel p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-[16px]">{editing ? t("prt.editTitle") : t("prt.newTitle")}</h2>
           <button type="button" onClick={onClose} aria-label={t("prt.close")}><X size={18} /></button>
@@ -380,15 +380,15 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="col-span-2">
             <label className="block text-[12px] text-muted mb-1">{t("prt.fName")}</label>
-            <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={name} onChange={(e) => setName(e.target.value)} />
+            <input className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
             <label className="block text-[12px] text-muted mb-1">{t("prt.fCompany")}</label>
-            <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder="1xbet" value={company} onChange={(e) => setCompany(e.target.value)} />
+            <input className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder="1xbet" value={company} onChange={(e) => setCompany(e.target.value)} />
           </div>
           <div>
             <label className="block text-[12px] text-muted mb-1">{t("prt.fCurrency")}</label>
-            <select className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            <select className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={currency} onChange={(e) => setCurrency(e.target.value)}>
               {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -396,7 +396,7 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
 
         <div className="mb-3">
           <label className="block text-[12px] text-muted mb-1">{t("prt.fContact")}</label>
-          <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phContact")} value={contact} onChange={(e) => setContact(e.target.value)} />
+          <input className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phContact")} value={contact} onChange={(e) => setContact(e.target.value)} />
         </div>
 
         <div className="mb-3">
@@ -404,21 +404,21 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
           <div className="flex gap-1.5 mb-2">
             {(["commission", "subscription"] as const).map((b) => (
               <button key={b} type="button" onClick={() => setBilling(b)}
-                className={`flex-1 py-2 rounded-lg text-[12.5px] font-medium border ${billing === b ? "bg-accent/20 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}>
+                className={`flex-1 py-2 rounded-lg text-[12.5px] font-medium border ${billing === b ? "bg-accent/20 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}>
                 {b === "commission" ? t("prt.bCommission") : t("prt.bSubscription")}
               </button>
             ))}
           </div>
           {billing === "commission" ? (
-            <input type="number" step="0.01" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phCommission")} value={commission} onChange={(e) => setCommission(e.target.value)} />
+            <input type="number" step="0.01" className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phCommission")} value={commission} onChange={(e) => setCommission(e.target.value)} />
           ) : (
-            <input type="number" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phSubscription", { cur: currency })} value={subscription} onChange={(e) => setSubscription(e.target.value)} />
+            <input type="number" className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phSubscription", { cur: currency })} value={subscription} onChange={(e) => setSubscription(e.target.value)} />
           )}
         </div>
 
         <div className="mb-5">
           <label className="block text-[12px] text-muted mb-1">{t("prt.fStatus")}</label>
-          <select className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={status} onChange={(e) => setStatus(e.target.value as Partner["status"])}>
+          <select className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={status} onChange={(e) => setStatus(e.target.value as Partner["status"])}>
             <option value="active">{t("prt.stActive")}</option>
             <option value="pending">{t("prt.stPending")}</option>
             <option value="suspended">{t("prt.stSuspended")}</option>
@@ -553,7 +553,7 @@ export default function PartnersManager() {
                     <span className="text-[#5b6f85]">·</span>
                     <span>{p.currency}</span>
                   </div>
-                  <div className="mt-auto flex items-center gap-1.5 pt-2 border-t border-white/5">
+                  <div className="mt-auto flex items-center gap-1.5 pt-2 border-t border-subtle">
                     <button onClick={() => setProvisionFor(p)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
                       <SlidersHorizontal size={13} /> {t("prt.setupBtn")}
                     </button>
@@ -592,7 +592,7 @@ export default function PartnersManager() {
                   </div>
                   {l.message && <p className="text-[12.5px] text-white/85 bg-white/[0.03] rounded-lg px-3 py-2 my-2">{l.message}</p>}
                   <div className="text-[10.5px] text-[#5b6f85] mb-2.5">{new Date(l.created_at).toLocaleString("ru-RU")}</div>
-                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-white/5">
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-subtle">
                     <button onClick={() => setModal({ open: true, partner: null, prefill: { name: l.company || l.name || "", company: l.company || "" }, leadId: l.id })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
                       <ArrowRight size={13} /> {t("prt.createPartner")}
                     </button>

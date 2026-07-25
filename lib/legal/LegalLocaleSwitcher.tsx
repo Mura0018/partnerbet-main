@@ -18,7 +18,7 @@ export function LegalLocaleSwitcher({ current }: { current: Locale }) {
   };
 
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5">
+    <div className="inline-flex items-center gap-1.5 rounded-lg border border-subtle px-2.5 py-1.5">
       <Globe size={13} className="text-muted" />
       <select
         value={current}

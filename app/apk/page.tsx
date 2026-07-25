@@ -42,7 +42,7 @@ export default async function ApkPage() {
             <p className="text-[12px] text-muted mt-1">Android {release.min_android}+ talab qilinadi</p>
 
             {release.changelog && (
-              <div className="text-left mt-5 rounded-xl border border-white/8 bg-white/[0.02] p-4">
+              <div className="text-left mt-5 rounded-xl border border-subtle bg-white/[0.02] p-4">
                 <div className="text-[11px] text-muted uppercase tracking-wide mb-2">Yangiliklar</div>
                 <p className="text-[13px] text-white/90 whitespace-pre-line">{release.changelog}</p>
               </div>

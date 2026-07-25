@@ -52,7 +52,7 @@ function TopupHeroGraphic() {
       />
 
       {/* shop window frame */}
-      <div className="topup-bob absolute inset-[6%] rounded-[2rem] border border-white/10 overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.45)]"
+      <div className="topup-bob absolute inset-[6%] rounded-[2rem] border border-subtle overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.45)]"
         style={{ background: "linear-gradient(160deg, rgba(61,127,255,0.16), rgba(10,20,38,0.9) 55%)" }}
       >
         {/* glass highlight streak */}
@@ -184,7 +184,7 @@ function TopupHeroGraphic() {
       </div>
 
       <div className="absolute bottom-3 left-0 right-0 flex justify-center">
-        <span className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-[12px] font-semibold">
+        <span className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm border border-subtle text-[12px] font-semibold">
           Qo'lidagi bonusga teging <ArrowRight size={13} />
         </span>
       </div>
@@ -232,7 +232,7 @@ export default function TopUpPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-12">
           {STEPS.map((step) => (
-            <div key={step.n} className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 relative overflow-hidden">
+            <div key={step.n} className="rounded-2xl border border-subtle bg-white/[0.02] p-4 relative overflow-hidden">
               <div className="w-7 h-7 rounded-full bg-accent/15 text-accent text-[12px] font-bold flex items-center justify-center mb-3">
                 {step.n}
               </div>
@@ -242,14 +242,14 @@ export default function TopUpPage() {
           ))}
         </div>
 
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 mb-10">
+        <div className="rounded-2xl border border-subtle bg-white/[0.02] p-6 mb-10">
           <div className="flex items-center gap-2 mb-4">
             <ShieldCheck size={16} className="text-accent" />
             <span className="text-[13px] font-semibold">Qo'llab-quvvatlanadigan to'lov usullari</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {METHODS.map((m) => (
-              <span key={m} className="px-3.5 py-1.5 rounded-full text-[12px] font-medium bg-white/5 border border-white/10 text-muted">
+              <span key={m} className="px-3.5 py-1.5 rounded-full text-[12px] font-medium bg-white/5 border border-subtle text-muted">
                 {m}
               </span>
             ))}

@@ -110,7 +110,7 @@ export default function TelegramBotAdminPage() {
               className="absolute inset-0 bg-bg flex flex-col shadow-2xl"
               style={{ animation: "bcDrawerIn 0.28s cubic-bezier(0.22,1,0.36,1)" }}
             >
-              <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/8 shrink-0">
+              <div className="flex items-center gap-2 px-4 py-3.5 border-b border-subtle shrink-0">
                 <MessageCircle size={18} className="text-accent" />
                 <h2 className="text-[15px] font-bold flex-1">{t("tgb.teamChat")}</h2>
                 <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10" aria-label={t("tgb.close")}>

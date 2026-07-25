@@ -68,7 +68,7 @@ export function AuthShell({
           </span>
         </Link>
 
-        <div className="relative rounded-2xl border border-white/10 bg-panel/60 backdrop-blur-xl p-8 shadow-2xl overflow-hidden">
+        <div className="relative rounded-2xl border border-subtle bg-panel/60 backdrop-blur-xl p-8 shadow-2xl overflow-hidden">
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
           <h1 className="text-[20px] font-bold text-white text-center">{title}</h1>
           {subtitle && <p className="text-[13px] text-muted text-center mt-1.5 leading-relaxed">{subtitle}</p>}
@@ -97,7 +97,7 @@ export function FieldSuccess({ children }: { children: React.ReactNode }) {
 }
 
 export const inputClass =
-  "w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] text-white outline-none focus:border-accent transition-colors placeholder:text-[#3d4d5f]";
+  "w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3.5 text-[14px] text-white outline-none focus:border-accent transition-colors placeholder:text-[#3d4d5f]";
 
 export const submitButtonClass =
   "auth-submit-btn relative overflow-hidden w-full mt-2 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] text-white disabled:opacity-60 disabled:cursor-not-allowed transition hover:brightness-110 active:scale-[0.98]";

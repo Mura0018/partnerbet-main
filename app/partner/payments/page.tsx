@@ -84,22 +84,22 @@ export default function PartnerPaymentsPage() {
       ) : (
         <>
           {showAdd && (
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 mb-4 space-y-2.5">
-              <select value={form.kind} onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
+            <div className="rounded-xl border border-subtle bg-white/[0.03] p-4 mb-4 space-y-2.5">
+              <select value={form.kind} onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
                 {KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
               </select>
-              <input value={form.number} onChange={(e) => setForm((p) => ({ ...p, number: e.target.value }))} placeholder="Raqam / hisob" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-              <input value={form.holder} onChange={(e) => setForm((p) => ({ ...p, holder: e.target.value }))} placeholder="Egasi (ixtiyoriy)" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+              <input value={form.number} onChange={(e) => setForm((p) => ({ ...p, number: e.target.value }))} placeholder="Raqam / hisob" className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+              <input value={form.holder} onChange={(e) => setForm((p) => ({ ...p, holder: e.target.value }))} placeholder="Egasi (ixtiyoriy)" className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
               <button onClick={add} disabled={saving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">{saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Saqlash"}</button>
             </div>
           )}
 
           {methods.length === 0 ? (
-            <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">Hozircha to'lov usuli yo'q.</div>
+            <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">Hozircha to'lov usuli yo'q.</div>
           ) : (
             <div className="space-y-2">
               {methods.map((m) => (
-                <div key={m.id} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4">
+                <div key={m.id} className="flex items-center gap-3 rounded-xl border border-subtle bg-white/[0.02] p-4">
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-semibold">{kindLabel(m.kind)}</div>
                     <div className="text-[12px] text-muted">{m.number}{m.holder ? ` · ${m.holder}` : ""}</div>

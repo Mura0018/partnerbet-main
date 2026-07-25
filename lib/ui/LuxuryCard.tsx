@@ -72,7 +72,7 @@ export function LuxuryCard({
               {active !== undefined && (
                 <span
                   className={`text-[9px] px-2 py-0.5 rounded-full border ${
-                    active ? "bg-[#4ADE80]/15 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-white/40 border-white/10"
+                    active ? "bg-[#4ADE80]/15 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-white/40 border-subtle"
                   }`}
                 >
                   {active ? "Faol" : "Nofaol"}
@@ -125,12 +125,12 @@ export function LuxuryCard({
       {!readOnly && (onToggleActive || onEdit || onDelete) && (
         <div className="flex items-center gap-2 mt-2.5">
           {onToggleActive && (
-            <button onClick={onToggleActive} className="text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white transition-colors">
+            <button onClick={onToggleActive} className="text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white transition-colors">
               {active ? "Nofaol qilish" : "Faollashtirish"}
             </button>
           )}
           {onEdit && (
-            <button onClick={onEdit} className="text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white transition-colors">
+            <button onClick={onEdit} className="text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white transition-colors">
               Tahrirlash
             </button>
           )}

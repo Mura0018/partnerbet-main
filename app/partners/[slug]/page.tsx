@@ -44,9 +44,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
         <Breadcrumbs items={[{ label: "Partners", href: "/partners" }, { label: partner.name }]} />
         <div className="flex items-center gap-4 mb-6">
           {partner.logo_url ? (
-            <img src={partner.logo_url} alt={partner.name} className="w-16 h-16 rounded-2xl object-cover border border-white/10" />
+            <img src={partner.logo_url} alt={partner.name} className="w-16 h-16 rounded-2xl object-cover border border-subtle" />
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10" />
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-subtle" />
           )}
           <div>
             <div className="flex items-center gap-2">

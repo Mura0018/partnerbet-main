@@ -16,7 +16,7 @@ export function ThemePicker({ value, onChange }: { value: string; onChange: (the
             type="button"
             onClick={() => onChange(key)}
             className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border transition-colors ${
-              active ? "border-white/30 bg-white/10" : "border-white/10 bg-white/[0.02] hover:border-white/20"
+              active ? "border-subtle bg-white/10" : "border-subtle bg-white/[0.02] hover:border-subtle"
             }`}
           >
             <span

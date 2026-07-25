@@ -31,7 +31,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] text-white outline-none focus:border-accent transition-colors";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3.5 text-[14px] text-white outline-none focus:border-accent transition-colors";
 
 function SaveButton({ saving, saved, onClick }: { saving: boolean; saved: boolean; onClick: () => void }) {
   const { t } = useLocale();
@@ -92,7 +92,7 @@ export default function SettingsPage() {
       <h1 className="text-[22px] font-bold mb-1">{t("set.title")}</h1>
       <p className="text-[13px] text-muted mb-6">{t("set.sub")}</p>
 
-      <div className="flex gap-1 mb-6 border-b border-white/8 overflow-x-auto">
+      <div className="flex gap-1 mb-6 border-b border-subtle overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -233,7 +233,7 @@ function BrandImageField({
         onTouchMove={(e) => { if (panning) { const tp = e.touches[0]; updatePositionFromPointer(tp.clientX, tp.clientY); } }}
         onTouchEnd={() => setPanning(false)}
         className={`relative flex items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden select-none ${boxClassName} ${
-          dragOver ? "border-accent bg-accent/10" : "border-white/15 hover:border-white/30"
+          dragOver ? "border-accent bg-accent/10" : "border-subtle hover:border-subtle"
         } ${currentUrl && onPositionChange ? "cursor-move" : ""}`}
         style={
           currentUrl
@@ -326,7 +326,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
         <div className="flex items-center gap-4 mb-3">
           {/* Preview: where this logo shows up */}
           <div className="flex flex-col items-center gap-1.5">
-            <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-bg-elevated border border-white/10">
+            <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-bg-elevated border border-subtle">
               {branding.logo_media_id_url ? (
                 <img src={branding.logo_media_id_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
               ) : (
@@ -337,7 +337,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
             <span className="text-[9px] text-muted">{t("set.bAdminPanel")}</span>
           </div>
           <div className="flex flex-col items-center gap-1.5">
-            <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-bg-elevated border border-white/10">
+            <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-bg-elevated border border-subtle">
               {branding.logo_media_id_url ? (
                 <img src={branding.logo_media_id_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
               ) : (
@@ -395,13 +395,13 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label={t("set.bAccent")}>
-          <input type="color" className="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer" value={theme.accent_color ?? "#00A3FF"} onChange={(e) => updateLocal("theme", { accent_color: e.target.value })} />
+          <input type="color" className="w-full h-10 bg-white/5 border border-subtle rounded-lg cursor-pointer" value={theme.accent_color ?? "#00A3FF"} onChange={(e) => updateLocal("theme", { accent_color: e.target.value })} />
         </Field>
         <Field label={t("set.bSecondary")}>
-          <input type="color" className="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer" value={theme.secondary_color ?? "#FFC857"} onChange={(e) => updateLocal("theme", { secondary_color: e.target.value })} />
+          <input type="color" className="w-full h-10 bg-white/5 border border-subtle rounded-lg cursor-pointer" value={theme.secondary_color ?? "#FFC857"} onChange={(e) => updateLocal("theme", { secondary_color: e.target.value })} />
         </Field>
         <Field label={t("set.bBackground")}>
-          <input type="color" className="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer" value={theme.background_color ?? "#07111F"} onChange={(e) => updateLocal("theme", { background_color: e.target.value })} />
+          <input type="color" className="w-full h-10 bg-white/5 border border-subtle rounded-lg cursor-pointer" value={theme.background_color ?? "#07111F"} onChange={(e) => updateLocal("theme", { background_color: e.target.value })} />
         </Field>
       </div>
       <p className="text-[11px] text-[#5b6f85] mb-4">{t("set.bColorHint")}</p>
@@ -532,7 +532,7 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
     <div key={k.key} className="mb-4">
       <div className="flex items-center gap-2 mb-1.5">
         <label className="text-[12px] text-muted">{k.label}</label>
-        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${secretStatuses[k.key] ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-white/10"}`}>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${secretStatuses[k.key] ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-subtle"}`}>
           {secretStatuses[k.key] ? t("set.configured") : t("set.notConfigured")}
         </span>
       </div>

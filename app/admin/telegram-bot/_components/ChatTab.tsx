@@ -256,11 +256,11 @@ export function ChatTab() {
 
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className="flex items-center gap-2 p-2.5 bg-white/[0.04] backdrop-blur-md border-b border-white/[0.06]">
+      <div className="flex items-center gap-2 p-2.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
         {showSearch ? (
           <input
             autoFocus
-            className="flex-1 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-1.5 px-3 text-[12px] outline-none focus:border-accent"
+            className="flex-1 bg-white/[0.06] backdrop-blur-md border border-subtle rounded-lg py-1.5 px-3 text-[12px] outline-none focus:border-accent"
             placeholder={t("cht.phSearch")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -268,7 +268,7 @@ export function ChatTab() {
         ) : (
           <div className="flex-1 flex items-center justify-center gap-2">
             <span
-              className="w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/15"
+              className="w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm border border-subtle"
               style={{ background: "linear-gradient(135deg, rgba(61,127,255,0.25), rgba(61,127,255,0.08))" }}
             >
               <Lock size={12} className="text-[#7db8ff]" />
@@ -292,13 +292,13 @@ export function ChatTab() {
         </button>
       </div>
       {showThemePicker && (
-        <div className="px-3 py-2.5 bg-white/[0.03] backdrop-blur-md border-b border-white/[0.06]">
+        <div className="px-3 py-2.5 bg-white/[0.03] backdrop-blur-md border-b border-subtle">
           <ThemePicker value={myTheme} onChange={changeMyTheme} />
         </div>
       )}
 
       {/* 8-BOSQICH: pinned qoidalar */}
-      <div className="px-3 py-2 bg-white/[0.04] backdrop-blur-md border-b border-white/[0.06]">
+      <div className="px-3 py-2 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
         <div className="flex items-start gap-2">
           <span className="text-[11px] shrink-0">📌</span>
           {editingRules ? (
@@ -307,7 +307,7 @@ export function ChatTab() {
                 rows={3}
                 value={rulesDraft}
                 onChange={(e) => setRulesDraft(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-[11px] outline-none focus:border-accent"
+                className="w-full bg-white/5 border border-subtle rounded-lg p-2 text-[11px] outline-none focus:border-accent"
               />
               <div className="flex gap-1.5 mt-1.5">
                 <button onClick={saveRules} disabled={savingRules} className="text-[11px] px-2.5 py-1 rounded-lg bg-accent/20 text-white disabled:opacity-50">{t("cht.save")}</button>
@@ -326,7 +326,7 @@ export function ChatTab() {
       </div>
 
       {/* 8-BOSQICH: tur filtri + faol (smenada) operatorlar */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] backdrop-blur-md border-b border-white/[0.06]">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] backdrop-blur-md border-b border-subtle">
         {([["all", "cht.fAll"], ["chat", "cht.fChat"], ["system", "cht.fSystem"]] as const).map(([id, labelKey]) => (
           <button
             key={id}
@@ -401,11 +401,11 @@ export function ChatTab() {
                   <span className="text-[9px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
                 <div
-                  className={`rounded-xl px-3 py-2 text-[12.5px] leading-snug break-words ${isMe ? "text-white shadow-lg shadow-black/20" : "bg-white/10 backdrop-blur-md border border-white/[0.06] text-white/90"}`}
+                  className={`rounded-xl px-3 py-2 text-[12.5px] leading-snug break-words ${isMe ? "text-white shadow-lg shadow-black/20" : "bg-white/10 backdrop-blur-md border border-subtle text-white/90"}`}
                   style={isMe ? { background: chatThemeGradient(myTheme) } : undefined}
                 >
                   {quoted && (
-                    <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${isMe ? "border-white/50" : "border-accent/50"}`}>
+                    <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${isMe ? "border-subtle" : "border-accent/50"}`}>
                       <span className="font-semibold">{quotedName}</span>{" "}
                       {quoted.message || (quoted.image_path ? t("cht.image") : quoted.voice_path ? t("cht.voice") : "")}
                     </div>
@@ -438,7 +438,7 @@ export function ChatTab() {
         <div ref={bottomRef} />
       </div>
       {replyTo && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-white/[0.06]">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-subtle">
           <Reply size={12} className="text-accent shrink-0" />
           <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
             {replyTo.message || (replyTo.image_path ? t("cht.image") : replyTo.voice_path ? t("cht.voice") : "")}
@@ -449,7 +449,7 @@ export function ChatTab() {
         </div>
       )}
       {voiceRecorder.recording ? (
-        <div className="flex items-center gap-2.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
+        <div className="flex items-center gap-2.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-subtle">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
           <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
           <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label={t("cht.cancelRec")}>
@@ -460,16 +460,16 @@ export function ChatTab() {
           </button>
         </div>
       ) : (
-      <div className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
-        <label className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] cursor-pointer hover:bg-white/10">
+      <div className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-subtle">
+        <label className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-subtle cursor-pointer hover:bg-white/10">
           <Paperclip size={13} className="text-muted" />
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendImage} disabled={sending} />
         </label>
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] hover:bg-white/10 disabled:opacity-50" aria-label={t("cht.voiceMsg")}>
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-subtle hover:bg-white/10 disabled:opacity-50" aria-label={t("cht.voiceMsg")}>
           <Mic size={13} className="text-muted" />
         </button>
         <input
-          className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
+          className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-subtle rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
           placeholder={t("cht.phMessage")}
           value={text}
           onChange={(e) => setText(e.target.value)}

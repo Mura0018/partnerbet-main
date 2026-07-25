@@ -51,8 +51,8 @@ export function LegalPageLayout({ content, locale }: { content: LegalPageContent
           </nav>
 
           {/* Document card */}
-          <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 md:p-9">
-            <div className="divide-y divide-white/5">
+          <div className="rounded-2xl border border-subtle bg-white/[0.02] p-6 md:p-9">
+            <div className="divide-y divide-subtle">
               {content.sections.map((section, i) => (
                 <div key={section.heading} id={slugify(section.heading)} className="py-6 first:pt-0 last:pb-0 scroll-mt-8">
                   <div className="flex items-baseline gap-3 mb-2.5">
