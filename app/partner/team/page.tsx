@@ -74,10 +74,10 @@ export default function PartnerTeamPage() {
       <p className="text-[13px] text-muted mb-6">Xodimlaringiz buyurtmalarni qayta ishlaydi.</p>
 
       {showAdd && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 mb-4 space-y-2.5">
-          <input placeholder="Ism familiya" value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-          <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-          <input placeholder="Parol (kamida 10 belgi: harf, raqam, belgi)" type="text" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+        <div className="rounded-xl border border-subtle bg-white/[0.03] p-4 mb-4 space-y-2.5">
+          <input placeholder="Ism familiya" value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+          <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+          <input placeholder="Parol (kamida 10 belgi: harf, raqam, belgi)" type="text" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
           {error && <p className="text-[12px] text-[#FF6B85]">{error}</p>}
           <button onClick={addStaff} disabled={saving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">{saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Yaratish"}</button>
         </div>
@@ -85,7 +85,7 @@ export default function PartnerTeamPage() {
 
       <div className="space-y-1.5">
         {members.map((m) => (
-          <div key={m.id} className="flex items-center gap-2 rounded-xl bg-white/[0.02] border border-white/8 px-4 py-3">
+          <div key={m.id} className="flex items-center gap-2 rounded-xl bg-white/[0.02] border border-subtle px-4 py-3">
             <div className="flex-1 min-w-0">
               <span className="text-[13px] font-medium">{m.profiles?.full_name || "—"}</span>
               <span className="text-[10.5px] text-muted"> · {m.partner_role === "partner_admin" ? "Admin" : "Xodim"}</span>

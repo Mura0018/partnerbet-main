@@ -8,6 +8,9 @@ import {
 } from "lucide-react";
 import { applyAppTheme } from "@/lib/telegram/appThemes";
 import { PrizeCard } from "./PrizeCard";
+import { PrizeCard as HeroPrizeCard } from "./components/PrizeCard";
+import { MoneyRail } from "./components/MoneyRail";
+import { BottomNav } from "./components/BottomNav";
 import { PromoBanner } from "./PromoBanner";
 import { WithdrawWizard } from "./WithdrawWizard";
 
@@ -33,6 +36,8 @@ type Order = {
   created_at: string;
   // F2b: kartaning orqasida "qaysi operator" ni ko'rsatish uchun.
   operator_name?: string | null;
+  // MoneyRail 3-bekat — order_confirmations'da haqiqiy tasdiq bormi.
+  payment_confirmed?: boolean;
 };
 
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
@@ -368,7 +373,7 @@ function PaymentMethodPicker({
             type="button"
             onClick={() => onChange(m.id)}
             className={`py-2.5 rounded-xl text-[13px] font-semibold border transition-colors ${
-              value === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"
+              value === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"
             }`}
           >
             {m.labelKey ? t(m.labelKey as any) : m.label}
@@ -739,13 +744,18 @@ export default function TelegramAppPage() {
       setError(t("tg.eNeedPhonePass"));
       return;
     }
+    // Ro'yxatda haqiqiy ism-familiya (kamida 2 so'z) majburiy.
+    if (mode === "register" && fullName.trim().split(/\s+/).filter(Boolean).length < 2) {
+      setError(t("tg.eNameRequired"));
+      return;
+    }
     setSubmitting(true);
     try {
       const endpoint = mode === "register" ? "/api/telegram/miniapp/register" : "/api/telegram/miniapp/login";
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: getInitData(), phone: phone.trim(), password, fullName: fullName.trim() || undefined }),
+        body: JSON.stringify({ initData: getInitData(), phone: phone.trim(), password, fullName: mode === "register" ? fullName.trim() : fullName.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -753,6 +763,7 @@ export default function TelegramAppPage() {
           phone_taken: t("tg.ePhoneTaken"),
           telegram_already_linked: t("tg.eTgLinked"),
           weak_password: t("tg.eWeakPass"),
+          name_required: t("tg.eNameRequired"),
           not_found: t("tg.eNotFound"),
           wrong_password: t("tg.eWrongPass"),
           linked_to_other_telegram: t("tg.eLinkedOther"),
@@ -1122,6 +1133,16 @@ export default function TelegramAppPage() {
       .then((r) => r.json())
       .then((data) => { if (data.theme) setMyChatTheme(data.theme); })
       .catch(() => {});
+  };
+
+  // Pastki nav tabi. "Yordam" va "Buyurtma" oddiy setScreen bilan ochilsa,
+  // ochish mantiqi (buyurtmalarni yuklash, eski suhbatni tozalash, scroll
+  // imzosini tiklash) chetlab o'tiladi — shuning uchun o'z ochuvchilariga
+  // yo'naltiramiz. Yangi ekran/sahifa yaratilmaydi.
+  const navigateTab = (s: string) => {
+    if (s === "support") { void openSupport(null); return; }
+    if (s === "orders") { void openOrders(); return; }
+    setScreen(s as any);
   };
 
   useEffect(() => {
@@ -1548,7 +1569,7 @@ export default function TelegramAppPage() {
       <div className={`${bgCls} p-6 flex flex-col items-center justify-center text-center relative`}>
         <FloatingAmbience />
         <div className="relative z-10 flex flex-col items-center max-w-[320px]">
-          <div className="w-16 h-16 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center mb-5">
+          <div className="w-16 h-16 rounded-2xl bg-white/[0.06] border m-divider flex items-center justify-center mb-5">
             <ShieldCheck size={30} className="text-[#93a5ba]" />
           </div>
           <h1 className="text-[18px] font-extrabold mb-2" style={titleShadow}>{t("tg.blockedTitle")}</h1>
@@ -1598,7 +1619,10 @@ export default function TelegramAppPage() {
 
           <form onSubmit={submitAuth} className="space-y-3.5">
             {mode === "register" && (
-              <input className={inputCls} placeholder={t("tg.phFullName")} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <div>
+                <input className={inputCls} placeholder={t("tg.phFullNameReq")} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <p className="text-[11px] text-[#F4C76A] mt-1.5 leading-relaxed px-1">{t("tg.nameRequired")}</p>
+              </div>
             )}
             <input className={inputCls} placeholder={t("tg.phPhone")} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
             <PasswordInput className={inputCls} placeholder={t("tg.phPassword")} value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -1736,7 +1760,7 @@ export default function TelegramAppPage() {
               t("tg.step3"),
               t("tg.step4"),
             ].map((s, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/8 px-3.5 py-3">
+              <div key={i} className="flex items-center gap-3 rounded-xl bg-white/[0.04] border m-divider px-3.5 py-3">
                 <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-[#3D7FFF] to-[#2456c9] flex items-center justify-center text-[13px] font-bold">{i + 1}</div>
                 <div className="text-[13px]">{s}</div>
               </div>
@@ -1745,7 +1769,7 @@ export default function TelegramAppPage() {
 
           {/* Qoidalar */}
           <h2 className="text-[15px] font-bold mb-3">{t("tg.hkRules")}</h2>
-          <div className="rounded-2xl bg-white/[0.04] border border-white/8 p-4 mb-7 space-y-2.5">
+          <div className="rounded-2xl bg-white/[0.04] border m-divider p-4 mb-7 space-y-2.5">
             {[
               t("tg.rule1"),
               t("tg.rule2"),
@@ -1767,20 +1791,20 @@ export default function TelegramAppPage() {
               <div className="text-[12px] text-[#93a5ba]">{t("tg.hkDoneSub")}</div>
             </div>
           ) : (
-            <div className="rounded-2xl bg-white/[0.04] border border-white/8 p-4">
+            <div className="rounded-2xl bg-white/[0.04] border m-divider p-4">
               <div className="text-[14px] font-bold mb-3 flex items-center gap-1.5"><Handshake size={16} className="text-[#F4C76A]" /> {t("tg.hkForm")}</div>
               <input
                 value={plCompany}
                 onChange={(e) => setPlCompany(e.target.value)}
                 placeholder={t("tg.phCompany")}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5"
+                className="w-full bg-white/5 border m-divider rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5"
               />
               <textarea
                 value={plMessage}
                 onChange={(e) => setPlMessage(e.target.value)}
                 rows={3}
                 placeholder={t("tg.phAbout")}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5 resize-none"
+                className="w-full bg-white/5 border m-divider rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5 resize-none"
               />
               <p className="text-[11px] text-[#93a5ba] mb-3">{t("tg.hkAuto")} <span className="text-white/80">{customer?.full_name || customer?.phone || "—"}</span></p>
               {plError && <p className="text-[12px] text-[#FF6B85] mb-2.5">{plError}</p>}
@@ -1796,7 +1820,7 @@ export default function TelegramAppPage() {
           <div className="mt-6 text-center">
             <button onClick={() => setPmOpen((v) => !v)} className="text-[12px] text-[#93a5ba] underline">{t("tg.hkAlready")}</button>
             {pmOpen && (
-              <div className="mt-3 rounded-2xl bg-white/[0.04] border border-white/8 p-4 text-left">
+              <div className="mt-3 rounded-2xl bg-white/[0.04] border m-divider p-4 text-left">
                 {pmSent ? (
                   <div className="text-center" style={{ animation: "hkRise .4s ease both" }}>
                     <CheckCircle2 size={32} className="text-[#4ADE80] mx-auto mb-2" />
@@ -1805,7 +1829,7 @@ export default function TelegramAppPage() {
                   </div>
                 ) : (
                   <>
-                    <input value={pmEmail} onChange={(e) => setPmEmail(e.target.value)} type="email" placeholder={t("tg.phEmail")} className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5" />
+                    <input value={pmEmail} onChange={(e) => setPmEmail(e.target.value)} type="email" placeholder={t("tg.phEmail")} className="w-full bg-white/5 border m-divider rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5" />
                     {pmError && <p className="text-[12px] text-[#FF6B85] mb-2.5">{pmError}</p>}
                     <button onClick={requestPartnerInvite} disabled={pmBusy} className={buttonCls}>
                       <span className="flex items-center justify-center gap-2">{pmBusy ? <Loader2 size={16} className="animate-spin" /> : t("tg.hkGetLink")}</span>
@@ -1909,7 +1933,7 @@ export default function TelegramAppPage() {
     ];
     const filteredOrders = ordersFilter === "all" ? orders : orders.filter((o) => o.status === ordersFilter);
     return (
-      <div className={`${bgCls} p-5`}>
+      <div className={`${bgCls} p-5 m-screen-pb`}>
         <ScreenHeader title={t("tg.ordersTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <div className="flex gap-2 mb-4 overflow-x-auto">
           {ORDER_FILTERS.map((f) => (
@@ -1917,7 +1941,7 @@ export default function TelegramAppPage() {
               key={f.id}
               onClick={() => setOrdersFilter(f.id)}
               className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold border whitespace-nowrap ${
-                ordersFilter === f.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-white/10 text-[#93a5ba]"
+                ordersFilter === f.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"
               }`}
             >
               {f.label}
@@ -1946,38 +1970,14 @@ export default function TelegramAppPage() {
                   <div className="text-[12px] text-[#93a5ba]">{o.platform} · ID: {o.account_id}</div>
                   <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")}</div>
 
-                  {/* S1: bosqich progress (Yaratildi -> Ko'rilmoqda -> Bajarildi/Rad etildi) */}
-                  {(() => {
-                    const rejected = o.status === "rejected";
-                    const done = o.status === "completed";
-                    const idx = done || rejected ? 2 : o.operator_name ? 1 : 0;
-                    const labels = [t("tg.stCreated"), o.operator_name ? `${o.operator_name}` : t("tg.stReviewing"), rejected ? t("tg.stRejected") : t("tg.stCompleted")];
-                    const finalColor = rejected ? "#FF6B85" : "#4ADE80";
-                    return (
-                      <div className="mt-3 flex items-start">
-                        {labels.map((lb, i) => {
-                          const active = i <= idx;
-                          const isFinal = i === 2 && (done || rejected);
-                          const dot = isFinal ? finalColor : active ? "#7db8ff" : "#2a3a52";
-                          return (
-                            <React.Fragment key={i}>
-                              <div className="flex flex-col items-center" style={{ width: 66 }}>
-                                <span className="w-3 h-3 rounded-full" style={{ background: dot }} />
-                                <span className="text-[8.5px] mt-1 text-center leading-tight truncate max-w-[62px]" style={{ color: active ? "#c3cede" : "#5b7089" }}>{lb}</span>
-                              </div>
-                              {i < 2 && <span className="flex-1 h-[2px] mt-[5px]" style={{ background: i < idx ? "#7db8ff" : "#2a3a52" }} />}
-                            </React.Fragment>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
+                  {/* Pul yo'li — 4 bekatli progress (MoneyRail) */}
+                  <MoneyRail order={o} />
 
                   {o.operator_note && <div className="text-[11px] text-[#93a5ba] mt-2.5 italic">{o.operator_note}</div>}
                   <div className="text-[10px] text-[#5b7089] mt-2">{new Date(o.created_at).toLocaleString()}</div>
                   <button
                     onClick={() => openSupport(o.id)}
-                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold py-2 rounded-lg bg-white/[0.04] border border-white/10 text-[#93a5ba] active:bg-white/[0.08]"
+                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold py-2 rounded-lg bg-white/[0.04] border m-divider text-[#93a5ba] active:bg-white/[0.08]"
                   >
                     <Headset size={13} /> {t("tg.writeAbout")}
                   </button>
@@ -1986,6 +1986,7 @@ export default function TelegramAppPage() {
             })}
           </div>
         )}
+        <BottomNav current={screen} onNavigate={navigateTab} />
       </div>
     );
   }
@@ -2019,7 +2020,7 @@ export default function TelegramAppPage() {
             </div>
           </div>
         )}
-        <div className="p-4 pb-2 shrink-0 bg-white/[0.04] backdrop-blur-xl border-b border-white/10 z-10">
+        <div className="p-4 pb-2 shrink-0 bg-white/[0.04] backdrop-blur-xl border-b m-divider z-10">
           <div className="flex items-center justify-between -mt-1">
             <ScreenHeader title={t("tg.chatTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
             <button onClick={() => setShowThemePicker((v) => !v)} className="p-2 rounded-lg active:bg-white/5 -mt-5" aria-label={t("tg.chatTheme")}>
@@ -2027,7 +2028,7 @@ export default function TelegramAppPage() {
             </button>
           </div>
           {showThemePicker && (
-            <div className="mt-2 p-3 rounded-xl bg-white/[0.04] border border-white/10">
+            <div className="mt-2 p-3 rounded-xl bg-white/[0.04] border m-divider">
               <p className="text-[11px] text-[#93a5ba] mb-2">{t("tg.chatThemeHint")}</p>
               <ThemePicker value={myChatTheme} onChange={changeChatTheme} />
             </div>
@@ -2066,10 +2067,10 @@ export default function TelegramAppPage() {
                 <div
                   onClick={m.sender === "customer" && m.status === "failed" ? () => setFailedMenuFor((f) => (f === m.clientId ? null : m.clientId ?? null)) : undefined}
                   {...(m.status !== "sending" && !m.message?.startsWith("__END_CONFIRM__") ? bindMessageGestures(m, !!m.message && !m.image_path && !m._localImageUrl && !m.voice_path) : {})}
-                  className={`max-w-[78%] rounded-2xl ${(m.image_path || m._localImageUrl) ? "p-1" : "px-3 py-1.5"} text-[12.5px] leading-snug select-none transition-transform active:scale-[0.97] text-white bg-[#0f2137]/80 backdrop-blur-md border ${m.sender === "customer" ? "border-[#3D7FFF]/30 shadow-[0_2px_16px_rgba(61,127,255,0.20)]" : "border-white/12 shadow-[0_2px_14px_rgba(120,180,255,0.12)]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
+                  className={`max-w-[78%] rounded-2xl ${(m.image_path || m._localImageUrl) ? "p-1" : "px-3 py-1.5"} text-[12.5px] leading-snug select-none transition-transform active:scale-[0.97] text-white bg-[#0f2137]/80 backdrop-blur-md border ${m.sender === "customer" ? "border-[#3D7FFF]/30 shadow-[0_2px_16px_rgba(61,127,255,0.20)]" : "m-divider shadow-[0_2px_14px_rgba(120,180,255,0.12)]"}${m.sender === "customer" && m.status === "failed" ? " cursor-pointer" : ""}`}
                 >
                   {quoted && (
-                    <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${m.sender === "customer" ? "border-white/50" : "border-accent/50"}`}>
+                    <div className={`mb-1.5 pl-2 border-l-2 text-[10.5px] opacity-70 truncate max-w-[220px] ${m.sender === "customer" ? "m-divider" : "border-accent/50"}`}>
                       <span className="font-semibold">{quotedLabel}</span>{" "}
                       {quoted.message || (quoted.image_path ? t("tg.photo") : quoted.voice_path ? t("tg.voiceMsg") : "")}
                     </div>
@@ -2137,7 +2138,7 @@ export default function TelegramAppPage() {
         {showScrollDown && (
           <button
             onClick={() => { supportBottomRef.current?.scrollIntoView({ behavior: "smooth" }); setShowScrollDown(false); }}
-            className="fixed right-3 bottom-20 z-[60] w-10 h-10 rounded-full bg-[#0e2038]/90 backdrop-blur border border-white/10 flex items-center justify-center shadow-lg active:scale-95"
+            className="fixed right-3 bottom-20 z-[60] w-10 h-10 rounded-full bg-[#0e2038]/90 backdrop-blur border m-divider flex items-center justify-center shadow-lg active:scale-95"
             aria-label={t("tg.scrollDown")}
           >
             <ChevronDown size={20} className="text-white" />
@@ -2149,7 +2150,7 @@ export default function TelegramAppPage() {
         {msgMenuFor && msgMenuPos && (
           <div className="fixed inset-0 z-[85]" onClick={() => setMsgMenuFor(null)}>
             <div
-              className={`absolute w-40 select-none bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
+              className={`absolute w-40 select-none bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border m-divider shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
               style={{
                 left: Math.max(8, Math.min(msgMenuPos.x - 80, (typeof window !== "undefined" ? window.innerWidth : 360) - 168)),
                 top: Math.max(8, msgMenuPos.y - 104),
@@ -2183,7 +2184,7 @@ export default function TelegramAppPage() {
             tomon — sabab/operator faqat operator panelida ko'rinadi). */}
         {selectedOrder && (
           <div className="px-3 pt-2 shrink-0">
-            <div className="rounded-xl bg-white/[0.05] border border-white/10 px-3 py-2 flex items-center gap-2">
+            <div className="rounded-xl bg-white/[0.05] border m-divider px-3 py-2 flex items-center gap-2">
               <ListOrdered size={15} className="text-[#7db8ff] shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-semibold text-white truncate">
@@ -2233,16 +2234,17 @@ export default function TelegramAppPage() {
 
   if (screen === "promo") {
     return (
-      <div className={`${bgCls} p-5`}>
+      <div className={`${bgCls} p-5 m-screen-pb`}>
         <ScreenHeader title={t("tg.prizeTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <PrizeCard initData={getInitData()} />
+        <BottomNav current={screen} onNavigate={navigateTab} />
       </div>
     );
   }
 
   // menu
   return (
-    <div className={`${bgCls} p-5 relative`}>
+    <div className={`${bgCls} p-5 m-screen-pb relative`}>
       <FloatingAmbience />
       <div className="relative z-10">
       <div className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5 shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]">
@@ -2250,6 +2252,10 @@ export default function TelegramAppPage() {
           <div>
             <p className="text-[11px] text-[#93a5ba] mb-1">{t("tg.welcome")}</p>
             <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
+            <span className="inline-flex items-center gap-1.5 mt-1.5 text-[10px] font-bold tracking-wide" style={{ color: "var(--em)" }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--em)", boxShadow: "0 0 6px var(--em)" }} />
+              {t("tg.onlineLabel")}
+            </span>
           </div>
           <div className="shrink-0 flex items-center gap-1.5">
             <div className="flex items-center rounded-lg bg-white/[0.08] p-0.5 text-[11px] font-semibold">
@@ -2269,6 +2275,10 @@ export default function TelegramAppPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <HeroPrizeCard initData={getInitData()} />
       </div>
 
       <div className="grid grid-cols-2 gap-3.5">
@@ -2348,6 +2358,7 @@ export default function TelegramAppPage() {
         @keyframes hkRise { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
       </div>
+      <BottomNav current={screen} onNavigate={navigateTab} />
     </div>
   );
 }

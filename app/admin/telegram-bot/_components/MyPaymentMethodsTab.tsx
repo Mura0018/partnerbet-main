@@ -168,7 +168,7 @@ export function MyPaymentMethodsTab() {
           <div className="mb-3">
             <label className="block text-[12px] text-muted mb-1.5">{t("pay.fType")}</label>
             <select
-              className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]"
+              className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]"
               value={form.method_type}
               onChange={(e) => setForm((prev) => ({ ...prev, method_type: e.target.value as OperatorPaymentMethod["method_type"] }))}
             >
@@ -180,7 +180,7 @@ export function MyPaymentMethodsTab() {
           <div className="mb-3">
             <label className="block text-[12px] text-muted mb-1.5">{t("pay.fNumber")}</label>
             <input
-              className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+              className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
               value={form.account_number}
               onChange={(e) => setForm((prev) => ({ ...prev, account_number: e.target.value }))}
               placeholder={form.method_type === "crypto" ? t("pay.phCrypto") : t("pay.phPhone")}
@@ -190,7 +190,7 @@ export function MyPaymentMethodsTab() {
             <div className="mb-4">
               <label className="block text-[12px] text-muted mb-1.5">{t("pay.fHolder")}</label>
               <input
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+                className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
                 value={form.holder_name}
                 onChange={(e) => setForm((prev) => ({ ...prev, holder_name: e.target.value }))}
                 placeholder={t("pay.phHolder")}
@@ -202,14 +202,14 @@ export function MyPaymentMethodsTab() {
             <input
               type="number"
               min={1}
-              className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+              className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
               value={form.usage_limit}
               onChange={(e) => setForm((prev) => ({ ...prev, usage_limit: e.target.value }))}
               placeholder={t("pay.phLimit")}
             />
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[13px]">
+            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-subtle text-[13px]">
               {t("pay.cancel")}
             </button>
             <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">

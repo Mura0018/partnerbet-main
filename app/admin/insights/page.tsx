@@ -103,7 +103,7 @@ export default function InsightsManager() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-          <form onSubmit={save} className="w-full max-w-lg rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
+          <form onSubmit={save} className="w-full max-w-lg rounded-2xl border border-subtle bg-panel p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-[16px]">{editingId ? t("med.insEdit") : t("med.insNew")}</h2>
               <button type="button" onClick={() => setShowForm(false)} aria-label={t("med.insClose")}><X size={18} /></button>
@@ -123,7 +123,7 @@ export default function InsightsManager() {
                   type={f.type} required
                   value={(form as any)[f.key]}
                   onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+                  className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
                 />
               </div>
             ))}
@@ -143,7 +143,7 @@ export default function InsightsManager() {
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]"
+                className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]"
               >
                 {["UPCOMING", "LIVE", "WIN", "LOST", "PUSH"].map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -155,7 +155,7 @@ export default function InsightsManager() {
                 required rows={3}
                 value={form.analysis}
                 onChange={(e) => setForm({ ...form, analysis: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+                className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
               />
             </div>
 

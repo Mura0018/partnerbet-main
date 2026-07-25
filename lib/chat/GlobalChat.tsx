@@ -65,7 +65,7 @@ export function GlobalChat() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 rounded-xl border border-white/8 bg-white/[0.02]">
+    <div className="flex flex-col h-full min-h-0 rounded-xl border border-subtle bg-white/[0.02]">
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2.5">
         {loading ? (
           <p className="text-[13px] text-muted text-center py-6">Yuklanmoqda...</p>
@@ -90,13 +90,13 @@ export function GlobalChat() {
           );
         })}
       </div>
-      <div className="flex items-center gap-2 p-3 border-t border-white/8 shrink-0">
+      <div className="flex items-center gap-2 p-3 border-t border-subtle shrink-0">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="Xabar yozing..."
-          className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+          className="flex-1 min-w-0 bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
         />
         <button onClick={send} disabled={sending || !text.trim()} className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50" aria-label="Yuborish">
           {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}

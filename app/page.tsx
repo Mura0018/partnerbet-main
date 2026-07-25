@@ -7,6 +7,7 @@ import {
   MessageCircle, Shield, Flame,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { NotificationBell } from "@/lib/push/NotificationBell";
 import { BrandName } from "@/lib/ui/BrandName";
 import { BannerSlot } from "@/lib/ui/BannerSlot";
@@ -77,6 +78,7 @@ const NAV_LIVE: { label: string; href: string }[] = [
 ];
 
 export default function Home() {
+  const { t } = useLocale();
   const [insights, setInsights] = useState<Insight[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [liveScores, setLiveScores] = useState<any[]>([]);
@@ -212,7 +214,7 @@ export default function Home() {
         <div className="absolute top-1/3 -right-40 w-[32rem] h-[32rem] rounded-full bg-vip/5 blur-[140px]" />
       </div>
 
-      <header className="sticky top-0 z-40 glass border-b border-white/5">
+      <header className="sticky top-0 z-40 glass border-b border-subtle">
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between gap-6">
           <div className="flex items-center gap-2.5 shrink-0">
             {siteSettings.identity.branding_logo_url ? (
@@ -250,7 +252,7 @@ export default function Home() {
               onClick={() => scrollTo("promos")}
               className="text-[13px] font-semibold px-4 py-2.5 rounded-xl bg-gradient-to-r from-cta to-cta-dim hover:brightness-110 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(23,201,100,0.35)]"
             >
-              Open Partner
+              {t("home.openPartner")}
             </button>
           </div>
         </div>
@@ -275,38 +277,36 @@ export default function Home() {
           />
         )}
         <div className="relative z-10">
-          <Badge tone="live"><Radio size={11} className="animate-pulse" /> {liveScores.length} matches live now</Badge>
+          <Badge tone="live"><Radio size={11} className="animate-pulse" /> {liveScores.length === 0 ? t("home.liveNone") : t("home.liveCount", { n: liveScores.length })}</Badge>
           <h1 className="mt-5 text-[42px] leading-[1.05] md:text-[64px] font-extrabold tracking-tight">
             BET SMARTER<br />
             <span className="bg-gradient-to-r from-accent to-vip bg-clip-text text-transparent">WIN BIGGER</span>
           </h1>
           <p className="mt-5 text-muted text-[16px] leading-relaxed max-w-md">
-            Daily football analytics, live scores, APK access, and professional match insights.
+            {t("home.heroSub")}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <button
               onClick={() => scrollTo("promos")}
               className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-cta to-cta-dim font-semibold text-[14px] shadow-[0_0_30px_rgba(23,201,100,0.4)] transition-all active:scale-[0.98] hover:brightness-110"
             >
-              Claim Bonus <ChevronRight size={16} />
+              {t("home.claimBonus")} <ChevronRight size={16} />
             </button>
             <Link
               href="/apk"
               className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-cta to-cta-dim font-semibold text-[14px] shadow-[0_0_24px_rgba(23,201,100,0.3)] hover:brightness-110 transition-all active:scale-[0.98]"
             >
-              <Download size={16} /> Download App
+              <Download size={16} /> {t("home.downloadApp")}
             </Link>
           </div>
           <p className="mt-6 text-[11px] text-muted leading-relaxed max-w-md">
-            18+ only. Gambling can be addictive — play responsibly. WINORA is an independent
-            football analytics platform and licensed affiliate partner; it does not accept wagers
-            directly. See full affiliate disclosure in the footer.
+            {t("home.disclaimer", { site: siteSettings.identity.site_name || "WINORA" })}
           </p>
         </div>
 
         <div className="relative z-10">
         {insights[0] ? (
-          <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-panel to-[#0A1626] p-6 backdrop-blur-xl shadow-2xl">
+          <div className="relative rounded-2xl border border-subtle bg-gradient-to-b from-panel to-[#0A1626] p-6 backdrop-blur-xl shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <Badge tone="blue"><TrendingUp size={11} /> Top Insight</Badge>
               <span className="text-[11px] text-muted">{insights[0].league}</span>
@@ -331,7 +331,7 @@ export default function Home() {
           <h2 className="text-[22px] font-bold">Partner Promo Codes</h2>
         </div>
         {partners.length === 0 ? (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">
             Hozircha hamkorlar mavjud emas. Tez orada qo'shiladi.
           </div>
         ) : (
@@ -343,12 +343,12 @@ export default function Home() {
                 <a
                   href={`/partners/${partner.slug}`}
                   key={partner.id}
-                  className="rounded-xl border border-white/8 bg-white/[0.02] p-5 flex items-center gap-4 hover:border-accent/30 transition"
+                  className="rounded-xl border border-subtle bg-white/[0.02] p-5 flex items-center gap-4 hover:border-accent/30 transition"
                 >
                   {partner.logo_url ? (
-                    <img src={partner.logo_url} alt={partner.name} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
+                    <img src={partner.logo_url} alt={partner.name} className="w-12 h-12 rounded-lg object-cover border border-subtle shrink-0" />
                   ) : (
-                    <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 shrink-0" />
+                    <div className="w-12 h-12 rounded-lg bg-white/5 border border-subtle shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -379,19 +379,19 @@ export default function Home() {
       <section id="insights" className="max-w-7xl mx-auto px-5 md:px-8 pb-16 scroll-mt-20">
         <h2 className="text-[22px] font-bold mb-5">Match Insights</h2>
         {insightsLoading && (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">
             Yuklanmoqda…
           </div>
         )}
         {!insightsLoading && insights.length === 0 && (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">
             Hozircha tahlillar mavjud emas. Tez orada qo'shiladi.
           </div>
         )}
         {insights.length > 0 && (
           <div className="grid md:grid-cols-3 gap-4">
             {insights.map((m) => (
-              <div key={m.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+              <div key={m.id} className="rounded-xl border border-subtle bg-white/[0.02] p-5">
                 <div className="flex items-center justify-between mb-3">
                   <Badge tone={m.status === "LIVE" ? "live" : "blue"}>{m.league}</Badge>
                   <span className="text-[11px] text-muted">{new Date(m.match_time).toLocaleString()}</span>
@@ -413,7 +413,7 @@ export default function Home() {
 
       <section id="live-scores" className="max-w-7xl mx-auto px-5 md:px-8 pb-16 scroll-mt-20">
         <h2 className="text-[22px] font-bold mb-5">Live Scores</h2>
-        <div className="rounded-xl border border-white/8 divide-y divide-white/5 overflow-hidden">
+        <div className="rounded-xl border border-subtle divide-y divide-subtle overflow-hidden">
           {loadingLive && (
             <div className="px-5 py-6 text-center text-[13px] text-muted">Loading live matches…</div>
           )}
@@ -443,46 +443,41 @@ export default function Home() {
             <Badge tone="gold"><Flame size={11} /> Latest version</Badge>
             <h2 className="text-[26px] md:text-[32px] font-bold mt-4">Get the WINORA app</h2>
             <p className="text-[14px] text-muted mt-2 max-w-md leading-relaxed">
-              Live scores, push alerts and match insights in your pocket.
+              {t("home.apkSub")}
             </p>
             <div className="flex flex-wrap gap-3 mt-6">
               <Link
                 href="/apk"
                 className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-cta to-cta-dim font-semibold text-[14px] shadow-[0_0_24px_rgba(23,201,100,0.3)] hover:brightness-110 transition-all active:scale-[0.98]"
               >
-                <Download size={16} /> Download App
+                <Download size={16} /> {t("home.downloadApp")}
               </Link>
             </div>
             <div className="flex items-center gap-2 mt-5 text-[11px] text-muted">
-              <Shield size={13} /> Verified build · checksum published on the install guide
+              <Shield size={13} /> {t("home.apkVerified")}
             </div>
           </div>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-5 md:px-8 pb-20">
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-8 flex flex-col md:flex-row items-center justify-between gap-5">
+        <Link
+          href="/support"
+          className="rounded-2xl border border-subtle bg-white/[0.02] p-8 flex items-center justify-between gap-5 transition-colors hover:border-accent/30 hover:bg-white/[0.04]"
+        >
           <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
               <MessageCircle size={18} className="text-accent" />
             </div>
-            <div>
-              <div className="font-semibold text-[15px]">Need help? We're online.</div>
-              <div className="text-[13px] text-muted">Average reply time under 3 minutes.</div>
-            </div>
+            <div className="font-semibold text-[15px]">{t("home.helpCta")}</div>
           </div>
-          <span
-            title="Support chat Phase 4'da qo'shiladi"
-            className="px-5 py-2.5 rounded-lg border border-white/10 text-muted font-semibold text-[13px] cursor-not-allowed select-none"
-          >
-            Tez orada
-          </span>
-        </div>
+          <ChevronRight size={18} className="text-muted shrink-0" />
+        </Link>
       </section>
 
-      <footer className="border-t border-white/8 mt-4 bg-white/[0.015]">
+      <footer className="border-t border-subtle mt-4 bg-white/[0.015]">
         <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
-          <div className="pb-6 mb-6 border-b border-white/8">
+          <div className="pb-6 mb-6 border-b border-subtle">
             <div className="font-extrabold text-[17px] tracking-tight mb-2">
               <BrandName name={siteSettings.identity.site_name} />
             </div>
@@ -509,7 +504,7 @@ export default function Home() {
                 <Link href="/football" className="text-muted hover:text-white transition-colors">Football Center</Link>
                 <Link href="/blog" className="text-muted hover:text-white transition-colors">News</Link>
                 <Link href="/partners" className="text-muted hover:text-white transition-colors">Partners</Link>
-                <Link href="/apk" className="text-muted hover:text-white transition-colors">Download App</Link>
+                <Link href="/apk" className="text-muted hover:text-white transition-colors">{t("home.downloadApp")}</Link>
                 <Link href="/topup" className="flex items-center gap-1.5 text-muted hover:text-white transition-colors">
                   Top-Up
                   <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] border border-[#4ADE80]/30">Yangi</span>
@@ -544,13 +539,11 @@ export default function Home() {
             </div>
           </div>
 
-          <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-white/8">
-            <span className="font-semibold text-white/60">18+ only.</span> Gambling can be addictive — please play
-            responsibly. {siteSettings.identity.site_name || "WINORA"} is a licensed affiliate marketing platform and
-            does not itself accept wagers or hold client funds. Promo codes are issued by third-party licensed operators.
+          <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-subtle">
+            {t("home.disclaimer", { site: siteSettings.identity.site_name || "WINORA" })}
           </p>
 
-          <div className="mt-6 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
+          <div className="mt-6 pt-5 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
             <span>© {new Date().getFullYear()} {siteSettings.identity.site_name || "WINORA"}. Barcha huquqlar himoyalangan.</span>
             <span>Ishonchli. Xavfsiz. Professional.</span>
           </div>

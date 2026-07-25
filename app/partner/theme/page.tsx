@@ -64,7 +64,7 @@ export default function PartnerThemePage() {
           const locked = t.is_premium && !access[t.id];
           return (
             <button key={t.id} onClick={() => choose(t)} disabled={!isAdmin || locked || saving !== null}
-              className={`relative flex items-center gap-3 rounded-xl border p-4 text-left transition ${active ? "border-accent bg-accent/10" : "border-white/8 bg-white/[0.02]"} ${(!isAdmin || locked) ? "opacity-70 cursor-not-allowed" : "hover:border-accent/40"}`}>
+              className={`relative flex items-center gap-3 rounded-xl border p-4 text-left transition ${active ? "border-accent bg-accent/10" : "border-subtle bg-white/[0.02]"} ${(!isAdmin || locked) ? "opacity-70 cursor-not-allowed" : "hover:border-accent/40"}`}>
               <span className="w-9 h-9 rounded-xl shrink-0" style={{ background: t.accent || "#3D7FFF" }} />
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-bold flex items-center gap-1.5">{t.name} {locked && <Lock size={12} className="text-[#F4C76A]" />}</div>

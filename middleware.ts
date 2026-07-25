@@ -32,6 +32,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: string }[] = [
   { prefix: "/admin/operator-rating", permission: "operators.oversight" },
   { prefix: "/admin/staff-monitor", permission: "operators.oversight" },
   { prefix: "/admin/reports", permission: "reports.view" },
+  { prefix: "/admin/security-log", permission: "security.manage" },
 ];
 
 function buildSupabaseClient(request: NextRequest, response: NextResponse) {

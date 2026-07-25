@@ -93,7 +93,7 @@ function SetPasswordInner() {
     <div className={wrap}>
       <style>{`@keyframes spFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes spGlow{0%,100%{box-shadow:0 0 30px 4px rgba(61,127,255,.35)}50%{box-shadow:0 0 46px 10px rgba(124,58,237,.4)}}@keyframes spRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}`}</style>
       <div className="w-full max-w-sm" style={{ animation: "spRise .5s ease both" }}>
-        <div className="rounded-3xl p-6 border border-white/10" style={{ background: "linear-gradient(160deg,#173a68,#0e2038)", boxShadow: "12px 12px 30px rgba(0,0,0,0.5),-6px -6px 20px rgba(120,180,255,0.08)" }}>
+        <div className="rounded-3xl p-6 border border-subtle" style={{ background: "linear-gradient(160deg,#173a68,#0e2038)", boxShadow: "12px 12px 30px rgba(0,0,0,0.5),-6px -6px 20px rgba(120,180,255,0.08)" }}>
           {done ? (
             <div className="text-center py-4">
               <CheckCircle2 size={48} className="text-[#4ADE80] mx-auto mb-4" />
@@ -114,8 +114,8 @@ function SetPasswordInner() {
                 <p className="text-[12.5px] text-[#93a5ba] mt-1">Hamkorlik paneliga kirish uchun parol o'rnating.</p>
               </div>
               <form onSubmit={submit}>
-                <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Yangi parol (kamida 10 belgi: harf, raqam, belgi)" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-3.5 text-[14px] outline-none focus:border-accent mb-2.5" />
-                <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="Parolni takrorlang" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-3.5 text-[14px] outline-none focus:border-accent mb-3" />
+                <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Yangi parol (kamida 10 belgi: harf, raqam, belgi)" className="w-full bg-white/5 border border-subtle rounded-xl py-3 px-3.5 text-[14px] outline-none focus:border-accent mb-2.5" />
+                <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="Parolni takrorlang" className="w-full bg-white/5 border border-subtle rounded-xl py-3 px-3.5 text-[14px] outline-none focus:border-accent mb-3" />
                 {error && <p className="text-[12.5px] text-[#FF6B85] mb-3">{error}</p>}
                 <button type="submit" disabled={busy} className="w-full py-3 rounded-xl bg-gradient-to-r from-accent to-accent-dim font-bold text-[15px] disabled:opacity-50">
                   {busy ? <Loader2 size={16} className="animate-spin mx-auto" /> : "Parolni saqlash"}

@@ -8,7 +8,7 @@ import {
 import { createClient } from "@/lib/supabase";
 import { isValidHttpUrl } from "@/lib/validation/url";
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 type Provider = {
@@ -38,7 +38,7 @@ export default function StreamingAdminPage() {
         Faqat rasmiy, litsenziyalangan oqim (stream) provayderlarini qo'shing. Ruxsatsiz manbalar taqiqlanadi.
       </p>
 
-      <div className="flex gap-1 mb-6 border-b border-white/8">
+      <div className="flex gap-1 mb-6 border-b border-subtle">
         <button onClick={() => setTab("providers")} className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[13px] font-medium border-b-2 ${tab === "providers" ? "border-accent text-accent" : "border-transparent text-muted hover:text-white"}`}>
           <Zap size={14} /> Providers
         </button>
@@ -57,7 +57,7 @@ function StatusBadge({ status }: { status: Provider["connection_status"] }) {
   const { t } = useLocale();
   if (status === "connected") return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/30"><CheckCircle2 size={11} /> {t("strm.connected")}</span>;
   if (status === "error") return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#FF3B5C]/10 text-[#FF6B85] border border-[#FF3B5C]/30"><XCircle size={11} /> {t("strm.error")}</span>;
-  return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 text-muted border border-white/10"><HelpCircle size={11} /> {t("strm.unknown")}</span>;
+  return <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 text-muted border border-subtle"><HelpCircle size={11} /> {t("strm.unknown")}</span>;
 }
 
 function ProvidersTab() {
@@ -147,11 +147,11 @@ function ProvidersTab() {
                 {p.last_error && <div className="text-[11px] text-[#FF6B85] mt-1">{p.last_error}</div>}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                <button onClick={() => testConnection(p.id)} disabled={testingId === p.id} className="px-3 py-1.5 rounded-md border border-white/10 text-[11px] font-semibold hover:bg-white/5 disabled:opacity-50 flex items-center gap-1.5">
+                <button onClick={() => testConnection(p.id)} disabled={testingId === p.id} className="px-3 py-1.5 rounded-md border border-subtle text-[11px] font-semibold hover:bg-white/5 disabled:opacity-50 flex items-center gap-1.5">
                   {testingId === p.id ? <Loader2 size={12} className="animate-spin" /> : null} Test Connection
                 </button>
                 <button onClick={() => setCredentialsProviderId(p.id)} className="p-2 rounded-md hover:bg-white/10" aria-label="Kalitlar"><KeyRound size={14} /></button>
-                <button onClick={() => toggleActive(p)} className={`text-[11px] px-2 py-1 rounded-full border ${p.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>{p.is_active ? "Faol" : "Faolsiz"}</button>
+                <button onClick={() => toggleActive(p)} className={`text-[11px] px-2 py-1 rounded-full border ${p.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-subtle"}`}>{p.is_active ? "Faol" : "Faolsiz"}</button>
                 <button onClick={() => openEdit(p)} className="p-2 rounded-md hover:bg-white/10" aria-label="Tahrirlash"><Pencil size={14} /></button>
                 <button onClick={() => remove(p.id)} className="p-2 rounded-md hover:bg-white/10 text-[#FF6B85]" aria-label="O'chirish"><Trash2 size={14} /></button>
               </div>
@@ -163,7 +163,7 @@ function ProvidersTab() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-          <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6">
+          <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-subtle bg-panel p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-[16px]">{editingId ? "Providerni tahrirlash" : "Yangi Provider"}</h2>
               <button type="button" onClick={() => setShowForm(false)} aria-label="Yopish"><X size={18} /></button>
@@ -226,7 +226,7 @@ function CredentialsModal({ providerId, onClose }: { providerId: string; onClose
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6">
+      <div className="w-full max-w-md rounded-2xl border border-subtle bg-panel p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-[16px]">{t("strm.apiKeys")}</h2>
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
@@ -238,7 +238,7 @@ function CredentialsModal({ providerId, onClose }: { providerId: string; onClose
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1.5">
             <label className="text-[12px] text-muted">{t("strm.apiKey")}</label>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${status?.hasApiKey ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${status?.hasApiKey ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-subtle"}`}>
               {status?.hasApiKey ? "Sozlangan" : "Sozlanmagan"}
             </span>
           </div>
@@ -253,7 +253,7 @@ function CredentialsModal({ providerId, onClose }: { providerId: string; onClose
         <div className="mb-2">
           <div className="flex items-center gap-2 mb-1.5">
             <label className="text-[12px] text-muted">{t("strm.apiSecret")}</label>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${status?.hasApiSecret ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${status?.hasApiSecret ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-subtle"}`}>
               {status?.hasApiSecret ? "Sozlangan" : "Sozlanmagan"}
             </span>
           </div>
@@ -379,14 +379,14 @@ function MatchStreamsTab() {
 
       <div className="space-y-2">
         {streams.map((s) => (
-          <div key={s.id} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+          <div key={s.id} className="flex items-center justify-between rounded-lg border border-subtle p-3">
             <div className="text-[12px]">
               <span className="font-medium">{s.streaming_providers?.name ?? "—"}</span>
               {s.is_primary && <span className="text-[10px] text-vip ml-1.5">★ primary</span>}
               <div className="text-muted mt-0.5">{s.football_provider} · O'yin ID {s.external_fixture_id}</div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => toggleActive(s)} className={`text-[10px] px-2 py-1 rounded-full border ${s.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>{s.is_active ? "Faol" : "Faolsiz"}</button>
+              <button onClick={() => toggleActive(s)} className={`text-[10px] px-2 py-1 rounded-full border ${s.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-subtle"}`}>{s.is_active ? "Faol" : "Faolsiz"}</button>
               <button onClick={() => remove(s.id)} className="p-1 rounded-md hover:bg-white/10 text-[#FF6B85]"><Trash2 size={13} /></button>
             </div>
           </div>

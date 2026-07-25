@@ -7,7 +7,7 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 type Tag = { id: string; name: string; slug: string };
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 export default function TagsPage() {
@@ -66,7 +66,7 @@ export default function TagsPage() {
 
       <div className="flex flex-wrap gap-2">
         {tags.map((tg) => (
-          <div key={tg.id} className="flex items-center gap-2 rounded-full border border-white/10 pl-3 pr-1.5 py-1 text-[12px]">
+          <div key={tg.id} className="flex items-center gap-2 rounded-full border border-subtle pl-3 pr-1.5 py-1 text-[12px]">
             <span>{tg.name}</span>
             <span className="text-[10px] text-[#5b6f85]">{usageCounts[tg.id] ?? 0}</span>
             <button onClick={() => { setName(tg.name); setEditingId(tg.id); }} className="p-1 rounded-full hover:bg-white/10"><Pencil size={11} /></button>

@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { sendTelegramMessage } from "@/lib/telegram/notify";
+import { env } from "@/lib/env";
 
-const MINIAPP_ADMIN_URL = "https://www.couponbet.org/admin/telegram-bot";
+const MINIAPP_ADMIN_URL = `${env.siteUrl}/admin/telegram-bot`;
 
 // Pings every staff member who (a) has telegram_orders.manage permission
 // via their role, (b) is active, and (c) has linked their own Telegram

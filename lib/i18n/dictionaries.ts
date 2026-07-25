@@ -12,10 +12,35 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
 };
 
-// Auth-flow + shared admin-chrome strings. Every key below exists in all
-// three languages — no partial translations, no fallback-to-English gaps.
+// Auth-flow + shared admin-chrome strings.
+// `uz` va `ru` — to'liq va bir xil hajmda (43 bo'lim). `en` esa QISMAN:
+// faqat home/common/auth/roles/donations bo'limlari bor, qolgani yo'q va
+// t() DEFAULT_LOCALE (uz) ga qaytadi. Shuning uchun `en` foydalanuvchiga
+// tanlash uchun taklif qilinmaydi — LegalLocaleSwitcher va LocaleSwitcher
+// ikkalasi ham PANEL_LOCALES (uz/ru) dan foydalanadi.
 export const dictionaries = {
   uz: {
+    home: {
+      liveNone: "Hozir jonli o'yin yo'q",
+      liveCount: "Jonli o'yinlar: {n}",
+      heroSub: "Kunlik futbol tahlillari, jonli natijalar, APK va professional o'yin sharhlari.",
+      claimBonus: "Bonusni olish",
+      downloadApp: "Ilovani yuklab olish",
+      openPartner: "Hamkor paneli",
+      navSupport: "Yordam",
+      navFootball: "Futbol markazi",
+      navNews: "Yangiliklar",
+      navPartners: "Hamkorlar",
+      navApp: "Ilova",
+      apkSub: "Jonli natijalar, bildirishnomalar va o'yin tahlillari — telefoningizda.",
+      apkVerified: "Tekshirilgan build · nazorat summasi o'rnatish qo'llanmasida",
+      helpCta: "Savolingiz bormi? Yordam bo'limiga o'ting",
+      disclaimer: "18+. Qimor o'yinlari qaramlik keltirishi mumkin — mas'uliyat bilan o'ynang. {site} — mustaqil futbol tahlil platformasi va litsenziyalangan hamkor; tikish qabul qilmaydi. To'liq ma'lumot footerda.",
+    },
+    partners: {
+      openSite: "Saytga o'tish",
+      disclaimer: "18+. Qimor o'yinlari qaramlik keltirishi mumkin — mas'uliyat bilan o'ynang. {partner} — mustaqil litsenziyalangan operator. {site} tikish qabul qilmaydi va operator xizmatlari uchun javobgar emas.",
+    },
     nav: {
       g_main: "Asosiy", g_content: "Kontent", g_marketing: "Marketing", g_system: "Tizim",
       g_pay: "BetCore Pay", g_team: "Jamoa", g_partner: "Hamkorlik", orders: "Buyurtmalar", teamChat: "Jamoa chati",
@@ -131,7 +156,7 @@ export const dictionaries = {
     don: {
       title: "Homiyliklar", sub: "Homiylik statistikasi va to'lov usullarini boshqarish.", loading: "Yuklanmoqda…",
       totalRevenue: "Jami daromad", today: "Bugun", last7: "So'nggi 7 kun", last30: "So'nggi 30 kun",
-      recent: "So'nggi homiyliklar", noDonations: "Hozircha homiylik yo'q.", topSupporters: "Top Supporters", noData: "Ma'lumot yo'q.",
+      recent: "So'nggi homiyliklar", noDonations: "Hozircha homiylik yo'q.", topSupporters: "Top homiylar", noData: "Ma'lumot yo'q.",
       confirmDel: "To'lov usuli o'chirilsinmi?", keys: "Kalitlar", edit: "Tahrirlash", del: "O'chirish", noMethods: "Hozircha to'lov usuli yo'q.",
       fName: "Nomi", fType: "Turi", tGateway: "To'lov shlyuzi (Stripe/PayPal)", tCrypto: "Kripto hamyon", provider: "Provider", pGeneric: "Generic (kelajakda)",
       baseUrl: "Base API URL", cryptoSymbol: "Kripto belgisi (masalan USDT, BTC, ETH, SOL)", network: "Tarmoq (masalan TRC20, ERC20)", walletAddress: "Wallet Address",
@@ -498,6 +523,9 @@ export const dictionaries = {
       mTopup: "Hisob to'ldirish", mWithdraw: "Pul yechish", mOrders: "Buyurtmalarim", mSupport: "Operator bilan aloqa",
       becomePartner: "Hamkor bo'ling", becomePartnerSub: "O'z biznesingizni bizning platformamiz bilan yuriting",
       prizeCard: "Sovrin kartangiz", prizeCardSub: "Faol bo'ling — katta sovrinlar sizni kutmoqda", prizeTitle: "Sovrin kartasi",
+      heroLabel: "SOVRIN KARTA", heroTurnover: "Aylanma", heroRank: "O'rin", heroNoName: "Ism kiritilmagan", heroNoRank: "Faoliyat boshlang",
+      rail1: "Yuborildi", rail2: "Operator qabul qildi", rail3: "To'lov tasdiqlandi", rail4: "1xbet hisobingizda", railReady: "TAYYOR", railRejected: "Rad etildi",
+      navHome: "Asosiy", navOrders: "Buyurtma", navPrize: "Sovrin", navSupport: "Yordam", onlineLabel: "ONLAYN",
       voiceLoading: "Yuklanmoqda…", voiceFail: "Ovozli xabarni yuklab bo'lmadi.", imgLoading: "Rasm yuklanmoqda…", imgAlt: "Rasm",
       accIdLabel: "Hisob ID raqami", accIdPh: "Masalan: 123456789", verify: "Tekshirish", confirmed: "tasdiqlangan", change: "O'zgartirish",
       idNotFound: "Bu ID bo'yicha ma'lumot topilmadi — to'g'ri kiritganingizga ishonch hosil qiling. Baribir davom etishingiz mumkin.",
@@ -646,7 +674,7 @@ export const dictionaries = {
       donorName: "Ismingiz (ixtiyoriy)",
       message: "Xabar (ixtiyoriy)",
       anonymous: "Anonim qoldirish",
-      showPublicly: "Ismimni Top Supporters'da ko'rsatish",
+      showPublicly: "Ismimni Top homiylar ro'yxatida ko'rsatish",
       donateNow: "Homiylik qilish",
       processing: "Yuborilmoqda…",
       cryptoInstructions: "Quyidagi manzilga kiritilgan miqdorni yuboring, so'ng pastdagi formani to'ldiring.",
@@ -656,13 +684,34 @@ export const dictionaries = {
       thankYouTitle: "Rahmat!",
       thankYouMessage: "Homiyligingiz uchun tashakkur. Sizning yordamingiz biz uchun muhim.",
       backHome: "Bosh sahifaga qaytish",
-      topSupportersTitle: "Top Supporters",
+      topSupportersTitle: "Top homiylar",
       noSupportersYet: "Hozircha homiylar yo'q.",
       invalidAmount: "To'g'ri miqdor kiriting.",
       genericError: "Xatolik yuz berdi. Qayta urinib ko'ring.",
     },
   },
   ru: {
+    home: {
+      liveNone: "Сейчас нет матчей в прямом эфире",
+      liveCount: "Матчей в эфире: {n}",
+      heroSub: "Ежедневная футбольная аналитика, живые счета, APK и профессиональные разборы матчей.",
+      claimBonus: "Получить бонус",
+      downloadApp: "Скачать приложение",
+      openPartner: "Партнёрская панель",
+      navSupport: "Помощь",
+      navFootball: "Футбольный центр",
+      navNews: "Новости",
+      navPartners: "Партнёры",
+      navApp: "Приложение",
+      apkSub: "Живые счета, уведомления и разборы матчей — в вашем телефоне.",
+      apkVerified: "Проверенная сборка · контрольная сумма в руководстве по установке",
+      helpCta: "Есть вопрос? Перейдите в раздел помощи",
+      disclaimer: "18+. Азартные игры могут вызывать зависимость — играйте ответственно. {site} — независимая платформа футбольной аналитики и лицензированный партнёр; ставки не принимает. Полная информация в футере.",
+    },
+    partners: {
+      openSite: "Перейти на сайт",
+      disclaimer: "18+. Азартные игры могут вызывать зависимость — играйте ответственно. {partner} — независимый лицензированный оператор. {site} не принимает ставки и не несёт ответственности за услуги оператора.",
+    },
     nav: {
       g_main: "Основное", g_content: "Контент", g_marketing: "Маркетинг", g_system: "Система",
       g_pay: "BetCore Pay", g_team: "Команда", g_partner: "Партнёрство", orders: "Заказы", teamChat: "Командный чат",
@@ -1145,6 +1194,9 @@ export const dictionaries = {
       mTopup: "Пополнение счёта", mWithdraw: "Вывод средств", mOrders: "Мои заказы", mSupport: "Связь с оператором",
       becomePartner: "Станьте партнёром", becomePartnerSub: "Ведите свой бизнес на нашей платформе",
       prizeCard: "Ваша призовая карта", prizeCardSub: "Будьте активны — вас ждут большие призы", prizeTitle: "Призовая карта",
+      heroLabel: "ПРИЗОВАЯ КАРТА", heroTurnover: "Оборот", heroRank: "Место", heroNoName: "Имя не указано", heroNoRank: "Начните активность",
+      rail1: "Отправлено", rail2: "Оператор принял", rail3: "Оплата подтверждена", rail4: "На счету 1xbet", railReady: "ГОТОВО", railRejected: "Отклонено",
+      navHome: "Главная", navOrders: "Заказы", navPrize: "Приз", navSupport: "Помощь", onlineLabel: "ОНЛАЙН",
       voiceLoading: "Загрузка…", voiceFail: "Не удалось загрузить голосовое сообщение.", imgLoading: "Изображение загружается…", imgAlt: "Изображение",
       accIdLabel: "Номер счёта (ID)", accIdPh: "Например: 123456789", verify: "Проверить", confirmed: "подтверждён", change: "Изменить",
       idNotFound: "По этому ID данные не найдены — проверьте правильность ввода. Вы всё равно можете продолжить.",
@@ -1293,7 +1345,7 @@ export const dictionaries = {
       donorName: "Ваше имя (необязательно)",
       message: "Сообщение (необязательно)",
       anonymous: "Оставить анонимно",
-      showPublicly: "Показать моё имя в Top Supporters",
+      showPublicly: "Показать моё имя в Топ спонсорах",
       donateNow: "Поддержать",
       processing: "Отправка…",
       cryptoInstructions: "Отправьте указанную сумму на адрес ниже, затем заполните форму.",
@@ -1303,13 +1355,34 @@ export const dictionaries = {
       thankYouTitle: "Спасибо!",
       thankYouMessage: "Благодарим за вашу поддержку. Ваша помощь важна для нас.",
       backHome: "Вернуться на главную",
-      topSupportersTitle: "Top Supporters",
+      topSupportersTitle: "Топ спонсоры",
       noSupportersYet: "Пока нет спонсоров.",
       invalidAmount: "Введите корректную сумму.",
       genericError: "Произошла ошибка. Попробуйте снова.",
     },
   },
   en: {
+    home: {
+      liveNone: "No live matches right now",
+      liveCount: "Live matches: {n}",
+      heroSub: "Daily football analytics, live scores, APK access, and professional match insights.",
+      claimBonus: "Claim Bonus",
+      downloadApp: "Download App",
+      openPartner: "Open Partner",
+      navSupport: "Support",
+      navFootball: "Football Center",
+      navNews: "News",
+      navPartners: "Partners",
+      navApp: "App",
+      apkSub: "Live scores, push alerts and match insights in your pocket.",
+      apkVerified: "Verified build · checksum published on the install guide",
+      helpCta: "Have a question? Go to the help section",
+      disclaimer: "18+. Gambling can be addictive — please play responsibly. {site} is an independent football analytics platform and a licensed affiliate partner; it does not accept wagers. Full details in the footer.",
+    },
+    partners: {
+      openSite: "Open site",
+      disclaimer: "18+. Gambling can be addictive — play responsibly. {partner} is an independent licensed operator. {site} does not accept wagers and is not responsible for the operator's services.",
+    },
     common: {
       loading: "Loading…",
       save: "Save",

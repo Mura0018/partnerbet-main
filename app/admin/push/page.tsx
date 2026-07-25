@@ -5,7 +5,7 @@ import { Send, Users, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 
 export default function PushNotificationsPage() {
   const { t } = useLocale();
@@ -82,7 +82,7 @@ export default function PushNotificationsPage() {
       <h2 className="text-[15px] font-bold mb-3">{t("cnt.pushRecent")}</h2>
       <div className="space-y-2">
         {log.map((l) => (
-          <div key={l.id} className="rounded-lg border border-white/8 p-3">
+          <div key={l.id} className="rounded-lg border border-subtle p-3">
             <div className="text-[13px] font-medium">{l.title}</div>
             <div className="text-[11px] text-[#5b6f85] mt-1">{new Date(l.created_at).toLocaleString()} · {t("cnt.pushLog", { r: l.recipients_count, f: l.failures_count })}</div>
           </div>

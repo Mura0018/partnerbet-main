@@ -115,7 +115,7 @@ export function PrizeCard({ initData }: { initData: string }) {
             </div>
             <div>
               <div style={{ fontSize: 11, letterSpacing: 2, color: "#7fb8ad" }}>{t("pz.prizeCard")}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 2 }}>{t("pz.closed")}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "rgba(255,255,255,.98)", marginTop: 2 }}>{t("pz.closed")}</div>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
               {[0, 1, 2, 3].map((i) => <span key={i} style={{ width: 22, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.15)" }} />)}
@@ -133,13 +133,13 @@ export function PrizeCard({ initData }: { initData: string }) {
             }}
           >
             <div style={{ position: "absolute", bottom: -50, left: -50, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle,rgba(244,199,106,0.16),transparent 70%)" }} />
-            <div style={{ background: "#fff", borderRadius: 12, padding: 6, flexShrink: 0 }}>
+            <div style={{ background: "rgba(255,255,255,.98)", borderRadius: 12, padding: 6, flexShrink: 0 }}>
               {qr ? <img src={qr} alt="QR" style={{ width: 96, height: 96, display: "block" }} /> : <div style={{ width: 96, height: 96, display: "flex", alignItems: "center", justifyContent: "center" }}><QrCode size={40} className="text-[#04231F]" /></div>}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: 10.5, letterSpacing: 1.5, color: "#F4C76A", fontWeight: 700 }}>{t("pz.prizeCard")}</div>
               <div style={{ fontSize: 12, color: "#93a5ba", margin: "6px 0 2px" }}>{t("pz.cardCode")}</div>
-              <div style={{ fontFamily: "monospace", fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: 1 }}>{card?.card_code}</div>
+              <div style={{ fontFamily: "monospace", fontSize: 17, fontWeight: 800, color: "rgba(255,255,255,.98)", letterSpacing: 1 }}>{card?.card_code}</div>
               <div style={{ fontSize: 10.5, color: "#7fb8ad", marginTop: 8 }}>{t("pz.showOperator")}</div>
             </div>
           </div>

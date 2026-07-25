@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
+import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, ChevronRight, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -71,7 +71,7 @@ function ReceiptViewer({ path }: { path: string }) {
         src={url}
         alt="To'lov cheki"
         onClick={() => setExpanded(true)}
-        className="w-full max-h-56 object-contain rounded-lg border border-white/10 cursor-zoom-in bg-black/20"
+        className="w-full max-h-56 object-contain rounded-lg border border-subtle cursor-zoom-in bg-black/20"
       />
       {expanded && (
         <div
@@ -138,7 +138,7 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder={t("ord.amount")}
-          className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
+          className="w-36 bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
         />
         <span className="text-[11px] text-muted">{t("ord.receivedQ")}</span>
       </div>
@@ -147,7 +147,7 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder={t("ord.noteOptional")}
-        className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[12px] outline-none focus:border-accent mb-2"
+        className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[12px] outline-none focus:border-accent mb-2"
       />
       {err && <div className="rounded-lg bg-[#FF6B85]/10 border border-[#FF6B85]/30 text-[#FF6B85] text-[11px] px-3 py-2 mb-2">{err}</div>}
       <div className="flex gap-2">
@@ -167,7 +167,7 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
         </button>
       </div>
       {rows.length > 0 && (
-        <div className="mt-3 space-y-1.5 border-t border-white/5 pt-2.5">
+        <div className="mt-3 space-y-1.5 border-t border-subtle pt-2.5">
           {rows.map((r) => (
             <div key={r.id} className="text-[11px] text-muted">
               <span className={r.confirmed ? "text-[#4ADE80]" : "text-[#FF6B85]"}>
@@ -227,7 +227,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
   };
 
   const Row = ({ label, value, highlight }: { label: string; value: React.ReactNode; highlight?: boolean }) => (
-    <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-white/5 last:border-0">
+    <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-subtle last:border-0">
       <span className="text-[12px] text-muted shrink-0">{label}</span>
       <span className={`text-[13px] text-right ${highlight ? "font-semibold text-white" : ""}`}>{value}</span>
     </div>
@@ -235,7 +235,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-md rounded-2xl border border-subtle bg-panel p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-bold text-[16px]">{order.type === "topup" ? t("ord.topup") : t("ord.withdraw")}</h2>
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
@@ -330,7 +330,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
               key={i}
               type="button"
               onClick={() => setNote(t(tpl as any))}
-              className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
+              className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-full bg-white/5 border border-subtle text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
             >
               {t(tpl as any)}
             </button>
@@ -338,7 +338,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         </div>
         <textarea
           rows={2}
-          className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3"
+          className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3"
           placeholder={t("ord.rejPlaceholder")}
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -458,7 +458,7 @@ function LimitsEditor() {
           <label className="block text-[10px] text-[#5b6f85] mb-1">{t("wid.maxOrder")}</label>
           <input
             type="number"
-            className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]"
+            className="w-36 bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px]"
             value={values.max_order_amount}
             onChange={(e) => setValues((prev) => ({ ...prev, max_order_amount: e.target.value }))}
           />
@@ -467,7 +467,7 @@ function LimitsEditor() {
           <label className="block text-[10px] text-[#5b6f85] mb-1">{t("wid.dailyLimit")}</label>
           <input
             type="number"
-            className="w-36 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]"
+            className="w-36 bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px]"
             value={values.daily_customer_limit}
             onChange={(e) => setValues((prev) => ({ ...prev, daily_customer_limit: e.target.value }))}
           />
@@ -600,7 +600,7 @@ function MyBusyToggle() {
   if (loading) return null;
 
   return (
-    <div className={`mb-4 rounded-lg px-3.5 py-2.5 border ${isBusy ? "bg-[#FF6B85]/10 border-[#FF6B85]/25" : "bg-white/[0.02] border-white/8"}`}>
+    <div className={`mb-4 rounded-lg px-3.5 py-2.5 border ${isBusy ? "bg-[#FF6B85]/10 border-[#FF6B85]/25" : "bg-white/[0.02] border-subtle"}`}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className={`w-2.5 h-2.5 rounded-full ${isBusy ? "bg-[#FF6B85]" : "bg-[#4ADE80]"}`} />
@@ -622,7 +622,7 @@ function MyBusyToggle() {
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder={t("wid.busyReasonPh")}
-          className="mt-2 w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
+          className="mt-2 w-full bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
         />
       )}
     </div>
@@ -701,7 +701,7 @@ function DebtsSection() {
             ? t("wid.creditorConfirmed")
             : t("wid.open");
           return (
-            <div key={d.id} className="flex items-center justify-between gap-2 text-[11px] border-b border-white/5 pb-1.5 last:border-0">
+            <div key={d.id} className="flex items-center justify-between gap-2 text-[11px] border-b border-subtle pb-1.5 last:border-0">
               <div className="min-w-0">
                 <span className={d.i_am_debtor ? "text-[#FF6B85]" : "text-[#4ADE80]"}>
                   {`${d.i_am_debtor ? d.creditor_name : d.debtor_name}: ${fmt(d.amount)} ${t("ord.sum")}`}
@@ -796,7 +796,7 @@ function TelegramLinkWidget() {
     return (
       <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80] flex items-center justify-between gap-3">
         <span>{t("wid.tgLinked")}</span>
-        <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">
+        <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white">
           {unlinking ? "…" : t("wid.unlink")}
         </button>
       </div>
@@ -835,8 +835,12 @@ function TelegramLinkWidget() {
   );
 }
 
+const ORDERS_PAGE_SIZE = 100;
+
 export function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"pending" | "completed" | "rejected" | "all">("pending");
   const [selected, setSelected] = useState<Order | null>(null);
@@ -851,19 +855,39 @@ export function OrdersTab() {
   const { t } = useLocale();
   const isSuperAdmin = profile?.roles?.key === "super_admin";
 
-  const load = async () => {
+  // Qidiruv/filtr server tomonda (#16) — ilgari .limit(200) olib, qidiruv
+  // va filtrlarni FAQAT shu 200 qator ustida qilardi; 200 tadan eski
+  // buyurtma hech qanday filtr bilan topilmasdi.
+  const load = async (p = page) => {
     setLoading(true);
-    let query = supabase
-      .from("telegram_orders")
-      .select("id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, payout_done, handoff_open, sla_deadline, created_at, customers(phone, full_name)")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (filter !== "all") query = query.eq("status", filter);
-    const { data } = await query;
-    setOrders((data as any[]) ?? []);
+    try {
+      const params = new URLSearchParams({
+        status: filter,
+        page: String(p),
+        onlyToday: onlyToday ? "1" : "0",
+        onlyUnclaimed: onlyUnclaimed ? "1" : "0",
+        operatorId: operatorFilter,
+        search,
+      });
+      const res = await fetch(`/api/admin/telegram-orders/list?${params.toString()}`);
+      const data = await res.json();
+      if (res.ok) {
+        setOrders((data.orders as any[]) ?? []);
+        setTotal(data.total ?? 0);
+      }
+    } catch { /* ignore */ }
     setLoading(false);
   };
-  useEffect(() => { load(); }, [filter]);
+
+  // Qidiruv/filtr o'zgarganda 0-sahifadan qayta yuklaymiz (customers/page.tsx
+  // bilan bir xil naqsh — 300ms debounce, har tugma bosilganda emas).
+  useEffect(() => {
+    const tm = setTimeout(() => { setPage(0); load(0); }, 300);
+    return () => clearTimeout(tm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, operatorFilter, onlyToday, onlyUnclaimed, search]);
+
+  useEffect(() => { load(page); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
@@ -912,23 +936,7 @@ export function OrdersTab() {
     }
   };
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  const filtered = orders.filter((o) => {
-    if (operatorFilter !== "all") {
-      const owner = o.status === "pending" ? o.claimed_by : o.operator_id;
-      if (owner !== operatorFilter) return false;
-    }
-    if (onlyToday && new Date(o.created_at) < todayStart) return false;
-    if (onlyUnclaimed && (o.status !== "pending" || o.claimed_by)) return false;
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      const haystack = `${o.account_id} ${o.platform} ${o.customers?.phone ?? ""} ${o.customers?.full_name ?? ""} ${o.player_name ?? ""}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
-    return true;
-  });
+  const lastPage = Math.max(0, Math.ceil(total / ORDERS_PAGE_SIZE) - 1);
 
   return (
     <div>
@@ -946,7 +954,7 @@ export function OrdersTab() {
         <div className="relative mb-2.5">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           <input
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent"
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent"
             placeholder={t("ord.searchOrders")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -983,7 +991,7 @@ export function OrdersTab() {
           <select
             value={operatorFilter}
             onChange={(e) => setOperatorFilter(e.target.value)}
-            className="ml-auto bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
+            className="ml-auto bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
           >
             <option value="all">{t("ord.allOperators")}</option>
             {currentUserId && <option value={currentUserId}>{t("ord.onlyMine")}</option>}
@@ -996,13 +1004,13 @@ export function OrdersTab() {
 
       {loading ? (
         <p className="text-[13px] text-muted">{t("common.loading")}</p>
-      ) : filtered.length === 0 ? (
+      ) : orders.length === 0 ? (
         <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
           {t("ord.noOrders")}
         </div>
       ) : (
         <div className="space-y-2.5">
-          {filtered.map((o) => {
+          {orders.map((o) => {
             const owner = o.status === "pending" ? o.claimed_by : o.operator_id;
             const ownerName = owner ? operatorNames[owner] : null;
             return (
@@ -1055,6 +1063,16 @@ export function OrdersTab() {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {!loading && total > ORDERS_PAGE_SIZE && (
+        <div className="flex items-center justify-between mt-3 text-[12px]">
+          <span className="text-muted">{page * ORDERS_PAGE_SIZE + 1}–{Math.min((page + 1) * ORDERS_PAGE_SIZE, total)} / {total}</span>
+          <div className="flex gap-1.5">
+            <button disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className="p-2 rounded-lg border border-subtle disabled:opacity-30 hover:bg-white/5"><ChevronLeft size={15} /></button>
+            <button disabled={page >= lastPage} onClick={() => setPage((p) => Math.min(lastPage, p + 1))} className="p-2 rounded-lg border border-subtle disabled:opacity-30 hover:bg-white/5"><ChevronRight size={15} /></button>
+          </div>
         </div>
       )}
 

@@ -91,7 +91,7 @@ export function CommandPalette({
         </div>
 
         {/* natijalar */}
-        <div className="overflow-y-auto rounded-2xl bg-[#0b1524]/90 border border-white/8 p-2">
+        <div className="overflow-y-auto rounded-2xl bg-[#0b1524]/90 border border-subtle p-2">
           {isNumeric && (
             <>
               <div className="px-2 pt-2 pb-1 text-[9.5px] font-bold tracking-[0.14em] uppercase text-muted">{t("shl.secDirect")}</div>

@@ -104,11 +104,11 @@ export function RichTextEditor({ value, onChange }: { value: string; onChange: (
     editor.commands.setYoutubeVideo({ src: url });
   }, [editor]);
 
-  if (!editor) return <div className="rounded-lg border border-white/10 bg-white/5 h-64 animate-pulse" />;
+  if (!editor) return <div className="rounded-lg border border-subtle bg-white/5 h-64 animate-pulse" />;
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 overflow-hidden">
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-white/10 px-2 py-1.5 bg-black/20">
+    <div className="rounded-lg border border-subtle bg-white/5 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-subtle px-2 py-1.5 bg-black/20">
         <ToolbarButton label="Qalin" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}><Bold size={14} /></ToolbarButton>
         <ToolbarButton label="Kursiv" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic size={14} /></ToolbarButton>
         <ToolbarButton label="Chizilgan" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}><Strikethrough size={14} /></ToolbarButton>

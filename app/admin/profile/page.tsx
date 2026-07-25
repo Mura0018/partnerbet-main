@@ -127,7 +127,7 @@ function TwoFactorSection() {
           <button
             onClick={() => unenroll(factors[0].id)}
             disabled={unenrolling === factors[0].id}
-            className="text-[12px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white disabled:opacity-50"
+            className="text-[12px] px-3 py-1.5 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white disabled:opacity-50"
           >
             {unenrolling === factors[0].id ? "…" : t("prof.disable")}
           </button>
@@ -154,12 +154,12 @@ function TwoFactorSection() {
                 maxLength={6}
                 value={verifyCode}
                 onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-3 tracking-[0.3em] text-center"
+                className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-3 tracking-[0.3em] text-center"
                 placeholder="000000"
               />
               {verifyError && <p className="text-[12px] text-[#FF6B85] mb-3">{verifyError}</p>}
               <div className="flex gap-2">
-                <button type="button" onClick={cancelEnroll} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[13px]">
+                <button type="button" onClick={cancelEnroll} className="flex-1 py-2.5 rounded-lg bg-white/5 border border-subtle text-[13px]">
                   Bekor qilish
                 </button>
                 <button type="submit" disabled={verifying} className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
@@ -298,7 +298,7 @@ function NotificationPrefsSection() {
     <div className="rounded-xl glass-card p-5 mb-6">
       <h2 className="text-[15px] font-semibold mb-1 flex items-center gap-2"><Bell size={16} className="text-accent" /> {t("prof.notif")}</h2>
       <p className="text-[12px] text-muted mb-2">{t("prof.notifHint")}</p>
-      <div className="divide-y divide-white/5">
+      <div className="divide-y divide-subtle">
         <Toggle checked={notifyOrders} onChange={(v) => { setNotifyOrders(v); save(v, notifySecurityPref); }} label={t("prof.notifOrders")} />
         <Toggle checked={notifySecurityPref} onChange={(v) => { setNotifySecurityPref(v); save(notifyOrders, v); }} label={t("prof.notifSecurity")} />
       </div>
@@ -350,7 +350,7 @@ function EmailChangeSection() {
       {!editing ? (
         <div className="flex items-center justify-between">
           <span className="text-[13px] text-muted">{currentEmail}</span>
-          <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">
+          <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white">
             <Pencil size={12} /> O'zgartirish
           </button>
         </div>
@@ -363,10 +363,10 @@ function EmailChangeSection() {
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="yangi@email.com"
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-3"
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-3"
           />
           <div className="flex gap-2">
-            <button type="button" onClick={() => { setEditing(false); setNewEmail(""); setError(""); }} className="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-[13px]">
+            <button type="button" onClick={() => { setEditing(false); setNewEmail(""); setError(""); }} className="flex-1 py-2 rounded-lg bg-white/5 border border-subtle text-[13px]">
               Bekor qilish
             </button>
             <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
@@ -410,7 +410,7 @@ function LoginHistorySection() {
       <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2"><ShieldAlert size={16} className="text-accent" /> {t("prof.lastLogins")}</h2>
       <div className="space-y-2">
         {history.map((h, i) => (
-          <div key={i} className="flex items-center justify-between gap-2 text-[12px] py-1 border-b border-white/5 last:border-0">
+          <div key={i} className="flex items-center justify-between gap-2 text-[12px] py-1 border-b border-subtle last:border-0">
             <span className={h.success ? "text-[#4ADE80] shrink-0" : "text-[#FF6B85] shrink-0"}>{h.success ? "✅" : "❌"}</span>
             <span className="text-muted flex-1 min-w-0 truncate">{h.ip_address ?? "—"} · {describeDeviceSimple(h.user_agent, t)}</span>
             <span className="text-muted shrink-0 text-[11px]">{new Date(h.created_at).toLocaleDateString()}</span>
@@ -548,7 +548,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-1.5">
                   <input
                     autoFocus
-                    className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[14px] outline-none focus:border-accent"
+                    className="flex-1 min-w-0 bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[14px] outline-none focus:border-accent"
                     placeholder={profile.full_name ?? ""}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
@@ -567,7 +567,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[13px] cursor-pointer hover:bg-white/5 w-fit">
+          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-subtle text-[13px] cursor-pointer hover:bg-white/5 w-fit">
             {avatarUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
             Rasm yuklash
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarUploading}
@@ -590,7 +590,7 @@ export default function ProfilePage() {
           <PasswordInput
             required value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-9 text-[14px] outline-none focus:border-accent"
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 pl-9 text-[14px] outline-none focus:border-accent"
           />
         </div>
 
@@ -600,7 +600,7 @@ export default function ProfilePage() {
           <PasswordInput
             required value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-9 text-[14px] outline-none focus:border-accent"
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 pl-9 text-[14px] outline-none focus:border-accent"
           />
         </div>
         <PasswordStrengthMeter password={newPassword} />

@@ -1,7 +1,8 @@
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { env } from "@/lib/env";
 
-const APP_ORIGIN = "https://www.couponbet.org";
+const APP_ORIGIN = env.siteUrl;
 
 // Hamkor a'zosi uchun parol o'rnatish taklifi (invite) yaratadi va havola qaytaradi.
 export async function createPartnerInvite(profileId: string): Promise<string> {

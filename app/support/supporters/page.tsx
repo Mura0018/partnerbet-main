@@ -3,8 +3,13 @@ import { PublicHeader } from "@/lib/ui/PublicHeader";
 import { PublicFooter } from "@/lib/ui/PublicFooter";
 import { Container, Card, SectionHeading, EmptyState } from "@/lib/ui/primitives";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { getServerLocale } from "@/lib/i18n/getServerLocale";
+import { dictionaries } from "@/lib/i18n/dictionaries";
 
-export const metadata = { title: "Top Supporters" };
+export async function generateMetadata() {
+  const d = dictionaries[await getServerLocale()];
+  return { title: d.donations.topSupportersTitle };
+}
 
 async function getSupporters() {
   const admin = createAdminClient();
@@ -21,12 +26,13 @@ async function getSupporters() {
 
 export default async function TopSupportersPage() {
   const supporters = await getSupporters();
+  const d = dictionaries[await getServerLocale()];
 
   return (
     <div className="min-h-screen bg-bg text-white">
       <PublicHeader />
       <Container className="py-14 max-w-2xl">
-        <SectionHeading eyebrow="Rahmat" title="Top Supporters" />
+        <SectionHeading eyebrow="Rahmat" title={d.donations.topSupportersTitle} />
         {supporters.length === 0 ? (
           <EmptyState icon={<Trophy size={20} />} message="Hozircha homiylar yo'q." />
         ) : (

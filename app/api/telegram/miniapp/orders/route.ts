@@ -9,6 +9,7 @@ import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
 import { resolveOrderCashdesk } from "@/lib/cashdesk/pickCashdesk";
 import { getSlaMinutes } from "@/lib/cashdesk/sla";
+import { getTimezone, startOfDayInTimezone } from "@/lib/site/timezone";
 
 const PAYMENT_METHODS = ["click", "payme", "card", "crypto"] as const;
 
@@ -112,8 +113,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "order_limit_exceeded", limit: maxOrderAmount }, { status: 400 });
   }
 
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  // Server UTC'da ishlaydi (Vercel) — "bugun" ni site_settings.timezone
+  // (standart Asia/Tashkent) bo'yicha hisoblaymiz, aks holda kunlik limit
+  // Toshkentda ertalab 05:00 da yangilanardi.
+  const startOfToday = startOfDayInTimezone(new Date(), await getTimezone());
   const { data: todaysOrders } = await adminForLimits
     .from("telegram_orders")
     .select("amount")
@@ -220,10 +223,25 @@ export async function GET(req: NextRequest) {
     const { data: profs } = await supabase.from("profiles").select("id, display_name, full_name").in("id", opIds);
     for (const p of profs ?? []) nameById.set(p.id, p.display_name || p.full_name || "Operator");
   }
+
+  // MoneyRail 3-bekat ("To'lov tasdiqlandi") — order_confirmations'da shu
+  // buyurtma uchun HAQIQIY tasdiq (confirmed=true) bormi. Operator/izoh/summa
+  // kabi ichki tafsilotlar mijozga chiqarilmaydi — faqat bitta bool.
+  const orderIds = (orders ?? []).map((o: any) => o.id);
+  const confirmedIds = new Set<string>();
+  if (orderIds.length) {
+    const { data: confirmations } = await supabase
+      .from("order_confirmations")
+      .select("order_id")
+      .in("order_id", orderIds)
+      .eq("confirmed", true);
+    for (const c of (confirmations ?? []) as any[]) confirmedIds.add(c.order_id);
+  }
+
   const withNames = (orders ?? []).map((o: any) => {
     const opId = o.operator_id ?? o.claimed_by;
     const { operator_id, claimed_by, ...rest } = o;
-    return { ...rest, operator_name: opId ? nameById.get(opId) ?? null : null };
+    return { ...rest, operator_name: opId ? nameById.get(opId) ?? null : null, payment_confirmed: confirmedIds.has(o.id) };
   });
 
   return NextResponse.json({ orders: withNames });
