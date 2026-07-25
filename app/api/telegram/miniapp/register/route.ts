@@ -17,6 +17,11 @@ export async function POST(req: NextRequest) {
   if (String(password).length < 6) {
     return NextResponse.json({ error: "weak_password" }, { status: 400 });
   }
+  // Haqiqiy ism-familiya majburiy (kamida 2 so'z) — to'ldirish/yechish tasdig'i uchun.
+  const nameParts = String(fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  if (nameParts.length < 2) {
+    return NextResponse.json({ error: "name_required" }, { status: 400 });
+  }
 
   const verified = await resolveMiniApp(initData);
   if (!verified) return NextResponse.json({ error: "invalid_signature" }, { status: 401 });

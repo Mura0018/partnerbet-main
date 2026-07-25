@@ -125,7 +125,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
           <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.platform")}</label>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {PLATFORMS.map((p) => (
-              <button key={p} type="button" onClick={() => setPlatform(p)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-subtle text-[#93a5ba]"}`}>{p}</button>
+              <button key={p} type="button" onClick={() => setPlatform(p)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"}`}>{p}</button>
             ))}
           </div>
           {platform === "Boshqa" && <input className={`${inputCls} mb-3`} placeholder={t("wz.platformPh")} value={customPlatform} onChange={(e) => setCustomPlatform(e.target.value)} />}
@@ -159,7 +159,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
           <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.receiveMethod")}</label>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {METHODS.map((m) => (
-              <button key={m.id} type="button" onClick={() => setMethod(m.id)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${method === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] border-subtle text-[#93a5ba]"}`}>{m.label}</button>
+              <button key={m.id} type="button" onClick={() => setMethod(m.id)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${method === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"}`}>{m.label}</button>
             ))}
           </div>
           <button onClick={() => setStep(4)} className={buttonCls}>{t("wz.continueBtn")} <ChevronRight size={16} /></button>
@@ -168,7 +168,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
 
       {step === 4 && (
         <div>
-          <div className="rounded-xl bg-white/[0.03] border border-subtle px-3.5 py-2.5 mb-3 text-[12px] text-[#93a5ba]">{t("wz.sumLabel")} <b className="text-white">{summa.toLocaleString("ru-RU")} {t("wz.sumUnit")}</b> · {t("wz.methodLabel")} <b className="text-white">{METHODS.find((m) => m.id === method)?.label}</b></div>
+          <div className="rounded-xl bg-white/[0.03] border m-divider px-3.5 py-2.5 mb-3 text-[12px] text-[#93a5ba]">{t("wz.sumLabel")} <b className="text-white">{summa.toLocaleString("ru-RU")} {t("wz.sumUnit")}</b> · {t("wz.methodLabel")} <b className="text-white">{METHODS.find((m) => m.id === method)?.label}</b></div>
           <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.recipient")}</label>
           <input className={`${inputCls} mb-3`} value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder={t("wz.recipientPh")} />
           <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.recipientReq")}</label>

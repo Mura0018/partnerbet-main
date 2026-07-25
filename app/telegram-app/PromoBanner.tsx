@@ -69,7 +69,7 @@ export function PromoBanner() {
         {banners.length > 1 && (
           <div className="absolute bottom-2 right-3 flex gap-1">
             {banners.map((_, i) => (
-              <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: i === idx % banners.length ? "#fff" : "rgba(255,255,255,0.4)" }} />
+              <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: i === idx % banners.length ? "rgba(255,255,255,.95)" : "rgba(255,255,255,0.4)" }} />
             ))}
           </div>
         )}
