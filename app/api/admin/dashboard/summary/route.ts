@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { getTimezone, startOfDayInTimezone } from "@/lib/site/timezone";
 
 type Period = "today" | "7d" | "30d" | "all";
 
 // app/admin/dashboard/page.tsx dagi periodStart() bilan bir xil mantiq —
-// server tomonda ham xuddi shu davr chegarasini hisoblash kerak.
-function periodStart(p: Period): string | null {
+// faqat "today" holati boshqacha: bu route serverda (UTC) ishlaydi, shuning
+// uchun site_settings.timezone bo'yicha hisoblanadi (klientdagi periodStart
+// esa brauzer vaqtidan foydalanadi — u yerga tegilmadi).
+function periodStart(p: Period, tz: string): string | null {
   if (p === "all") return null;
   const now = new Date();
-  if (p === "today") { const d = new Date(now); d.setHours(0, 0, 0, 0); return d.toISOString(); }
+  if (p === "today") return startOfDayInTimezone(now, tz).toISOString();
   return new Date(now.getTime() - (p === "7d" ? 7 : 30) * 86400000).toISOString();
 }
 
@@ -32,7 +35,7 @@ export async function GET(req: NextRequest) {
 
   const sp = req.nextUrl.searchParams;
   const period = (sp.get("period") as Period) ?? "today";
-  const start = periodStart(period);
+  const start = periodStart(period, await getTimezone());
   const nowIso = new Date().toISOString();
 
   const admin = createAdminClient();

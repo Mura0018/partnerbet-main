@@ -9,6 +9,7 @@ import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
 import { resolveOrderCashdesk } from "@/lib/cashdesk/pickCashdesk";
 import { getSlaMinutes } from "@/lib/cashdesk/sla";
+import { getTimezone, startOfDayInTimezone } from "@/lib/site/timezone";
 
 const PAYMENT_METHODS = ["click", "payme", "card", "crypto"] as const;
 
@@ -112,8 +113,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "order_limit_exceeded", limit: maxOrderAmount }, { status: 400 });
   }
 
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  // Server UTC'da ishlaydi (Vercel) — "bugun" ni site_settings.timezone
+  // (standart Asia/Tashkent) bo'yicha hisoblaymiz, aks holda kunlik limit
+  // Toshkentda ertalab 05:00 da yangilanardi.
+  const startOfToday = startOfDayInTimezone(new Date(), await getTimezone());
   const { data: todaysOrders } = await adminForLimits
     .from("telegram_orders")
     .select("amount")

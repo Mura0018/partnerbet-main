@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { getTimezone, startOfDayInTimezone } from "@/lib/site/timezone";
 
 const PAGE_SIZE = 100;
 const ORDER_COLUMNS =
@@ -32,8 +33,9 @@ export async function GET(req: NextRequest) {
   if (status !== "all") q = q.eq("status", status);
 
   if (onlyToday) {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    // Server UTC'da ishlaydi — "bugun" ni site_settings.timezone bo'yicha
+    // hisoblaymiz (bu route ilgari OrdersTab.tsx'da brauzer-tomon edi).
+    const todayStart = startOfDayInTimezone(new Date(), await getTimezone());
     q = q.gte("created_at", todayStart.toISOString());
   }
 

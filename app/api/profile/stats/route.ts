@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { getTimezone, startOfMonthInTimezone } from "@/lib/site/timezone";
 
 export async function GET() {
   const supabase = await createServerSupabaseClient();
@@ -10,10 +11,8 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "forbidden" }, { status: 401 });
 
   const admin = createAdminClient();
-  const monthStart = new Date();
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
-  const since = monthStart.toISOString();
+  // Server UTC'da ishlaydi — "shu oy" ni site_settings.timezone bo'yicha hisoblaymiz.
+  const since = startOfMonthInTimezone(new Date(), await getTimezone()).toISOString();
 
   const [{ count: resolvedOrders }, { count: supportReplies }] = await Promise.all([
     admin
