@@ -9,6 +9,7 @@ import {
 import { applyAppTheme } from "@/lib/telegram/appThemes";
 import { PrizeCard } from "./PrizeCard";
 import { PrizeCard as HeroPrizeCard } from "./components/PrizeCard";
+import { MoneyRail } from "./components/MoneyRail";
 import { PromoBanner } from "./PromoBanner";
 import { WithdrawWizard } from "./WithdrawWizard";
 
@@ -1947,32 +1948,8 @@ export default function TelegramAppPage() {
                   <div className="text-[12px] text-[#93a5ba]">{o.platform} · ID: {o.account_id}</div>
                   <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")}</div>
 
-                  {/* S1: bosqich progress (Yaratildi -> Ko'rilmoqda -> Bajarildi/Rad etildi) */}
-                  {(() => {
-                    const rejected = o.status === "rejected";
-                    const done = o.status === "completed";
-                    const idx = done || rejected ? 2 : o.operator_name ? 1 : 0;
-                    const labels = [t("tg.stCreated"), o.operator_name ? `${o.operator_name}` : t("tg.stReviewing"), rejected ? t("tg.stRejected") : t("tg.stCompleted")];
-                    const finalColor = rejected ? "#FF6B85" : "#4ADE80";
-                    return (
-                      <div className="mt-3 flex items-start">
-                        {labels.map((lb, i) => {
-                          const active = i <= idx;
-                          const isFinal = i === 2 && (done || rejected);
-                          const dot = isFinal ? finalColor : active ? "#7db8ff" : "#2a3a52";
-                          return (
-                            <React.Fragment key={i}>
-                              <div className="flex flex-col items-center" style={{ width: 66 }}>
-                                <span className="w-3 h-3 rounded-full" style={{ background: dot }} />
-                                <span className="text-[8.5px] mt-1 text-center leading-tight truncate max-w-[62px]" style={{ color: active ? "#c3cede" : "#5b7089" }}>{lb}</span>
-                              </div>
-                              {i < 2 && <span className="flex-1 h-[2px] mt-[5px]" style={{ background: i < idx ? "#7db8ff" : "#2a3a52" }} />}
-                            </React.Fragment>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
+                  {/* Pul yo'li — 4 bekatli progress (MoneyRail) */}
+                  <MoneyRail order={o} />
 
                   {o.operator_note && <div className="text-[11px] text-[#93a5ba] mt-2.5 italic">{o.operator_note}</div>}
                   <div className="text-[10px] text-[#5b7089] mt-2">{new Date(o.created_at).toLocaleString()}</div>

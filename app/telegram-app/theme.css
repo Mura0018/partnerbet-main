@@ -109,6 +109,16 @@
   100% { background-position: -200% 0; }
 }
 
+/* MoneyRail kometa ripple */
+@keyframes mRipple {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.85; }
+  70% { transform: translate(-50%, -50%) scale(2.7); opacity: 0; }
+  100% { opacity: 0; }
+}
+.m-comet-ring {
+  animation: mRipple 1.4s ease-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .miniapp-root * {
     animation: none !important;
