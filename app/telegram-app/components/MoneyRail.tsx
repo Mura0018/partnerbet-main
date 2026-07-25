@@ -70,8 +70,8 @@ export function MoneyRail({ order }: { order: RailOrder }) {
         {/* kometa (yakunlanmagan) */}
         {!completed && !rejected && (
           <div style={{ position: "absolute", top: "50%", left: `${(fill * 100).toFixed(0)}%`, transform: "translate(-50%, -50%)", width: 7, height: 7 }}>
-            <span className="m-comet-ring" style={{ position: "absolute", top: "50%", left: "50%", width: 7, height: 7, borderRadius: 999, border: "2px solid #fff" }} />
-            <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 7, height: 7, borderRadius: 999, background: "#fff", boxShadow: "0 0 8px #fff" }} />
+            <span className="m-comet-ring" style={{ position: "absolute", top: "50%", left: "50%", width: 7, height: 7, borderRadius: 999, border: "2px solid rgba(255,255,255,.92)" }} />
+            <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 7, height: 7, borderRadius: 999, background: "rgba(255,255,255,.95)", boxShadow: "0 0 8px rgba(255,255,255,.7)" }} />
           </div>
         )}
       </div>
