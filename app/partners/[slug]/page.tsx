@@ -32,6 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PartnerDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const d = dictionaries[await getServerLocale()];
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "WINORA";
   const { slug } = await params;
   const partner = await getPartner(slug);
   if (!partner) notFound();
@@ -94,8 +95,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
         </div>
 
         <p className="text-[11px] text-[#5b6f85] mt-8 leading-relaxed">
-          18+ only. Gambling can be addictive — please play responsibly. This is a sponsored
-          affiliate link; {partner.name} is a third-party licensed operator.
+          {d.home.disclaimer.replace("{site}", siteName)}
         </p>
       </Container>
       <PublicFooter />
