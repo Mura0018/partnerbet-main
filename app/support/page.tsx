@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Heart, Copy, Check, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Heart, Copy, Check, Loader2, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { PublicHeader } from "@/lib/ui/PublicHeader";
@@ -120,6 +121,12 @@ export default function SupportPage() {
           </div>
           <h1 className="text-[28px] md:text-[36px] font-extrabold">{t("donations.title")}</h1>
           <p className="text-muted mt-2 text-[15px]">{t("donations.subtitle")}</p>
+          <Link
+            href="/support/supporters"
+            className="inline-flex items-center gap-1.5 mt-4 text-[13px] font-semibold text-[#7db8ff] hover:text-white transition-colors"
+          >
+            <Trophy size={14} /> {t("donations.topSupportersTitle")}
+          </Link>
         </div>
 
         <Card className="p-6 md:p-8">
