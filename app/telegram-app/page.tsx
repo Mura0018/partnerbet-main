@@ -741,13 +741,18 @@ export default function TelegramAppPage() {
       setError(t("tg.eNeedPhonePass"));
       return;
     }
+    // Ro'yxatda haqiqiy ism-familiya (kamida 2 so'z) majburiy.
+    if (mode === "register" && fullName.trim().split(/\s+/).filter(Boolean).length < 2) {
+      setError(t("tg.eNameRequired"));
+      return;
+    }
     setSubmitting(true);
     try {
       const endpoint = mode === "register" ? "/api/telegram/miniapp/register" : "/api/telegram/miniapp/login";
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: getInitData(), phone: phone.trim(), password, fullName: fullName.trim() || undefined }),
+        body: JSON.stringify({ initData: getInitData(), phone: phone.trim(), password, fullName: mode === "register" ? fullName.trim() : fullName.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -755,6 +760,7 @@ export default function TelegramAppPage() {
           phone_taken: t("tg.ePhoneTaken"),
           telegram_already_linked: t("tg.eTgLinked"),
           weak_password: t("tg.eWeakPass"),
+          name_required: t("tg.eNameRequired"),
           not_found: t("tg.eNotFound"),
           wrong_password: t("tg.eWrongPass"),
           linked_to_other_telegram: t("tg.eLinkedOther"),
@@ -1600,7 +1606,10 @@ export default function TelegramAppPage() {
 
           <form onSubmit={submitAuth} className="space-y-3.5">
             {mode === "register" && (
-              <input className={inputCls} placeholder={t("tg.phFullName")} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <div>
+                <input className={inputCls} placeholder={t("tg.phFullNameReq")} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <p className="text-[11px] text-[#F4C76A] mt-1.5 leading-relaxed px-1">{t("tg.nameRequired")}</p>
+              </div>
             )}
             <input className={inputCls} placeholder={t("tg.phPhone")} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
             <PasswordInput className={inputCls} placeholder={t("tg.phPassword")} value={password} onChange={(e) => setPassword(e.target.value)} />
