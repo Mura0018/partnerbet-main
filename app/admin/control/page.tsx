@@ -10,7 +10,7 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 // bitta joyда, guruhlangan. Mavjud kalitlar qayta ishlatiladi (rewrite emas).
 // Har karta alohida saqlanadi. RLS: settings.manage (super admin).
 
-const inp = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inp = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 
 type Settings = Record<string, any>;
 

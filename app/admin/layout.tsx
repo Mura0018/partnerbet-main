@@ -161,7 +161,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <span className="pointer-events-none absolute top-0 left-0 right-0 h-[2px] z-10 bg-gradient-to-r from-transparent via-accent/60 to-transparent" style={{ animation: "sidebarScan 5s linear infinite" }} />
       <style>{`@keyframes sidebarScan { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }`}</style>
-      <div className="relative h-16 flex items-center justify-between gap-2 px-5 border-b border-white/8 shrink-0">
+      <div className="relative h-16 flex items-center justify-between gap-2 px-5 divider-gradient shrink-0">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
         <div className="flex items-center gap-2">
           {logoUrl ? (
@@ -186,7 +186,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         <Search size={15} className="shrink-0" />
         <span className="truncate">{t("shl.trigger")}</span>
-        <span className="ml-auto text-[10px] border border-white/10 rounded px-1.5 py-0.5 font-mono shrink-0 hidden md:inline">⌘K</span>
+        <span className="ml-auto text-[10px] border border-subtle rounded px-1.5 py-0.5 font-mono shrink-0 hidden md:inline">⌘K</span>
       </button>
 
       <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto relative">
@@ -249,7 +249,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         })}
       </nav>
 
-      <div className="p-2 border-t border-white/8 flex items-center gap-1.5 shrink-0">
+      <div className="p-2 border-t border-subtle flex items-center gap-1.5 shrink-0">
         <Link
           href="/admin/profile"
           className={`flex items-center gap-2 min-w-0 flex-1 rounded-lg px-1.5 py-1.5 transition ${
@@ -282,7 +282,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-[100svh] bg-bg text-white md:flex overflow-x-hidden">
-      <div className="md:hidden h-14 flex items-center justify-between px-4 border-b border-white/8 bg-panel/40 sticky top-0 z-30">
+      <div className="md:hidden h-14 flex items-center justify-between px-4 divider-gradient bg-panel/40 sticky top-0 z-30">
         <button onClick={() => setMobileOpen(true)} className="p-2 -ml-2 rounded-lg hover:bg-white/10" aria-label="Menyuni ochish">
           <Menu size={20} />
         </button>
@@ -308,7 +308,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-60 shrink-0 border-r border-white/8 bg-bg-elevated md:bg-panel/40 flex flex-col transition-transform duration-200 overflow-hidden ${
+        className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-60 shrink-0 border-r border-subtle bg-bg-elevated md:bg-panel/40 flex flex-col transition-transform duration-200 overflow-hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -324,7 +324,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobil pastki tab-bar — operator kunlik 4 + "Yana" (faqat BetCore foydalanuvchi) */}
       {shell?.canManageOrders && (
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 h-[62px] grid grid-cols-5 border-t border-white/8 bg-panel/95 backdrop-blur-xl">
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 h-[62px] grid grid-cols-5 divider-gradient-top bg-panel/95 backdrop-blur-xl">
           {[
             { href: "/admin/dashboard", label: t("shl.tabPanel"), icon: LayoutDashboard, color: "#2E8FFF" },
             { href: "/admin/telegram-bot", label: t("shl.tabOrders"), icon: Wallet, color: "#12D9A0", badge: shell?.counts?.pendingOrders ?? 0 },

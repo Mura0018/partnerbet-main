@@ -62,7 +62,7 @@ export function WithdrawCodeGuide() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-[12.5px] text-[#93a5ba]"
+        className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-subtle text-[12.5px] text-[#93a5ba]"
       >
         <span>{t("wcg.toggleQ")}</span>
         <span className="text-[#7db8ff]">{open ? t("wcg.hide") : t("wcg.show")}</span>
@@ -163,7 +163,7 @@ export function WithdrawCodeGuide() {
                 type="button"
                 disabled={current === 0 || animating}
                 onClick={() => goTo(current - 1, "back")}
-                className="px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-white/[0.08] border border-white/15 text-[#cdd8ea] disabled:opacity-30"
+                className="px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-white/[0.08] border border-subtle text-[#cdd8ea] disabled:opacity-30"
               >
                 {t("wcg.prev")}
               </button>

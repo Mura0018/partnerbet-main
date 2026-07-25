@@ -36,22 +36,22 @@ export default function PartnerBillingPage() {
       <p className="text-[13px] text-muted mb-6">Obuna/komissiya to'lovlaringiz.</p>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-4">
           <div className="text-[11px] text-muted mb-1">To'lanmagan</div>
           <div className="text-[18px] font-bold text-[#F4C76A]">{fmt(unpaidSum, cur)}</div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-4">
           <div className="text-[11px] text-muted mb-1">Invoyslar</div>
           <div className="text-[18px] font-bold">{invoices.length}</div>
         </div>
       </div>
 
       {invoices.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">Hozircha to'lov yozuvi yo'q.</div>
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">Hozircha to'lov yozuvi yo'q.</div>
       ) : (
         <div className="space-y-2.5">
           {invoices.map((i) => (
-            <div key={i.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4">
+            <div key={i.id} className="flex items-center justify-between gap-3 rounded-xl border border-subtle bg-white/[0.02] p-4">
               <div>
                 <div className="text-[13px] font-semibold">{i.period} · {i.model === "commission" ? "Komissiya" : "Obuna"}</div>
                 <div className="text-[11px] text-muted">{new Date(i.created_at).toLocaleDateString("ru-RU")}</div>

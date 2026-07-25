@@ -100,7 +100,7 @@ export default function MediaLibraryPage() {
         onDrop={onDrop}
         onClick={() => fileInputRef.current?.click()}
         className={`rounded-xl border-2 border-dashed p-8 text-center mb-6 cursor-pointer transition ${
-          dragOver ? "border-accent bg-accent/5" : "border-white/15 hover:border-white/25"
+          dragOver ? "border-accent bg-accent/5" : "border-subtle hover:border-subtle"
         }`}
       >
         {uploading ? (
@@ -126,7 +126,7 @@ export default function MediaLibraryPage() {
         <input
           value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder={t("med.phSearch")}
-          className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent"
+          className="w-full bg-white/5 border border-subtle rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent"
         />
       </div>
 

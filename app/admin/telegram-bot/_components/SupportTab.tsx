@@ -239,7 +239,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
 
   return (
     <div className="fixed inset-0 z-50 bg-bg flex flex-col">
-      <div className="flex items-center gap-2 px-5 py-4 bg-white/[0.04] backdrop-blur-md border-b border-white/[0.06] shrink-0">
+      <div className="flex items-center gap-2 px-5 py-4 bg-white/[0.04] backdrop-blur-md border-b border-subtle shrink-0">
         <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10" aria-label={t("sup.back")}>
           <ChevronLeft size={20} />
         </button>
@@ -256,7 +256,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         <button
           onClick={archive}
           disabled={archiving}
-          className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white disabled:opacity-50"
+          className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white disabled:opacity-50"
         >
           {archiving ? "…" : t("sup.archive")}
         </button>
@@ -291,7 +291,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
                 <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} {t("sup.som")}</div>
                 <div className="text-[9px] text-white/30 mt-1">{t("sup.tapHint")}</div>
               </div>
-              <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }} className="rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-3 flex flex-col justify-center">
+              <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }} className="rounded-xl border border-subtle bg-white/[0.06] backdrop-blur-md p-3 flex flex-col justify-center">
                 <div className="text-[11.5px] font-semibold" style={{ color: linkedOrder.status === "completed" ? "#4ADE80" : linkedOrder.status === "rejected" ? "#FF6B85" : "#F4C76A" }}>
                   {linkedOrder.status === "completed" ? t("sup.doneMark") : linkedOrder.status === "rejected" ? t("sup.rejMark") : t("sup.pendMark")}
                 </div>
@@ -315,11 +315,11 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           <div key={m.id} className={`flex flex-col ${m.sender === "operator" ? "items-end" : "items-start"}`}>
             <span className="text-[9px] text-[#5b6f85] mb-0.5 px-1">{m.sender === "operator" ? t("sup.youOperator") : t("sup.customer")}</span>
             <div
-              className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "operator" ? "text-white shadow-lg shadow-black/20" : "bg-white/10 backdrop-blur-md border border-white/[0.06]"}`}
+              className={`max-w-[78%] rounded-xl px-3 py-2 text-[12.5px] leading-snug ${m.sender === "operator" ? "text-white shadow-lg shadow-black/20" : "bg-white/10 backdrop-blur-md border border-subtle"}`}
               style={m.sender === "operator" ? { background: chatThemeGradient(myTheme) } : undefined}
             >
               {quoted && (
-                <div className={`mb-1.5 rounded-lg border-l-[3px] pl-2.5 pr-2 py-1 ${m.sender === "operator" ? "border-white/70 bg-white/10" : "border-accent/70 bg-accent/10"}`}>
+                <div className={`mb-1.5 rounded-lg border-l-[3px] pl-2.5 pr-2 py-1 ${m.sender === "operator" ? "border-subtle bg-white/10" : "border-accent/70 bg-accent/10"}`}>
                   <div className={`text-[10px] font-semibold ${m.sender === "operator" ? "text-white/90" : "text-accent"}`}>{quotedLabel}</div>
                   <div className="text-[10.5px] opacity-70 line-clamp-2 break-words">
                     {quoted.message || (quoted.image_path ? t("sup.image") : quoted.voice_path ? t("sup.voice") : "")}
@@ -354,14 +354,14 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
+      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-subtle">
         {REPLY_TEMPLATE_KEYS.map((tk, i) => {
           const tpl = t(tk as any);
           return (
           <button
             key={i}
             onClick={() => setText(tpl)}
-            className="shrink-0 text-[10px] px-2 py-1 rounded-full bg-white/[0.06] backdrop-blur-md border border-white/[0.08] text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
+            className="shrink-0 text-[10px] px-2 py-1 rounded-full bg-white/[0.06] backdrop-blur-md border border-subtle text-muted hover:text-white hover:border-accent/40 whitespace-nowrap"
           >
             {tpl.length > 28 ? tpl.slice(0, 28) + "…" : tpl}
           </button>
@@ -369,7 +369,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         })}
       </div>
       {replyTo && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-white/[0.06] shrink-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-subtle shrink-0">
           <Reply size={12} className="text-accent shrink-0" />
           <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
             {replyTo.message || (replyTo.image_path ? t("sup.image") : replyTo.voice_path ? t("sup.voice") : "")}
@@ -380,7 +380,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
         </div>
       )}
       {voiceRecorder.recording ? (
-        <div className="flex items-center gap-2.5 px-3 py-2 shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
+        <div className="flex items-center gap-2.5 px-3 py-2 shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-subtle">
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
           <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
           <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label={t("sup.cancelRec")}>
@@ -391,12 +391,12 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           </button>
         </div>
       ) : (
-      <div className="flex items-center gap-1.5 px-3 py-2 shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-white/[0.06]">
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/[0.08] hover:bg-white/10 disabled:opacity-50" aria-label={t("sup.voiceMsg")}>
+      <div className="flex items-center gap-1.5 px-3 py-2 shrink-0 bg-white/[0.04] backdrop-blur-md border-t border-subtle">
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-subtle hover:bg-white/10 disabled:opacity-50" aria-label={t("sup.voiceMsg")}>
           <Mic size={13} className="text-muted" />
         </button>
         <input
-          className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
+          className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-subtle rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
           placeholder={t("sup.phReply")}
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -509,7 +509,7 @@ export function SupportTab() {
   return (
     <div>
       <input
-        className="w-full mb-3 bg-white/[0.06] backdrop-blur-md border border-white/[0.08] rounded-lg py-2 px-3.5 text-[13px] outline-none focus:border-accent"
+        className="w-full mb-3 bg-white/[0.06] backdrop-blur-md border border-subtle rounded-lg py-2 px-3.5 text-[13px] outline-none focus:border-accent"
         placeholder={t("sup.phSearch")}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -517,26 +517,26 @@ export function SupportTab() {
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setShowArchived(false)}
-          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${!showArchived ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${!showArchived ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}
         >
           {t("sup.fActive")}
         </button>
         <button
           onClick={() => setShowArchived(true)}
-          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${showArchived ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${showArchived ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}
         >
           {t("sup.fArchive")}
         </button>
         <button
           onClick={() => setOnlyMine((v) => !v)}
-          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${onlyMine ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${onlyMine ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}
         >
           {t("sup.fOnlyMine")}
         </button>
       </div>
 
       {filteredThreads.length === 0 ? (
-        <div className="rounded-xl bg-white/[0.03] backdrop-blur-md border border-white/[0.06] p-8 text-center text-[13px] text-muted">
+        <div className="rounded-xl bg-white/[0.03] backdrop-blur-md border border-subtle p-8 text-center text-[13px] text-muted">
           {search ? t("sup.notFound") : showArchived ? t("sup.archiveEmpty") : t("sup.noThreads")}
         </div>
       ) : (
@@ -545,13 +545,13 @@ export function SupportTab() {
             <button
               key={th.customer_id}
               onClick={() => openThread(th)}
-              className="w-full text-left p-3.5 rounded-xl bg-white/[0.03] backdrop-blur-md border border-white/[0.06] hover:border-accent/40 hover:bg-white/[0.05]"
+              className="w-full text-left p-3.5 rounded-xl bg-white/[0.03] backdrop-blur-md border border-subtle hover:border-accent/40 hover:bg-white/[0.05]"
             >
               <div className="flex items-center justify-between gap-2 mb-0.5">
                 <div className="text-[13px] font-semibold truncate">{th.full_name || th.phone}</div>
                 {th.claimed_by && (
                   <span className={`shrink-0 text-[9.5px] px-2 py-0.5 rounded-full border ${
-                    th.claimed_by === currentUserId ? "bg-accent/15 border-accent/40 text-accent" : "bg-white/5 border-white/10 text-muted"
+                    th.claimed_by === currentUserId ? "bg-accent/15 border-accent/40 text-accent" : "bg-white/5 border-subtle text-muted"
                   }`}>
                     🔵 {th.claimed_by === currentUserId ? t("sup.youAnswer") : t("sup.isAnswering", { name: th.claimed_by_name || t("sup.operator") })}
                   </span>

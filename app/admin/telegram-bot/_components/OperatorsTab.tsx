@@ -19,7 +19,7 @@ type OperatorRow = {
   is_online: boolean;
 };
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 
 export function OperatorsTab() {
   const { t } = useLocale();
@@ -102,10 +102,10 @@ export function OperatorsTab() {
                   defaultValue={op.telegram_region ?? ""}
                   onChange={(e) => setRegionDrafts((prev) => ({ ...prev, [op.id]: e.target.value }))}
                 />
-                <button onClick={() => saveRegion(op.id)} className="shrink-0 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-[12px] hover:bg-white/10">
+                <button onClick={() => saveRegion(op.id)} className="shrink-0 px-3 py-2 rounded-lg bg-white/5 border border-subtle text-[12px] hover:bg-white/10">
                   {t("tgb.save")}
                 </button>
-                <button onClick={() => toggleActive(op)} className="shrink-0 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-[12px] hover:bg-white/10">
+                <button onClick={() => toggleActive(op)} className="shrink-0 px-3 py-2 rounded-lg bg-white/5 border border-subtle text-[12px] hover:bg-white/10">
                   {op.is_active ? t("tgb.disable") : t("tgb.enable")}
                 </button>
               </div>

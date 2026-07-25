@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { isValidHttpUrl } from "@/lib/validation/url";
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 type Tab = "leagues" | "fixtures" | "videos";
 
 export default function FootballCenterAdmin() {
@@ -27,7 +27,7 @@ export default function FootballCenterAdmin() {
         Bu yerda faqat tahririyat kontenti (ligalar tanlovi, ajratilgan o'yinlar, videolar) boshqariladi.
       </p>
 
-      <div className="flex gap-1 mb-6 border-b border-white/8">
+      <div className="flex gap-1 mb-6 border-b border-subtle">
         {TABS.map((tb) => (
           <button key={tb.id} onClick={() => setTab(tb.id)}
             className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[13px] font-medium border-b-2 transition ${tab === tb.id ? "border-accent text-accent" : "border-transparent text-muted hover:text-white"}`}>
@@ -93,7 +93,7 @@ function FeaturedLeaguesTab() {
       </form>
       <div className="space-y-2">
         {leagues.map((l) => (
-          <div key={l.id} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+          <div key={l.id} className="flex items-center justify-between rounded-lg border border-subtle p-3">
             <div className="text-[13px]"><span className="font-semibold">{l.name}</span> <span className="text-[#5b6f85] text-[12px]">· {l.provider} · ID {l.external_league_id} · {l.country} {l.season}</span></div>
             <button onClick={() => remove(l.id)} className="p-1.5 rounded-md hover:bg-white/10 text-[#FF6B85]"><Trash2 size={14} /></button>
           </div>
@@ -149,7 +149,7 @@ function FeaturedFixturesTab() {
       </form>
       <div className="space-y-2">
         {fixtures.map((f) => (
-          <div key={f.id} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+          <div key={f.id} className="flex items-center justify-between rounded-lg border border-subtle p-3">
             <div className="text-[13px]">{f.provider} · ID {f.external_fixture_id} {f.note && <span className="text-[#5b6f85]"> — {f.note}</span>}</div>
             <button onClick={() => remove(f.id)} className="p-1.5 rounded-md hover:bg-white/10 text-[#FF6B85]"><Trash2 size={14} /></button>
           </div>
@@ -205,7 +205,7 @@ function VideosTab() {
         <input className={inputCls} placeholder={t("fbl.phVideoTitle")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
         <input className={inputCls} placeholder={t("fbl.phVideoUrl")} value={form.video_url} onChange={(e) => setForm({ ...form, video_url: e.target.value })} />
         <textarea rows={2} className={inputCls} placeholder={t("fbl.phVideoDesc")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-[12px] cursor-pointer hover:bg-white/5 w-fit">
+        <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-subtle text-[12px] cursor-pointer hover:bg-white/5 w-fit">
           {thumbUploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} Thumbnail yuklash
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={thumbUploading} onChange={(e) => e.target.files?.[0] && uploadThumb(e.target.files[0])} />
         </label>
@@ -215,7 +215,7 @@ function VideosTab() {
       </form>
       <div className="space-y-2">
         {videos.map((v) => (
-          <div key={v.id} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+          <div key={v.id} className="flex items-center justify-between rounded-lg border border-subtle p-3">
             <div className="text-[13px] flex items-center gap-2">
               {v.is_featured && <Star size={12} className="text-vip" fill="currentColor" />}
               {v.title}

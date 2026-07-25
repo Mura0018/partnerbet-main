@@ -70,7 +70,7 @@ export default async function FootballNewsDetailPage({ params }: { params: Promi
           <span className="flex items-center gap-1.5"><Eye size={13} /> {news.view_count ?? 0}</span>
         </div>
 
-        {news.cover_url && <img src={news.cover_url} alt={news.title} className="w-full rounded-2xl mt-6 border border-white/10" />}
+        {news.cover_url && <img src={news.cover_url} alt={news.title} className="w-full rounded-2xl mt-6 border border-subtle" />}
 
         <div className="mt-8">
           <RichTextRenderer html={news.content} />

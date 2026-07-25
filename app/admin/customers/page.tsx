@@ -107,16 +107,16 @@ export default function CustomersManager() {
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("cus.searchPh")}
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent" />
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent" />
         </div>
         <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
+          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
           <option value="all">{t("cus.allCustomers")}</option>
           <option value="platform">{t("cus.platform")}</option>
           {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <button onClick={() => setShowHidden((v) => !v)}
-          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12.5px] font-medium border whitespace-nowrap ${showHidden ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted hover:text-white"}`}>
+          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12.5px] font-medium border whitespace-nowrap ${showHidden ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted hover:text-white"}`}>
           {showHidden ? <><Eye size={14} /> {t("cus.normalList")}</> : <><EyeOff size={14} /> {t("cus.hiddenList")}</>}
         </button>
       </div>
@@ -137,7 +137,7 @@ export default function CustomersManager() {
         </div>
       )}
 
-      <div className="rounded-xl border border-white/8 overflow-x-auto">
+      <div className="rounded-xl border border-subtle overflow-x-auto">
         <table className="w-full min-w-[640px] text-[13px]">
           <thead className="bg-white/[0.03] text-[11px] text-muted uppercase tracking-wide">
             <tr>
@@ -149,7 +149,7 @@ export default function CustomersManager() {
               <th className="text-left px-4 py-3 font-medium">{t("cus.colRegistered")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-subtle">
             {loading ? (
               <tr><td colSpan={6} className="px-4 py-6 text-center text-muted">{t("cus.loading")}</td></tr>
             ) : rows.length === 0 ? (
@@ -177,9 +177,9 @@ export default function CustomersManager() {
         <div className="flex items-center justify-between mt-4 text-[13px]">
           <span className="text-muted">{page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} / {total}</span>
           <div className="flex items-center gap-1.5">
-            <button disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className="p-2 rounded-lg border border-white/10 disabled:opacity-30 hover:bg-white/5"><ChevronLeft size={15} /></button>
+            <button disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className="p-2 rounded-lg border border-subtle disabled:opacity-30 hover:bg-white/5"><ChevronLeft size={15} /></button>
             <span className="px-2 text-muted">{page + 1} / {lastPage + 1}</span>
-            <button disabled={page >= lastPage} onClick={() => setPage((p) => Math.min(lastPage, p + 1))} className="p-2 rounded-lg border border-white/10 disabled:opacity-30 hover:bg-white/5"><ChevronRight size={15} /></button>
+            <button disabled={page >= lastPage} onClick={() => setPage((p) => Math.min(lastPage, p + 1))} className="p-2 rounded-lg border border-subtle disabled:opacity-30 hover:bg-white/5"><ChevronRight size={15} /></button>
           </div>
         </div>
       )}
@@ -187,7 +187,7 @@ export default function CustomersManager() {
       {/* Batafsil modal */}
       {detail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5" onClick={() => setDetail(null)}>
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-lg rounded-2xl border border-subtle bg-panel p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-[16px]">{t("cus.modalTitle")}</h2>
               <button onClick={() => setDetail(null)} aria-label={t("cus.close")}><X size={18} /></button>
@@ -209,7 +209,7 @@ export default function CustomersManager() {
                 </div>
 
                 {/* BONUS uchun joy — hozir funksiya YO'Q, keyingi bosqichda qo'shiladi */}
-                <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-4 mb-4 flex items-center gap-3">
+                <div className="rounded-xl border border-dashed border-subtle bg-white/[0.02] p-4 mb-4 flex items-center gap-3">
                   <Gift size={18} className="text-[#F4C76A] shrink-0" />
                   <div className="text-[12px] text-muted">
                     <span className="text-white font-medium">{t("cus.bonusTitle")}</span> {t("cus.bonusHint")}

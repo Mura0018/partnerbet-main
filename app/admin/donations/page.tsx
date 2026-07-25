@@ -18,7 +18,7 @@ export default function DonationsAdminPage() {
       </div>
       <p className="text-[13px] text-muted mb-6">{t("don.sub")}</p>
 
-      <div className="flex gap-1 mb-6 border-b border-white/8">
+      <div className="flex gap-1 mb-6 border-b border-subtle">
         <button onClick={() => setTab("dashboard")} className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[13px] font-medium border-b-2 ${tab === "dashboard" ? "border-accent text-accent" : "border-transparent text-muted hover:text-white"}`}>
           <LayoutDashboard size={14} /> Dashboard
         </button>
@@ -77,7 +77,7 @@ function DashboardTab() {
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <button onClick={exportCsv} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[12px] font-semibold hover:bg-white/5">
+        <button onClick={exportCsv} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-subtle text-[12px] font-semibold hover:bg-white/5">
           <Download size={14} /> Export CSV
         </button>
       </div>
@@ -102,7 +102,7 @@ function DashboardTab() {
           <h2 className="text-[14px] font-bold mb-3">{t("don.recent")}</h2>
           <div className="space-y-2">
             {recent.map((d) => (
-              <div key={d.id} className="rounded-lg border border-white/8 p-3 text-[12px] flex items-center justify-between">
+              <div key={d.id} className="rounded-lg border border-subtle p-3 text-[12px] flex items-center justify-between">
                 <div>
                   <span className="font-medium">{d.is_anonymous ? "Anonim" : d.donor_name || "—"}</span>
                   <span className="text-muted"> · {d.payment_methods?.name ?? "—"}</span>
@@ -111,7 +111,7 @@ function DashboardTab() {
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${
                     d.status === "completed" ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" :
                     d.status === "pending" ? "bg-vip/10 text-vip border-vip/30" :
-                    "bg-white/5 text-muted border-white/10"
+                    "bg-white/5 text-muted border-subtle"
                   }`}>{d.status}</span>
                   <span className="font-bold">${Number(d.amount).toFixed(2)}</span>
                 </div>
@@ -124,7 +124,7 @@ function DashboardTab() {
           <h2 className="text-[14px] font-bold mb-3">{t("don.topSupporters")}</h2>
           <div className="space-y-2">
             {topSupporters.map((s, i) => (
-              <div key={i} className="rounded-lg border border-white/8 p-3 text-[12px] flex items-center justify-between">
+              <div key={i} className="rounded-lg border border-subtle p-3 text-[12px] flex items-center justify-between">
                 <span>{s.is_anonymous ? "Anonim" : s.donor_name || "—"}</span>
                 <span className="font-bold">${Number(s.amount).toFixed(2)}</span>
               </div>
@@ -143,7 +143,7 @@ type PaymentMethod = {
   display_order: number; is_active: boolean;
 };
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 const CREDENTIAL_FIELDS: Record<string, { field: string; label: string }[]> = {
@@ -238,7 +238,7 @@ function PaymentMethodsTab() {
 
       <div className="space-y-2">
         {methods.map((m, i) => (
-          <div key={m.id} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+          <div key={m.id} className="flex items-center justify-between rounded-lg border border-subtle p-3">
             <div className="text-[13px]">
               <span className="font-medium">{m.name}</span>
               <span className="text-muted ml-2 text-[11px]">
@@ -249,11 +249,11 @@ function PaymentMethodsTab() {
               <button onClick={() => move(i, -1)} disabled={i === 0} className="text-[11px] px-2 py-1 rounded hover:bg-white/10 disabled:opacity-30">↑</button>
               <button onClick={() => move(i, 1)} disabled={i === methods.length - 1} className="text-[11px] px-2 py-1 rounded hover:bg-white/10 disabled:opacity-30">↓</button>
               {m.method_type === "gateway" && (
-                <button onClick={() => setCredentialsMethod(m)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] hover:bg-white/5">{t("don.keys")}</button>
+                <button onClick={() => setCredentialsMethod(m)} className="px-2.5 py-1 rounded-md border border-subtle text-[11px] hover:bg-white/5">{t("don.keys")}</button>
               )}
-              <button onClick={() => toggleActive(m)} className={`text-[10px] px-2 py-1 rounded-full border ${m.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>{m.is_active ? "Faol" : "Faolsiz"}</button>
-              <button onClick={() => openEdit(m)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] hover:bg-white/5">{t("don.edit")}</button>
-              <button onClick={() => remove(m.id)} className="px-2.5 py-1 rounded-md border border-white/10 text-[11px] text-[#FF6B85] hover:bg-white/5">{t("don.del")}</button>
+              <button onClick={() => toggleActive(m)} className={`text-[10px] px-2 py-1 rounded-full border ${m.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-subtle"}`}>{m.is_active ? "Faol" : "Faolsiz"}</button>
+              <button onClick={() => openEdit(m)} className="px-2.5 py-1 rounded-md border border-subtle text-[11px] hover:bg-white/5">{t("don.edit")}</button>
+              <button onClick={() => remove(m.id)} className="px-2.5 py-1 rounded-md border border-subtle text-[11px] text-[#FF6B85] hover:bg-white/5">{t("don.del")}</button>
             </div>
           </div>
         ))}
@@ -262,7 +262,7 @@ function PaymentMethodsTab() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-          <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
+          <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-subtle bg-panel p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="font-bold text-[16px] mb-4">{editingId ? "Tahrirlash" : "Yangi to'lov usuli"}</h2>
 
             <label className="block text-[12px] text-muted mb-1">{t("don.fName")}</label>
@@ -303,7 +303,7 @@ function PaymentMethodsTab() {
             {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
             <div className="flex gap-2">
               <button type="submit" className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px]">{t("don.save")}</button>
-              <button type="button" onClick={() => setShowForm(false)} className="px-4 rounded-lg border border-white/10 text-[13px]">{t("don.cancel")}</button>
+              <button type="button" onClick={() => setShowForm(false)} className="px-4 rounded-lg border border-subtle text-[13px]">{t("don.cancel")}</button>
             </div>
           </form>
         </div>
@@ -343,14 +343,14 @@ function GatewayCredentialsModal({ method, onClose }: { method: PaymentMethod; o
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6">
+      <div className="w-full max-w-md rounded-2xl border border-subtle bg-panel p-6">
         <h2 className="font-bold text-[16px] mb-1">{method.name} — API kalitlari</h2>
         <p className="text-[11px] text-muted mb-4">{t("don.encHint")}</p>
         {fields.map((f) => (
           <div key={f.field} className="mb-4">
             <div className="flex items-center gap-2 mb-1.5">
               <label className="text-[12px] text-muted">{f.label}</label>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${statuses[f.field] ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-white/10"}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${statuses[f.field] ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-muted border-subtle"}`}>
                 {statuses[f.field] ? "Sozlangan" : "Sozlanmagan"}
               </span>
             </div>
@@ -362,7 +362,7 @@ function GatewayCredentialsModal({ method, onClose }: { method: PaymentMethod; o
             </div>
           </div>
         ))}
-        <button onClick={onClose} className="w-full py-2 rounded-lg border border-white/10 text-[13px] mt-2">{t("don.close")}</button>
+        <button onClick={onClose} className="w-full py-2 rounded-lg border border-subtle text-[13px] mt-2">{t("don.close")}</button>
       </div>
     </div>
   );

@@ -35,9 +35,9 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
       <Container className="py-14">
         <div className="flex items-center gap-4 mb-8">
           {team?.logoUrl ? (
-            <img src={team.logoUrl} alt={team.name} className="w-16 h-16 rounded-2xl object-cover border border-white/10" />
+            <img src={team.logoUrl} alt={team.name} className="w-16 h-16 rounded-2xl object-cover border border-subtle" />
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center"><Users size={24} className="text-muted" /></div>
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-subtle flex items-center justify-center"><Users size={24} className="text-muted" /></div>
           )}
           <h1 className="text-[28px] font-extrabold">{team?.name || "Jamoa"}</h1>
         </div>
@@ -48,9 +48,9 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
         ) : fixtures.length === 0 ? (
           <EmptyState message="Bu jamoa uchun o'yinlar topilmadi." />
         ) : (
-          <div className="rounded-2xl border border-white/8 overflow-hidden">
+          <div className="rounded-2xl border border-subtle overflow-hidden">
             {fixtures.map((f: any) => (
-              <div key={f.id} className="flex items-center justify-between px-5 py-4 border-b border-white/5 last:border-0">
+              <div key={f.id} className="flex items-center justify-between px-5 py-4 border-b border-subtle last:border-0">
                 <span className="text-[11px] text-muted w-24 shrink-0">{new Date(f.kickoff).toLocaleDateString()}</span>
                 <div className="flex-1 flex items-center justify-center gap-3 font-semibold text-[13px]">
                   <span className="text-right flex-1 truncate">{f.homeTeam.name}</span>

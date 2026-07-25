@@ -106,7 +106,7 @@ export default function ReportsManager() {
           <BarChart3 size={20} className="text-accent" />
           <h1 className="text-[22px] font-bold">{t("rep.title")}</h1>
         </div>
-        <button onClick={exportCsv} disabled={!data} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-[12.5px] font-medium hover:bg-white/[0.08] disabled:opacity-40">
+        <button onClick={exportCsv} disabled={!data} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/[0.04] border border-subtle text-[12.5px] font-medium hover:bg-white/[0.08] disabled:opacity-40">
           <Download size={14} /> {t("rep.csvDownload")}
         </button>
       </div>
@@ -116,16 +116,16 @@ export default function ReportsManager() {
       <div className="flex flex-wrap items-center gap-1.5 mb-6">
         {PRESETS.map((pr) => (
           <button key={pr.id} onClick={() => setPreset(pr.id)}
-            className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${preset === pr.id ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}>
+            className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${preset === pr.id ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}>
             {t(pr.labelKey as any)}
           </button>
         ))}
-        <button onClick={() => setPreset("custom")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${preset === "custom" ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}>{t("rep.custom")}</button>
+        <button onClick={() => setPreset("custom")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${preset === "custom" ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}>{t("rep.custom")}</button>
         {preset === "custom" && (
           <>
-            <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]" />
+            <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px]" />
             <span className="text-muted text-[12px]">—</span>
-            <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg py-1.5 px-2.5 text-[12px]" />
+            <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px]" />
           </>
         )}
       </div>
@@ -159,7 +159,7 @@ export default function ReportsManager() {
               <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">{t("rep.commissionDetail")}</div>
               <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">To'ldirish ({data.commissionPct.topup}%)</span><span className="font-semibold">{som(c.topupCommission)}</span></div>
               <div className="flex justify-between text-[13px] mb-1"><span className="text-muted">Yechish ({data.commissionPct.withdraw}%)</span><span className="font-semibold">{som(c.withdrawCommission)}</span></div>
-              <div className="flex justify-between text-[13px] pt-1 border-t border-white/8"><span className="font-medium">{t("rep.total")}</span><span className="font-bold text-[#7db8ff]">{som(c.totalCommission)}</span></div>
+              <div className="flex justify-between text-[13px] pt-1 border-t border-subtle"><span className="font-medium">{t("rep.total")}</span><span className="font-bold text-[#7db8ff]">{som(c.totalCommission)}</span></div>
             </div>
             <div className="glass-card p-4">
               <div className="text-[11px] text-muted mb-2 uppercase tracking-wide">{t("rep.bonusSpent")}</div>
@@ -202,12 +202,12 @@ export default function ReportsManager() {
           {/* Hamkorlar kesimi */}
           <div className="mb-6">
             <div className="text-[13px] font-bold mb-2">{t("rep.byPartners")}</div>
-            <div className="rounded-xl border border-white/8 overflow-x-auto">
+            <div className="rounded-xl border border-subtle overflow-x-auto">
               <table className="w-full min-w-[520px] text-[13px]">
                 <thead className="bg-white/[0.03] text-[11px] text-muted uppercase tracking-wide">
                   <tr><th className="text-left px-4 py-3 font-medium">{t("rep.cPartner")}</th><th className="text-right px-4 py-3 font-medium">{t("rep.cIn")}</th><th className="text-right px-4 py-3 font-medium">{t("rep.cOut")}</th><th className="text-right px-4 py-3 font-medium">{t("rep.cOrders")}</th><th className="text-right px-4 py-3 font-medium">{t("rep.cCommission")}</th></tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-subtle">
                   {data.partnerRows.length === 0 ? (
                     <tr><td colSpan={5} className="px-4 py-5 text-center text-muted">{t("rep.noData")}</td></tr>
                   ) : data.partnerRows.map((pr, i) => (

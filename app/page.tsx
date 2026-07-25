@@ -212,7 +212,7 @@ export default function Home() {
         <div className="absolute top-1/3 -right-40 w-[32rem] h-[32rem] rounded-full bg-vip/5 blur-[140px]" />
       </div>
 
-      <header className="sticky top-0 z-40 glass border-b border-white/5">
+      <header className="sticky top-0 z-40 glass border-b border-subtle">
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between gap-6">
           <div className="flex items-center gap-2.5 shrink-0">
             {siteSettings.identity.branding_logo_url ? (
@@ -306,7 +306,7 @@ export default function Home() {
 
         <div className="relative z-10">
         {insights[0] ? (
-          <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-panel to-[#0A1626] p-6 backdrop-blur-xl shadow-2xl">
+          <div className="relative rounded-2xl border border-subtle bg-gradient-to-b from-panel to-[#0A1626] p-6 backdrop-blur-xl shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <Badge tone="blue"><TrendingUp size={11} /> Top Insight</Badge>
               <span className="text-[11px] text-muted">{insights[0].league}</span>
@@ -331,7 +331,7 @@ export default function Home() {
           <h2 className="text-[22px] font-bold">Partner Promo Codes</h2>
         </div>
         {partners.length === 0 ? (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">
             Hozircha hamkorlar mavjud emas. Tez orada qo'shiladi.
           </div>
         ) : (
@@ -343,12 +343,12 @@ export default function Home() {
                 <a
                   href={`/partners/${partner.slug}`}
                   key={partner.id}
-                  className="rounded-xl border border-white/8 bg-white/[0.02] p-5 flex items-center gap-4 hover:border-accent/30 transition"
+                  className="rounded-xl border border-subtle bg-white/[0.02] p-5 flex items-center gap-4 hover:border-accent/30 transition"
                 >
                   {partner.logo_url ? (
-                    <img src={partner.logo_url} alt={partner.name} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
+                    <img src={partner.logo_url} alt={partner.name} className="w-12 h-12 rounded-lg object-cover border border-subtle shrink-0" />
                   ) : (
-                    <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 shrink-0" />
+                    <div className="w-12 h-12 rounded-lg bg-white/5 border border-subtle shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -379,19 +379,19 @@ export default function Home() {
       <section id="insights" className="max-w-7xl mx-auto px-5 md:px-8 pb-16 scroll-mt-20">
         <h2 className="text-[22px] font-bold mb-5">Match Insights</h2>
         {insightsLoading && (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">
             Yuklanmoqda…
           </div>
         )}
         {!insightsLoading && insights.length === 0 && (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+          <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">
             Hozircha tahlillar mavjud emas. Tez orada qo'shiladi.
           </div>
         )}
         {insights.length > 0 && (
           <div className="grid md:grid-cols-3 gap-4">
             {insights.map((m) => (
-              <div key={m.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-5">
+              <div key={m.id} className="rounded-xl border border-subtle bg-white/[0.02] p-5">
                 <div className="flex items-center justify-between mb-3">
                   <Badge tone={m.status === "LIVE" ? "live" : "blue"}>{m.league}</Badge>
                   <span className="text-[11px] text-muted">{new Date(m.match_time).toLocaleString()}</span>
@@ -413,7 +413,7 @@ export default function Home() {
 
       <section id="live-scores" className="max-w-7xl mx-auto px-5 md:px-8 pb-16 scroll-mt-20">
         <h2 className="text-[22px] font-bold mb-5">Live Scores</h2>
-        <div className="rounded-xl border border-white/8 divide-y divide-white/5 overflow-hidden">
+        <div className="rounded-xl border border-subtle divide-y divide-subtle overflow-hidden">
           {loadingLive && (
             <div className="px-5 py-6 text-center text-[13px] text-muted">Loading live matches…</div>
           )}
@@ -461,7 +461,7 @@ export default function Home() {
       </section>
 
       <section className="max-w-7xl mx-auto px-5 md:px-8 pb-20">
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-8 flex flex-col md:flex-row items-center justify-between gap-5">
+        <div className="rounded-2xl border border-subtle bg-white/[0.02] p-8 flex flex-col md:flex-row items-center justify-between gap-5">
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center">
               <MessageCircle size={18} className="text-accent" />
@@ -473,16 +473,16 @@ export default function Home() {
           </div>
           <span
             title="Support chat Phase 4'da qo'shiladi"
-            className="px-5 py-2.5 rounded-lg border border-white/10 text-muted font-semibold text-[13px] cursor-not-allowed select-none"
+            className="px-5 py-2.5 rounded-lg border border-subtle text-muted font-semibold text-[13px] cursor-not-allowed select-none"
           >
             Tez orada
           </span>
         </div>
       </section>
 
-      <footer className="border-t border-white/8 mt-4 bg-white/[0.015]">
+      <footer className="border-t border-subtle mt-4 bg-white/[0.015]">
         <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
-          <div className="pb-6 mb-6 border-b border-white/8">
+          <div className="pb-6 mb-6 border-b border-subtle">
             <div className="font-extrabold text-[17px] tracking-tight mb-2">
               <BrandName name={siteSettings.identity.site_name} />
             </div>
@@ -544,13 +544,13 @@ export default function Home() {
             </div>
           </div>
 
-          <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-white/8">
+          <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-subtle">
             <span className="font-semibold text-white/60">18+ only.</span> Gambling can be addictive — please play
             responsibly. {siteSettings.identity.site_name || "WINORA"} is a licensed affiliate marketing platform and
             does not itself accept wagers or hold client funds. Promo codes are issued by third-party licensed operators.
           </p>
 
-          <div className="mt-6 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
+          <div className="mt-6 pt-5 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
             <span>© {new Date().getFullYear()} {siteSettings.identity.site_name || "WINORA"}. Barcha huquqlar himoyalangan.</span>
             <span>Ishonchli. Xavfsiz. Professional.</span>
           </div>

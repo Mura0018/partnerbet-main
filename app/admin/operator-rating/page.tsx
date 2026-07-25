@@ -11,7 +11,7 @@ type Alert = { id: string; operator_name: string; level: number; reason: string 
 const fmtDt = (s: string) => new Date(s).toLocaleString("ru-RU");
 const ratingColor = (n: number) => (n > 0 ? "text-[#4ADE80]" : n < 0 ? "text-[#FF6B85]" : "text-white/60");
 const levelBadge = (l: number) =>
-  l === 3 ? "bg-[#FF6B85]/15 text-[#FF6B85] border-[#FF6B85]/40" : l === 2 ? "bg-[#F4C76A]/15 text-[#F4C76A] border-[#F4C76A]/40" : "bg-white/5 text-white/50 border-white/10";
+  l === 3 ? "bg-[#FF6B85]/15 text-[#FF6B85] border-[#FF6B85]/40" : l === 2 ? "bg-[#F4C76A]/15 text-[#F4C76A] border-[#F4C76A]/40" : "bg-white/5 text-white/50 border-subtle";
 
 export default function OperatorRatingPage() {
   const [data, setData] = useState<{ operators: Operator[]; events: Event[]; alerts: Alert[] } | null>(null);
@@ -45,9 +45,9 @@ export default function OperatorRatingPage() {
       </div>
 
       {/* Operatorlar reytingi (eng past yuqorида) */}
-      <div className="overflow-x-auto border border-white/10 rounded-2xl mb-6">
+      <div className="overflow-x-auto border border-subtle rounded-2xl mb-6">
         <table className="w-full text-sm">
-          <thead className="text-white/40 text-xs border-b border-white/10">
+          <thead className="text-white/40 text-xs border-b border-subtle">
             <tr>
               <th className="text-left font-medium px-4 py-3">{t("mon.colOperator")}</th>
               <th className="text-center font-medium px-4 py-3">{t("mon.colStatus")}</th>
@@ -56,7 +56,7 @@ export default function OperatorRatingPage() {
           </thead>
           <tbody>
             {data.operators.map((o) => (
-              <tr key={o.id} className="border-b border-white/5 last:border-0">
+              <tr key={o.id} className="border-b border-subtle last:border-0">
                 <td className="px-4 py-3 text-white">{o.name}</td>
                 <td className="px-4 py-3 text-center">
                   <span className={`inline-block w-2 h-2 rounded-full mr-1 ${o.is_online ? "bg-[#4ADE80]" : "bg-white/30"}`} />

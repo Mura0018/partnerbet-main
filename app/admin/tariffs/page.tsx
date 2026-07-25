@@ -56,11 +56,11 @@ function TariffRow({ tf, onSaved }: { tf: Tariff; onSaved: () => void }) {
       <div className="flex flex-wrap items-end gap-2.5">
         <div>
           <label className="block text-[10.5px] text-[#5b6f85] mb-1">{t("trf.price")}</label>
-          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-40 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-40 bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
         </div>
         <div>
           <label className="block text-[10.5px] text-[#5b6f85] mb-1">{t("trf.currency")}</label>
-          <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
+          <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
             {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>

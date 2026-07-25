@@ -62,7 +62,7 @@ const EMPTY_PARTNER = {
   rating: null as number | null, priority: 0, is_active: true, is_featured: false,
 };
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 function LinkHealthBadge({ result }: { result?: { status: string } }) {
@@ -129,9 +129,9 @@ export default function AffiliatesPage() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 {p.logo_url ? (
-                  <img src={p.logo_url} alt={p.name} className="w-10 h-10 rounded-lg object-cover border border-white/10 shrink-0" />
+                  <img src={p.logo_url} alt={p.name} className="w-10 h-10 rounded-lg object-cover border border-subtle shrink-0" />
                 ) : (
-                  <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 shrink-0" />
+                  <div className="w-10 h-10 rounded-lg bg-white/5 border border-subtle shrink-0" />
                 )}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -153,7 +153,7 @@ export default function AffiliatesPage() {
                 <button onClick={() => toggleFeatured(p)} className="p-1.5 rounded-md hover:bg-white/10" aria-label="Featured" title="Featured">
                   <Star size={14} className={p.is_featured ? "text-vip" : "text-[#5b6f85]"} fill={p.is_featured ? "currentColor" : "none"} />
                 </button>
-                <button onClick={() => toggleActive(p)} className={`text-[11px] px-2 py-1 rounded-full border ${p.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-white/10"}`}>
+                <button onClick={() => toggleActive(p)} className={`text-[11px] px-2 py-1 rounded-full border ${p.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-subtle"}`}>
                   {p.is_active ? "Faol" : "Faolsiz"}
                 </button>
                 <button onClick={() => openEdit(p)} className="p-1.5 rounded-md hover:bg-white/10" aria-label="Tahrirlash"><Pencil size={14} /></button>
@@ -278,13 +278,13 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-      <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-panel max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="w-full max-w-2xl rounded-2xl border border-subtle bg-panel max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 pt-5">
           <h2 className="font-bold text-[16px]">{currentPartner ? "Hamkorni tahrirlash" : "Yangi hamkor"}</h2>
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
         </div>
 
-        <div className="flex gap-1 px-6 mt-4 border-b border-white/8">
+        <div className="flex gap-1 px-6 mt-4 border-b border-subtle">
           {[
             { id: "details" as ModalTab, label: t("aff.tabInfo"), icon: Pencil, disabled: false },
             { id: "promos" as ModalTab, label: t("aff.tabPromo"), icon: Tag, disabled: !currentPartner },
@@ -309,8 +309,8 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
           {tab === "details" && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                {form.logo_url && <img src={form.logo_url} alt="" className="w-12 h-12 rounded-lg object-cover border border-white/10" />}
-                <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-[12px] cursor-pointer hover:bg-white/5">
+                {form.logo_url && <img src={form.logo_url} alt="" className="w-12 h-12 rounded-lg object-cover border border-subtle" />}
+                <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-subtle text-[12px] cursor-pointer hover:bg-white/5">
                   {logoUploading ? <Loader2 size={13} className="animate-spin" /> : null} Logotip yuklash
                   <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" disabled={logoUploading}
                     onChange={(e) => e.target.files?.[0] && handleLogoUpload(e.target.files[0])} />
@@ -372,7 +372,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
                     {LANG_OPTIONS.map((l) => (
                       <button key={l} type="button" onClick={() => toggleLanguage(l)}
                         className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border uppercase ${
-                          (form.languages ?? []).includes(l) ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"
+                          (form.languages ?? []).includes(l) ? "bg-accent/10 text-accent border-accent/30" : "border-subtle text-muted"
                         }`}>
                         {l}
                       </button>
@@ -452,7 +452,7 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
 
   return (
     <div>
-      <form onSubmit={add} className="rounded-lg border border-white/8 p-4 mb-4 space-y-2">
+      <form onSubmit={add} className="rounded-lg border border-subtle p-4 mb-4 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input className={inputCls} placeholder={t("aff.phPromo")} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
           <input type="date" className={inputCls} value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} />
@@ -465,7 +465,7 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
 
       <div className="space-y-2">
         {codes.map((c) => (
-          <div key={c.id} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+          <div key={c.id} className="flex items-center justify-between rounded-lg border border-subtle p-3">
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-mono font-semibold text-[13px]">{c.code}</span>
@@ -474,7 +474,7 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
               <div className="text-[11px] text-[#5b6f85] mt-0.5">{c.bonus_description} · {c.usage_count} marta ishlatilgan{c.expires_at ? ` · muddat: ${new Date(c.expires_at).toLocaleDateString()}` : ""}</div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => toggleActive(c)} className={`text-[10px] px-2 py-1 rounded-full border ${c.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-white/10"}`}>{c.is_active ? "Faol" : "Faolsiz"}</button>
+              <button onClick={() => toggleActive(c)} className={`text-[10px] px-2 py-1 rounded-full border ${c.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-subtle"}`}>{c.is_active ? "Faol" : "Faolsiz"}</button>
               <button onClick={() => remove(c.id)} className="p-1 rounded-md hover:bg-white/10 text-[#FF6B85]"><Trash2 size={13} /></button>
             </div>
           </div>
@@ -521,7 +521,7 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
       <p className="text-[11px] text-[#5b6f85] mb-3 leading-relaxed">
         Qoida topilmasa, mobil/planshet uchun Deep Link (agar kiritilgan bo'lsa), aks holda standart Affiliate URL ishlatiladi.
       </p>
-      <form onSubmit={add} className="rounded-lg border border-white/8 p-4 mb-4 space-y-2">
+      <form onSubmit={add} className="rounded-lg border border-subtle p-4 mb-4 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <select className={inputCls} value={form.match_type} onChange={(e) => setForm({ ...form, match_type: e.target.value as any })}>
             <option value="country">{t("aff.rCountry")}</option>
@@ -538,7 +538,7 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
 
       <div className="space-y-2">
         {rules.map((r) => (
-          <div key={r.id} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+          <div key={r.id} className="flex items-center justify-between rounded-lg border border-subtle p-3">
             <div className="text-[12px]">
               <span className="font-medium capitalize">{r.match_type}</span> = <span className="font-mono">{r.match_value}</span>
               <span className="text-[#5b6f85]"> → {r.target_url}</span>
@@ -599,7 +599,7 @@ function LinkHealthTab({ partner, onChecked }: { partner: Partner; onChecked: (p
         {FIELDS.map((f) => {
           const result = partner.link_health?.[f.key];
           return (
-            <div key={f.key} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+            <div key={f.key} className="flex items-center justify-between rounded-lg border border-subtle p-3">
               <span className="text-[12px]">{f.label}</span>
               {result ? (
                 <span className={`text-[11px] px-2 py-0.5 rounded-full border ${statusColor[result.status]}`}>{statusLabel[result.status] ?? result.status}</span>

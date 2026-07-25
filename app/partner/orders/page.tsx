@@ -66,13 +66,13 @@ export default function PartnerOrdersPage() {
       {loading ? (
         <p className="text-[13px] text-muted">Yuklanmoqda...</p>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">Bu holatda buyurtma yo'q.</div>
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">Bu holatda buyurtma yo'q.</div>
       ) : (
         <div className="space-y-2.5">
           {filtered.map((o) => {
             const st = STATUS[o.status] ?? STATUS.pending;
             return (
-              <div key={o.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4">
+              <div key={o.id} className="flex items-center justify-between gap-3 rounded-xl border border-subtle bg-white/[0.02] p-4">
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold">{o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {o.platform}</div>
                   <div className="text-[11px] text-muted mt-0.5 truncate">

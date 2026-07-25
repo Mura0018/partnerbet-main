@@ -48,15 +48,15 @@ function CreateRoleModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-white/10 bg-panel p-6">
+      <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-subtle bg-panel p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-[16px]">{t("rol.newRole")}</h2>
           <button type="button" onClick={onClose} aria-label={t("rol.close")}><X size={18} /></button>
         </div>
         <label className="block text-[12px] text-muted mb-1">{t("rol.fKey")} <span className="font-mono">support_lead</span>)</label>
-        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder={t("rol.keyPh")} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3 font-mono" />
+        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder={t("rol.keyPh")} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-3 font-mono" />
         <label className="block text-[12px] text-muted mb-1">{t("rol.fName")}</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("rol.namePh")} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-4" />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("rol.namePh")} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent mb-4" />
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
         <button type="submit" disabled={saving} className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] disabled:opacity-50">
           {saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : t("rol.create")}
@@ -167,7 +167,7 @@ export default function RolesManager() {
           <div className="flex flex-wrap gap-1.5 mb-5">
             {roles.map((r) => (
               <button key={r.id} onClick={() => setSelected(r.id)}
-                className={`px-3 py-1.5 rounded-lg text-[12.5px] font-medium border transition-colors ${selected === r.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted hover:text-white"}`}>
+                className={`px-3 py-1.5 rounded-lg text-[12.5px] font-medium border transition-colors ${selected === r.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted hover:text-white"}`}>
                 {roleName(r)}{r.key === "super_admin" && <Lock size={11} className="inline ml-1 -mt-0.5" />}
               </button>
             ))}
@@ -189,7 +189,7 @@ export default function RolesManager() {
                   {g.items.map((p) => {
                     const checked = isSuper ? true : roleSet.has(p.id);
                     return (
-                      <label key={p.id} className={`flex items-start gap-3 rounded-lg border px-3.5 py-2.5 ${isSuper ? "opacity-70 cursor-not-allowed border-white/8 bg-white/[0.02]" : "cursor-pointer border-white/8 bg-white/[0.02] hover:border-accent/40"}`}>
+                      <label key={p.id} className={`flex items-start gap-3 rounded-lg border px-3.5 py-2.5 ${isSuper ? "opacity-70 cursor-not-allowed border-subtle bg-white/[0.02]" : "cursor-pointer border-subtle bg-white/[0.02] hover:border-accent/40"}`}>
                         <input type="checkbox" checked={checked} disabled={isSuper} onChange={() => toggle(p.id)} className="accent-accent mt-0.5" />
                         <div className="min-w-0">
                           <div className="text-[12.5px] font-medium font-mono">{p.key}</div>

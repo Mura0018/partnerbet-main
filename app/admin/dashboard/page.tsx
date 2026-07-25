@@ -37,7 +37,7 @@ export default function Dashboard() {
             <button
               key={p.key}
               onClick={() => setPeriod(p.key)}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border transition-colors ${period === p.key ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border transition-colors ${period === p.key ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}
             >
               {t(p.labelKey as any)}
             </button>
@@ -225,7 +225,7 @@ function StaffActivity({ period }: { period: Period }) {
         <UserCog size={16} className="text-accent" />
         <h2 className="text-[15px] font-bold">{t("dash.staffTitle")}</h2>
       </div>
-      <div className="rounded-xl border border-white/8 overflow-x-auto">
+      <div className="rounded-xl border border-subtle overflow-x-auto">
         <table className="w-full min-w-[520px] text-[13px]">
           <thead className="bg-white/[0.03] text-[11px] text-muted uppercase tracking-wide">
             <tr>
@@ -241,7 +241,7 @@ function StaffActivity({ period }: { period: Period }) {
             ) : rows.length === 0 ? (
               <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">{t("dash.noActivity")}</td></tr>
             ) : rows.map((r) => (
-              <tr key={r.id} className="border-t border-white/5">
+              <tr key={r.id} className="border-t border-subtle">
                 <td className="px-4 py-3 font-medium">{r.name}</td>
                 <td className="px-4 py-3 text-right">{r.completed.toLocaleString("ru-RU")}</td>
                 <td className="px-4 py-3 text-right text-muted">{fmtSom(r.volume, t("dash.som"))}</td>

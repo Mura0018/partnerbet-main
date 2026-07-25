@@ -29,7 +29,7 @@ type Partner = { id: string; name: string; slug: string };
 
 const PLACEMENTS = ["homepage", "blog", "insights", "football_news", "apk_page", "popup", "sticky", "sidebar", "footer", "header"];
 const BANNER_SIZES = ["desktop", "tablet", "mobile", "square", "popup", "sticky", "hero"];
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 
 const EMPTY = {
   kind: "image" as "image" | "embed", placement: "homepage", banner_size: "desktop",
@@ -245,8 +245,8 @@ export default function BannersManager() {
 
         {form.kind === "image" ? (
           <div className="flex items-center gap-3">
-            {form.content && <img src={form.content} alt="" className="w-14 h-14 rounded-lg object-cover border border-white/10" />}
-            <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[12px] cursor-pointer hover:bg-white/5">
+            {form.content && <img src={form.content} alt="" className="w-14 h-14 rounded-lg object-cover border border-subtle" />}
+            <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-subtle text-[12px] cursor-pointer hover:bg-white/5">
               {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} Rasm yuklash
               <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" disabled={uploading}
                 onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
@@ -268,7 +268,7 @@ export default function BannersManager() {
           <input placeholder={t("bnr.phCountries")} value={form.countriesInput} onChange={(e) => setForm({ ...form, countriesInput: e.target.value })} className={inputCls} />
           <div className="flex gap-2 items-center">
             {["uz", "ru", "en"].map((l) => (
-              <button key={l} type="button" onClick={() => toggleLanguage(l)} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border uppercase ${form.languages.includes(l) ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>{l}</button>
+              <button key={l} type="button" onClick={() => toggleLanguage(l)} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border uppercase ${form.languages.includes(l) ? "bg-accent/10 text-accent border-accent/30" : "border-subtle text-muted"}`}>{l}</button>
             ))}
           </div>
         </div>
@@ -337,7 +337,7 @@ export default function BannersManager() {
               <button onClick={() => toggleSelect(b.id)} className="shrink-0 text-muted hover:text-white" aria-label="Tanlash">
                 {selectedIds.has(b.id) ? <CheckSquare size={16} className="text-accent" /> : <Square size={16} />}
               </button>
-              {b.image_url && <img src={b.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-white/10 shrink-0" />}
+              {b.image_url && <img src={b.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-subtle shrink-0" />}
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-[11px] flex-wrap">
                   <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/30">{b.kind}</span>

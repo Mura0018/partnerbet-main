@@ -75,23 +75,23 @@ export default function PartnerBotPage() {
             <div className="text-[14px] font-bold">Bot ulangan</div>
             <div className="text-[12px] text-muted">@{username}</div>
           </div>
-          {isAdmin && <button onClick={disconnect} disabled={busy} className="shrink-0 text-[12px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">Uzish</button>}
+          {isAdmin && <button onClick={disconnect} disabled={busy} className="shrink-0 text-[12px] px-3 py-1.5 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white">Uzish</button>}
         </div>
       ) : null}
 
       {username && (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 mb-5 text-[12.5px] text-muted">
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-4 mb-5 text-[12.5px] text-muted">
           Mijozlaringiz botingizni ochib, pastdagi <span className="text-white font-medium">menyu (☰)</span> tugmasi orqali BetCore Pay app'ini ochadi.
           <div className="text-[11px] text-[#5b6f85] mt-1.5">Eslatma: app'ning hamkor ko'rinishi (tema/to'lov) keyingi bosqichda to'liq ulanadi.</div>
         </div>
       )}
 
       {!username && (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-5">
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-5 mb-5">
           {isAdmin ? (
             <>
               <label className="block text-[12px] text-muted mb-1.5">Bot tokeni (@BotFather → /newbot)</label>
-              <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="123456:AA...." className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-accent mb-3 font-mono" />
+              <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="123456:AA...." className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-accent mb-3 font-mono" />
               {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
               <button onClick={connect} disabled={busy} className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] disabled:opacity-50">
                 {busy ? <Loader2 size={15} className="animate-spin mx-auto" /> : "Ulash"}

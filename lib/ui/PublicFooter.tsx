@@ -53,10 +53,10 @@ export function PublicFooter() {
   const social: Record<string, string> = settings.social_links ?? {};
 
   return (
-    <footer className="border-t border-white/8 mt-20 bg-white/[0.015]">
+    <footer className="border-t border-subtle mt-20 bg-white/[0.015]">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
         {/* Brand strip */}
-        <div className="pb-6 mb-6 border-b border-white/8">
+        <div className="pb-6 mb-6 border-b border-subtle">
           <div className="font-extrabold text-[17px] tracking-tight mb-2">
             <BrandName name={siteName} />
           </div>
@@ -115,14 +115,14 @@ export function PublicFooter() {
         </div>
 
         {/* Compliance line */}
-        <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-white/8">
+        <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-subtle">
           <span className="font-semibold text-white/60">18+ only.</span> Gambling can be addictive — please play
           responsibly. {siteName || "WINORA"} is a licensed affiliate marketing platform and does not itself accept
           wagers or hold client funds. Promo codes are issued by third-party licensed operators.
         </p>
 
         {/* Bottom bar */}
-        <div className="mt-6 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
+        <div className="mt-6 pt-5 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
           <span>© {new Date().getFullYear()} {siteName || "WINORA"}. Barcha huquqlar himoyalangan.</span>
           <span>Ishonchli. Xavfsiz. Professional.</span>
         </div>

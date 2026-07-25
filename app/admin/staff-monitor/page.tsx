@@ -45,11 +45,11 @@ export default function StaffMonitorPage() {
       </div>
 
       {ops.length === 0 ? (
-        <div className="text-center py-16 text-white/40 text-sm border border-white/10 rounded-2xl">{t("mon.noOperator")}</div>
+        <div className="text-center py-16 text-white/40 text-sm border border-subtle rounded-2xl">{t("mon.noOperator")}</div>
       ) : (
-        <div className="overflow-x-auto border border-white/10 rounded-2xl">
+        <div className="overflow-x-auto border border-subtle rounded-2xl">
           <table className="w-full text-sm whitespace-nowrap">
-            <thead className="text-white/40 text-xs border-b border-white/10">
+            <thead className="text-white/40 text-xs border-b border-subtle">
               <tr>
                 <th className="text-left font-medium px-3 py-3">{t("mon.colOperator")}</th>
                 <th className="text-center font-medium px-3 py-3">{t("mon.colStatus")}</th>
@@ -67,7 +67,7 @@ export default function StaffMonitorPage() {
             </thead>
             <tbody>
               {ops.map((o) => (
-                <tr key={o.id} className={`border-b border-white/5 last:border-0 ${o.flags.length ? "bg-[#FF6B85]/[0.04]" : ""}`}>
+                <tr key={o.id} className={`border-b border-subtle last:border-0 ${o.flags.length ? "bg-[#FF6B85]/[0.04]" : ""}`}>
                   <td className="px-3 py-2.5">
                     <div className="text-white font-medium">{o.name}</div>
                     <div className="text-[10.5px] text-white/35">{o.email ?? "—"}</div>
