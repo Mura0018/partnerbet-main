@@ -66,6 +66,27 @@ type SupportMessage = {
   _localImageUrl?: string;
 };
 
+// F1/F4: poll (4s) optimistik xabar hali "sending" holatida bo'lganda ham
+// serverga yetib borgan bo'lishi mumkin (o'zining deliverSupportMessage
+// javobi hali kelmagan) — id bo'yicha solishtirish bunday holatda mos
+// kelmaydi (clientId hali server id bilan almashtirilmagan), natijada
+// bitta xabar ikki marta ko'rinib qoladi. Mazmuni (yuboruvchi+matn/rasm)
+// va vaqt oralig'i bo'yicha taqqoslab, allaqachon kelgan optimistik
+// xabarni pending ro'yxatidan chiqarib tashlaymiz.
+function optimisticMatchesServer(pending: SupportMessage, serverMsg: SupportMessage): boolean {
+  if (pending.sender !== serverMsg.sender) return false;
+  const draft = pending._draft;
+  if (!draft) return false;
+  if (draft.kind === "text") {
+    if (serverMsg.message !== draft.message) return false;
+  } else if (draft.kind === "image") {
+    if ((serverMsg.message ?? null) !== (draft.caption ?? null)) return false;
+    if (!serverMsg.image_path) return false;
+  }
+  const dt = Math.abs(new Date(serverMsg.created_at).getTime() - new Date(pending.created_at).getTime());
+  return dt < 20000;
+}
+
 type PaymentInfo = {
   cardNumber: string; cardHolder: string; cardOperatorId: string | null;
   clickNumber: string; clickHolder: string; clickOperatorId: string | null;
@@ -1075,7 +1096,11 @@ export default function TelegramAppPage() {
       setSupportMessages((prev) => {
         const serverIds = new Set(msgs.map((m) => m.id));
         const pending = prev.filter(
-          (m) => m.clientId && (m.status === "sending" || m.status === "failed") && !serverIds.has(m.id)
+          (m) =>
+            m.clientId &&
+            (m.status === "sending" || m.status === "failed") &&
+            !serverIds.has(m.id) &&
+            !msgs.some((s) => optimisticMatchesServer(m, s))
         );
         const last = msgs[msgs.length - 1];
         const sig = `${msgs.length}:${last?.id ?? ""}:${last?.created_at ?? ""}|${pending
