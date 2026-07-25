@@ -300,9 +300,7 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-6 text-[11px] text-muted leading-relaxed max-w-md">
-            18+ only. Gambling can be addictive — play responsibly. WINORA is an independent
-            football analytics platform and licensed affiliate partner; it does not accept wagers
-            directly. See full affiliate disclosure in the footer.
+            {t("home.disclaimer", { site: siteSettings.identity.site_name || "WINORA" })}
           </p>
         </div>
 
