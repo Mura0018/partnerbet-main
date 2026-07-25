@@ -1,6 +1,7 @@
 import { getApiCredential } from "@/lib/auth/apiCredentials";
+import { env } from "@/lib/env";
 
-const MINIAPP_URL = "https://www.couponbet.org/telegram-app";
+const MINIAPP_URL = `${env.siteUrl}/telegram-app`;
 
 // Attached to every customer-facing bot message so they can jump straight
 // back into the Mini App from the notification itself, not just from /start.

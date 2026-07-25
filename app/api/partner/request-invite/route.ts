@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { sendEmail, renderActionEmail } from "@/lib/email/send";
+import { env } from "@/lib/env";
 
 // App'dagi "Hamkormisiz?" — hamkor o'z emaili orqali parol havolasini oladi.
 // XAVFSIZLIK: havola HECH QACHON javobda qaytarilmaydi. Faqat hamkor bo'lsa,
 // Supabase parol-tiklash havolasini EGASINING emailiga yuboradi. Javob har doim
 // bir xil neytral (email enumeratsiyasi/akkaunt egallash oldini oladi).
 const NEUTRAL = { ok: true, message: "Agar bu email hamkor bo'lsa, parol havolasi emailingizga yuborildi." };
-const RESET_REDIRECT = "https://www.couponbet.org/partner/set-password";
+// env.siteUrl — so'rov host'iga tayanmaydi (spoofing xavfi).
+const RESET_REDIRECT = `${env.siteUrl}/partner/set-password`;
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);

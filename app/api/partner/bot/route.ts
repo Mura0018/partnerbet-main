@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { encryptSecret } from "@/lib/security/encryption";
 import { isPartnerActive } from "@/lib/partner/status";
+import { env } from "@/lib/env";
 
 // Hamkor o'z Telegram botini ulaydi. Faqat partner_admin.
 // Token Telegram getMe orqali tekshiriladi va MAXFIY saqlanadi
@@ -57,9 +58,10 @@ export async function POST(req: NextRequest) {
   // Best-effort: agar o'rnatilmasa ham bot ulangan holatда qoladi.
   let menuSet = false;
   try {
-    // Bizning o'z botimiz bilan bir xil, kafolatlangan (200) URL — req.url origin
-    // proksi/www tufayli noto'g'ri (404) chiqishi mumkin edi.
-    const appUrl = "https://www.couponbet.org/telegram-app";
+    // Bizning o'z botimiz bilan bir xil, kafolatlangan (200) URL — req.url
+    // origin (Host header) ga tayanmaymiz: proksi/www tufayli noto'g'ri (404)
+    // chiqishi MUMKIN edi, ustiga so'rov host'i soxtalashtirilishi ham mumkin.
+    const appUrl = `${env.siteUrl}/telegram-app`;
     const r = await fetch(`https://api.telegram.org/bot${token}/setChatMenuButton`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

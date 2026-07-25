@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { sendTelegramMessage } from "@/lib/telegram/notify";
+import { env } from "@/lib/env";
 
-const SECURITY_LOG_URL = "https://www.couponbet.org/admin/security-log";
+const SECURITY_LOG_URL = `${env.siteUrl}/admin/security-log`;
 
 // Prevents a sustained attack from sending one Telegram message per failed
 // request — each distinct situation (a given IP, a given targeted staff
