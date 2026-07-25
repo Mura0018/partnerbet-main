@@ -108,9 +108,8 @@ const STATUS_LABEL: Record<Order["status"], { labelKey: string; color: string; i
 };
 
 const inputCls =
-  "w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[14px] text-white outline-none placeholder:text-[#5b7089] transition-shadow duration-200 focus:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),0_0_0_2px_rgba(61,127,255,0.5),0_0_16px_rgba(61,127,255,0.35)] " +
-  "shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)] " +
-  "focus:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.12),0_0_0_2px_rgba(61,127,255,0.4)] transition-shadow";
+  "w-full bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-xl py-3.5 px-4 text-[14px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-3)] transition-colors " +
+  "focus:border-[var(--em)] focus:shadow-[0_0_0_2px_rgba(18,217,160,0.25),0_0_16px_rgba(18,217,160,0.15)]";
 
 const selectCls = inputCls + " appearance-none";
 
