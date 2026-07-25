@@ -126,7 +126,7 @@ export const dictionaries = {
       empty: "\"{q}\" topilmadi. Mijoz ID yoki buyurtma raqamini yozing.",
       custId: "Mijoz ID: {id}", orderId: "Buyurtma #{id}",
       actBusy: "Band / Bo'sh rejimi", actChat: "Jamoa chatiga yozish", actProfile: "Profil",
-      tabPanel: "Panel", tabOrders: "Buyurtma", tabCashdesk: "Kassa", tabChat: "Chat", tabMore: "Yana",
+      tabPanel: "Panel", tabOrders: "Buyurtma", tabCashdesk: "Kassa", tabChat: "Chat", tabMore: "Yana", tabRating: "Reyting", tabProfile: "Profil",
     },
     don: {
       title: "Homiyliklar", sub: "Homiylik statistikasi va to'lov usullarini boshqarish.", loading: "Yuklanmoqda…",
@@ -773,7 +773,7 @@ export const dictionaries = {
       empty: "\"{q}\" не найдено. Введите ID клиента или номер заказа.",
       custId: "ID клиента: {id}", orderId: "Заказ #{id}",
       actBusy: "Режим Занят / Свободен", actChat: "Написать в командный чат", actProfile: "Профиль",
-      tabPanel: "Панель", tabOrders: "Заказы", tabCashdesk: "Касса", tabChat: "Чат", tabMore: "Ещё",
+      tabPanel: "Панель", tabOrders: "Заказы", tabCashdesk: "Касса", tabChat: "Чат", tabMore: "Ещё", tabRating: "Рейтинг", tabProfile: "Профиль",
     },
     don: {
       title: "Пожертвования", sub: "Статистика пожертвований и управление способами оплаты.", loading: "Загрузка…",

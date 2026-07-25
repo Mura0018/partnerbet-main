@@ -330,7 +330,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             { href: "/admin/telegram-bot", label: t("shl.tabOrders"), icon: Wallet, color: "#12D9A0", badge: shell?.counts?.pendingOrders ?? 0 },
             { href: "/admin/cashdesks", label: t("shl.tabCashdesk"), icon: Landmark, color: "#12D9A0" },
             { href: "/admin/telegram-bot?chat=1", label: t("shl.tabChat"), icon: MessageCircle, color: "#8B5CFF", dot: chatNew },
-            { more: true, label: t("shl.tabMore"), icon: Menu, color: "#7D8CA6" },
+            shell?.canOversight
+              ? { href: "/admin/operator-rating", label: t("shl.tabRating"), icon: Gauge, color: "#8B5CFF" }
+              : { href: "/admin/profile", label: t("shl.tabProfile"), icon: UserCircle, color: "#7D8CA6" },
           ].map((tb: any, i) => {
             const active = tb.href && !tb.href.includes("?") && pathname.startsWith(tb.href);
             const inner = (
