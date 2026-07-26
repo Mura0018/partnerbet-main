@@ -599,6 +599,12 @@ export default function TelegramAppPage() {
   // Yuqoriga scroll qilib eski tarixni yuklash (oxirgi 50 dan tashqarisi).
   const [supportHasMore, setSupportHasMore] = useState(true);
   const [supportLoadingMore, setSupportLoadingMore] = useState(false);
+  // __END_CONFIRM__ kartasi: qaysi xabar (id) hozir yuborilmoqda (tugmalarni
+  // vaqtincha o'chirish + spinner) va qaysilariga javob allaqachon berilgan
+  // (Ha/Yo'q qayta bosib bo'lmaydi — server bu holatni saqlamaydi, shuning
+  // uchun mahalliy Set 4s poll davomida ham saqlanib qoladi).
+  const [endConfirmSendingId, setEndConfirmSendingId] = useState<string | null>(null);
+  const [respondedEndConfirmIds, setRespondedEndConfirmIds] = useState<{ [id: string]: boolean }>({});
   // Support ekraniga xos xato (rasm/ovoz) — umumiy `error`dan ajratilgan,
   // shunda support ekranida ko'rsatiladi va boshqa ekranlarga sizmaydi.
   const [supportError, setSupportError] = useState("");
@@ -1270,15 +1276,20 @@ export default function TelegramAppPage() {
     };
   }, [screen]);
 
-  const confirmEnd = async (resolved: boolean) => {
+  const confirmEnd = async (messageId: string, resolved: boolean) => {
+    if (endConfirmSendingId) return; // sinxron dedup — ikkinchi bosishni e'tiborsiz qoldiradi
+    setEndConfirmSendingId(messageId);
     try {
       await fetch("/api/telegram/miniapp/support/end-confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initData: getInitData(), resolved }),
       });
+      setRespondedEndConfirmIds((prev) => ({ ...prev, [messageId]: resolved }));
       await loadSupport(true);
-    } catch {}
+    } catch {} finally {
+      setEndConfirmSendingId(null);
+    }
   };
 
   // F1: optimistik xabarning holatini clientId bo'yicha yangilaydi.
@@ -2187,10 +2198,29 @@ export default function TelegramAppPage() {
                   ) : m.message?.startsWith("__END_CONFIRM__") ? (
                     <div>
                       <div className="mb-2">{m.message.replace("__END_CONFIRM__", "")}</div>
-                      <div className="flex gap-2">
-                        <button onClick={() => confirmEnd(true)} className="flex-1 text-[12px] py-1.5 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] text-white font-medium">{t("tg.endYes")}</button>
-                        <button onClick={() => confirmEnd(false)} className="flex-1 text-[12px] py-1.5 rounded-lg bg-white/10 text-white font-medium">{t("tg.endNo")}</button>
-                      </div>
+                      {respondedEndConfirmIds[m.id] !== undefined ? (
+                        <div className="flex items-center gap-1.5 text-[11px] text-[#7db8ff]">
+                          <CheckCircle2 size={13} />
+                          {respondedEndConfirmIds[m.id] ? t("tg.endAnsweredYes") : t("tg.endAnsweredNo")}
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => confirmEnd(m.id, true)}
+                            disabled={endConfirmSendingId === m.id}
+                            className="flex-1 flex items-center justify-center text-[12px] py-1.5 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] text-white font-medium disabled:opacity-60"
+                          >
+                            {endConfirmSendingId === m.id ? <Loader2 size={14} className="animate-spin" /> : t("tg.endYes")}
+                          </button>
+                          <button
+                            onClick={() => confirmEnd(m.id, false)}
+                            disabled={endConfirmSendingId === m.id}
+                            className="flex-1 flex items-center justify-center text-[12px] py-1.5 rounded-lg bg-white/10 text-white font-medium disabled:opacity-60"
+                          >
+                            {endConfirmSendingId === m.id ? <Loader2 size={14} className="animate-spin" /> : t("tg.endNo")}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     m.message
