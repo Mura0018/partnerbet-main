@@ -609,6 +609,11 @@ export default function TelegramAppPage() {
   const supportSigRef = useRef<string>("");
   // Support ekrani ochilgandagi birinchi scroll animatsiyasiz bo'lsin.
   const supportFirstScrollRef = useRef(true);
+  // Yangi xabar DOM'ga qo'shilishidan OLDINGI holatni saqlaydi — aks holda
+  // scrollHeight'dan masofani xabar qo'shilgandan KEYIN o'lchash yangi
+  // xabarning o'zi balandligicha xato beradi (pastda turgan bo'lsa ham
+  // "tepada" deb hisoblanib, avto-scroll bekor qilinardi).
+  const supportNearBottomRef = useRef(true);
   // F1: optimistik xabarларга noyob vaqtинча id berish uchun.
   const optimisticSeqRef = useRef(0);
   // F1b: sinxron dedup guard (bir xil xabar ikki marta ketmasin) va
@@ -1242,8 +1247,10 @@ export default function TelegramAppPage() {
     }
     // Keyingi yangi xabarlarda: faqat foydalanuvchi allaqachon pastga yaqin
     // bo'lsa sur (tepada eski xabarlarni o'qiyotgan bo'lsa uzmaymiz).
-    const list = supportListRef.current;
-    if (list && list.scrollHeight - list.scrollTop - list.clientHeight >= 80) return;
+    // supportNearBottomRef — xabar qo'shilishidan OLDINGI holat (onScroll
+    // orqali yangilanadi), shuning uchun yangi xabarning o'z balandligi
+    // hisobga aralashib, noto'g'ri "tepada" degan xulosaga olib kelmaydi.
+    if (!supportNearBottomRef.current) return;
     bottom.scrollIntoView({ behavior: "smooth" });
   }, [supportMessages, screen]);
 
@@ -2115,6 +2122,7 @@ export default function TelegramAppPage() {
           onScroll={(e) => {
             const el = e.currentTarget;
             setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240);
+            supportNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
             // Tepaga yaqinlashganda eski (oldingi 50 tadan tashqari) xabarlarni yuklaymiz.
             if (el.scrollTop < 60) void loadMoreSupport();
           }}

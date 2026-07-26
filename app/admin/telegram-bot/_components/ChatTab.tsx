@@ -62,6 +62,11 @@ export function ChatTab() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const firstScrollRef = useRef(true);
+  // Yangi xabar DOM'ga qo'shilishidan OLDINGI holatni saqlaydi — aks holda
+  // scrollHeight'dan masofani xabar qo'shilgandan KEYIN o'lchash (eski usul)
+  // yangi xabarning o'zi balandligicha xato beradi (foydalanuvchi pastda
+  // turgan bo'lsa ham "tepada" deb hisoblanib, avto-scroll bekor qilinardi).
+  const nearBottomRef = useRef(true);
   const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
 
@@ -175,8 +180,10 @@ export function ChatTab() {
     }
     // Keyingi yangi xabarlarda: faqat foydalanuvchi pastga yaqin bo'lsa sur
     // (tepada eski xabarlarni o'qiyotgan bo'lsa polling uni tortmaydi).
-    const list = listRef.current;
-    if (list && list.scrollHeight - list.scrollTop - list.clientHeight >= 80) return;
+    // nearBottomRef — xabar DOM'ga qo'shilishidan OLDINGI holat (onScroll
+    // orqali yangilanadi), shuning uchun yangi xabarning o'z balandligi
+    // hisobga aralashib, noto'g'ri "tepada" degan xulosaga olib kelmaydi.
+    if (!nearBottomRef.current) return;
     bottom.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
@@ -349,6 +356,10 @@ export function ChatTab() {
       </div>
       <div
         ref={listRef}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+        }}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-w-0 min-h-0"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
       >
