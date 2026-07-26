@@ -58,10 +58,18 @@ export function ChatTab() {
   const [editingRules, setEditingRules] = useState(false);
   const [rulesDraft, setRulesDraft] = useState("");
   const [savingRules, setSavingRules] = useState(false);
+  // Ixcham (Telegram uslubi): mahkamlangan qoidalar standart holatda bitta
+  // qatorga qisqartirilgan, bosilganda to'liq ochiladi.
+  const [rulesExpanded, setRulesExpanded] = useState(false);
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const firstScrollRef = useRef(true);
+  // Yangi xabar DOM'ga qo'shilishidan OLDINGI holatni saqlaydi — aks holda
+  // scrollHeight'dan masofani xabar qo'shilgandan KEYIN o'lchash (eski usul)
+  // yangi xabarning o'zi balandligicha xato beradi (foydalanuvchi pastda
+  // turgan bo'lsa ham "tepada" deb hisoblanib, avto-scroll bekor qilinardi).
+  const nearBottomRef = useRef(true);
   const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
 
@@ -107,14 +115,19 @@ export function ChatTab() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    // currentUserId load()dan OLDIN o'rnatilishi shart — aks holda birinchi
+    // render xabarlarni currentUserId hali null bo'lganda chizadi va
+    // O'ZINING xabarlari ham chapga (isMe=false) tushib, keyin identifikatsiya
+    // kelgach o'ngga sakraydi (race condition, GlobalChat.tsx'da yo'q edi).
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id ?? null);
       if (user) {
         const { data } = await supabase.from("profiles").select("chat_theme").eq("id", user.id).maybeSingle();
         if (data?.chat_theme) setMyTheme(data.chat_theme);
       }
-    });
-    load();
+      await load();
+    })();
     const interval = setInterval(load, 4000);
     return () => clearInterval(interval);
   }, []);
@@ -170,8 +183,10 @@ export function ChatTab() {
     }
     // Keyingi yangi xabarlarda: faqat foydalanuvchi pastga yaqin bo'lsa sur
     // (tepada eski xabarlarni o'qiyotgan bo'lsa polling uni tortmaydi).
-    const list = listRef.current;
-    if (list && list.scrollHeight - list.scrollTop - list.clientHeight >= 80) return;
+    // nearBottomRef — xabar DOM'ga qo'shilishidan OLDINGI holat (onScroll
+    // orqali yangilanadi), shuning uchun yangi xabarning o'z balandligi
+    // hisobga aralashib, noto'g'ri "tepada" degan xulosaga olib kelmaydi.
+    if (!nearBottomRef.current) return;
     bottom.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
@@ -256,7 +271,7 @@ export function ChatTab() {
 
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className="flex items-center gap-2 p-2.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
+      <div className="flex items-center gap-2 py-1.5 px-2.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
         {showSearch ? (
           <input
             autoFocus
@@ -297,11 +312,12 @@ export function ChatTab() {
         </div>
       )}
 
-      {/* 8-BOSQICH: pinned qoidalar */}
-      <div className="px-3 py-2 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
-        <div className="flex items-start gap-2">
-          <span className="text-[11px] shrink-0">📌</span>
-          {editingRules ? (
+      {/* 8-BOSQICH: pinned qoidalar — ixcham (Telegram uslubi): standart
+          holatda bitta qatorga qisqartirilgan, bosilganda to'liq ochiladi. */}
+      <div className="px-3 py-1.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
+        {editingRules ? (
+          <div className="flex items-start gap-2">
+            <span className="text-[11px] shrink-0">📌</span>
             <div className="flex-1 min-w-0">
               <textarea
                 rows={3}
@@ -314,19 +330,24 @@ export function ChatTab() {
                 <button onClick={() => setEditingRules(false)} className="text-[11px] px-2.5 py-1 rounded-lg text-muted hover:bg-white/5">{t("cht.cancel")}</button>
               </div>
             </div>
-          ) : (
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] text-[#cdd7e5] whitespace-pre-wrap">{rules || t("cht.noRules")}</div>
-              <Can permission="operators.oversight">
-                <button onClick={() => { setRulesDraft(rules); setEditingRules(true); }} className="text-[10px] text-accent mt-0.5">{t("cht.edit")}</button>
-              </Can>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button onClick={() => setRulesExpanded((v) => !v)} className="flex-1 min-w-0 flex items-start gap-2 text-left">
+              <span className="text-[11px] shrink-0">📌</span>
+              <span className={`flex-1 min-w-0 text-[11px] text-[#cdd7e5] ${rulesExpanded ? "whitespace-pre-wrap" : "truncate"}`}>
+                {rules || t("cht.noRules")}
+              </span>
+            </button>
+            <Can permission="operators.oversight">
+              <button onClick={() => { setRulesDraft(rules); setEditingRules(true); }} className="text-[10px] text-accent shrink-0">{t("cht.edit")}</button>
+            </Can>
+          </div>
+        )}
       </div>
 
       {/* 8-BOSQICH: tur filtri + faol (smenada) operatorlar */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] backdrop-blur-md border-b border-subtle">
+      <div className="flex items-center gap-1.5 px-3 py-1 bg-white/[0.03] backdrop-blur-md border-b border-subtle">
         {([["all", "cht.fAll"], ["chat", "cht.fChat"], ["system", "cht.fSystem"]] as const).map(([id, labelKey]) => (
           <button
             key={id}
@@ -344,6 +365,10 @@ export function ChatTab() {
       </div>
       <div
         ref={listRef}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+        }}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-w-0 min-h-0"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
       >

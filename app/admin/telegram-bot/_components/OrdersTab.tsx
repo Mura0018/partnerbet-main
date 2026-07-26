@@ -528,25 +528,34 @@ function MyStatusToggle() {
     setSaving(false);
   };
 
-  if (loading) return null;
-
+  // Yuklanayotganda HAM shu joyni band qilib turadigan skeleton — `return null`
+  // butun panelni bir lahzaga yo'qotib, ma'lumot kelgach qayta chizardi
+  // ("2 tugma yonib-o'chishi"). Endi tashqi konteyner doim bir xil o'lchamda.
   return (
     <div className={`mb-4 rounded-lg px-3.5 py-2.5 flex items-center justify-between gap-3 border ${
-      isOnline ? "bg-[#4ADE80]/10 border-[#4ADE80]/25" : "bg-[#F4C76A]/10 border-[#F4C76A]/25"
+      loading ? "bg-white/[0.03] border-subtle" : isOnline ? "bg-[#4ADE80]/10 border-[#4ADE80]/25" : "bg-[#F4C76A]/10 border-[#F4C76A]/25"
     }`}>
-      <div className="flex items-center gap-2">
-        <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-[#4ADE80]" : "bg-[#F4C76A]"}`} />
-        <span className={`text-[12px] ${isOnline ? "text-[#4ADE80]" : "text-[#F4C76A]"}`}>
-          {t("wid.workStatus")} <span className="font-semibold">{isOnline ? t("wid.active") : t("wid.busy")}</span>
-        </span>
-      </div>
-      <button
-        onClick={toggle}
-        disabled={saving}
-        className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
-      >
-        {saving ? "…" : isOnline ? t("wid.markBusy") : t("wid.markActive")}
-      </button>
+      {loading ? (
+        <div className="h-[15px] w-40 rounded bg-white/10 animate-pulse" />
+      ) : (
+        <div className="flex items-center gap-2">
+          <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-[#4ADE80]" : "bg-[#F4C76A]"}`} />
+          <span className={`text-[12px] ${isOnline ? "text-[#4ADE80]" : "text-[#F4C76A]"}`}>
+            {t("wid.workStatus")} <span className="font-semibold">{isOnline ? t("wid.active") : t("wid.busy")}</span>
+          </span>
+        </div>
+      )}
+      {loading ? (
+        <div className="shrink-0 h-[26px] w-20 rounded-lg bg-white/10 animate-pulse" />
+      ) : (
+        <button
+          onClick={toggle}
+          disabled={saving}
+          className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
+        >
+          {saving ? "…" : isOnline ? t("wid.markBusy") : t("wid.markActive")}
+        </button>
+      )}
     </div>
   );
 }
@@ -597,27 +606,36 @@ function MyBusyToggle() {
     setSaving(false);
   };
 
-  if (loading) return null;
-
+  // Yuklanayotganda HAM shu joyni band qilib turadigan skeleton — `return null`
+  // butun panelni bir lahzaga yo'qotib, ma'lumot kelgach qayta chizardi
+  // ("2 tugma yonib-o'chishi"). Endi tashqi konteyner doim bir xil o'lchamda.
   return (
-    <div className={`mb-4 rounded-lg px-3.5 py-2.5 border ${isBusy ? "bg-[#FF6B85]/10 border-[#FF6B85]/25" : "bg-white/[0.02] border-subtle"}`}>
+    <div className={`mb-4 rounded-lg px-3.5 py-2.5 border ${loading ? "bg-white/[0.03] border-subtle" : isBusy ? "bg-[#FF6B85]/10 border-[#FF6B85]/25" : "bg-white/[0.02] border-subtle"}`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className={`w-2.5 h-2.5 rounded-full ${isBusy ? "bg-[#FF6B85]" : "bg-[#4ADE80]"}`} />
-          <span className={`text-[12px] ${isBusy ? "text-[#FF6B85]" : "text-muted"}`}>
-            {t("wid.busyLabel")} <span className="font-semibold">{isBusy ? t("wid.busyMan") : t("wid.freeMan")}</span>
-            {isBusy && reason ? <span className="text-[11px]"> — {reason}</span> : null}
-          </span>
-        </div>
-        <button
-          onClick={toggle}
-          disabled={saving}
-          className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
-        >
-          {saving ? "…" : isBusy ? t("wid.markFree") : t("wid.markBusyMan")}
-        </button>
+        {loading ? (
+          <div className="h-[15px] w-40 rounded bg-white/10 animate-pulse" />
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${isBusy ? "bg-[#FF6B85]" : "bg-[#4ADE80]"}`} />
+            <span className={`text-[12px] ${isBusy ? "text-[#FF6B85]" : "text-muted"}`}>
+              {t("wid.busyLabel")} <span className="font-semibold">{isBusy ? t("wid.busyMan") : t("wid.freeMan")}</span>
+              {isBusy && reason ? <span className="text-[11px]"> — {reason}</span> : null}
+            </span>
+          </div>
+        )}
+        {loading ? (
+          <div className="shrink-0 h-[26px] w-20 rounded-lg bg-white/10 animate-pulse" />
+        ) : (
+          <button
+            onClick={toggle}
+            disabled={saving}
+            className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
+          >
+            {saving ? "…" : isBusy ? t("wid.markFree") : t("wid.markBusyMan")}
+          </button>
+        )}
       </div>
-      {!isBusy && (
+      {!loading && !isBusy && (
         <input
           value={reason}
           onChange={(e) => setReason(e.target.value)}
