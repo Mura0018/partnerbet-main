@@ -58,6 +58,9 @@ export function ChatTab() {
   const [editingRules, setEditingRules] = useState(false);
   const [rulesDraft, setRulesDraft] = useState("");
   const [savingRules, setSavingRules] = useState(false);
+  // Ixcham (Telegram uslubi): mahkamlangan qoidalar standart holatda bitta
+  // qatorga qisqartirilgan, bosilganda to'liq ochiladi.
+  const [rulesExpanded, setRulesExpanded] = useState(false);
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -268,7 +271,7 @@ export function ChatTab() {
 
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className="flex items-center gap-2 p-2.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
+      <div className="flex items-center gap-2 py-1.5 px-2.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
         {showSearch ? (
           <input
             autoFocus
@@ -309,11 +312,12 @@ export function ChatTab() {
         </div>
       )}
 
-      {/* 8-BOSQICH: pinned qoidalar */}
-      <div className="px-3 py-2 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
-        <div className="flex items-start gap-2">
-          <span className="text-[11px] shrink-0">📌</span>
-          {editingRules ? (
+      {/* 8-BOSQICH: pinned qoidalar — ixcham (Telegram uslubi): standart
+          holatda bitta qatorga qisqartirilgan, bosilganda to'liq ochiladi. */}
+      <div className="px-3 py-1.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
+        {editingRules ? (
+          <div className="flex items-start gap-2">
+            <span className="text-[11px] shrink-0">📌</span>
             <div className="flex-1 min-w-0">
               <textarea
                 rows={3}
@@ -326,19 +330,24 @@ export function ChatTab() {
                 <button onClick={() => setEditingRules(false)} className="text-[11px] px-2.5 py-1 rounded-lg text-muted hover:bg-white/5">{t("cht.cancel")}</button>
               </div>
             </div>
-          ) : (
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] text-[#cdd7e5] whitespace-pre-wrap">{rules || t("cht.noRules")}</div>
-              <Can permission="operators.oversight">
-                <button onClick={() => { setRulesDraft(rules); setEditingRules(true); }} className="text-[10px] text-accent mt-0.5">{t("cht.edit")}</button>
-              </Can>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button onClick={() => setRulesExpanded((v) => !v)} className="flex-1 min-w-0 flex items-start gap-2 text-left">
+              <span className="text-[11px] shrink-0">📌</span>
+              <span className={`flex-1 min-w-0 text-[11px] text-[#cdd7e5] ${rulesExpanded ? "whitespace-pre-wrap" : "truncate"}`}>
+                {rules || t("cht.noRules")}
+              </span>
+            </button>
+            <Can permission="operators.oversight">
+              <button onClick={() => { setRulesDraft(rules); setEditingRules(true); }} className="text-[10px] text-accent shrink-0">{t("cht.edit")}</button>
+            </Can>
+          </div>
+        )}
       </div>
 
       {/* 8-BOSQICH: tur filtri + faol (smenada) operatorlar */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] backdrop-blur-md border-b border-subtle">
+      <div className="flex items-center gap-1.5 px-3 py-1 bg-white/[0.03] backdrop-blur-md border-b border-subtle">
         {([["all", "cht.fAll"], ["chat", "cht.fChat"], ["system", "cht.fSystem"]] as const).map(([id, labelKey]) => (
           <button
             key={id}
