@@ -36,6 +36,12 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
   const [recipient, setRecipient] = useState("");
   const [details, setDetails] = useState("");
 
+  // W1.4: full_name bo'sh mijozdan bir marta so'raladi (payout ism
+  // tekshiruvi bloklagan bo'lsa).
+  const [needsFullName, setNeedsFullName] = useState(false);
+  const [fullNameInput, setFullNameInput] = useState("");
+  const [savingFullName, setSavingFullName] = useState(false);
+
   const realPlatform = platform === "Boshqa" ? customPlatform.trim() : platform;
 
   // 1-qadam: ID tekshirish
@@ -77,6 +83,9 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
         else if (d.error === "withdraw_disabled") setError(t("wz.eWithdrawOff"));
         else if (d.error === "too_many_pending_orders") setError(t("wz.ePending"));
         else if (d.error === "player_not_found") setError(t("wz.ePlayerNF"));
+        else if (d.error === "temporarily_blocked") setError(t("wz.eBlocked"));
+        else if (d.error === "full_name_required") setNeedsFullName(true);
+        else if (d.error === "name_mismatch") setError(t("wz.eNameMismatch"));
         else setError(t("wz.eGeneric"));
         return;
       }
@@ -86,6 +95,32 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
       setStep(3);
     } finally {
       setBusy(false);
+    }
+  };
+
+  // W1.4: ism yuborilgach, Payout so'rovi avtomatik qayta urinadi.
+  const submitFullNameAndRetry = async () => {
+    if (!fullNameInput.trim()) {
+      setError(t("tg.eNameRequired"));
+      return;
+    }
+    setSavingFullName(true);
+    setError("");
+    try {
+      const res = await fetch("/api/telegram/miniapp/set-full-name", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), fullName: fullNameInput.trim() }),
+      });
+      if (!res.ok) {
+        setError(t("wz.eGeneric"));
+        return;
+      }
+      setNeedsFullName(false);
+      await confirmCode();
+    } catch {
+      setError(t("wz.eGeneric"));
+    } finally {
+      setSavingFullName(false);
     }
   };
 
@@ -136,7 +171,16 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
         </div>
       )}
 
-      {step === 2 && (
+      {step === 2 && needsFullName && (
+        <div>
+          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.fullNamePrompt")}</label>
+          <input className={`${inputCls} mb-2`} placeholder={t("tg.fullNamePh")} value={fullNameInput} onChange={(e) => setFullNameInput(e.target.value)} />
+          {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+          <button onClick={submitFullNameAndRetry} disabled={savingFullName} className={buttonCls}>{savingFullName ? <Loader2 size={16} className="animate-spin" /> : t("tg.submitName")}</button>
+        </div>
+      )}
+
+      {step === 2 && !needsFullName && (
         <div>
           {playerName && <div className="flex items-center gap-2 mb-3 text-[13px] text-[#4ADE80]"><CheckCircle2 size={15} /> {t("wz.player")} <b>{playerName}</b></div>}
           <div className="rounded-xl bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 mb-3 flex items-start gap-2">

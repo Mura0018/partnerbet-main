@@ -8,6 +8,8 @@ import { resolveOrderCashdesk } from "@/lib/cashdesk/pickCashdesk";
 import { getCashdeskCredsById, type Creds } from "@/lib/cashdesk/store";
 import { getSlaMinutes } from "@/lib/cashdesk/sla";
 import { superAdminPosterId } from "@/lib/cashdesk/debt";
+import { checkCustomerBlocked } from "@/lib/customers/abandonBlock";
+import { checkCustomerNameMatch } from "@/lib/customers/nameCheckGate";
 
 // WITHDRAW A-OQIMI, 2-qadam: mijoz kodни kiritадi -> PAYOUT chaqiriladi
 // (pul 1xbetдан kassага tortiladi, QAYTMAS). Muvaffaqiyatли bo'lса buyurtма
@@ -28,6 +30,12 @@ export async function POST(req: NextRequest) {
   const cc = await resolveCustomerContext(initData);
   if (!cc || cc.denied || !cc.customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
   const customer = cc.customer;
+
+  // W1.3: ketma-ket to'lovsiz (expired) buyurtma ochgan mijoz vaqtincha bloklangan.
+  const block = await checkCustomerBlocked(customer.id);
+  if (block.blocked) {
+    return NextResponse.json({ error: "temporarily_blocked", until: block.until }, { status: 403 });
+  }
 
   const admin = createAdminClient();
 
@@ -58,6 +66,15 @@ export async function POST(req: NextRequest) {
   const playerName = lookup.ok ? (lookup.data.name ?? null) : null;
   if (!lookup.ok && lookup.error !== "not_configured" && lookup.error !== "network_error" && lookup.error !== "request_failed") {
     return NextResponse.json({ error: "player_not_found" }, { status: 404 });
+  }
+
+  // W1.4: ism tekshiruvi — PAYOUT'DAN OLDIN (pul chiqib ketgandan keyin
+  // emas). playerName topilmagan bo'lsa solishtirish bo'lmaydi.
+  if (playerName) {
+    const nameCheck = await checkCustomerNameMatch(customer.id, customer.full_name, playerName, String(platform).trim(), acc);
+    if (!nameCheck.allowed) {
+      return NextResponse.json({ error: nameCheck.reason }, { status: 403 });
+    }
   }
 
   // === PAYOUT: pul 1xbetдан tortiladi (kod bilan). QAYTMAS. ===

@@ -1,14 +1,23 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, Search, X, Loader2, ChevronLeft, ChevronRight, Gift, EyeOff, Eye, RotateCcw } from "lucide-react";
+import { Users, Search, X, Loader2, ChevronLeft, ChevronRight, Gift, EyeOff, Eye, RotateCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 
-type Row = { id: string; full_name: string | null; phone: string; created_at: string; partnerName: string | null; orderCount: number };
+type Row = { id: string; full_name: string | null; phone: string; created_at: string; partnerName: string | null; orderCount: number; nameMismatchPending: boolean };
 type Partner = { id: string; name: string };
 type Order = { id: string; type: string; amount: number; status: string; platform: string; created_at: string };
-type Detail = { customer: { id: string; full_name: string | null; phone: string; created_at: string; telegram_id: number | null; partnerName: string | null; ownerName: string | null }; orders: Order[] };
+// W1.4: nameMismatch — hali hal qilinmagan ism-nomuvofiqlik (bo'lsa); nameOverride — avval tasdiqlangan bo'lsa tarixi.
+type Detail = {
+  customer: {
+    id: string; full_name: string | null; phone: string; created_at: string; telegram_id: number | null;
+    partnerName: string | null; ownerName: string | null;
+    nameMismatch: { id: string; registered_name: string; player_name: string; platform: string | null; account_id: string | null; created_at: string } | null;
+    nameOverride: { by: string | null; at: string; reason: string | null } | null;
+  };
+  orders: Order[];
+};
 
 const STATUS: Record<string, { labelKey: string; cls: string }> = {
   pending: { labelKey: "cus.stPending", cls: "text-[#F4C76A]" },
@@ -33,14 +42,19 @@ export default function CustomersManager() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const [showHidden, setShowHidden] = useState(false);
+  const [nameMismatchFilter, setNameMismatchFilter] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+
+  // W1.4: sabab (majburiy) + yuborilmoqda holati — "Ismni tasdiqlash" uchun.
+  const [nameConfirmReason, setNameConfirmReason] = useState("");
+  const [confirmingName, setConfirmingName] = useState(false);
 
   const load = async (p = page) => {
     setLoading(true);
     setSelectedIds(new Set());
     try {
-      const params = new URLSearchParams({ search, partnerId, page: String(p), hidden: showHidden ? "1" : "0" });
+      const params = new URLSearchParams({ search, partnerId, page: String(p), hidden: showHidden ? "1" : "0", nameMismatch: nameMismatchFilter ? "1" : "0" });
       const res = await fetch(`/api/admin/customers?${params.toString()}`);
       const data = await res.json();
       if (res.ok) {
@@ -58,19 +72,40 @@ export default function CustomersManager() {
     const tm = setTimeout(() => { setPage(0); load(0); }, 300);
     return () => clearTimeout(tm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, partnerId, showHidden]);
+  }, [search, partnerId, showHidden, nameMismatchFilter]);
 
   useEffect(() => { load(page); /* eslint-disable-next-line */ }, [page]);
 
   const openDetail = async (id: string) => {
     setDetailLoading(true);
-    setDetail({ customer: { id, full_name: null, phone: "", created_at: "", telegram_id: null, partnerName: null, ownerName: null }, orders: [] });
+    setNameConfirmReason("");
+    setDetail({ customer: { id, full_name: null, phone: "", created_at: "", telegram_id: null, partnerName: null, ownerName: null, nameMismatch: null, nameOverride: null }, orders: [] });
     try {
       const res = await fetch(`/api/admin/customers/detail?id=${id}`);
       const data = await res.json();
       if (res.ok) setDetail(data);
     } catch { /* ignore */ }
     setDetailLoading(false);
+  };
+
+  // W1.4: "Ismni tasdiqlash" — sabab MAJBURIY (kim/qachon serverda, auth'dan yoziladi).
+  const confirmNameMismatch = async () => {
+    if (!detail || !nameConfirmReason.trim()) { toast.error(t("cus.reasonRequired")); return; }
+    setConfirmingName(true);
+    try {
+      const res = await fetch("/api/admin/customers/name-mismatch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: detail.customer.id, reason: nameConfirmReason.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(t("cus.tConfirmFailed") + (data.error ?? "")); return; }
+      toast.success(t("cus.tConfirmed"));
+      setNameConfirmReason("");
+      await openDetail(detail.customer.id);
+      load(page);
+    } catch { toast.error(t("cus.tConnErr")); }
+    finally { setConfirmingName(false); }
   };
 
   const toggleSelect = (id: string) => setSelectedIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -119,6 +154,10 @@ export default function CustomersManager() {
           className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12.5px] font-medium border whitespace-nowrap ${showHidden ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted hover:text-white"}`}>
           {showHidden ? <><Eye size={14} /> {t("cus.normalList")}</> : <><EyeOff size={14} /> {t("cus.hiddenList")}</>}
         </button>
+        <button onClick={() => setNameMismatchFilter((v) => !v)}
+          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12.5px] font-medium border whitespace-nowrap ${nameMismatchFilter ? "bg-[#F4C76A]/15 border-[#F4C76A]/50 text-[#F4C76A]" : "bg-white/[0.02] border-subtle text-muted hover:text-white"}`}>
+          <AlertTriangle size={14} /> {t("cus.nameMismatchFilter")}
+        </button>
       </div>
 
       {/* Bulk amal paneli */}
@@ -159,7 +198,16 @@ export default function CustomersManager() {
                 <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                   <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)} className="accent-accent" aria-label={t("cus.selectOne")} />
                 </td>
-                <td className="px-4 py-3 font-medium">{c.full_name || "—"}</td>
+                <td className="px-4 py-3 font-medium">
+                  <span className="inline-flex items-center gap-1.5">
+                    {c.full_name || "—"}
+                    {c.nameMismatchPending && (
+                      <span title={t("cus.nameMismatchBadge")} className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#F4C76A]/15 text-[#F4C76A]">
+                        <AlertTriangle size={10} /> {t("cus.nameMismatchBadge")}
+                      </span>
+                    )}
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-muted">{c.phone}</td>
                 <td className="px-4 py-3">
                   {c.partnerName ? <span className="text-[#7db8ff]">{c.partnerName}</span> : <span className="text-muted">{t("cus.platformShort")}</span>}
@@ -207,6 +255,46 @@ export default function CustomersManager() {
                     {detail.customer.telegram_id != null && <span>{t("cus.tgId")} <span className="text-white font-mono">{detail.customer.telegram_id}</span></span>}
                   </div>
                 </div>
+
+                {/* W1.4: ism mos kelmagani sababli bloklangan — operator qo'lda tasdiqlaydi (sabab majburiy). */}
+                {detail.customer.nameMismatch && (
+                  <div className="rounded-xl border border-[#F4C76A]/40 bg-[#F4C76A]/10 p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2.5 text-[#F4C76A]">
+                      <AlertTriangle size={16} className="shrink-0" />
+                      <span className="font-semibold text-[13px]">{t("cus.nameMismatchTitle")}</span>
+                    </div>
+                    <div className="text-[12px] text-white/90 mb-1">
+                      {t("cus.registeredName")}: <span className="font-semibold">{detail.customer.nameMismatch.registered_name || "—"}</span>
+                    </div>
+                    <div className="text-[12px] text-white/90 mb-3">
+                      {t("cus.playerNameLab")}: <span className="font-semibold">{detail.customer.nameMismatch.player_name}</span>
+                    </div>
+                    <textarea
+                      rows={2}
+                      value={nameConfirmReason}
+                      onChange={(e) => setNameConfirmReason(e.target.value)}
+                      placeholder={t("cus.reasonPh")}
+                      className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[12px] outline-none focus:border-accent mb-2.5"
+                    />
+                    <button
+                      onClick={confirmNameMismatch}
+                      disabled={confirmingName || !nameConfirmReason.trim()}
+                      className="w-full py-2 rounded-lg bg-[#4ADE80]/15 border border-[#4ADE80]/40 text-[#4ADE80] font-semibold text-[12.5px] disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    >
+                      {confirmingName ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} {t("cus.confirmName")}
+                    </button>
+                  </div>
+                )}
+
+                {detail.customer.nameOverride && (
+                  <div className="rounded-xl border border-[#4ADE80]/30 bg-[#4ADE80]/10 p-3.5 mb-4 text-[12px] text-[#4ADE80]">
+                    <div className="flex items-center gap-1.5 font-semibold mb-1">
+                      <CheckCircle2 size={14} /> {t("cus.nameOverridden")} — {fmtDate(detail.customer.nameOverride.at)}
+                      {detail.customer.nameOverride.by && <span> ({t("cus.nameOverriddenBy")}: {detail.customer.nameOverride.by})</span>}
+                    </div>
+                    {detail.customer.nameOverride.reason && <div className="text-white/80">{detail.customer.nameOverride.reason}</div>}
+                  </div>
+                )}
 
                 {/* BONUS uchun joy — hozir funksiya YO'Q, keyingi bosqichda qo'shiladi */}
                 <div className="rounded-xl border border-dashed border-subtle bg-white/[0.02] p-4 mb-4 flex items-center gap-3">
