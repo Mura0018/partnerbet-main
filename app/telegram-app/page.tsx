@@ -1006,55 +1006,6 @@ export default function TelegramAppPage() {
     }
   };
 
-  const submitWithdraw = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccessWarning(null);
-    const platform = wdPlatform === "Boshqa" ? wdCustomPlatform.trim() : wdPlatform;
-    if (!platform || !wdAccountId.trim() || !wdCode.trim() || !wdAmount || Number(wdAmount) <= 0 || !wdPayoutDetails.trim() || !wdRecipientName.trim()) {
-      setError("Barcha maydonlarni to'ldiring.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/telegram/miniapp/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          initData: getInitData(), type: "withdraw", platform, accountId: wdAccountId.trim(),
-          amount: Number(wdAmount), paymentMethod: wdMethod, withdrawCode: wdCode.trim(), payoutDetails: wdPayoutDetails.trim(),
-          recipientName: wdRecipientName.trim(),
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data.error === "player_not_found") {
-          setError("Bunday hisob ID topilmadi. Platforma va ID raqamini tekshiring.");
-        } else if (data.error === "order_limit_exceeded") {
-          setError(`Bitta buyurtma uchun maksimal summa: ${Number(data.limit).toLocaleString("ru-RU")} so'm.`);
-        } else if (data.error === "daily_limit_exceeded") {
-          setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
-        } else if (data.error === "too_many_pending_orders") {
-          setError("Sizda hozircha ko'rib chiqilayotgan buyurtmalar bor. Iltimos ular yakunlanishini kuting.");
-        } else if (data.error === "topup_disabled") {
-          setError("Hisob to'ldirish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
-        } else if (data.error === "withdraw_disabled") {
-          setError("Pul yechish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
-        } else {
-          setError(t("tg.eOrderSend"));
-        }
-        return;
-      }
-      setSuccessLabel(t("tg.withdrawTitle"));
-      resetForms();
-      setScreen("order-success");
-    } catch {
-      setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   // Resets the local session view. Since this app auto-signs the customer
   // back in by their Telegram identity (see the session route), reopening
   // the mini app will log them back in automatically — this just clears
