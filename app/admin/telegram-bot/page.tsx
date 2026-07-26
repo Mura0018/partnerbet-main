@@ -22,14 +22,14 @@ const TABS: { id: Tab; labelKey: string; icon: any; permission?: string }[] = [
 export default function TelegramBotAdminPage() {
   const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("orders");
-  const [chatOpen, setChatOpen] = useState(false);
-
-  // Menyudagi "Jamoa chati" havolasi (?chat=1) — kirilganda chat drawer'ini ochadi.
-  useEffect(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1") {
-      setChatOpen(true);
-    }
-  }, []);
+  // Menyudagi "Jamoa chati" havolasi (?chat=1) — URL'dan DARHOL (birinchi
+  // render'da) o'qiladi, useEffect'da emas. Aks holda bir lahza bo'lsa ham
+  // pastdagi og'ir Orders tab'i (o'z DB so'rovlari bilan) fonda yuklanib
+  // ulguradi, keyingina chat drawer ustidan ochiladi — shu "og'ir kirish"
+  // hissiyotini beradi. Endi chatOpen bo'lsa Orders umuman render qilinmaydi.
+  const [chatOpen, setChatOpen] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1"
+  );
 
   // Chat ochilganda "ko'rildi" belgisi — sidebar'dagi yangilik nuqtasi o'chadi.
   useEffect(() => {
@@ -77,12 +77,14 @@ export default function TelegramBotAdminPage() {
         })}
       </div>
 
-      <div key={tab} style={{ animation: "bcTabPop 0.25s ease" }}>
-        {tab === "orders" && <OrdersTab />}
-        {tab === "support" && <SupportTab />}
-        {tab === "operators" && <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
-        {tab === "my-payments" && <MyPaymentMethodsTab />}
-      </div>
+      {!chatOpen && (
+        <div key={tab} style={{ animation: "bcTabPop 0.25s ease" }}>
+          {tab === "orders" && <OrdersTab />}
+          {tab === "support" && <SupportTab />}
+          {tab === "operators" && <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
+          {tab === "my-payments" && <MyPaymentMethodsTab />}
+        </div>
+      )}
 
       {/* Suzuvchi Jamoa chati tugmasi (FAB) */}
       <Can permission="team_chat.use">
