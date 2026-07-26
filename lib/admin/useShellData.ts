@@ -10,7 +10,7 @@ export type ShellData = {
   perms?: string[];
   canManageOrders?: boolean;
   canOversight?: boolean;
-  me?: { name: string; rating: number; isBusy: boolean; busyReason: string | null };
+  me?: { name: string; rating: number; isBusy: boolean; busyReason: string | null; isOnline: boolean };
   counts?: {
     pendingOrders: number;
     openDebts: number;
