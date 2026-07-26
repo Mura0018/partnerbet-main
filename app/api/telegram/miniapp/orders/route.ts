@@ -4,6 +4,7 @@ import { resolveCustomerContext } from "@/lib/telegram/resolveCustomer";
 import { sendTelegramMessage, buildOrderCreatedMessage } from "@/lib/telegram/notify";
 import { notifyOperatorsNewOrder } from "@/lib/telegram/notifyStaff";
 import { bumpCardUsage } from "@/lib/payments/cardUsage";
+import { pickRequisiteForOrder, bumpPartnerRequisiteUsage, recordRequisiteReveal } from "@/lib/payments/pickRequisite";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
@@ -23,7 +24,11 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
-  const { initData, type, platform, accountId, amount, paymentMethod, withdrawCode, payoutDetails, recipientName, paymentOperatorId, receivedAccountNumber, receivedHolderName } = body ?? {};
+  // W1.1: paymentOperatorId/receivedAccountNumber/receivedHolderName endi
+  // MIJOZDAN qabul qilinmaydi — ilgari mijoz o'zi ko'rgan kartani "aynan
+  // shu edi" deb qaytarib yuborardi va server buni tekshirmasdan ishonardi.
+  // Endi rekvizit shu endpoint ICHIDA, server tomonda tanlanadi (pastda).
+  const { initData, type, platform, accountId, amount, paymentMethod, withdrawCode, payoutDetails, recipientName } = body ?? {};
 
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
@@ -128,6 +133,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "daily_limit_exceeded", limit: dailyCustomerLimit }, { status: 400 });
   }
 
+  // W1.1/W1.6: topup uchun rekvizit AYNAN SHU YERDA, server tomonda
+  // tanlanadi (platforma va hamkor mijozlari bir xil fair-rotation
+  // mantig'idan o'tadi — pickRequisiteForOrder). Rekvizit topilmasa
+  // (faol karta yo'q) buyurtma umuman yaratilmaydi — bo'sh/soxta
+  // rekvizit bilan ochilib qolmaydi.
+  let requisite: Awaited<ReturnType<typeof pickRequisiteForOrder>> = null;
+  if (type === "topup") {
+    requisite = await pickRequisiteForOrder(paymentMethod, cc.partnerId ?? null);
+    if (!requisite) {
+      return NextResponse.json({ error: "no_payment_method_available" }, { status: 503 });
+    }
+  }
+
   const supabase = createAdminClient();
   const { data: order, error } = await supabase
     .from("telegram_orders")
@@ -141,9 +159,9 @@ export async function POST(req: NextRequest) {
       withdraw_code: type === "withdraw" ? String(withdrawCode).trim().slice(0, 20) : null,
       payout_details: payoutDetails ? String(payoutDetails).trim().slice(0, 500) : null,
       recipient_name: type === "withdraw" ? String(recipientName).trim().slice(0, 150) : null,
-      payment_operator_id: type === "topup" && paymentOperatorId ? String(paymentOperatorId) : null,
-      received_account_number: type === "topup" && receivedAccountNumber ? String(receivedAccountNumber).trim().slice(0, 100) : null,
-      received_holder_name: type === "topup" && receivedHolderName ? String(receivedHolderName).trim().slice(0, 150) : null,
+      payment_operator_id: requisite?.operatorId ?? null,
+      received_account_number: requisite?.accountNumber ?? null,
+      received_holder_name: requisite?.holderName ?? null,
       player_name: playerName,
       currency_id: currencyId,
       partner_id: cc.partnerId,
@@ -187,11 +205,35 @@ export async function POST(req: NextRequest) {
 
   await sendTelegramMessage(customer.telegram_id, buildOrderCreatedMessage(type, amountNum));
   await notifyOperatorsNewOrder(type, amountNum, playerName ?? String(accountId).trim());
-  if (type === "topup" && paymentOperatorId && receivedAccountNumber) {
-    await bumpCardUsage(String(paymentOperatorId), String(receivedAccountNumber).trim());
+
+  // W1.1/W1.2: fair-rotation bump + "har ko'rsatish qayd etiladi" audit yozuvi.
+  // Best-effort — bu ikkalasi ham buyurtma yaratishni bloklamasligi kerak
+  // (pul/buyurtma allaqachon amalga oshgan, tashqi audit yozuvi ikkinchi darajali).
+  if (type === "topup" && requisite) {
+    try {
+      if (requisite.isPartner) await bumpPartnerRequisiteUsage(requisite.methodRowId);
+      else await bumpCardUsage(String(requisite.operatorId), requisite.accountNumber);
+      await recordRequisiteReveal({
+        customerId: customer.id,
+        orderId: order.id,
+        methodType: paymentMethod,
+        picked: requisite,
+        ip,
+      });
+    } catch {
+      /* bump/audit best-effort */
+    }
   }
 
-  return NextResponse.json({ order });
+  return NextResponse.json({
+    order,
+    // W1.1: mijoz endi rekvizitni mustaqil GET /payment-info orqali emas,
+    // shu javobdan oladi (topup uchun).
+    requisite:
+      type === "topup" && requisite
+        ? { accountNumber: requisite.accountNumber, holderName: requisite.holderName, methodType: paymentMethod }
+        : null,
+  });
 }
 
 export async function GET(req: NextRequest) {

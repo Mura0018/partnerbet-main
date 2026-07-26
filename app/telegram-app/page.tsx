@@ -87,12 +87,10 @@ function optimisticMatchesServer(pending: SupportMessage, serverMsg: SupportMess
   return dt < 20000;
 }
 
-type PaymentInfo = {
-  cardNumber: string; cardHolder: string; cardOperatorId: string | null;
-  clickNumber: string; clickHolder: string; clickOperatorId: string | null;
-  paymeNumber: string; paymeHolder: string; paymeOperatorId: string | null;
-  cryptoWallet: string; cryptoOperatorId: string | null;
-};
+// W1.1: rekvizit endi mustaqil (buyurtmasiz) ko'rilmaydi — bu tur endi
+// FAQAT allaqachon yaratilgan bitta topup buyurtmaning tanlangan rekvizitini
+// ifodalaydi (POST /orders javobidan yoki GET /payment-info?orderId= dan).
+type TopupRequisite = { accountNumber: string; holderName: string; methodType: PaymentMethod };
 
 const PLATFORMS = ["1xBet", "Melbet", "Betwinner", "Boshqa"];
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; labelKey?: string }[] = [
@@ -364,26 +362,17 @@ function ScreenHeader({ title, onBack, onHome }: { title: string; onBack: () => 
   );
 }
 
-function PaymentMethodPicker({
-  value,
-  onChange,
-  paymentInfo,
-}: {
-  value: PaymentMethod;
-  onChange: (m: PaymentMethod) => void;
-  paymentInfo: PaymentInfo | null;
-}) {
+// W1.1: bu yerda endi karta/rekvizit KO'RSATILMAYDI — usul tanlash shunchaki
+// buyurtmaga qaysi turdagi rekvizit (karta/Click/Payme/kripto) kerakligini
+// belgilaydi. Aniq raqam FAQAT buyurtma yaratilgach, keyingi qadamda
+// (server tanlagandan keyin) ko'rinadi — mustaqil "oldindan ko'rish" endi
+// mavjud emas.
+function PaymentMethodPicker({ value, onChange }: { value: PaymentMethod; onChange: (m: PaymentMethod) => void }) {
   const { t } = useLocale();
-  const detail: Record<PaymentMethod, { number: string; holder: string; label: string } | null> = {
-    click: paymentInfo?.clickNumber ? { number: paymentInfo.clickNumber, holder: paymentInfo.clickHolder, label: "Click" } : null,
-    payme: paymentInfo?.paymeNumber ? { number: paymentInfo.paymeNumber, holder: paymentInfo.paymeHolder, label: "Payme" } : null,
-    card: paymentInfo?.cardNumber ? { number: paymentInfo.cardNumber, holder: paymentInfo.cardHolder, label: t("tg.mCardShort") } : null,
-    crypto: paymentInfo?.cryptoWallet ? { number: paymentInfo.cryptoWallet, holder: "", label: t("tg.mCryptoShort") } : null,
-  };
   return (
     <div className="mb-3.5">
       <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.payMethod")}</label>
-      <div className="grid grid-cols-2 gap-2 mb-2.5">
+      <div className="grid grid-cols-2 gap-2">
         {PAYMENT_METHODS.map((m) => (
           <button
             key={m.id}
@@ -397,18 +386,6 @@ function PaymentMethodPicker({
           </button>
         ))}
       </div>
-      {detail[value] ? (
-        <LuxuryCard
-          typeLabel={detail[value]!.label}
-          number={detail[value]!.number}
-          holderName={detail[value]!.holder || null}
-          readOnly
-        />
-      ) : (
-        <div className="rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
-          {t("tg.noMethodInfo")}
-        </div>
-      )}
     </div>
   );
 }
@@ -528,14 +505,17 @@ export default function TelegramAppPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoPos, setLogoPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
-  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
-
   // Top-up form
   const [tuPlatform, setTuPlatform] = useState(PLATFORMS[0]);
   const [tuCustomPlatform, setTuCustomPlatform] = useState("");
   const [tuAccountId, setTuAccountId] = useState("");
   const [tuAmount, setTuAmount] = useState("");
   const [tuMethod, setTuMethod] = useState<PaymentMethod>("click");
+  // W1.1: buyurtma 2-qadam oxirida yaratiladi — tuOrderId/tuRequisite o'sha
+  // javobdan keladi va 3-qadamda (rekvizit ko'rsatish + chek yuklash) ishlatiladi.
+  const [tuOrderId, setTuOrderId] = useState<string | null>(null);
+  const [tuRequisite, setTuRequisite] = useState<TopupRequisite | null>(null);
+  const [tuCreatingOrder, setTuCreatingOrder] = useState(false);
   const [tuReceiptBase64, setTuReceiptBase64] = useState("");
   const [tuReceiptMime, setTuReceiptMime] = useState("");
   const [tuReceiptFileName, setTuReceiptFileName] = useState("");
@@ -699,8 +679,6 @@ export default function TelegramAppPage() {
       .then((r) => r.json())
       .then((data) => { setLogoUrl(data.logoUrl); if (data.logoPosition) setLogoPos(data.logoPosition); })
       .catch(() => {});
-    // payment-info endi himoyalangan (initData talab qiladi) — u faqat
-    // Telegram WebApp initData tayyor bo'lgach, script.onload ichida yuklanadi.
   }, []);
 
   // F2: keyboard ochilganda chat sakramasin/kichraymasin — ko'rinadigan
@@ -743,11 +721,8 @@ export default function TelegramAppPage() {
         setScreen("auth");
         return;
       }
-      // initData tayyor — endi himoyalangan payment-info'ni yuklaymiz.
-      fetch(`/api/telegram/miniapp/payment-info?initData=${encodeURIComponent(initData)}`)
-        .then((r) => r.json())
-        .then((data) => setPaymentInfo(data))
-        .catch(() => {});
+      // W1.1: payment-info endi mustaqil oldindan yuklanmaydi — rekvizit
+      // faqat buyurtma yaratilganda (POST /orders javobida) keladi.
       try {
         const res = await fetch("/api/telegram/miniapp/session", {
           method: "POST",
@@ -886,6 +861,7 @@ export default function TelegramAppPage() {
 
   const resetForms = () => {
     setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
+    setTuOrderId(null); setTuRequisite(null);
     setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1);
     setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails(""); setWdRecipientName("");
   };
@@ -933,39 +909,29 @@ export default function TelegramAppPage() {
     }
   };
 
-  const submitTopup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // W1.1: buyurtma endi shu yerda — 2-qadom (summa+usul) tugagach —
+  // yaratiladi. Server rekvizitni o'zi tanlaydi va shu javobda qaytaradi;
+  // mustaqil "oldindan ko'rish" endi yo'q (faqat MAVJUD buyurtma uchun
+  // rekvizit bo'ladi).
+  const createTopupOrder = async () => {
     setError("");
-    setSuccessWarning(null);
     const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
     if (!platform || !tuAccountId.trim() || !tuAmount || Number(tuAmount) <= 0) {
       setError(t("tg.eAllFields"));
       return;
     }
-    if (!tuReceiptBase64) {
-      setError(t("tg.eReceipt"));
-      return;
-    }
-    setSubmitting(true);
+    setTuCreatingOrder(true);
     try {
-      const methodDetails: Record<PaymentMethod, { number: string; holder: string; operatorId: string | null }> = {
-        card: { number: paymentInfo?.cardNumber ?? "", holder: paymentInfo?.cardHolder ?? "", operatorId: paymentInfo?.cardOperatorId ?? null },
-        click: { number: paymentInfo?.clickNumber ?? "", holder: paymentInfo?.clickHolder ?? "", operatorId: paymentInfo?.clickOperatorId ?? null },
-        payme: { number: paymentInfo?.paymeNumber ?? "", holder: paymentInfo?.paymeHolder ?? "", operatorId: paymentInfo?.paymeOperatorId ?? null },
-        crypto: { number: paymentInfo?.cryptoWallet ?? "", holder: "", operatorId: paymentInfo?.cryptoOperatorId ?? null },
-      };
-      const shown = methodDetails[tuMethod];
       const res = await fetch("/api/telegram/miniapp/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           initData: getInitData(), type: "topup", platform, accountId: tuAccountId.trim(),
           amount: Number(tuAmount), paymentMethod: tuMethod,
-          paymentOperatorId: shown.operatorId, receivedAccountNumber: shown.number, receivedHolderName: shown.holder,
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         if (data.error === "player_not_found") {
           setError(t("tg.eIdNotFound"));
         } else if (data.error === "order_limit_exceeded") {
@@ -976,20 +942,42 @@ export default function TelegramAppPage() {
           setError(t("tg.ePendingOrders"));
         } else if (data.error === "topup_disabled") {
           setError(t("tg.eTopupOff"));
-        } else if (data.error === "withdraw_disabled") {
-          setError(t("tg.eWithdrawOff"));
+        } else if (data.error === "no_payment_method_available") {
+          setError(t("tg.noMethodInfo"));
         } else {
           setError(t("tg.eOrderSend"));
         }
         return;
       }
-      const { order } = await res.json();
+      setTuOrderId(data.order.id);
+      setTuRequisite(data.requisite ?? null);
+      setTuStep(3);
+    } catch {
+      setError(t("tg.eOrderSend"));
+    } finally {
+      setTuCreatingOrder(false);
+    }
+  };
 
+  const submitTopup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccessWarning(null);
+    if (!tuOrderId) {
+      setError(t("tg.eOrderSend"));
+      return;
+    }
+    if (!tuReceiptBase64) {
+      setError(t("tg.eReceipt"));
+      return;
+    }
+    setSubmitting(true);
+    try {
       const receiptRes = await fetch("/api/telegram/miniapp/orders/receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          initData: getInitData(), orderId: order.id, imageBase64: tuReceiptBase64, mimeType: tuReceiptMime,
+          initData: getInitData(), orderId: tuOrderId, imageBase64: tuReceiptBase64, mimeType: tuReceiptMime,
         }),
       });
       if (!receiptRes.ok) {
@@ -1920,14 +1908,32 @@ export default function TelegramAppPage() {
                 <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.sum")}</label>
                 <input className={inputCls} type="number" min={1} placeholder={t("tg.phSum")} value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
               </div>
-              <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} paymentInfo={paymentInfo} />
+              <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} />
               {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
-              <button type="button" onClick={() => { if (!tuAmount || Number(tuAmount) <= 0) { setError(t("tg.eAmount")); return; } setError(""); setTuStep(3); }} className={buttonCls}>{t("tg.continueBtn")}</button>
+              <button type="button" onClick={createTopupOrder} disabled={tuCreatingOrder} className={buttonCls}>
+                {tuCreatingOrder ? <Loader2 size={16} className="animate-spin" /> : t("tg.continueBtn")}
+              </button>
             </div>
           )}
 
           {tuStep === 3 && (
             <form onSubmit={submitTopup}>
+              {tuRequisite && (
+                <div className="mb-4">
+                  <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.payMethod")}</label>
+                  <LuxuryCard
+                    typeLabel={
+                      tuRequisite.methodType === "click" ? "Click"
+                      : tuRequisite.methodType === "payme" ? "Payme"
+                      : tuRequisite.methodType === "card" ? t("tg.mCardShort")
+                      : t("tg.mCryptoShort")
+                    }
+                    number={tuRequisite.accountNumber}
+                    holderName={tuRequisite.holderName || null}
+                    readOnly
+                  />
+                </div>
+              )}
               <div className="mb-4">
                 <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.receipt")}</label>
                 <label className="flex items-center justify-center gap-2 w-full bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer">
