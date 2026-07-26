@@ -944,6 +944,8 @@ export default function TelegramAppPage() {
           setError(t("tg.eTopupOff"));
         } else if (data.error === "no_payment_method_available") {
           setError(t("tg.noMethodInfo"));
+        } else if (data.error === "temporarily_blocked") {
+          setError(t("tg.eBlocked"));
         } else {
           setError(t("tg.eOrderSend"));
         }

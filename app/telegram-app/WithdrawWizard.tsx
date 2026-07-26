@@ -77,6 +77,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
         else if (d.error === "withdraw_disabled") setError(t("wz.eWithdrawOff"));
         else if (d.error === "too_many_pending_orders") setError(t("wz.ePending"));
         else if (d.error === "player_not_found") setError(t("wz.ePlayerNF"));
+        else if (d.error === "temporarily_blocked") setError(t("wz.eBlocked"));
         else setError(t("wz.eGeneric"));
         return;
       }

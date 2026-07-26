@@ -137,6 +137,12 @@ export async function POST(req: NextRequest) {
     } catch {
       /* egalik biriktirish best-effort */
     }
+    // W1.3: mijoz buyurtmani muvaffaqiyatli yakunladi — abandon-streak nolga.
+    try {
+      await admin.from("customers").update({ abandoned_streak: 0 }).eq("id", (order as any).customer_id);
+    } catch {
+      /* streak-reset best-effort */
+    }
   }
 
   // 6-BOSQICH: QARZ. Buyurtma takeover bilan olingan (handoffFrom bор) VA uni

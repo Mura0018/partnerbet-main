@@ -5,6 +5,7 @@ import { sendTelegramMessage, buildOrderCreatedMessage } from "@/lib/telegram/no
 import { notifyOperatorsNewOrder } from "@/lib/telegram/notifyStaff";
 import { bumpCardUsage } from "@/lib/payments/cardUsage";
 import { pickRequisiteForOrder, bumpPartnerRequisiteUsage, recordRequisiteReveal } from "@/lib/payments/pickRequisite";
+import { checkCustomerBlocked } from "@/lib/customers/abandonBlock";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
@@ -35,6 +36,12 @@ export async function POST(req: NextRequest) {
   const cc = await resolveCustomerContext(initData);
   if (!cc || cc.denied || !cc.customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
   const customer = cc.customer;
+
+  // W1.3: ketma-ket to'lovsiz (expired) buyurtma ochgan mijoz vaqtincha bloklangan.
+  const block = await checkCustomerBlocked(customer.id);
+  if (block.blocked) {
+    return NextResponse.json({ error: "temporarily_blocked", until: block.until }, { status: 403 });
+  }
 
   if (type !== "topup" && type !== "withdraw") {
     return NextResponse.json({ error: "invalid_type" }, { status: 400 });

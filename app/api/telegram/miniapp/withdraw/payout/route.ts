@@ -8,6 +8,7 @@ import { resolveOrderCashdesk } from "@/lib/cashdesk/pickCashdesk";
 import { getCashdeskCredsById, type Creds } from "@/lib/cashdesk/store";
 import { getSlaMinutes } from "@/lib/cashdesk/sla";
 import { superAdminPosterId } from "@/lib/cashdesk/debt";
+import { checkCustomerBlocked } from "@/lib/customers/abandonBlock";
 
 // WITHDRAW A-OQIMI, 2-qadam: mijoz kodни kiritадi -> PAYOUT chaqiriladi
 // (pul 1xbetдан kassага tortiladi, QAYTMAS). Muvaffaqiyatли bo'lса buyurtма
@@ -28,6 +29,12 @@ export async function POST(req: NextRequest) {
   const cc = await resolveCustomerContext(initData);
   if (!cc || cc.denied || !cc.customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
   const customer = cc.customer;
+
+  // W1.3: ketma-ket to'lovsiz (expired) buyurtma ochgan mijoz vaqtincha bloklangan.
+  const block = await checkCustomerBlocked(customer.id);
+  if (block.blocked) {
+    return NextResponse.json({ error: "temporarily_blocked", until: block.until }, { status: 403 });
+  }
 
   const admin = createAdminClient();
 
