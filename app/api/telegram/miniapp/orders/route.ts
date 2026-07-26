@@ -6,6 +6,7 @@ import { notifyOperatorsNewOrder } from "@/lib/telegram/notifyStaff";
 import { bumpCardUsage } from "@/lib/payments/cardUsage";
 import { pickRequisiteForOrder, bumpPartnerRequisiteUsage, recordRequisiteReveal } from "@/lib/payments/pickRequisite";
 import { checkCustomerBlocked } from "@/lib/customers/abandonBlock";
+import { checkCustomerNameMatch } from "@/lib/customers/nameCheckGate";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
@@ -80,6 +81,16 @@ export async function POST(req: NextRequest) {
     currencyId = lookup.data.currencyId != null ? String(lookup.data.currencyId) : null;
   } else if (lookup.error !== "not_configured" && lookup.error !== "network_error" && lookup.error !== "request_failed") {
     return NextResponse.json({ error: "player_not_found" }, { status: 404 });
+  }
+
+  // W1.4: mijozning ro'yxatdan o'tgan ismi bilan cashdesk'dan kelgan
+  // player_name'ni yumshoq solishtiramiz. playerName topilmagan bo'lsa
+  // (cashdesk sozlanmagan/tarmoq xatosi) solishtirish umuman bo'lmaydi.
+  if (playerName) {
+    const nameCheck = await checkCustomerNameMatch(customer.id, customer.full_name, playerName, String(platform).trim(), String(accountId).trim());
+    if (!nameCheck.allowed) {
+      return NextResponse.json({ error: nameCheck.reason }, { status: 403 });
+    }
   }
 
   const adminForLimits = createAdminClient();

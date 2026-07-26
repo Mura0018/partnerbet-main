@@ -516,6 +516,11 @@ export default function TelegramAppPage() {
   const [tuOrderId, setTuOrderId] = useState<string | null>(null);
   const [tuRequisite, setTuRequisite] = useState<TopupRequisite | null>(null);
   const [tuCreatingOrder, setTuCreatingOrder] = useState(false);
+  // W1.4: full_name bo'sh mijozdan bir marta so'raladi (buyurtma
+  // yaratishga to'sqinlik qilgan bo'lsa).
+  const [tuNeedsFullName, setTuNeedsFullName] = useState(false);
+  const [tuFullNameInput, setTuFullNameInput] = useState("");
+  const [tuSavingFullName, setTuSavingFullName] = useState(false);
   const [tuReceiptBase64, setTuReceiptBase64] = useState("");
   const [tuReceiptMime, setTuReceiptMime] = useState("");
   const [tuReceiptFileName, setTuReceiptFileName] = useState("");
@@ -861,7 +866,7 @@ export default function TelegramAppPage() {
 
   const resetForms = () => {
     setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
-    setTuOrderId(null); setTuRequisite(null);
+    setTuOrderId(null); setTuRequisite(null); setTuNeedsFullName(false); setTuFullNameInput("");
     setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1);
     setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails(""); setWdRecipientName("");
   };
@@ -946,6 +951,10 @@ export default function TelegramAppPage() {
           setError(t("tg.noMethodInfo"));
         } else if (data.error === "temporarily_blocked") {
           setError(t("tg.eBlocked"));
+        } else if (data.error === "full_name_required") {
+          setTuNeedsFullName(true);
+        } else if (data.error === "name_mismatch") {
+          setError(t("tg.eNameMismatch"));
         } else {
           setError(t("tg.eOrderSend"));
         }
@@ -958,6 +967,34 @@ export default function TelegramAppPage() {
       setError(t("tg.eOrderSend"));
     } finally {
       setTuCreatingOrder(false);
+    }
+  };
+
+  // W1.4: bir martalik ism kiritish (full_name bo'sh mijoz uchun) —
+  // yuborilgach, buyurtma yaratish avtomatik qayta urinadi.
+  const submitFullNameAndRetry = async () => {
+    if (!tuFullNameInput.trim()) {
+      setError(t("tg.eNameRequired"));
+      return;
+    }
+    setTuSavingFullName(true);
+    setError("");
+    try {
+      const res = await fetch("/api/telegram/miniapp/set-full-name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), fullName: tuFullNameInput.trim() }),
+      });
+      if (!res.ok) {
+        setError(t("tg.eOrderSend"));
+        return;
+      }
+      setTuNeedsFullName(false);
+      await createTopupOrder();
+    } catch {
+      setError(t("tg.eOrderSend"));
+    } finally {
+      setTuSavingFullName(false);
     }
   };
 
@@ -1904,7 +1941,20 @@ export default function TelegramAppPage() {
             </div>
           )}
 
-          {tuStep === 2 && (
+          {tuStep === 2 && tuNeedsFullName && (
+            <div>
+              <div className="mb-3.5">
+                <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.fullNamePrompt")}</label>
+                <input className={inputCls} placeholder={t("tg.fullNamePh")} value={tuFullNameInput} onChange={(e) => setTuFullNameInput(e.target.value)} />
+              </div>
+              {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+              <button type="button" onClick={submitFullNameAndRetry} disabled={tuSavingFullName} className={buttonCls}>
+                {tuSavingFullName ? <Loader2 size={16} className="animate-spin" /> : t("tg.submitName")}
+              </button>
+            </div>
+          )}
+
+          {tuStep === 2 && !tuNeedsFullName && (
             <div>
               <div className="mb-3.5">
                 <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.sum")}</label>
