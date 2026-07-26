@@ -485,82 +485,8 @@ function LimitsEditor() {
   );
 }
 
-function MyStatusToggle() {
-  const { t } = useLocale();
-  const [isOnline, setIsOnline] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const supabase = createClient();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { setLoading(false); return; }
-      const { data } = await supabase.from("profiles").select("is_online, display_name, full_name").eq("id", user.id).maybeSingle();
-      if (data) setIsOnline(data.is_online ?? true);
-      setLoading(false);
-    });
-  }, []);
-
-  const toggle = async () => {
-    setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSaving(false); return; }
-    const next = !isOnline;
-    const { data: profile } = await supabase.from("profiles").select("display_name, full_name").eq("id", user.id).maybeSingle();
-    const name = profile?.display_name || profile?.full_name || "Operator";
-
-    // DB'ga yozilishini TASDIQLAB, keyin UI'ni almashtiramiz — aks holda
-    // yozish jim fail bo'lса (RLS/trigger rollback) UI yolg'on "band" ko'rsatib,
-    // refreshда qaytardi. Endi xato bo'lsa UI o'zgarmaydi.
-    const { error } = await supabase.from("profiles").update({ is_online: next }).eq("id", user.id);
-    if (error) {
-      alert(t("wid.statusSaveFailed") + error.message);
-      setSaving(false);
-      return;
-    }
-    await supabase.from("team_chat_messages").insert({
-      sender_id: user.id,
-      message: next ? `🟢 ${name} ${t("wid.nowActive")}` : `🔴 ${name} ${t("wid.wentBusy")}`,
-      is_system: true,
-      event_type: "status",
-    });
-    setIsOnline(next);
-    setSaving(false);
-  };
-
-  // Yuklanayotganda HAM shu joyni band qilib turadigan skeleton — `return null`
-  // butun panelni bir lahzaga yo'qotib, ma'lumot kelgach qayta chizardi
-  // ("2 tugma yonib-o'chishi"). Endi tashqi konteyner doim bir xil o'lchamda.
-  return (
-    <div className={`mb-4 rounded-lg px-3.5 py-2.5 flex items-center justify-between gap-3 border ${
-      loading ? "bg-white/[0.03] border-subtle" : isOnline ? "bg-[#4ADE80]/10 border-[#4ADE80]/25" : "bg-[#F4C76A]/10 border-[#F4C76A]/25"
-    }`}>
-      {loading ? (
-        <div className="h-[15px] w-40 rounded bg-white/10 animate-pulse" />
-      ) : (
-        <div className="flex items-center gap-2">
-          <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-[#4ADE80]" : "bg-[#F4C76A]"}`} />
-          <span className={`text-[12px] ${isOnline ? "text-[#4ADE80]" : "text-[#F4C76A]"}`}>
-            {t("wid.workStatus")} <span className="font-semibold">{isOnline ? t("wid.active") : t("wid.busy")}</span>
-          </span>
-        </div>
-      )}
-      {loading ? (
-        <div className="shrink-0 h-[26px] w-20 rounded-lg bg-white/10 animate-pulse" />
-      ) : (
-        <button
-          onClick={toggle}
-          disabled={saving}
-          className="shrink-0 text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
-        >
-          {saving ? "…" : isOnline ? t("wid.markBusy") : t("wid.markActive")}
-        </button>
-      )}
-    </div>
-  );
-}
-
 // 4-BOSQICH: operator band holati (is_busy + sabab). is_online dan alohida.
+// (is_online holatini o'zgartirish endi sidebar'dagi ShellCard'ga ko'chirildi.)
 // Band bo'lganда — buyurtmalari SLA/cron orqali boshqa operatorga o'tishi mumkin.
 function MyBusyToggle() {
   const { t } = useLocale();
@@ -959,7 +885,6 @@ export function OrdersTab() {
   return (
     <div>
       {/* Ish holati va Telegram xabarnomasi — faqat xodimlar uchun (super admin buyurtma qayta ishlamaydi) */}
-      {!isSuperAdmin && <MyStatusToggle />}
       {!isSuperAdmin && <MyBusyToggle />}
       {!isSuperAdmin && <MyRatingBadge />}
       {!isSuperAdmin && <DebtsSection />}

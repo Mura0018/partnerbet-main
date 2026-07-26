@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Clock, Pause, Play, AlertTriangle } from "lucide-react";
+import { Clock, Pause, Play, AlertTriangle, Wifi, WifiOff } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import type { ShellData } from "@/lib/admin/useShellData";
@@ -15,6 +15,7 @@ export function ShellCard({ data, onRefresh }: { data: ShellData | null; onRefre
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0, gx: 50, gy: 30 });
   const [busyPending, setBusyPending] = useState(false);
+  const [onlinePending, setOnlinePending] = useState(false);
   const [slaLabel, setSlaLabel] = useState<string | null>(null);
   const [slaState, setSlaState] = useState<"ok" | "warn" | "bad">("ok");
 
@@ -52,6 +53,7 @@ export function ShellCard({ data, onRefresh }: { data: ShellData | null; onRefre
   const pct = limit && balance != null ? Math.max(0, Math.min(100, (balance / limit) * 100)) : null;
   const low = pct != null && pct < 25;
   const isBusy = !!me?.isBusy;
+  const isOnline = me?.isOnline ?? true;
 
   const onMove = (e: React.PointerEvent) => {
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -62,6 +64,31 @@ export function ShellCard({ data, onRefresh }: { data: ShellData | null; onRefre
     setTilt({ x: (px * 2 - 1) * 5, y: (py * 2 - 1) * 4, gx: 20 + px * 60, gy: 15 + py * 55 });
   };
   const onLeave = () => setTilt({ x: 0, y: 0, gx: 50, gy: 30 });
+
+  const toggleOnline = async () => {
+    if (onlinePending) return;
+    setOnlinePending(true);
+    try {
+      const supabase = createClient();
+      const { data: auth } = await supabase.auth.getUser();
+      if (auth.user) {
+        const next = !isOnline;
+        const { error } = await supabase.from("profiles").update({ is_online: next }).eq("id", auth.user.id);
+        if (!error) {
+          const name = me?.name || "Operator";
+          await supabase.from("team_chat_messages").insert({
+            sender_id: auth.user.id,
+            message: next ? `🟢 ${name} ${t("wid.nowActive")}` : `🔴 ${name} ${t("wid.wentBusy")}`,
+            is_system: true,
+            event_type: "status",
+          });
+          onRefresh();
+        }
+      }
+    } finally {
+      setOnlinePending(false);
+    }
+  };
 
   const toggleBusy = async () => {
     if (busyPending) return;
@@ -119,22 +146,39 @@ export function ShellCard({ data, onRefresh }: { data: ShellData | null; onRefre
                 </div>
               )}
             </div>
-            {/* band tugmasi */}
-            <button
-              onClick={toggleBusy}
-              disabled={busyPending}
-              aria-pressed={isBusy}
-              className="shrink-0 flex flex-col items-center gap-1 px-2.5 py-2 rounded-xl transition-all active:translate-y-[2px] disabled:opacity-50"
-              style={{
-                background: isBusy ? "linear-gradient(160deg,#4A3312,#2A1D08)" : "linear-gradient(160deg,#1B2B47,#101B2E)",
-                boxShadow: isBusy ? "0 4px 0 -1px #1A1204, 0 1px 0 rgba(255,255,255,.14) inset" : "0 4px 0 -1px #0A1220, 0 1px 0 rgba(255,255,255,.13) inset",
-              }}
-            >
-              {isBusy ? <Pause size={15} style={{ color: "#FFB020" }} /> : <Play size={15} style={{ color: "#96A5BD" }} />}
-              <span className="text-[8px] font-bold tracking-wide" style={{ color: isBusy ? "#FFB020" : "#5A6982" }}>
-                {isBusy ? t("shl.busy") : t("shl.free")}
-              </span>
-            </button>
+            {/* holat tugmalari: faol/band (is_online) + band sababli (is_busy) */}
+            <div className="shrink-0 flex items-center gap-1.5">
+              <button
+                onClick={toggleOnline}
+                disabled={onlinePending}
+                aria-pressed={!isOnline}
+                className="flex flex-col items-center gap-1 px-2.5 py-2 rounded-xl transition-all active:translate-y-[2px] disabled:opacity-50"
+                style={{
+                  background: isOnline ? "linear-gradient(160deg,#123018,#0A1F10)" : "linear-gradient(160deg,#4A3312,#2A1D08)",
+                  boxShadow: isOnline ? "0 4px 0 -1px #061208, 0 1px 0 rgba(255,255,255,.13) inset" : "0 4px 0 -1px #1A1204, 0 1px 0 rgba(255,255,255,.14) inset",
+                }}
+              >
+                {isOnline ? <Wifi size={15} style={{ color: "#4ADE80" }} /> : <WifiOff size={15} style={{ color: "#FFB020" }} />}
+                <span className="text-[8px] font-bold tracking-wide" style={{ color: isOnline ? "#4ADE80" : "#FFB020" }}>
+                  {isOnline ? t("wid.active") : t("wid.busy")}
+                </span>
+              </button>
+              <button
+                onClick={toggleBusy}
+                disabled={busyPending}
+                aria-pressed={isBusy}
+                className="flex flex-col items-center gap-1 px-2.5 py-2 rounded-xl transition-all active:translate-y-[2px] disabled:opacity-50"
+                style={{
+                  background: isBusy ? "linear-gradient(160deg,#4A3312,#2A1D08)" : "linear-gradient(160deg,#1B2B47,#101B2E)",
+                  boxShadow: isBusy ? "0 4px 0 -1px #1A1204, 0 1px 0 rgba(255,255,255,.14) inset" : "0 4px 0 -1px #0A1220, 0 1px 0 rgba(255,255,255,.13) inset",
+                }}
+              >
+                {isBusy ? <Pause size={15} style={{ color: "#FFB020" }} /> : <Play size={15} style={{ color: "#96A5BD" }} />}
+                <span className="text-[8px] font-bold tracking-wide" style={{ color: isBusy ? "#FFB020" : "#5A6982" }}>
+                  {isBusy ? t("shl.busy") : t("shl.free")}
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* meter */}
