@@ -242,6 +242,11 @@ export const dictionaries = {
       stPending: "Kutilmoqda", stCompleted: "Bajarildi", stRejected: "Rad etildi",
       confirmHide: "{n} ta mijoz ro'yxatdan yashiriladi. Ular bazadan o'chmaydi, keyin qaytarish mumkin. Davom etasizmi?",
       tFailed: "Bajarilmadi: ", tHidden: "{n} ta mijoz yashirildi", tRestored: "{n} ta mijoz qaytarildi", tConnErr: "Ulanishda xatolik.",
+      nameMismatchFilter: "Tasdiq kutayotganlar", nameMismatchBadge: "Ism nomuvofiq",
+      nameMismatchTitle: "Ism mos kelmadi — buyurtma bloklangan", registeredName: "Ro'yxatdagi ism", playerNameLab: "Hisob (1xbet/kassa) ismi",
+      reasonPh: "Sabab (majburiy) — masalan: mijoz bilan telefonda tasdiqlandi, pasport ko'rsatildi",
+      confirmName: "Ismni tasdiqlash", reasonRequired: "Sababni yozing.",
+      nameOverridden: "Tasdiqlangan", nameOverriddenBy: "tomonidan", tConfirmFailed: "Tasdiqlab bo'lmadi: ", tConfirmed: "Ism tasdiqlandi.",
     },
     dash: {
       title: "Dashboard", sub: "Umumiy statistika — tanlangan davr bo'yicha (real ma'lumot).",
@@ -919,6 +924,11 @@ export const dictionaries = {
       stPending: "В ожидании", stCompleted: "Выполнено", stRejected: "Отклонено",
       confirmHide: "{n} клиент(ов) будут скрыты из списка. Они не удаляются из базы, их можно вернуть. Продолжить?",
       tFailed: "Не выполнено: ", tHidden: "Скрыто клиентов: {n}", tRestored: "Возвращено клиентов: {n}", tConnErr: "Ошибка подключения.",
+      nameMismatchFilter: "Ждут подтверждения", nameMismatchBadge: "Имя не совпадает",
+      nameMismatchTitle: "Имя не совпало — заказ заблокирован", registeredName: "Имя при регистрации", playerNameLab: "Имя в аккаунте (1xbet/касса)",
+      reasonPh: "Причина (обязательно) — например: подтверждено по телефону, показан паспорт",
+      confirmName: "Подтвердить имя", reasonRequired: "Укажите причину.",
+      nameOverridden: "Подтверждено", nameOverriddenBy: "оператором", tConfirmFailed: "Не удалось подтвердить: ", tConfirmed: "Имя подтверждено.",
     },
     dash: {
       title: "Дашборд", sub: "Общая статистика — за выбранный период (реальные данные).",

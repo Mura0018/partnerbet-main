@@ -2,15 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 
-async function requireOrdersManage() {
+// customers.manage (admin/customers sahifasi) YOKI telegram_orders.manage
+// (BetCore operatori, buyurtma yaratishda bloklanishga duch keladi) —
+// ikkalasidan biri yetarli.
+async function requireAccess() {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, status: 401 };
 
-  const { data: allowed } = await supabase.rpc("has_permission", { perm_key: "telegram_orders.manage" });
-  if (!allowed) return { ok: false as const, status: 403 };
+  const [{ data: canCustomers }, { data: canOrders }] = await Promise.all([
+    supabase.rpc("has_permission", { perm_key: "customers.manage" }),
+    supabase.rpc("has_permission", { perm_key: "telegram_orders.manage" }),
+  ]);
+  if (!canCustomers && !canOrders) return { ok: false as const, status: 403 };
 
   return { ok: true as const, userId: user.id };
 }
@@ -18,7 +24,7 @@ async function requireOrdersManage() {
 // W1.4: ism mos kelmagani sababli bloklangan buyurtma urinishlari
 // ro'yxati (kutilayotgan — hali qaror qabul qilinmagan).
 export async function GET() {
-  const check = await requireOrdersManage();
+  const check = await requireAccess();
   if (!check.ok) return NextResponse.json({ error: "forbidden" }, { status: check.status });
 
   const admin = createAdminClient();
@@ -37,7 +43,7 @@ export async function GET() {
 // tomonidan, auth'dan) va sababi customers'ga qayd etiladi. Tasdiqdan
 // keyin shu mijoz uchun ism-tekshiruvi kelgusida o'tkazib yuboriladi.
 export async function POST(req: NextRequest) {
-  const check = await requireOrdersManage();
+  const check = await requireAccess();
   if (!check.ok) return NextResponse.json({ error: "forbidden" }, { status: check.status });
 
   const body = await req.json().catch(() => null);
