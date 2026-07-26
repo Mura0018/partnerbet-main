@@ -825,7 +825,15 @@ export function OrdersTab() {
 
   // Qidiruv/filtr o'zgarganda 0-sahifadan qayta yuklaymiz (customers/page.tsx
   // bilan bir xil naqsh — 300ms debounce, har tugma bosilganda emas).
+  // Birinchi mount'da BU effekt ham, pastdagi [page] effekti ham ishga
+  // tushardi (ikkalasi ham "yangi" deps bilan) — ya'ni har sahifa
+  // ochilganda/refresh qilinganda ikkita bir xil so'rov ketardi: birinchisi
+  // ro'yxatni ko'rsatardi, 300ms'dan keyin ikkinchisi `loading`ni qayta
+  // true qilib ro'yxatni "Yuklanmoqda…" matiniga almashtirardi (miltillash).
+  // didMountRef mount paytidagi ishga tushishni o'tkazib yuboradi.
+  const didMountRef = useRef(false);
   useEffect(() => {
+    if (!didMountRef.current) { didMountRef.current = true; return; }
     const tm = setTimeout(() => { setPage(0); load(0); }, 300);
     return () => clearTimeout(tm);
     // eslint-disable-next-line react-hooks/exhaustive-deps

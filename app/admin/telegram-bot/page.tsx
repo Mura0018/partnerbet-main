@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Wallet, Users as UsersIcon, MessageCircle, CreditCard, Headset, X, ClipboardList } from "lucide-react";
 import { Can } from "@/lib/auth/permissions";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -20,16 +21,31 @@ const TABS: { id: Tab; labelKey: string; icon: any; permission?: string }[] = [
 ];
 
 export default function TelegramBotAdminPage() {
+  // useSearchParams() Next.js talabi bo'yicha Suspense ichida bo'lishi kerak.
+  return (
+    <Suspense fallback={null}>
+      <TelegramBotAdminPageInner />
+    </Suspense>
+  );
+}
+
+function TelegramBotAdminPageInner() {
   const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("orders");
-  // Menyudagi "Jamoa chati" havolasi (?chat=1) — URL'dan DARHOL (birinchi
-  // render'da) o'qiladi, useEffect'da emas. Aks holda bir lahza bo'lsa ham
-  // pastdagi og'ir Orders tab'i (o'z DB so'rovlari bilan) fonda yuklanib
-  // ulguradi, keyingina chat drawer ustidan ochiladi — shu "og'ir kirish"
-  // hissiyotini beradi. Endi chatOpen bo'lsa Orders umuman render qilinmaydi.
-  const [chatOpen, setChatOpen] = useState(
-    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1"
-  );
+  const searchParams = useSearchParams();
+  const chatParam = searchParams.get("chat");
+  const [chatOpen, setChatOpen] = useState(() => chatParam === "1");
+
+  // Menyu/pastki nav/Cmd+K — barchasi shu SAHIFAGA (?chat=1 bilan) Link yoki
+  // router.push orqali o'tadi. Agar foydalanuvchi ALLAQACHON shu sahifada
+  // bo'lsa (masalan Orders'ni ko'rib turgan bo'lsa), Next.js komponentni
+  // qayta mount QILMAYDI — faqat URL o'zgaradi. useSearchParams() esa BU
+  // holatda ham reaktiv (mount shart emas), shuning uchun buni useEffect
+  // orqali kuzatamiz — aks holda tugma bosilganda hech narsa bo'lmay,
+  // faqat keyinchalik brauzer refresh qilinsa (haqiqiy remount) ishlardi.
+  useEffect(() => {
+    if (chatParam === "1") setChatOpen(true);
+  }, [chatParam]);
 
   // Chat ochilganda "ko'rildi" belgisi — sidebar'dagi yangilik nuqtasi o'chadi.
   useEffect(() => {
