@@ -271,7 +271,7 @@ export function ChatTab() {
 
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className="flex items-center gap-2 py-1.5 px-2.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
+      <div className="relative flex items-center gap-2 py-1.5 px-2.5 bg-white/[0.05] backdrop-blur-xl">
         {showSearch ? (
           <input
             autoFocus
@@ -305,16 +305,18 @@ export function ChatTab() {
         >
           <Palette size={15} />
         </button>
+        <div className="absolute left-0 right-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
       </div>
       {showThemePicker && (
-        <div className="px-3 py-2.5 bg-white/[0.03] backdrop-blur-md border-b border-subtle">
+        <div className="mx-2 mt-1.5 px-3 py-2.5 rounded-xl bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
           <ThemePicker value={myTheme} onChange={changeMyTheme} />
         </div>
       )}
 
       {/* 8-BOSQICH: pinned qoidalar — ixcham (Telegram uslubi): standart
-          holatda bitta qatorga qisqartirilgan, bosilganda to'liq ochiladi. */}
-      <div className="px-3 py-1.5 bg-white/[0.04] backdrop-blur-md border-b border-subtle">
+          holatda bitta qatorga qisqartirilgan, bosilganda to'liq ochiladi.
+          Suzuvchi dumaloq burchakli "glass" karta — qattiq chiziq emas. */}
+      <div className="mx-2 mt-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
         {editingRules ? (
           <div className="flex items-start gap-2">
             <span className="text-[11px] shrink-0">📌</span>
@@ -346,20 +348,22 @@ export function ChatTab() {
         )}
       </div>
 
-      {/* 8-BOSQICH: tur filtri + faol (smenada) operatorlar */}
-      <div className="flex items-center gap-1.5 px-3 py-1 bg-white/[0.03] backdrop-blur-md border-b border-subtle">
-        {([["all", "cht.fAll"], ["chat", "cht.fChat"], ["system", "cht.fSystem"]] as const).map(([id, labelKey]) => (
-          <button
-            key={id}
-            onClick={() => setTypeFilter(id)}
-            className={`text-[11px] px-2.5 py-1 rounded-lg ${typeFilter === id ? "bg-accent/20 text-white" : "text-muted hover:bg-white/5"}`}
-          >
-            {t(labelKey as any)}
-          </button>
-        ))}
+      {/* 8-BOSQICH: tur filtri (bitta ixcham segment-tugma) + faol operatorlar */}
+      <div className="flex items-center gap-2 mx-2 mt-1.5 mb-1 px-1 py-1 rounded-full bg-white/[0.03] backdrop-blur-xl border border-white/[0.06]">
+        <div className="flex items-center gap-0.5 flex-1">
+          {([["all", "cht.fAll"], ["chat", "cht.fChat"], ["system", "cht.fSystem"]] as const).map(([id, labelKey]) => (
+            <button
+              key={id}
+              onClick={() => setTypeFilter(id)}
+              className={`flex-1 text-[10.5px] px-2 py-1 rounded-full transition-colors ${typeFilter === id ? "bg-accent/25 text-white" : "text-muted hover:bg-white/5"}`}
+            >
+              {t(labelKey as any)}
+            </button>
+          ))}
+        </div>
         {onlineCount != null && (
-          <span className="ml-auto text-[11px] text-[#4ADE80] flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />{t("cht.online")} {onlineCount}
+          <span className="pr-2 text-[10.5px] text-[#4ADE80] flex items-center gap-1 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4ADE80]" />{onlineCount}
           </span>
         )}
       </div>
@@ -370,7 +374,12 @@ export function ChatTab() {
           nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-w-0 min-h-0"
-        style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
+        style={{
+          backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)",
+          backgroundSize: "18px 18px",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 22px, black calc(100% - 8px), transparent 100%)",
+          maskImage: "linear-gradient(to bottom, transparent 0, black 22px, black calc(100% - 8px), transparent 100%)",
+        }}
       >
         {filtered.length === 0 && (
           <p className="text-[12px] text-muted text-center mt-8">
@@ -463,7 +472,8 @@ export function ChatTab() {
         <div ref={bottomRef} />
       </div>
       {replyTo && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-md border-t border-subtle">
+        <div className="relative flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] backdrop-blur-xl">
+          <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
           <Reply size={12} className="text-accent shrink-0" />
           <div className="flex-1 min-w-0 text-[11px] text-muted truncate">
             {replyTo.message || (replyTo.image_path ? t("cht.image") : replyTo.voice_path ? t("cht.voice") : "")}
@@ -474,7 +484,8 @@ export function ChatTab() {
         </div>
       )}
       {voiceRecorder.recording ? (
-        <div className="flex items-center gap-2.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-subtle">
+        <div className="relative flex items-center gap-2.5 px-3 py-1.5 bg-white/[0.05] backdrop-blur-xl">
+          <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
           <span className="w-2 h-2 rounded-full bg-[#FF6B85] animate-pulse shrink-0" />
           <span className="text-[12px] text-white font-mono flex-1">{formatDuration(voiceRecorder.durationSeconds)}</span>
           <button onClick={voiceRecorder.cancel} className="p-1.5 rounded-lg bg-white/5 text-muted" aria-label={t("cht.cancelRec")}>
@@ -485,22 +496,23 @@ export function ChatTab() {
           </button>
         </div>
       ) : (
-      <div className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.04] backdrop-blur-md border-t border-subtle">
-        <label className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-subtle cursor-pointer hover:bg-white/10">
+      <div className="relative flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] backdrop-blur-xl">
+        <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
+        <label className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-white/[0.06] backdrop-blur-md border border-white/[0.06] cursor-pointer hover:bg-white/10">
           <Paperclip size={13} className="text-muted" />
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={sendImage} disabled={sending} />
         </label>
-        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] backdrop-blur-md border border-subtle hover:bg-white/10 disabled:opacity-50" aria-label={t("cht.voiceMsg")}>
+        <button onClick={voiceRecorder.start} disabled={sending} className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-white/[0.06] backdrop-blur-md border border-white/[0.06] hover:bg-white/10 disabled:opacity-50" aria-label={t("cht.voiceMsg")}>
           <Mic size={13} className="text-muted" />
         </button>
         <input
-          className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-subtle rounded-lg py-2 px-3 text-[12.5px] outline-none focus:border-accent"
+          className="flex-1 min-w-0 bg-white/[0.06] backdrop-blur-md border border-white/[0.06] rounded-full py-1.5 px-3.5 text-[12.5px] outline-none focus:border-accent"
           placeholder={t("cht.phMessage")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
         />
-        <button onClick={send} disabled={sending || !text.trim()} className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
+        <button onClick={send} disabled={sending || !text.trim()} className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-r from-accent to-accent-dim disabled:opacity-50">
           <Send size={13} />
         </button>
       </div>
