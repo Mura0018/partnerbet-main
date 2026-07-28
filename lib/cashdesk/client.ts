@@ -118,6 +118,8 @@ export type BalanceDiagnosis = {
   aMasked: string;
   bMasked: string;
   dt: string;
+  maskedHash: string;
+  maskedPass: string;
 };
 
 // W3.2 — diagnostika sahifasi FAQAT shu funksiyani chaqiradi (Deposit/
@@ -148,9 +150,9 @@ export async function diagnoseCashdeskBalance(
   try {
     const res = await fetch(url, { headers: { sign, login: creds.login, "Content-Type": "application/json" } });
     const rawResponse = await res.json().catch(() => null);
-    return { httpStatus: res.status, networkError: false, rawResponse, aMasked, bMasked, dt };
+    return { httpStatus: res.status, networkError: false, rawResponse, aMasked, bMasked, dt, maskedHash: maskedCreds.hash, maskedPass: maskedCreds.pass };
   } catch {
-    return { httpStatus: null, networkError: true, rawResponse: null, aMasked, bMasked, dt };
+    return { httpStatus: null, networkError: true, rawResponse: null, aMasked, bMasked, dt, maskedHash: maskedCreds.hash, maskedPass: maskedCreds.pass };
   }
 }
 

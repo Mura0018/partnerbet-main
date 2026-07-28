@@ -44,6 +44,22 @@ function credsFromRow(row: any): Creds | null {
   }
 }
 
+// W3.1: faol/faol-emasligidan qat'iy nazar (id bo'yicha) — FAQAT
+// diagnostika uchun (getCashdeskCredsById esa haqiqiy buyurtmalarda
+// ishlatiladi va ataylab faqat FAOL kassani qaytaradi). Diagnostika
+// aynan FAOL BO'LMAGAN (mijoz oqimidan chetlashtirilgan, sinov)
+// kassani ham tekshira olishi kerak.
+export async function getCashdeskCredsByIdAny(id: string): Promise<Creds | null> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("cashdesks")
+    .select("login, pass_enc, hash_enc, cashdesk_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return null;
+  return credsFromRow(data);
+}
+
 // Bitta kassaning creds'i (id bo'yicha) — imzo uchun, server tomonda.
 export async function getCashdeskCredsById(id: string): Promise<Creds | null> {
   const admin = createAdminClient();
