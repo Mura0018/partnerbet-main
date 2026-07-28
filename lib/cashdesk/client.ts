@@ -1,13 +1,22 @@
 import crypto from "crypto";
 import { getDefaultCashdeskCreds, type Creds } from "@/lib/cashdesk/store";
+import { computeSign, debugAB, type SignatureVariant } from "@/lib/cashdesk/signatureVariants";
+import { getCashdeskSignatureSettings } from "@/lib/cashdesk/signatureSettings";
+import { createAdminClient } from "@/lib/supabaseAdmin";
 
 // =========================================================
 // CashdeskBotAPI client (partners.servcul.com) — the real 1xBet-family
 // cashdesk API for balance/player lookup/deposit/payout. Every method
 // needs two independently-computed values:
-//   - "confirm": md5(`${id}:${hash}`) — goes in the URL/body
+//   - "confirm": md5(`${id}:${hash}`) — goes in the URL/body. NEVER
+//     varies by signature variant — already verified against the
+//     vendor doc's worked examples (matched 3/3), not in question.
 //   - "sign": sha256(sha256(A) + md5(B)) — goes in the `sign` header,
-//     where A/B are method-specific strings (see each function below)
+//     where A/B are method-specific field lists (see each function
+//     below). The EXACT assembly (key case / field order / separator)
+//     is driven by lib/cashdesk/signatureVariants.ts + the
+//     betcore_cashdesk_signature site_setting (W3) — variant 1 is the
+//     original/default recipe, kept unchanged as a fallback.
 // Verified against the vendor doc's worked examples: `confirm` matched
 // exactly on 3/3 examples, and step A of `sign` matched exactly (64-char
 // exact match). Step B of one worked example did not reproduce — most
@@ -31,11 +40,14 @@ function md5(input: string): string {
 function confirmFor(id: string | number, hash: string): string {
   return md5(`${id}:${hash}`);
 }
-function formatDt(date: Date): string {
+// W3.3: UTC siljishi bilan (dt qaysi vaqt mintaqasida yuborilishi —
+// birinchi gumondor, server o'z vaqtiga yaqinlikni tekshirishi mumkin).
+function formatDt(date: Date, offsetHours = 0): string {
+  const shifted = new Date(date.getTime() + offsetHours * 3600_000);
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
-    `${date.getUTCFullYear()}.${pad(date.getUTCMonth() + 1)}.${pad(date.getUTCDate())} ` +
-    `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`
+    `${shifted.getUTCFullYear()}.${pad(shifted.getUTCMonth() + 1)}.${pad(shifted.getUTCDate())} ` +
+    `${pad(shifted.getUTCHours())}:${pad(shifted.getUTCMinutes())}:${pad(shifted.getUTCSeconds())}`
   );
 }
 
@@ -48,7 +60,7 @@ async function resolveCreds(creds?: Creds): Promise<Creds | null> {
   return creds ?? (await getDefaultCashdeskCreds());
 }
 
-export type CashdeskResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type CashdeskResult<T> = { ok: true; data: T; dryRun?: boolean } | { ok: false; error: string };
 
 async function call<T>(url: string, sign: string, login: string, init?: RequestInit): Promise<CashdeskResult<T>> {
   try {
@@ -74,18 +86,74 @@ export async function isCashdeskConfigured(): Promise<boolean> {
   return (await getDefaultCashdeskCreds()) !== null;
 }
 
-export async function getCashdeskBalance(cd?: Creds): Promise<CashdeskResult<{ Balance: number | null; Limit: number | null }>> {
+// W3.2: diagnostika sahifasi FAQAT shu funksiyani chaqiradi — Balance
+// pul harakatlantirmaydi. variant/dtOffsetHours PARAMETR sifatida
+// berilishi mumkin (diagnostika turli variantlarni sinaydi); berilmasa
+// saqlangan (site_settings) sozlama ishlatiladi — bu real ishlatiladigan yo'l.
+export async function getCashdeskBalance(
+  cd?: Creds,
+  override?: { variant?: SignatureVariant; dtOffsetHours?: number }
+): Promise<CashdeskResult<{ Balance: number | null; Limit: number | null }>> {
   const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
 
-  const dt = formatDt(new Date());
-  const a = sha256(`hash=${creds.hash}&cashierpass=${creds.pass}&dt=${dt}`);
-  const b = md5(`dt=${dt}&cashierpass=${creds.pass}&cashdeskid=${creds.cashdeskId}`);
-  const sign = sha256(a + b);
+  const settings = await getCashdeskSignatureSettings();
+  const variant = override?.variant ?? settings.variant;
+  const dtOffsetHours = override?.dtOffsetHours ?? settings.dtOffsetHours;
+
+  const dt = formatDt(new Date(), dtOffsetHours);
+  const aPairs: [string, string][] = [["hash", creds.hash], ["cashierpass", creds.pass], ["dt", dt]];
+  const bPairs: [string, string][] = [["dt", dt], ["cashierpass", creds.pass], ["cashdeskid", creds.cashdeskId]];
+  const sign = computeSign(aPairs, bPairs, variant);
   const confirm = confirmFor(creds.cashdeskId, creds.hash);
 
   const url = `${BASE_URL}/Cashdesk/${creds.cashdeskId}/Balance?confirm=${confirm}&dt=${encodeURIComponent(dt)}`;
   return call(url, sign, creds.login);
+}
+
+export type BalanceDiagnosis = {
+  httpStatus: number | null;
+  networkError: boolean;
+  rawResponse: unknown;
+  aMasked: string;
+  bMasked: string;
+  dt: string;
+  maskedHash: string;
+  maskedPass: string;
+};
+
+// W3.2 — diagnostika sahifasi FAQAT shu funksiyani chaqiradi (Deposit/
+// Payout BU YERDA IMPORT QILINMAGAN — chaqirish imkoni strukturaviy
+// yo'q). `call()` xato-holatlarni semantik satrlarga aylantirib xom
+// HTTP kodni yashiradi — diagnostika uchun xom kod kerak, shuning uchun
+// alohida, mustaqil fetch. hash/cashierpass HECH QACHON qaytarilmaydi —
+// faqat oxirgi 4 belgisi bilan niqoblangan A/B qatorlari.
+export async function diagnoseCashdeskBalance(
+  creds: Creds,
+  variant: SignatureVariant,
+  dtOffsetHours: number
+): Promise<BalanceDiagnosis> {
+  const dt = formatDt(new Date(), dtOffsetHours);
+  const aPairs: [string, string][] = [["hash", creds.hash], ["cashierpass", creds.pass], ["dt", dt]];
+  const bPairs: [string, string][] = [["dt", dt], ["cashierpass", creds.pass], ["cashdeskid", creds.cashdeskId]];
+  const sign = computeSign(aPairs, bPairs, variant);
+  const confirm = confirmFor(creds.cashdeskId, creds.hash);
+  const url = `${BASE_URL}/Cashdesk/${creds.cashdeskId}/Balance?confirm=${confirm}&dt=${encodeURIComponent(dt)}`;
+
+  const maskedCreds: Creds = { ...creds, hash: maskSecret(creds.hash), pass: maskSecret(creds.pass) };
+  const { a: aMasked, b: bMasked } = debugAB(
+    [["hash", maskedCreds.hash], ["cashierpass", maskedCreds.pass], ["dt", dt]],
+    [["dt", dt], ["cashierpass", maskedCreds.pass], ["cashdeskid", creds.cashdeskId]],
+    variant
+  );
+
+  try {
+    const res = await fetch(url, { headers: { sign, login: creds.login, "Content-Type": "application/json" } });
+    const rawResponse = await res.json().catch(() => null);
+    return { httpStatus: res.status, networkError: false, rawResponse, aMasked, bMasked, dt, maskedHash: maskedCreds.hash, maskedPass: maskedCreds.pass };
+  } catch {
+    return { httpStatus: null, networkError: true, rawResponse: null, aMasked, bMasked, dt, maskedHash: maskedCreds.hash, maskedPass: maskedCreds.pass };
+  }
 }
 
 export async function findCashdeskPlayer(
@@ -95,51 +163,110 @@ export async function findCashdeskPlayer(
   const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
 
-  const a = sha256(`hash=${creds.hash}&userid=${userId}&cashdeskid=${creds.cashdeskId}`);
-  const b = md5(`userid=${userId}&cashierpass=${creds.pass}&hash=${creds.hash}`);
-  const sign = sha256(a + b);
+  const settings = await getCashdeskSignatureSettings();
+  const aPairs: [string, string][] = [["hash", creds.hash], ["userid", userId], ["cashdeskid", creds.cashdeskId]];
+  const bPairs: [string, string][] = [["userid", userId], ["cashierpass", creds.pass], ["hash", creds.hash]];
+  const sign = computeSign(aPairs, bPairs, settings.variant);
   const confirm = confirmFor(userId, creds.hash);
 
   const url = `${BASE_URL}/Users/${userId}?confirm=${confirm}&cashdeskId=${creds.cashdeskId}`;
   return call(url, sign, creds.login);
 }
 
+// W3.5: quruq rejim (dry-run) — yoqilgan bo'lsa so'rov TO'LIQ shakllanadi
+// va cashdesk_diagnostic_log'ga qayd etiladi, lekin fetch() CHAQIRILMAYDI.
+async function logDryRun(params: {
+  cashdeskId: string | null;
+  variant: SignatureVariant;
+  url: string;
+  body: unknown;
+  maskedHash: string;
+  maskedPass: string;
+}): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    await admin.from("cashdesk_diagnostic_log").insert({
+      cashdesk_id: params.cashdeskId,
+      kind: "dry_run",
+      signature_variant: params.variant,
+      dt_offset_hours: null,
+      http_status: null,
+      response: { url: params.url, body: params.body },
+      masked_hash: params.maskedHash,
+      masked_pass: params.maskedPass,
+      requested_by: null,
+    });
+  } catch {
+    /* qayd best-effort — quruq-rejimning o'zini bloklamaydi */
+  }
+}
+
+function maskSecret(s: string): string {
+  return s.length <= 4 ? "****" : `****${s.slice(-4)}`;
+}
+
 export async function cashdeskDeposit(
   userId: string,
   summa: number,
-  cd?: Creds
+  cd?: Creds,
+  cashdeskRowId?: string
 ): Promise<CashdeskResult<{ summa: number; success: boolean; messageId: number | null; message: string | null }>> {
   const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
 
-  const a = sha256(`hash=${creds.hash}&lng=${LNG}&UserId=${userId}`);
-  const b = md5(`summa=${summa}&cashierpass=${creds.pass}&cashdeskid=${creds.cashdeskId}`);
-  const sign = sha256(a + b);
+  const settings = await getCashdeskSignatureSettings();
+  const aPairs: [string, string][] = [["hash", creds.hash], ["lng", LNG], ["UserId", userId]];
+  const bPairs: [string, string][] = [["summa", String(summa)], ["cashierpass", creds.pass], ["cashdeskid", creds.cashdeskId]];
+  const sign = computeSign(aPairs, bPairs, settings.variant);
   const confirm = confirmFor(userId, creds.hash);
 
   const url = `${BASE_URL}/Deposit/${userId}/Add`;
-  return call(url, sign, creds.login, {
-    method: "POST",
-    body: JSON.stringify({ cashdeskId: Number(creds.cashdeskId), lng: LNG, summa, confirm }),
-  });
+  const body = { cashdeskId: Number(creds.cashdeskId), lng: LNG, summa, confirm };
+
+  if (settings.dryRun) {
+    await logDryRun({
+      cashdeskId: cashdeskRowId ?? null,
+      variant: settings.variant,
+      url,
+      body,
+      maskedHash: maskSecret(creds.hash),
+      maskedPass: maskSecret(creds.pass),
+    });
+    return { ok: true, dryRun: true, data: { summa, success: true, messageId: null, message: "DRY_RUN — so'rov jo'natilmadi" } };
+  }
+
+  return call(url, sign, creds.login, { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function cashdeskPayout(
   userId: string,
   code: string,
-  cd?: Creds
+  cd?: Creds,
+  cashdeskRowId?: string
 ): Promise<CashdeskResult<{ summa: number; success: boolean; messageId: number | null; message: string | null }>> {
   const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
 
-  const a = sha256(`hash=${creds.hash}&lng=${LNG}&UserId=${userId}`);
-  const b = md5(`code=${code}&cashierpass=${creds.pass}&cashdeskid=${creds.cashdeskId}`);
-  const sign = sha256(a + b);
+  const settings = await getCashdeskSignatureSettings();
+  const aPairs: [string, string][] = [["hash", creds.hash], ["lng", LNG], ["UserId", userId]];
+  const bPairs: [string, string][] = [["code", code], ["cashierpass", creds.pass], ["cashdeskid", creds.cashdeskId]];
+  const sign = computeSign(aPairs, bPairs, settings.variant);
   const confirm = confirmFor(userId, creds.hash);
 
   const url = `${BASE_URL}/Deposit/${userId}/Payout`;
-  return call(url, sign, creds.login, {
-    method: "POST",
-    body: JSON.stringify({ cashdeskId: Number(creds.cashdeskId), lng: LNG, code, confirm }),
-  });
+  const body = { cashdeskId: Number(creds.cashdeskId), lng: LNG, code, confirm };
+
+  if (settings.dryRun) {
+    await logDryRun({
+      cashdeskId: cashdeskRowId ?? null,
+      variant: settings.variant,
+      url,
+      body,
+      maskedHash: maskSecret(creds.hash),
+      maskedPass: maskSecret(creds.pass),
+    });
+    return { ok: true, dryRun: true, data: { summa: 0, success: true, messageId: null, message: "DRY_RUN — so'rov jo'natilmadi" } };
+  }
+
+  return call(url, sign, creds.login, { method: "POST", body: JSON.stringify(body) });
 }
