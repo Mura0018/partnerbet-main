@@ -5,7 +5,7 @@ import { getTimezone, startOfDayInTimezone } from "@/lib/site/timezone";
 
 const PAGE_SIZE = 100;
 const ORDER_COLUMNS =
-  "id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, payout_done, handoff_open, sla_deadline, created_at, customers(phone, full_name)";
+  "id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, payout_done, payout_status, payout_attempts, handoff_open, sla_deadline, created_at, customers(phone, full_name)";
 
 // Buyurtmalar ro'yxati — qidiruv/filtr server tomonda (#16). Ilgari
 // OrdersTab.tsx .limit(200) bilan olib, qidiruv/operator/bugun/olinmagan

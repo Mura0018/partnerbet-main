@@ -35,6 +35,8 @@ type Order = {
   player_name: string | null;
   auto_processed: boolean;
   payout_done: boolean;
+  payout_status: "none" | "pending" | "success" | "failed";
+  payout_attempts: number;
   handoff_open: boolean;
   sla_deadline: string | null;
   created_at: string;
@@ -192,12 +194,51 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
   const [apiError, setApiError] = useState("");
   const { t } = useLocale();
 
+  // W2.6: withdraw uchun ikki bosqichli payout — "[1] 1xbetdan yechib
+  // olish" muvaffaqiyatli bo'lgach ("payoutState"), "[2] Mijozga pul
+  // yuborish" (mavjud "Bajarildi"/completed) ochiladi. payoutState
+  // order.payout_status'dan boshlanadi, muvaffaqiyatli chaqiruvdan
+  // keyin modal yopilmasdan lokal yangilanadi.
+  const [payoutState, setPayoutState] = useState(order.payout_status);
+  const [payoutBusy, setPayoutBusy] = useState(false);
+  const [payoutError, setPayoutError] = useState("");
+  const [manualMode, setManualMode] = useState(false);
+
   const CASHDESK_ERROR_LABELS: Record<string, string> = {
     not_configured: t("ord.cd_not_configured"),
     network_error: t("ord.cd_network"),
     request_failed: t("ord.cd_request"),
     signature_error_401: t("ord.cd_sign401"),
     signature_error_403: t("ord.cd_sign403"),
+  };
+
+  const triggerPayout = async (manual = false) => {
+    setPayoutError("");
+    setPayoutBusy(true);
+    try {
+      const res = await fetch("/api/admin/telegram-orders/payout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, manual: manual || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (data.error === "not_configured") { setManualMode(true); return; }
+        if (data.error === "already_in_progress") { setPayoutError(t("ord.payoutInProgress")); return; }
+        if (data.error === "payout_blocked") { setPayoutError(t("ord.payoutBlocked")); return; }
+        if (data.error === "code_invalid") { setPayoutError(t("ord.payoutCodeInvalid")); setPayoutState("none"); return; }
+        if (data.payoutStatus === "pending") { setPayoutError(t("ord.payoutCheckStatus")); setPayoutState("pending"); return; }
+        if (data.payoutStatus === "failed") { setPayoutError(CASHDESK_ERROR_LABELS[data.error] ?? data.error ?? t("ord.genericError")); setPayoutState("failed"); return; }
+        setPayoutError(t("ord.genericError"));
+        return;
+      }
+      setPayoutState("success");
+      setManualMode(false);
+    } catch {
+      setPayoutError(t("ord.genericError"));
+    } finally {
+      setPayoutBusy(false);
+    }
   };
 
   const resolve = async (status: "completed" | "rejected") => {
@@ -242,9 +283,9 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         </div>
         <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} {t("ord.sum")}</div>
 
-        {order.type === "withdraw" && order.payout_done && (
+        {order.type === "withdraw" && payoutState === "success" && (
           <div className="rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/30 text-[#4ADE80] text-[12px] px-3 py-2.5 mb-4">
-            {t("ord.payoutDone")}
+            {t("ord.payoutSuccess")}
           </div>
         )}
 
@@ -303,7 +344,13 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
             <div className="flex items-center gap-2">
               <UserCheck size={15} className="text-accent shrink-0" />
               <span className="text-[13px]">
-                {t("ord.recipient")}: <span className="font-semibold">{order.recipient_name || "—"}</span>
+                {/* W2.6: rekvizit (qabul qiluvchi) faqat [1] "1xbetdan yechib
+                    olish" muvaffaqiyatli bo'lgandan keyin ko'rinadi. */}
+                {payoutState === "success" ? (
+                  <>{t("ord.recipient")}: <span className="font-semibold">{order.recipient_name || "—"}</span></>
+                ) : (
+                  <span className="text-muted">{t("ord.recipient")}: ●●●●●●●</span>
+                )}
               </span>
             </div>
           )}
@@ -316,7 +363,9 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
           <Row label={t("ord.accountId")} value={order.account_id} />
           <Row label={t("ord.method")} value={order.payment_method} />
           {order.withdraw_code && <Row label={t("ord.withdrawCode")} value={order.withdraw_code} highlight />}
-          {order.payout_details && <Row label={t("ord.recipientNum")} value={order.payout_details} highlight />}
+          {order.payout_details && (order.type !== "withdraw" || payoutState === "success") && (
+            <Row label={t("ord.recipientNum")} value={order.payout_details} highlight />
+          )}
         </div>
 
         {/* 5-BOSQICH: telefon tasdiqi — pending va hal qilingan buyurtmalar uchun ham (dalil) */}
@@ -324,6 +373,32 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
 
         {order.status === "pending" ? (
         <>
+        {/* W2.6: withdraw uchun ikki ketma-ket tugma — [2] faqat [1]
+            muvaffaqiyatli bo'lgandan keyin ochiladi. */}
+        {order.type === "withdraw" && (
+          <div className="mb-3">
+            {payoutError && (
+              <div className="rounded-lg bg-[#FF6B85]/10 border border-[#FF6B85]/30 text-[#FF6B85] text-[12px] px-3 py-2.5 mb-2.5">
+                {payoutError}
+              </div>
+            )}
+            {manualMode ? (
+              <div className="rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/30 text-[#F4C76A] text-[12px] px-3 py-2.5 mb-2.5">
+                {t("ord.manualPrompt")}
+              </div>
+            ) : null}
+            <button
+              onClick={() => triggerPayout(manualMode)}
+              disabled={payoutBusy || payoutState === "success" || payoutState === "pending"}
+              className={`w-full py-2.5 rounded-lg font-semibold text-[13px] disabled:opacity-50 flex items-center justify-center gap-1.5 ${
+                payoutState === "success" ? "bg-[#4ADE80]/15 border border-[#4ADE80]/40 text-[#4ADE80]" : "bg-white/10 border border-subtle text-white"
+              }`}
+            >
+              {payoutBusy ? <Loader2 size={14} className="animate-spin" /> : payoutState === "success" ? <CheckCircle2 size={14} /> : null}
+              {payoutState === "success" ? t("ord.payoutSuccess") : manualMode ? t("ord.manualConfirmBtn") : t("ord.payoutBtn1")}
+            </button>
+          </div>
+        )}
         <div className="flex gap-1.5 mb-2 overflow-x-auto min-w-0">
           {REJECT_REASON_KEYS.map((tpl, i) => (
             <button
@@ -359,10 +434,11 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
           </button>
           <button
             onClick={() => resolve("completed")}
-            disabled={submitting !== null}
+            disabled={submitting !== null || (order.type === "withdraw" && payoutState !== "success")}
+            title={order.type === "withdraw" && payoutState !== "success" ? t("ord.payoutBtn1") : undefined}
             className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50"
           >
-            {submitting === "completed" ? <Loader2 size={14} className="animate-spin mx-auto" /> : t("ord.done")}
+            {submitting === "completed" ? <Loader2 size={14} className="animate-spin mx-auto" /> : order.type === "withdraw" ? t("ord.payoutBtn2") : t("ord.done")}
           </button>
         </div>
         </>
