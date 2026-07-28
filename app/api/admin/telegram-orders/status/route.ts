@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { sendTelegramMessage, buildOrderResolvedMessage } from "@/lib/telegram/notify";
-import { cashdeskDeposit, cashdeskPayout, isCashdeskConfigured } from "@/lib/cashdesk/client";
+import { cashdeskDeposit, isCashdeskConfigured } from "@/lib/cashdesk/client";
 import { getCashdeskCredsById, type Creds } from "@/lib/cashdesk/store";
 import { enforceDebtLimit } from "@/lib/cashdesk/debt";
 import { applyRating } from "@/lib/cashdesk/oversight";
@@ -62,16 +62,16 @@ export async function POST(req: NextRequest) {
   let orderCreds: Creds | undefined = undefined;
   let orderCashdeskId: string | null = null;
   let handoffFrom: string | null = null; // 6-BOSQICH: takeover bo'lган bo'lsa asl owner
-  let payoutDone = false; // WITHDRAW A-OQIMI: Payout mijoz kодида bajarilганmi
+  let payoutStatus = "none"; // W2: withdraw uchun payout holat-mashinasi
   try {
     const { data: cdRow } = await admin
       .from("telegram_orders")
-      .select("cashdesk_id, handoff_from_operator_id, payout_done")
+      .select("cashdesk_id, handoff_from_operator_id, payout_status")
       .eq("id", orderId)
       .maybeSingle();
     orderCashdeskId = (cdRow as any)?.cashdesk_id ?? null;
     handoffFrom = (cdRow as any)?.handoff_from_operator_id ?? null;
-    payoutDone = !!(cdRow as any)?.payout_done;
+    payoutStatus = (cdRow as any)?.payout_status ?? "none";
     if (orderCashdeskId) {
       const c = await getCashdeskCredsById(orderCashdeskId);
       if (c) orderCreds = c;
@@ -80,23 +80,31 @@ export async function POST(req: NextRequest) {
     /* default kassa / ustun yo'q */
   }
 
+  // W2.2/W2.6: withdraw uchun "Mijozga pul yuborish" (shu endpoint,
+  // status=completed) "1xbetdan yechib olish" (alohida
+  // /api/admin/telegram-orders/payout endpointi) MUVAFFAQIYATLI
+  // bo'lmaguncha OCHILMAYDI. Mijoz ham, operator ham cashdeskPayout'ni
+  // endi shu yerdan HECH QACHON chaqira olmaydi (faqat o'sha alohida
+  // endpoint chaqiradi).
+  if (status === "completed" && pendingOrder.type === "withdraw" && payoutStatus !== "success") {
+    return NextResponse.json({ error: "payout_not_done", payoutStatus }, { status: 400 });
+  }
+
   if (status === "completed" && (await isCashdeskConfigured())) {
-    if (pendingOrder.type === "withdraw" && payoutDone) {
-      // WITHDRAW A-OQIMI: 1xbet Payout mijoz kодида ALLAQACHON bajarilган —
-      // QAYTA chaqirмаймиз (ikki marta pul chiqmasin). Operator faqat
-      // mijozга to'lovни tasdiqлади.
+    if (pendingOrder.type === "withdraw") {
+      // payoutStatus === "success" ekani yuqorida allaqachon tekshirildi —
+      // pul ALLAQACHON /api/admin/telegram-orders/payout orqali ketgan,
+      // shuning uchun cashdeskPayout bu yerda QAYTA CHAQIRILMAYDI (ikki
+      // marta pul chiqmasin). Operator faqat mijozga to'lovni tasdiqladi.
       operatorNote = operatorNote
-        ? `${operatorNote} (1xbetдан yechilган — kod orqali)`
-        : "1xbetдан yechilган (kod orqali), operator to'lovни tasdiqлади";
+        ? `${operatorNote} ("1xbetdan yechib olish" tugmasi orqali bajarilgan)`
+        : "1xbetdan yechilgan, operator to'lovni tasdiqladi";
     } else {
-      // Topup (Deposit) yoki eski withdraw oqimi (Payout hozir chaqiriladi).
-      const result =
-        pendingOrder.type === "topup"
-          ? await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds)
-          : await cashdeskPayout(pendingOrder.account_id, pendingOrder.withdraw_code ?? "", orderCreds);
+      // Topup (Deposit) — o'zgarishsiz, "Tasdiqlash" bosilganda shu yerda bajariladi.
+      const result = await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds);
 
       if (!result.ok) {
-        // Pul harakати muvaffaqiyatsiz bo'lса buyurtмани completed qilмаймиз.
+        // Pul harakati muvaffaqiyatsiz bo'lsa buyurtmani completed qilmaymiz.
         return NextResponse.json({ error: "cashdesk_failed", detail: result.error }, { status: 502 });
       }
       autoProcessed = true;
