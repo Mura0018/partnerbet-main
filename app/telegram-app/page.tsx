@@ -38,6 +38,10 @@ type Order = {
   operator_name?: string | null;
   // MoneyRail 3-bekat — order_confirmations'da haqiqiy tasdiq bormi.
   payment_confirmed?: boolean;
+  // W2.4: withdraw payout holati — 'none' + payout_attempts>0 bo'lsa,
+  // avvalgi kod muvaffaqiyatsiz bo'lgan (mijozdan yangisi kutilmoqda).
+  payout_status?: "none" | "pending" | "success" | "failed";
+  payout_attempts?: number;
 };
 
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
@@ -386,6 +390,63 @@ function PaymentMethodPicker({ value, onChange }: { value: PaymentMethod; onChan
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// W2.4: kod 1xbet'da kiritilgandan operator "1xbetdan yechib olish"ni
+// bosgunga qadar eskirishi mumkin. Payout shu sabab bilan muvaffaqiyatsiz
+// bo'lsa (payout_status 'none'ga qaytadi), mijozdan yangi kod so'raladi —
+// buyurtma bekor qilinmaydi, faqat kodni yangilaydi.
+function WithdrawCodeRefresh({
+  orderId,
+  getInitData,
+  onSubmitted,
+  inputCls,
+  buttonCls,
+}: {
+  orderId: string;
+  getInitData: () => string;
+  onSubmitted: () => void;
+  inputCls: string;
+  buttonCls: string;
+}) {
+  const { t } = useLocale();
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    setError("");
+    if (!code.trim()) { setError(t("wz.eCode")); return; }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/withdraw/refresh-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), orderId, code: code.trim() }),
+      });
+      if (!res.ok) {
+        setError(t("wz.eGeneric"));
+        return;
+      }
+      setCode("");
+      onSubmitted();
+    } catch {
+      setError(t("wz.eGeneric"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-2.5 rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 p-3">
+      <p className="text-[11.5px] text-[#F4C76A] mb-2">{t("tg.codeExpired")}</p>
+      <input className={`${inputCls} mb-2`} placeholder={t("wz.codePh")} value={code} onChange={(e) => setCode(e.target.value)} />
+      <button onClick={submit} disabled={busy} className={buttonCls}>
+        {busy ? <Loader2 size={15} className="animate-spin" /> : t("tg.submitCode")}
+      </button>
+      {error && <p className="text-[11px] text-[#FF6B85] mt-1.5">{error}</p>}
     </div>
   );
 }
@@ -2077,6 +2138,12 @@ export default function TelegramAppPage() {
                   <MoneyRail order={o} />
 
                   {o.operator_note && <div className="text-[11px] text-[#93a5ba] mt-2.5 italic">{o.operator_note}</div>}
+
+                  {/* W2.4: kod eskirib payout muvaffaqiyatsiz bo'lgan bo'lsa — yangi kod so'raladi. */}
+                  {o.type === "withdraw" && o.status === "pending" && o.payout_status === "none" && (o.payout_attempts ?? 0) > 0 && (
+                    <WithdrawCodeRefresh orderId={o.id} getInitData={getInitData} onSubmitted={refreshOrders} inputCls={inputCls} buttonCls={buttonCls} />
+                  )}
+
                   <div className="text-[10px] text-[#5b7089] mt-2">{new Date(o.created_at).toLocaleString()}</div>
                   <button
                     onClick={() => openSupport(o.id)}

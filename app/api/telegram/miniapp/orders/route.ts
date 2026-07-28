@@ -274,7 +274,7 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: orders } = await supabase
     .from("telegram_orders")
-    .select("id, type, platform, account_id, amount, payment_method, status, operator_note, created_at, operator_id, claimed_by")
+    .select("id, type, platform, account_id, amount, payment_method, status, operator_note, created_at, operator_id, claimed_by, payout_status, payout_attempts")
     .eq("customer_id", customer.id)
     .order("created_at", { ascending: false })
     .limit(50);
