@@ -51,29 +51,43 @@ export async function POST(req: NextRequest) {
   const customerId = (order as any).customer_id as string;
   const playerId = String((order as any).account_id);
 
-  // W2 QO'SHIMCHA: abuse-himoya — mijoz yoki shu player_id bloklangan bo'lsa
-  // (ketma-ket muvaffaqiyatsiz urinishlar tufayli) yangi urinishga ruxsat yo'q.
-  // Faqat HAQIQIY API yo'lida tekshiriladi — qo'lda (manual) rejim operator
-  // tomonidan ko'z bilan tasdiqlangani uchun bundan mustasno.
-  if (!manual) {
-    const blockCheck = await checkPayoutBlocked(customerId, playerId);
-    if (blockCheck.blocked) {
-      return NextResponse.json({ error: "payout_blocked", reason: blockCheck.reason, until: blockCheck.until }, { status: 403 });
-    }
+  let creds: Creds | undefined = undefined;
+  if ((order as any).cashdesk_id) {
+    const c = await getCashdeskCredsById((order as any).cashdesk_id);
+    if (c) creds = c;
+  }
+  const configured = creds ? true : await isCashdeskConfigured();
+
+  // W2 QO'SHIMCHA: blok holatini HAR DOIM tekshiramiz (qizil ogohlantirish
+  // uchun) — lekin faqat HAQIQIY avtomatik yo'lda (manual EMAS) qat'iy
+  // to'sib qo'yamiz. Qo'lda rejim operator ko'z bilan tasdiqlagani uchun
+  // bloklanmaydi, faqat ogohlantirish bilan birga ko'rsatiladi.
+  const blockCheck = await checkPayoutBlocked(customerId, playerId);
+  const blockedInfo = blockCheck.blocked ? { reason: blockCheck.reason, until: blockCheck.until } : undefined;
+
+  // Bu ikkalasi ORDER'ga hech qanday o'zgarish kiritmasdan (lock olinmasdan)
+  // rad etiladi — operator qo'lda rejim mavjudligini har doim bila oladi.
+  if (!manual && !configured) {
+    return NextResponse.json({ error: "not_configured", blocked: blockedInfo }, { status: 400 });
+  }
+  if (!manual && blockCheck.blocked) {
+    return NextResponse.json({ error: "payout_blocked", reason: blockCheck.reason, until: blockCheck.until }, { status: 403 });
+  }
+  if (manual && configured) {
+    return NextResponse.json({ error: "manual_not_allowed_configured" }, { status: 400 });
   }
 
   // ATOMIK: faqat 'none' holatida bo'lsa 'pending'ga o'tkazamiz + urinish
   // sanog'ini oshiramiz — IKKALASI HAM bitta UPDATE ichida, xuddi shu
   // WHERE payout_status='none' bilan qo'riqlanadi. Qator yangilanmasa —
   // boshqa kimdir ALLAQACHON bosgan (yoki hali noaniq holatda kutilmoqda)
-  // — TO'XTA (attempts ham bu holatda oshmaydi, chunki update umuman
-  // tatbiq etilmaydi).
-  const { data: currentRow } = await admin.from("telegram_orders").select("payout_attempts").eq("id", orderId).maybeSingle();
-  const nextAttempts = ((currentRow as any)?.payout_attempts ?? 0) + 1;
+  // — TO'XTA.
+  const { data: currentRow } = await admin.from("telegram_orders").select("payout_attempt_count").eq("id", orderId).maybeSingle();
+  const nextAttempts = ((currentRow as any)?.payout_attempt_count ?? 0) + 1;
 
   const { data: locked } = await admin
     .from("telegram_orders")
-    .update({ payout_status: "pending", payout_attempts: nextAttempts })
+    .update({ payout_status: "pending", payout_attempt_count: nextAttempts })
     .eq("id", orderId)
     .eq("payout_status", "none")
     .select("id");
@@ -82,23 +96,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "already_in_progress" }, { status: 409 });
   }
 
-  // Qo'lda rejim (W2.5): kalitlar hali yo'q bo'lganda operator MobCash
-  // ilovasida qo'lda yechadi va shu yerda "1xbetdan yechib oldim" deb
-  // belgilaydi. Faqat HAQIQATAN kalitlar yo'q bo'lganda qabul qilinadi —
-  // aks holda avtomatik yo'l bor ekan, uni chetlab o'tish TAQIQ.
-  let creds: Creds | undefined = undefined;
-  if ((order as any).cashdesk_id) {
-    const c = await getCashdeskCredsById((order as any).cashdesk_id);
-    if (c) creds = c;
-  }
-  const configured = creds ? true : await isCashdeskConfigured();
-
   if (manual) {
-    if (configured) {
-      // Kalitlar bor ekan — qo'lda rejimni chetlab o'tishga yo'l qo'ymaymiz.
-      await admin.from("telegram_orders").update({ payout_status: "none" }).eq("id", orderId);
-      return NextResponse.json({ error: "manual_not_allowed_configured" }, { status: 400 });
-    }
+    // Qo'lda rejim (W2.5): kalitlar hali yo'q — operator MobCash ilovasida
+    // qo'lda yechadi va shu yerda "1xbetdan yechib oldim" deb belgilaydi.
     const nowIso = new Date().toISOString();
     await admin
       .from("telegram_orders")
@@ -108,14 +108,10 @@ export async function POST(req: NextRequest) {
         payout_response: { manual: true, confirmed_by: check.userId },
       })
       .eq("id", orderId);
+    // W2 qo'shimcha: manual:true bo'lsa ham urinish qayd etiladi (bloklash
+    // hisobiga ta'sir qiladi — mavjud blok bo'lsa tozalanadi, yo'q bo'lsa hisobga qo'shilmaydi).
     await recordPayoutAttempt({ customerId, playerId, ok: true, error: null, ip: getClientIp(req.headers) });
-    return NextResponse.json({ ok: true, payoutStatus: "success", manual: true });
-  }
-
-  if (!configured) {
-    // Avtomatik yo'l yo'q — operatorga qo'lda rejimni tanlashi kerakligini bildiramiz.
-    await admin.from("telegram_orders").update({ payout_status: "none" }).eq("id", orderId);
-    return NextResponse.json({ error: "not_configured" }, { status: 400 });
+    return NextResponse.json({ ok: true, payoutStatus: "success", manual: true, blocked: blockedInfo });
   }
 
   const outcome = await withTimeout(cashdeskPayout((order as any).account_id, (order as any).withdraw_code ?? "", creds), PAYOUT_TIMEOUT_MS);

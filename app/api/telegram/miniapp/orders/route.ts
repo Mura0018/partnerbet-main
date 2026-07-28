@@ -272,12 +272,26 @@ export async function GET(req: NextRequest) {
   const customer = cc.customer;
 
   const supabase = createAdminClient();
-  const { data: orders } = await supabase
+  const BASE_COLUMNS = "id, type, platform, account_id, amount, payment_method, status, operator_note, created_at, operator_id, claimed_by";
+  let orders: any[] | null;
+  let ordersError: any;
+  ({ data: orders, error: ordersError } = await supabase
     .from("telegram_orders")
-    .select("id, type, platform, account_id, amount, payment_method, status, operator_note, created_at, operator_id, claimed_by, payout_status, payout_attempts")
+    .select(`${BASE_COLUMNS}, payout_status, payout_attempt_count`)
     .eq("customer_id", customer.id)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(50));
+  if (ordersError) {
+    // payout_status/payout_attempt_count ustunlari hali yo'q (migratsiya
+    // 0092 qo'yilmagan) — eski qisqa ustun ro'yxati bilan qayta so'raymiz,
+    // aks holda mijozning butun buyurtma tarixi BO'SH ko'rinib qolardi.
+    ({ data: orders } = await supabase
+      .from("telegram_orders")
+      .select(BASE_COLUMNS)
+      .eq("customer_id", customer.id)
+      .order("created_at", { ascending: false })
+      .limit(50));
+  }
 
   // F2b: kartaning orqa tomonida "qaysi operator" ko'rsatish uchun operator
   // ismini qo'shamiz (operator_id, aks holda claimed_by bo'yicha).
@@ -307,7 +321,13 @@ export async function GET(req: NextRequest) {
   const withNames = (orders ?? []).map((o: any) => {
     const opId = o.operator_id ?? o.claimed_by;
     const { operator_id, claimed_by, ...rest } = o;
-    return { ...rest, operator_name: opId ? nameById.get(opId) ?? null : null, payment_confirmed: confirmedIds.has(o.id) };
+    return {
+      ...rest,
+      payout_status: o.payout_status ?? "none",
+      payout_attempt_count: o.payout_attempt_count ?? 0,
+      operator_name: opId ? nameById.get(opId) ?? null : null,
+      payment_confirmed: confirmedIds.has(o.id),
+    };
   });
 
   return NextResponse.json({ orders: withNames });

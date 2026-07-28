@@ -4,8 +4,13 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getTimezone, startOfDayInTimezone } from "@/lib/site/timezone";
 
 const PAGE_SIZE = 100;
-const ORDER_COLUMNS =
-  "id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, payout_done, payout_status, payout_attempts, handoff_open, sla_deadline, created_at, customers(phone, full_name)";
+const BASE_ORDER_COLUMNS =
+  "id, type, platform, account_id, amount, payment_method, withdraw_code, payout_details, recipient_name, receipt_path, status, operator_note, operator_id, claimed_by, payment_operator_id, received_account_number, received_holder_name, player_name, auto_processed, payout_done, handoff_open, sla_deadline, created_at, customers(phone, full_name)";
+// W2: payout_status/payout_attempt_count — migratsiya (0092) hali
+// qo'yilmagan bo'lishi mumkin. Shu ikkalasi bilan so'rov xato bersa,
+// pastda BASE_ORDER_COLUMNS (bularsiz) bilan qayta uriniladi — aks holda
+// butun ro'yxat (barcha buyurtma turlari) BO'SH ko'rinib qolardi.
+const ORDER_COLUMNS = `${BASE_ORDER_COLUMNS}, payout_status, payout_attempt_count`;
 
 // Buyurtmalar ro'yxati — qidiruv/filtr server tomonda (#16). Ilgari
 // OrdersTab.tsx .limit(200) bilan olib, qidiruv/operator/bugun/olinmagan
@@ -28,29 +33,10 @@ export async function GET(req: NextRequest) {
   const search = (sp.get("search") ?? "").trim().replace(/[,()*%]/g, "").slice(0, 60);
 
   const admin = createAdminClient();
-  let q = admin.from("telegram_orders").select(ORDER_COLUMNS, { count: "exact" });
 
-  if (status !== "all") q = q.eq("status", status);
-
-  if (onlyToday) {
-    // Server UTC'da ishlaydi — "bugun" ni site_settings.timezone bo'yicha
-    // hisoblaymiz (bu route ilgari OrdersTab.tsx'da brauzer-tomon edi).
-    const todayStart = startOfDayInTimezone(new Date(), await getTimezone());
-    q = q.gte("created_at", todayStart.toISOString());
-  }
-
-  if (onlyUnclaimed) {
-    q = q.eq("status", "pending").is("claimed_by", null);
-  }
-
-  if (operatorId !== "all") {
-    // "Egasi" ustuni statusga qarab boshqacha: pending -> claimed_by,
-    // aks holda -> operator_id (mavjud client-tomon mantiq bilan bir xil).
-    if (status === "pending") q = q.eq("claimed_by", operatorId);
-    else if (status !== "all") q = q.eq("operator_id", operatorId);
-    else q = q.or(`and(status.eq.pending,claimed_by.eq.${operatorId}),and(status.neq.pending,operator_id.eq.${operatorId})`);
-  }
-
+  // search filtri uchun mijoz ID'lari — ustunlar ro'yxatidan mustaqil,
+  // shuning uchun bir marta hisoblanadi (ikkala urinishda ham qayta ishlatiladi).
+  let searchOrParts: string[] | null = null;
   if (search) {
     const { data: matchedCustomers } = await admin
       .from("customers")
@@ -60,11 +46,41 @@ export async function GET(req: NextRequest) {
     const matchedIds = (matchedCustomers ?? []).map((c: any) => c.id);
     const orParts = [`account_id.ilike.%${search}%`, `platform.ilike.%${search}%`, `player_name.ilike.%${search}%`];
     if (matchedIds.length) orParts.push(`customer_id.in.(${matchedIds.join(",")})`);
-    q = q.or(orParts.join(","));
+    searchOrParts = orParts;
   }
 
-  q = q.order("created_at", { ascending: false }).range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
-  const { data, count } = await q;
+  const runQuery = (columns: string) => {
+    let q = admin.from("telegram_orders").select(columns, { count: "exact" });
+    if (status !== "all") q = q.eq("status", status);
+    if (onlyUnclaimed) q = q.eq("status", "pending").is("claimed_by", null);
+    if (operatorId !== "all") {
+      // "Egasi" ustuni statusga qarab boshqacha: pending -> claimed_by,
+      // aks holda -> operator_id (mavjud client-tomon mantiq bilan bir xil).
+      if (status === "pending") q = q.eq("claimed_by", operatorId);
+      else if (status !== "all") q = q.eq("operator_id", operatorId);
+      else q = q.or(`and(status.eq.pending,claimed_by.eq.${operatorId}),and(status.neq.pending,operator_id.eq.${operatorId})`);
+    }
+    if (searchOrParts) q = q.or(searchOrParts.join(","));
+    return q.order("created_at", { ascending: false }).range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+  };
 
-  return NextResponse.json({ orders: data ?? [], total: count ?? 0, page, pageSize: PAGE_SIZE });
+  // onlyToday — "bugun" hisoblash uchun avval timezone kerak, shuning
+  // uchun runQuery chaqirilishidan oldin uni ham qo'shib qo'yamiz.
+  const todayStart = onlyToday ? startOfDayInTimezone(new Date(), await getTimezone()) : null;
+  const withToday = (q: ReturnType<typeof runQuery>) => (todayStart ? q.gte("created_at", todayStart.toISOString()) : q);
+
+  let { data, count, error } = await withToday(runQuery(ORDER_COLUMNS));
+  if (error) {
+    // payout_status/payout_attempt_count ustunlari hali yo'q (migratsiya
+    // 0092 qo'yilmagan) — eski qisqa ustun ro'yxati bilan qayta so'raymiz.
+    ({ data, count, error } = await withToday(runQuery(BASE_ORDER_COLUMNS)));
+  }
+
+  const orders = (data ?? []).map((o: any) => ({
+    ...o,
+    payout_status: o.payout_status ?? "none",
+    payout_attempt_count: o.payout_attempt_count ?? 0,
+  }));
+
+  return NextResponse.json({ orders, total: count ?? 0, page, pageSize: PAGE_SIZE });
 }

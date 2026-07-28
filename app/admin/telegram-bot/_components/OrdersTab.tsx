@@ -36,7 +36,7 @@ type Order = {
   auto_processed: boolean;
   payout_done: boolean;
   payout_status: "none" | "pending" | "success" | "failed";
-  payout_attempts: number;
+  payout_attempt_count: number;
   handoff_open: boolean;
   sla_deadline: string | null;
   created_at: string;
@@ -188,7 +188,7 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
   );
 }
 
-function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order; operatorNames: Record<string, string>; onClose: () => void; onDone: () => void }) {
+function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClose, onDone }: { order: Order; operatorNames: Record<string, string>; isSuperAdmin: boolean; currentUserId: string | null; onClose: () => void; onDone: () => void }) {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState<"completed" | "rejected" | null>(null);
   const [apiError, setApiError] = useState("");
@@ -203,6 +203,56 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
   const [payoutBusy, setPayoutBusy] = useState(false);
   const [payoutError, setPayoutError] = useState("");
   const [manualMode, setManualMode] = useState(false);
+  // W2 qo'shimcha: mijoz/hisob avtomatik urinishlarda bloklangan bo'lsa —
+  // qizil ogohlantirish (manual rejimda ham, chunki bu faqat KO'RSATISH,
+  // qo'lda tasdiqlashni to'smaydi).
+  const [blockedWarning, setBlockedWarning] = useState<{ reason?: string; until?: string } | null>(null);
+
+  // W2: rekvizit endi mas'ul operatorga (yoki super_adminga) DOIM ko'rinadi
+  // — payout_status'ga bog'liq emas. Boshqa operator (mas'ul bo'lmagan)
+  // uchun niqoblangan qoladi.
+  const isResponsible = isSuperAdmin || (!!currentUserId && order.claimed_by === currentUserId);
+
+  // W2: rekvizit OCHILGANDA (mas'ul operator ko'rganda) requisite_reveals'ga
+  // qayd etiladi — topup bilan bir xil "har ko'rsatish qayd etiladi" naqshi.
+  useEffect(() => {
+    if (order.type === "withdraw" && isResponsible && order.payout_details) {
+      fetch("/api/admin/telegram-orders/reveal-requisite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id }),
+      }).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order.id, isResponsible]);
+
+  // W2 qo'shimcha (super_admin, pending-stuck): "Payout holatini qo'lda hal qilish".
+  const [stuckOutcome, setStuckOutcome] = useState<"success" | "failed" | null>(null);
+  const [stuckReason, setStuckReason] = useState("");
+  const [stuckBusy, setStuckBusy] = useState(false);
+  const [stuckError, setStuckError] = useState("");
+
+  const resolveStuckPayout = async () => {
+    if (!stuckOutcome || !stuckReason.trim()) { setStuckError(t("ord.reasonRequired")); return; }
+    setStuckBusy(true);
+    setStuckError("");
+    try {
+      const res = await fetch("/api/admin/telegram-orders/payout-resolve-stuck", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, outcome: stuckOutcome, reason: stuckReason.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setStuckError(data.error ?? t("ord.genericError")); return; }
+      setPayoutState(data.payoutStatus);
+      setStuckOutcome(null);
+      setStuckReason("");
+    } catch {
+      setStuckError(t("ord.genericError"));
+    } finally {
+      setStuckBusy(false);
+    }
+  };
 
   const CASHDESK_ERROR_LABELS: Record<string, string> = {
     not_configured: t("ord.cd_not_configured"),
@@ -222,10 +272,11 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
         body: JSON.stringify({ orderId: order.id, manual: manual || undefined }),
       });
       const data = await res.json().catch(() => ({}));
+      if (data.blocked) setBlockedWarning(data.blocked);
       if (!res.ok) {
         if (data.error === "not_configured") { setManualMode(true); return; }
         if (data.error === "already_in_progress") { setPayoutError(t("ord.payoutInProgress")); return; }
-        if (data.error === "payout_blocked") { setPayoutError(t("ord.payoutBlocked")); return; }
+        if (data.error === "payout_blocked") { setPayoutError(t("ord.payoutBlocked")); setBlockedWarning({ reason: data.reason, until: data.until }); return; }
         if (data.error === "code_invalid") { setPayoutError(t("ord.payoutCodeInvalid")); setPayoutState("none"); return; }
         if (data.payoutStatus === "pending") { setPayoutError(t("ord.payoutCheckStatus")); setPayoutState("pending"); return; }
         if (data.payoutStatus === "failed") { setPayoutError(CASHDESK_ERROR_LABELS[data.error] ?? data.error ?? t("ord.genericError")); setPayoutState("failed"); return; }
@@ -344,9 +395,10 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
             <div className="flex items-center gap-2">
               <UserCheck size={15} className="text-accent shrink-0" />
               <span className="text-[13px]">
-                {/* W2.6: rekvizit (qabul qiluvchi) faqat [1] "1xbetdan yechib
-                    olish" muvaffaqiyatli bo'lgandan keyin ko'rinadi. */}
-                {payoutState === "success" ? (
+                {/* W2 qo'shimcha: rekvizit mas'ul operatorga (yoki
+                    super_adminga) DOIM ko'rinadi — payout_status'ga bog'liq
+                    emas. Boshqa operator uchun niqoblangan. */}
+                {isResponsible ? (
                   <>{t("ord.recipient")}: <span className="font-semibold">{order.recipient_name || "—"}</span></>
                 ) : (
                   <span className="text-muted">{t("ord.recipient")}: ●●●●●●●</span>
@@ -363,7 +415,7 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
           <Row label={t("ord.accountId")} value={order.account_id} />
           <Row label={t("ord.method")} value={order.payment_method} />
           {order.withdraw_code && <Row label={t("ord.withdrawCode")} value={order.withdraw_code} highlight />}
-          {order.payout_details && (order.type !== "withdraw" || payoutState === "success") && (
+          {order.payout_details && (order.type !== "withdraw" || isResponsible) && (
             <Row label={t("ord.recipientNum")} value={order.payout_details} highlight />
           )}
         </div>
@@ -377,6 +429,13 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
             muvaffaqiyatli bo'lgandan keyin ochiladi. */}
         {order.type === "withdraw" && (
           <div className="mb-3">
+            {/* W2 qo'shimcha: bloklangan mijoz/hisob — qizil ogohlantirish,
+                manual rejimda ham (bu faqat ko'rsatish, to'smaydi). */}
+            {blockedWarning && (
+              <div className="rounded-lg bg-[#FF6B85]/15 border border-[#FF6B85]/40 text-[#FF6B85] text-[12px] px-3 py-2.5 mb-2.5 font-semibold">
+                ⚠️ {t("ord.payoutBlocked")} {blockedWarning.reason ? `(${blockedWarning.reason})` : ""}
+              </div>
+            )}
             {payoutError && (
               <div className="rounded-lg bg-[#FF6B85]/10 border border-[#FF6B85]/30 text-[#FF6B85] text-[12px] px-3 py-2.5 mb-2.5">
                 {payoutError}
@@ -397,6 +456,51 @@ function ResolveModal({ order, operatorNames, onClose, onDone }: { order: Order;
               {payoutBusy ? <Loader2 size={14} className="animate-spin" /> : payoutState === "success" ? <CheckCircle2 size={14} /> : null}
               {payoutState === "success" ? t("ord.payoutSuccess") : manualMode ? t("ord.manualConfirmBtn") : t("ord.payoutBtn1")}
             </button>
+
+            {/* W2 qo'shimcha: "osilib qolgan" (timeout) payout — FAQAT
+                super_admin, 1xbet/kassa balansini QO'LDA tekshirgandan keyin. */}
+            {payoutState === "pending" && isSuperAdmin && (
+              <div className="mt-2.5 rounded-lg bg-white/[0.04] border border-subtle p-3">
+                <div className="flex items-center gap-1.5 text-[11.5px] text-[#F4C76A] mb-2 font-semibold">
+                  <AlertCircle size={13} className="shrink-0" /> {t("ord.stuckWarning")}
+                </div>
+                <div className="flex gap-1.5 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setStuckOutcome("success")}
+                    className={`flex-1 py-1.5 rounded-lg text-[12px] font-semibold border ${stuckOutcome === "success" ? "bg-[#4ADE80]/20 border-[#4ADE80]/50 text-[#4ADE80]" : "bg-white/5 border-subtle text-muted"}`}
+                  >
+                    {t("ord.stuckSuccess")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStuckOutcome("failed")}
+                    className={`flex-1 py-1.5 rounded-lg text-[12px] font-semibold border ${stuckOutcome === "failed" ? "bg-[#FF6B85]/20 border-[#FF6B85]/50 text-[#FF6B85]" : "bg-white/5 border-subtle text-muted"}`}
+                  >
+                    {t("ord.stuckFailed")}
+                  </button>
+                </div>
+                {stuckOutcome && (
+                  <>
+                    <textarea
+                      rows={2}
+                      value={stuckReason}
+                      onChange={(e) => setStuckReason(e.target.value)}
+                      placeholder={t("ord.stuckReasonPh")}
+                      className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[12px] outline-none focus:border-accent mb-2"
+                    />
+                    {stuckError && <p className="text-[11px] text-[#FF6B85] mb-2">{stuckError}</p>}
+                    <button
+                      onClick={resolveStuckPayout}
+                      disabled={stuckBusy || !stuckReason.trim()}
+                      className="w-full py-2 rounded-lg bg-white/10 border border-subtle text-white font-semibold text-[12px] disabled:opacity-50"
+                    >
+                      {stuckBusy ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("ord.stuckConfirm")}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
         <div className="flex gap-1.5 mb-2 overflow-x-auto min-w-0">
@@ -1107,6 +1211,8 @@ export function OrdersTab() {
         <ResolveModal
           order={selected}
           operatorNames={operatorNames}
+          isSuperAdmin={isSuperAdmin}
+          currentUserId={profile?.id ?? null}
           onClose={() => setSelected(null)}
           onDone={() => { setSelected(null); load(); }}
         />

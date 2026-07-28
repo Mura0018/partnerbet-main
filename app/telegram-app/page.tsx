@@ -38,10 +38,10 @@ type Order = {
   operator_name?: string | null;
   // MoneyRail 3-bekat — order_confirmations'da haqiqiy tasdiq bormi.
   payment_confirmed?: boolean;
-  // W2.4: withdraw payout holati — 'none' + payout_attempts>0 bo'lsa,
+  // W2.4: withdraw payout holati — 'none' + payout_attempt_count>0 bo'lsa,
   // avvalgi kod muvaffaqiyatsiz bo'lgan (mijozdan yangisi kutilmoqda).
   payout_status?: "none" | "pending" | "success" | "failed";
-  payout_attempts?: number;
+  payout_attempt_count?: number;
 };
 
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
@@ -2140,7 +2140,7 @@ export default function TelegramAppPage() {
                   {o.operator_note && <div className="text-[11px] text-[#93a5ba] mt-2.5 italic">{o.operator_note}</div>}
 
                   {/* W2.4: kod eskirib payout muvaffaqiyatsiz bo'lgan bo'lsa — yangi kod so'raladi. */}
-                  {o.type === "withdraw" && o.status === "pending" && o.payout_status === "none" && (o.payout_attempts ?? 0) > 0 && (
+                  {o.type === "withdraw" && o.status === "pending" && o.payout_status === "none" && (o.payout_attempt_count ?? 0) > 0 && (
                     <WithdrawCodeRefresh orderId={o.id} getInitData={getInitData} onSubmitted={refreshOrders} inputCls={inputCls} buttonCls={buttonCls} />
                   )}
 
