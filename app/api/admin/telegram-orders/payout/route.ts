@@ -114,7 +114,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, payoutStatus: "success", manual: true, blocked: blockedInfo });
   }
 
-  const outcome = await withTimeout(cashdeskPayout((order as any).account_id, (order as any).withdraw_code ?? "", creds), PAYOUT_TIMEOUT_MS);
+  const outcome = await withTimeout(
+    cashdeskPayout((order as any).account_id, (order as any).withdraw_code ?? "", creds, (order as any).cashdesk_id ?? undefined),
+    PAYOUT_TIMEOUT_MS
+  );
   const nowIso = new Date().toISOString();
 
   // 1) JAVOB KELMADI (timeout) — 'pending'da QOLDIRAMIZ, avtomatik qayta
@@ -125,6 +128,15 @@ export async function POST(req: NextRequest) {
   }
 
   const result = outcome;
+
+  // W3.5: QURUQ REJIM yoqiq — real pul KO'CHMAGAN. Buyurtmani
+  // 'success'ga o'tkazmaymiz (aks holda mijoz haqiqatda to'lanmagan
+  // holda "pul yuborish" bosqichiga o'tib qolardi) — qulfni bo'shatib,
+  // aniq xabar bilan qaytaramiz.
+  if (result.ok && (result as any).dryRun) {
+    await admin.from("telegram_orders").update({ payout_status: "none", payout_response: { dryRun: true } }).eq("id", orderId);
+    return NextResponse.json({ ok: false, payoutStatus: "none", error: "dry_run_active" }, { status: 409 });
+  }
 
   if (result.ok) {
     await admin

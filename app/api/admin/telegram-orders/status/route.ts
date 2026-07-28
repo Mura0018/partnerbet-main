@@ -101,11 +101,17 @@ export async function POST(req: NextRequest) {
         : "1xbetdan yechilgan, operator to'lovni tasdiqladi";
     } else {
       // Topup (Deposit) — o'zgarishsiz, "Tasdiqlash" bosilganda shu yerda bajariladi.
-      const result = await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds);
+      const result = await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds, orderCashdeskId ?? undefined);
 
       if (!result.ok) {
         // Pul harakati muvaffaqiyatsiz bo'lsa buyurtmani completed qilmaymiz.
         return NextResponse.json({ error: "cashdesk_failed", detail: result.error }, { status: 502 });
+      }
+      // W3.5: QURUQ REJIM yoqiq — real pul KO'CHMAGAN, shuning uchun
+      // buyurtma HAQIQATAN "completed" deb belgilanmasin (aks holda
+      // mijoz to'lov olmagan holda "bajarildi" ko'rinardi).
+      if ((result as any).dryRun) {
+        return NextResponse.json({ error: "dry_run_active", detail: "cashdesk_dry_run yoqiq — real Deposit chaqirilmadi" }, { status: 409 });
       }
       autoProcessed = true;
       operatorNote = operatorNote
