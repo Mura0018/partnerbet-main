@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { getDefaultCashdeskCreds, type Creds } from "@/lib/cashdesk/store";
-import { computeSign, type SignatureVariant } from "@/lib/cashdesk/signatureVariants";
+import { computeSign, debugAB, type SignatureVariant } from "@/lib/cashdesk/signatureVariants";
 import { getCashdeskSignatureSettings } from "@/lib/cashdesk/signatureSettings";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 
@@ -109,6 +109,49 @@ export async function getCashdeskBalance(
 
   const url = `${BASE_URL}/Cashdesk/${creds.cashdeskId}/Balance?confirm=${confirm}&dt=${encodeURIComponent(dt)}`;
   return call(url, sign, creds.login);
+}
+
+export type BalanceDiagnosis = {
+  httpStatus: number | null;
+  networkError: boolean;
+  rawResponse: unknown;
+  aMasked: string;
+  bMasked: string;
+  dt: string;
+};
+
+// W3.2 — diagnostika sahifasi FAQAT shu funksiyani chaqiradi (Deposit/
+// Payout BU YERDA IMPORT QILINMAGAN — chaqirish imkoni strukturaviy
+// yo'q). `call()` xato-holatlarni semantik satrlarga aylantirib xom
+// HTTP kodni yashiradi — diagnostika uchun xom kod kerak, shuning uchun
+// alohida, mustaqil fetch. hash/cashierpass HECH QACHON qaytarilmaydi —
+// faqat oxirgi 4 belgisi bilan niqoblangan A/B qatorlari.
+export async function diagnoseCashdeskBalance(
+  creds: Creds,
+  variant: SignatureVariant,
+  dtOffsetHours: number
+): Promise<BalanceDiagnosis> {
+  const dt = formatDt(new Date(), dtOffsetHours);
+  const aPairs: [string, string][] = [["hash", creds.hash], ["cashierpass", creds.pass], ["dt", dt]];
+  const bPairs: [string, string][] = [["dt", dt], ["cashierpass", creds.pass], ["cashdeskid", creds.cashdeskId]];
+  const sign = computeSign(aPairs, bPairs, variant);
+  const confirm = confirmFor(creds.cashdeskId, creds.hash);
+  const url = `${BASE_URL}/Cashdesk/${creds.cashdeskId}/Balance?confirm=${confirm}&dt=${encodeURIComponent(dt)}`;
+
+  const maskedCreds: Creds = { ...creds, hash: maskSecret(creds.hash), pass: maskSecret(creds.pass) };
+  const { a: aMasked, b: bMasked } = debugAB(
+    [["hash", maskedCreds.hash], ["cashierpass", maskedCreds.pass], ["dt", dt]],
+    [["dt", dt], ["cashierpass", maskedCreds.pass], ["cashdeskid", creds.cashdeskId]],
+    variant
+  );
+
+  try {
+    const res = await fetch(url, { headers: { sign, login: creds.login, "Content-Type": "application/json" } });
+    const rawResponse = await res.json().catch(() => null);
+    return { httpStatus: res.status, networkError: false, rawResponse, aMasked, bMasked, dt };
+  } catch {
+    return { httpStatus: null, networkError: true, rawResponse: null, aMasked, bMasked, dt };
+  }
 }
 
 export async function findCashdeskPlayer(
