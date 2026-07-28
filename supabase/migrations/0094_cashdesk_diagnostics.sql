@@ -31,6 +31,7 @@ create table if not exists cashdesk_diagnostic_log (
 create index if not exists idx_cashdesk_diagnostic_log_created on cashdesk_diagnostic_log(created_at desc);
 
 alter table cashdesk_diagnostic_log enable row level security;
+drop policy if exists "cashdesk_diagnostic_log read" on cashdesk_diagnostic_log;
 create policy "cashdesk_diagnostic_log read" on cashdesk_diagnostic_log
   for select using (has_permission('cashdesks.manage'));
 -- YOZISH faqat server (service role) — client-side insert/update/delete
