@@ -66,6 +66,12 @@ export async function POST(req: NextRequest) {
   if (type === "withdraw" && (!recipientName || String(recipientName).trim().length === 0)) {
     return NextResponse.json({ error: "invalid_recipient_name" }, { status: 400 });
   }
+  // W2.1: rekvizitsiz withdraw buyurtmasi YARATILMAYDI — mijoz "pulni
+  // qayerga olaman" javobini endi PAYOUTDAN OLDIN beradi (rekvizit
+  // buyurtma bilan birga keladi, keyingi alohida "details" qadami yo'q).
+  if (type === "withdraw" && (!payoutDetails || String(payoutDetails).trim().length === 0)) {
+    return NextResponse.json({ error: "invalid_payout_details" }, { status: 400 });
+  }
 
   // If the cashdesk API is configured, verify the account_id is a real
   // player before creating the order — this is what catches a mistyped
