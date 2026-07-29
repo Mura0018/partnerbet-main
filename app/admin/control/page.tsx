@@ -162,10 +162,10 @@ export default function ControlCenter() {
           <SaveBtn k="cashdesk_alert" value={{ level2: num(alert.level2, 3), level3: num(alert.level3, 5), window_hours: num(alert.window_hours, 24) }} />
         </Card>
 
-        {/* JAMOA CHATI (xodim tarafi) */}
+        {/* JAMOA CHATI (xodim tarafi) — tahrirlash ChatTab.tsx'da (operators.oversight huquqi bilan) */}
         <Card icon={<MessageSquare size={16} />} title={t("ctl.chatRules")} side={t("ctl.chatRulesSide")}>
-          <textarea rows={4} className={inp} value={rules.text ?? ""} onChange={(e) => patch("team_chat_rules", { text: e.target.value })} />
-          <div className="mt-3"><SaveBtn k="team_chat_rules" value={{ text: String(rules.text ?? "") }} /></div>
+          <p className="text-[12px] text-white/70 whitespace-pre-wrap min-h-[4rem]">{rules.text || t("ctl.chatRulesEmpty")}</p>
+          <div className="mt-3"><Link href="/admin/telegram-bot?chat=1" className="text-[12px] text-accent hover:underline">{t("ctl.goToChat")}</Link></div>
         </Card>
 
         {/* SOVRINLI KARTA / BONUS (mijoz tarafi) — to'liq forma admin/promo'da, bu yerda faqat holat */}
