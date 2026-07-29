@@ -35,7 +35,6 @@ type Order = {
   received_holder_name: string | null;
   player_name: string | null;
   auto_processed: boolean;
-  payout_done: boolean;
   payout_status: "none" | "pending" | "success" | "failed";
   payout_attempt_count: number;
   handoff_open: boolean;
