@@ -11,6 +11,7 @@ import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { toast } from "@/lib/ui/toast";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -73,6 +74,7 @@ export function ChatTab() {
   const nearBottomRef = useRef(true);
   const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase
@@ -209,10 +211,11 @@ export function ChatTab() {
     setSending(false);
   };
 
-  const removeMessage = async (id: string) => {
-    if (!confirm(t("cht.confirmDelete"))) return;
-    await supabase.from("team_chat_messages").delete().eq("id", id);
-    await load();
+  const removeMessage = (id: string) => {
+    confirm(t("cht.confirmDelete"), async () => {
+      await supabase.from("team_chat_messages").delete().eq("id", id);
+      await load();
+    });
   };
 
   const messageById = (id: string | null) => (id ? messages.find((m) => m.id === id) ?? null : null);
@@ -518,6 +521,7 @@ export function ChatTab() {
         </button>
       </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

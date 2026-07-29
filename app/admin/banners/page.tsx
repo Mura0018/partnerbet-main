@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { isValidHttpUrl } from "@/lib/validation/url";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Banner = {
   id: string;
@@ -51,6 +52,7 @@ export default function BannersManager() {
   const [filterStatus, setFilterStatus] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ data: bannersData }, { data: partnersData }] = await Promise.all([
@@ -122,10 +124,11 @@ export default function BannersManager() {
     await supabase.from("advertisements").update({ is_active: !b.is_active }).eq("id", b.id);
     load();
   };
-  const remove = async (id: string) => {
-    if (!confirm(t("bnr.confirmDel"))) return;
-    await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("bnr.confirmDel"), async () => {
+      await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const partnerName = (id: string | null) => partners.find((p) => p.id === id)?.name;
@@ -162,12 +165,13 @@ export default function BannersManager() {
     setSelectedIds(new Set());
     load();
   };
-  const bulkDelete = async () => {
+  const bulkDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`${selectedIds.size} ta banner o'chirilsinmi?`)) return;
-    await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).in("id", Array.from(selectedIds));
-    setSelectedIds(new Set());
-    load();
+    confirm(`${selectedIds.size} ta banner o'chirilsinmi?`, async () => {
+      await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).in("id", Array.from(selectedIds));
+      setSelectedIds(new Set());
+      load();
+    });
   };
   const clone = async (b: Banner) => {
     const { id, views, clicks, ...rest } = b;
@@ -397,6 +401,7 @@ export default function BannersManager() {
           </div>
         )}
       </div>
+      {confirmDialog}
     </div>
   );
 }

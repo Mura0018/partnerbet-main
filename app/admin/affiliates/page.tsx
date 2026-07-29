@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { isValidHttpUrl, isValidDeepLink } from "@/lib/validation/url";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Partner = {
   id: string;
@@ -80,6 +81,7 @@ export default function AffiliatesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -104,10 +106,11 @@ export default function AffiliatesPage() {
     await supabase.from("affiliate_partners").update({ is_featured: !p.is_featured }).eq("id", p.id);
     load();
   };
-  const remove = async (id: string) => {
-    if (!confirm(t("aff.confirmDel"))) return;
-    await supabase.from("affiliate_partners").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("aff.confirmDel"), async () => {
+      await supabase.from("affiliate_partners").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -177,6 +180,7 @@ export default function AffiliatesPage() {
           onSaved={() => { setShowModal(false); load(); }}
         />
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { RichTextEditor } from "@/lib/editor/RichTextEditor";
 import { usePermission } from "@/lib/auth/permissions";
 import { PromptModal } from "@/lib/ui/PromptModal";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Post = {
   id: string;
@@ -64,6 +65,7 @@ export default function BlogManager() {
   const [tagPromptOpen, setTagPromptOpen] = useState(false);
   const canManageTaxonomy = usePermission("taxonomy.manage");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ data: postsData }, { data: categoriesData }, { data: tagsData }, { data: postTagsData }] = await Promise.all([
@@ -168,10 +170,11 @@ export default function BlogManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("post.confirmDelPost"))) return;
-    await supabase.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("post.confirmDelPost"), async () => {
+      await supabase.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const categoryName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? "—";
@@ -327,6 +330,7 @@ export default function BlogManager() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

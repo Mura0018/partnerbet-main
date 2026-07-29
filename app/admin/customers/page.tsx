@@ -5,6 +5,7 @@ import { Users, Search, X, Loader2, ChevronLeft, ChevronRight, Gift, EyeOff, Eye
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Row = { id: string; full_name: string | null; phone: string; created_at: string; partnerName: string | null; orderCount: number; nameMismatchPending: boolean };
 type Partner = { id: string; name: string };
@@ -43,6 +44,7 @@ export default function CustomersManager() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const [showHidden, setShowHidden] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
   const [nameMismatchFilter, setNameMismatchFilter] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -113,19 +115,22 @@ export default function CustomersManager() {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const toggleAll = () => setSelectedIds(() => (allSelected ? new Set<string>() : new Set(rows.map((r) => r.id))));
 
-  const applyHide = async (hidden: boolean) => {
+  const applyHide = (hidden: boolean) => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
-    if (hidden && !confirm(t("cus.confirmHide", { n: ids.length }))) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/admin/customers/hide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids, hidden }) });
-      const data = await res.json();
-      if (!res.ok) { toast.error(t("cus.tFailed") + (data.error ?? "")); return; }
-      toast.success(hidden ? t("cus.tHidden", { n: data.updated }) : t("cus.tRestored", { n: data.updated }));
-      load(page);
-    } catch { toast.error(t("cus.tConnErr")); }
-    finally { setBusy(false); }
+    const run = async () => {
+      setBusy(true);
+      try {
+        const res = await fetch("/api/admin/customers/hide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids, hidden }) });
+        const data = await res.json();
+        if (!res.ok) { toast.error(t("cus.tFailed") + (data.error ?? "")); return; }
+        toast.success(hidden ? t("cus.tHidden", { n: data.updated }) : t("cus.tRestored", { n: data.updated }));
+        load(page);
+      } catch { toast.error(t("cus.tConnErr")); }
+      finally { setBusy(false); }
+    };
+    if (hidden) confirm(t("cus.confirmHide", { n: ids.length }), run);
+    else run();
   };
 
   const lastPage = Math.max(0, Math.ceil(total / pageSize) - 1);
@@ -336,6 +341,7 @@ export default function CustomersManager() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Tag = { id: string; name: string; slug: string };
 
@@ -18,6 +19,7 @@ export default function TagsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase.from("tags").select("*").order("name");
@@ -45,10 +47,11 @@ export default function TagsPage() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("cnt.tagConfirmDel"))) return;
-    await supabase.from("tags").delete().eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("cnt.tagConfirmDel"), async () => {
+      await supabase.from("tags").delete().eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -75,6 +78,7 @@ export default function TagsPage() {
         ))}
         {tags.length === 0 && <p className="text-[12px] text-[#5b6f85]">{t("cnt.tagEmpty")}</p>}
       </div>
+      {confirmDialog}
     </div>
   );
 }

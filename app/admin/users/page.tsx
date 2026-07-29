@@ -9,6 +9,7 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
 import { toast } from "@/lib/ui/toast";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Role = { id: string; key: string; name: string };
 type UserRow = {
@@ -168,6 +169,7 @@ export default function UsersManager() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -203,15 +205,16 @@ export default function UsersManager() {
     load();
   };
 
-  const deleteUser = async (user: UserRow) => {
-    if (!confirm(t("usr.confirmDelete", { name: user.full_name || t("usr.thisUser") }))) return;
-    const res = await fetch("/api/admin/users/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
+  const deleteUser = (user: UserRow) => {
+    confirm(t("usr.confirmDelete", { name: user.full_name || t("usr.thisUser") }), async () => {
+      const res = await fetch("/api/admin/users/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (res.ok) load();
+      else toast.error(t("usr.eDelete"));
     });
-    if (res.ok) load();
-    else toast.error(t("usr.eDelete"));
   };
 
   return (
@@ -296,6 +299,7 @@ export default function UsersManager() {
       </div>
 
       {showCreate && <CreateUserModal roles={roles} onClose={() => setShowCreate(false)} onCreated={load} />}
+      {confirmDialog}
     </div>
   );
 }

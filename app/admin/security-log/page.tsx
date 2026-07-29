@@ -3,6 +3,7 @@
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useEffect, useState } from "react";
 import { Loader2, Ban, Unlock } from "lucide-react";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type SecurityEvent = {
   id: string;
@@ -31,6 +32,7 @@ export default function SecurityLogPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "high" | "medium">("all");
   const [actingIp, setActingIp] = useState<string | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const res = await fetch("/api/admin/security-log");
@@ -46,19 +48,20 @@ export default function SecurityLogPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const blockIp = async (ip: string) => {
-    if (!confirm(`${ip} manzilini bloklashni tasdiqlaysizmi? Bu manzildan hech kim tizimga kira olmaydi.`)) return;
-    setActingIp(ip);
-    try {
-      await fetch("/api/admin/security-log/block-ip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ip, action: "block", reason: t("sec.blockReason") }),
-      });
-      await load();
-    } finally {
-      setActingIp(null);
-    }
+  const blockIp = (ip: string) => {
+    confirm(`${ip} manzilini bloklashni tasdiqlaysizmi? Bu manzildan hech kim tizimga kira olmaydi.`, async () => {
+      setActingIp(ip);
+      try {
+        await fetch("/api/admin/security-log/block-ip", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ip, action: "block", reason: t("sec.blockReason") }),
+        });
+        await load();
+      } finally {
+        setActingIp(null);
+      }
+    });
   };
 
   const unblockIp = async (ip: string) => {
@@ -185,6 +188,7 @@ export default function SecurityLogPage() {
           )}
         </>
       )}
+      {confirmDialog}
     </div>
   );
 }

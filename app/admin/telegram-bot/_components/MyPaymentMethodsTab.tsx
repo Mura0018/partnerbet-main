@@ -11,6 +11,7 @@ import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type OperatorPaymentMethod = {
   id: string;
@@ -41,6 +42,7 @@ export function MyPaymentMethodsTab() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -116,12 +118,13 @@ export function MyPaymentMethodsTab() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("pay.confirmDelete"))) return;
-    setError(null);
-    const { error } = await supabase.from("telegram_operator_payment_methods").delete().eq("id", id);
-    if (error) { setError(t("pay.eDelete")); return; }
-    load();
+  const remove = (id: string) => {
+    confirm(t("pay.confirmDelete"), async () => {
+      setError(null);
+      const { error } = await supabase.from("telegram_operator_payment_methods").delete().eq("id", id);
+      if (error) { setError(t("pay.eDelete")); return; }
+      load();
+    });
   };
 
   if (loading) return <p className="text-[13px] text-muted">{t("pay.loading")}</p>;
@@ -223,6 +226,7 @@ export function MyPaymentMethodsTab() {
           <CreditCard size={15} /> {t("pay.addNew")}
         </button>
       )}
+      {confirmDialog}
     </div>
   );
 }

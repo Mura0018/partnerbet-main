@@ -5,6 +5,7 @@ import { Upload, Trash2, Copy, Check, Search, Loader2, ImageIcon } from "lucide-
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type MediaItem = {
   id: string;
@@ -33,6 +34,7 @@ export default function MediaLibraryPage() {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase
@@ -81,10 +83,11 @@ export default function MediaLibraryPage() {
     }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("med.confirmDelete"))) return;
-    await supabase.from("media").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("med.confirmDelete"), async () => {
+      await supabase.from("media").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const filtered = items.filter((i) => i.file_name.toLowerCase().includes(search.toLowerCase()));
@@ -158,6 +161,7 @@ export default function MediaLibraryPage() {
           ))}
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

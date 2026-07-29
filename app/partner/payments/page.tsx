@@ -5,6 +5,7 @@ import { CreditCard, Plus, Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 const KINDS: { key: string; label: string }[] = [
   { key: "click", label: "Click" },
@@ -24,6 +25,7 @@ export default function PartnerPaymentsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ kind: "click", number: "", holder: "" });
   const [saving, setSaving] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   const loadMethods = async (pid: string) => {
     const { data, error } = await supabase.from("partner_payment_methods").select("id, kind, number, holder, is_active").eq("partner_id", pid).order("created_at");
@@ -60,11 +62,12 @@ export default function PartnerPaymentsPage() {
     loadMethods(partnerId);
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
-    const { error } = await supabase.from("partner_payment_methods").delete().eq("id", id);
-    if (error) toast.error("O'chirilmadi: " + error.message);
-    else { toast.success("O'chirildi"); if (partnerId) loadMethods(partnerId); }
+  const remove = (id: string) => {
+    confirm("O'chirishni tasdiqlaysizmi?", async () => {
+      const { error } = await supabase.from("partner_payment_methods").delete().eq("id", id);
+      if (error) toast.error("O'chirilmadi: " + error.message);
+      else { toast.success("O'chirildi"); if (partnerId) loadMethods(partnerId); }
+    });
   };
 
   if (loading) return <div className="p-6 text-[13px] text-muted">Yuklanmoqda...</div>;
@@ -115,6 +118,7 @@ export default function PartnerPaymentsPage() {
           )}
         </>
       )}
+      {confirmDialog}
     </div>
   );
 }

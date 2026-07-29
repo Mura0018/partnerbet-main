@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { RichTextEditor } from "@/lib/editor/RichTextEditor";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type NewsItem = {
   id: string;
@@ -54,6 +55,7 @@ export default function FootballNewsManager() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ data: itemsData }, { data: categoriesData }] = await Promise.all([
@@ -117,10 +119,11 @@ export default function FootballNewsManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("post.confirmDelNews"))) return;
-    await supabase.from("football_news").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("post.confirmDelNews"), async () => {
+      await supabase.from("football_news").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const categoryName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? "—";
@@ -239,6 +242,7 @@ export default function FootballNewsManager() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

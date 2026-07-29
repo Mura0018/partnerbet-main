@@ -11,6 +11,7 @@ import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { toast } from "@/lib/ui/toast";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type SupportThread = {
   customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string;
@@ -89,6 +90,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   const firstScrollRef = useRef(true);
   const voiceRecorder = useVoiceRecorder();
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const loadThread = async () => {
     const { data } = await supabase
@@ -165,14 +167,15 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
     }
   };
 
-  const deleteMessage = async (id: string) => {
-    if (!confirm(t("sup.confirmDeleteMsg"))) return;
-    await fetch("/api/admin/telegram-orders/support-delete-message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messageId: id }),
+  const deleteMessage = (id: string) => {
+    confirm(t("sup.confirmDeleteMsg"), async () => {
+      await fetch("/api/admin/telegram-orders/support-delete-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId: id }),
+      });
+      await loadThread();
     });
-    await loadThread();
   };
 
   const messageById = (id: string | null) => (id ? msgs.find((m) => m.id === id) ?? null : null);
@@ -208,24 +211,25 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
     }
   };
 
-  const endChat = async () => {
-    if (!confirm(t("sup.confirmEnd"))) return;
-    setArchiving(true);
-    try {
-      const res = await fetch("/api/admin/telegram-orders/support-end", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: thread.customer_id }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(t("sup.errPrefix") + (data.error ?? "noma'lum xato"));
-      } else {
-        toast.success(t("sup.endSent"));
+  const endChat = () => {
+    confirm(t("sup.confirmEnd"), async () => {
+      setArchiving(true);
+      try {
+        const res = await fetch("/api/admin/telegram-orders/support-end", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customerId: thread.customer_id }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toast.error(t("sup.errPrefix") + (data.error ?? "noma'lum xato"));
+        } else {
+          toast.success(t("sup.endSent"));
+        }
+      } finally {
+        setArchiving(false);
       }
-    } finally {
-      setArchiving(false);
-    }
+    });
   };
 
   const takeOver = async () => {
@@ -409,6 +413,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
       </div>
       )}
       </div>
+      {confirmDialog}
     </div>
   );
 }

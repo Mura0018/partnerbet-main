@@ -52,6 +52,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { WithdrawCodeGuide } from "@/lib/ui/WithdrawCodeGuide";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type SupportMessage = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
@@ -522,6 +523,7 @@ function dayLabel(t: (k: any, v?: any) => string, iso: string): string {
 
 export default function TelegramAppPage() {
   const { t, locale, setLocale } = useLocale();
+  const { confirm, confirmDialog } = useConfirm();
   const [screen, setScreen] = useState<Screen>("loading");
   // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
   // BackButton avval shuni yopadi, keyin ekrandan chiqadi.
@@ -1534,14 +1536,15 @@ export default function TelegramAppPage() {
     setSupportMessages((prev) => prev.filter((m) => m.clientId !== clientId));
   };
 
-  const deleteSupportMessage = async (id: string) => {
-    if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
-    await fetch("/api/telegram/miniapp/support/delete-message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData: getInitData(), messageId: id }),
+  const deleteSupportMessage = (id: string) => {
+    confirm("Xabarni o'chirishni tasdiqlaysizmi?", async () => {
+      await fetch("/api/telegram/miniapp/support/delete-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), messageId: id }),
+      });
+      await loadSupport(true);
     });
-    await loadSupport(true);
   };
 
   const supportMessageById = (id: string | null) => (id ? supportMessages.find((m) => m.id === id) ?? null : null);
@@ -2448,6 +2451,7 @@ export default function TelegramAppPage() {
             <Send size={14} />
           </button>
         </div>
+        {confirmDialog}
       </div>
     );
   }

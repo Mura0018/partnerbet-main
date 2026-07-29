@@ -6,6 +6,7 @@ import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Operator = { id: string; full_name: string | null; email: string | null };
 type Cashdesk = {
@@ -76,6 +77,7 @@ export default function CashdesksManager() {
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   // W3.2 — "Imzo diagnostikasi" (faqat super_admin, faqat Balance).
   const [diagCashdeskId, setDiagCashdeskId] = useState("");
@@ -223,17 +225,18 @@ export default function CashdesksManager() {
     }
   };
 
-  const remove = async (c: Cashdesk) => {
-    if (!confirm(t("csh.confirmDelete", { name: c.name }))) return;
-    try {
-      const res = await fetch(`/api/admin/cashdesks/${c.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) { toast.error(t("csh.tDelFailed") + (data.error ?? "")); return; }
-      toast.success(t("csh.tDeleted"));
-      await load();
-    } catch {
-      toast.error("Ulanishda xatolik.");
-    }
+  const remove = (c: Cashdesk) => {
+    confirm(t("csh.confirmDelete", { name: c.name }), async () => {
+      try {
+        const res = await fetch(`/api/admin/cashdesks/${c.id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) { toast.error(t("csh.tDelFailed") + (data.error ?? "")); return; }
+        toast.success(t("csh.tDeleted"));
+        await load();
+      } catch {
+        toast.error("Ulanishda xatolik.");
+      }
+    });
   };
 
   const importLegacy = async () => {
@@ -471,6 +474,7 @@ export default function CashdesksManager() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

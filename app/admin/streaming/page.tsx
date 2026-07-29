@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase";
 import { isValidHttpUrl } from "@/lib/validation/url";
 import { toast } from "@/lib/ui/toast";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -72,6 +73,7 @@ function ProvidersTab() {
   const [testingId, setTestingId] = useState<string | null>(null);
   const [credentialsProviderId, setCredentialsProviderId] = useState<string | null>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase.from("streaming_providers").select("*").is("deleted_at", null).order("priority");
@@ -100,10 +102,11 @@ function ProvidersTab() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("strm.confirmDel"))) return;
-    await supabase.from("streaming_providers").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("strm.confirmDel"), async () => {
+      await supabase.from("streaming_providers").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const testConnection = async (providerId: string) => {
@@ -188,6 +191,7 @@ function ProvidersTab() {
       {credentialsProviderId && (
         <CredentialsModal providerId={credentialsProviderId} onClose={() => setCredentialsProviderId(null)} />
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Category = {
   id: string;
@@ -27,6 +28,7 @@ export default function CategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase
@@ -74,10 +76,11 @@ export default function CategoriesPage() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("cnt.catConfirmDel"))) return;
-    await supabase.from("categories").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("cnt.catConfirmDel"), async () => {
+      await supabase.from("categories").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -129,6 +132,7 @@ export default function CategoriesPage() {
         ))}
         {categories.length === 0 && <p className="text-[12px] text-[#5b6f85] text-center py-6">{t("cnt.catEmpty")}</p>}
       </div>
+      {confirmDialog}
     </div>
   );
 }

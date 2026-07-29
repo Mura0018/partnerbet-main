@@ -7,6 +7,7 @@ import { GlobalChat } from "@/lib/chat/GlobalChat";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Partner = {
   id: string;
@@ -43,6 +44,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const [invSaving, setInvSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   const loadMembers = async () => {
     const { data } = await supabase.from("partner_members").select("id, profile_id, partner_role, profiles(full_name)").eq("partner_id", partner.id);
@@ -121,12 +123,13 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 
   const copyInvite = () => { if (inviteLink) { navigator.clipboard?.writeText(inviteLink); toast.success(t("prt.tLinkCopied")); } };
 
-  const removeMember = async (id: string) => {
-    if (!confirm(t("prt.confirmRemoveMember"))) return;
-    const { error } = await supabase.from("partner_members").delete().eq("id", id);
-    if (error) toast.error(t("prt.tRemoveFail") + error.message);
-    else toast.success(t("prt.tRemoved"));
-    loadMembers();
+  const removeMember = (id: string) => {
+    confirm(t("prt.confirmRemoveMember"), async () => {
+      const { error } = await supabase.from("partner_members").delete().eq("id", id);
+      if (error) toast.error(t("prt.tRemoveFail") + error.message);
+      else toast.success(t("prt.tRemoved"));
+      loadMembers();
+    });
   };
 
   const createInvoice = async () => {
@@ -305,6 +308,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
           )}
         </div>
       </div>
+      {confirmDialog}
     </div>
   );
 }
@@ -474,6 +478,7 @@ export default function PartnersManager() {
   const [modal, setModal] = useState<ModalState>({ open: false, partner: null });
   const [provisionFor, setProvisionFor] = useState<Partner | null>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -490,11 +495,12 @@ export default function PartnersManager() {
 
   const newLeadsCount = leads.filter((l) => l.status === "new").length;
 
-  const remove = async (p: Partner) => {
-    if (!confirm(t("prt.confirmDelete", { name: p.name }))) return;
-    const { error } = await supabase.from("partners").delete().eq("id", p.id);
-    if (error) toast.error(t("prt.tDelFail") + error.message);
-    else { toast.success(t("prt.tDeleted")); load(); }
+  const remove = (p: Partner) => {
+    confirm(t("prt.confirmDelete", { name: p.name }), async () => {
+      const { error } = await supabase.from("partners").delete().eq("id", p.id);
+      if (error) toast.error(t("prt.tDelFail") + error.message);
+      else { toast.success(t("prt.tDeleted")); load(); }
+    });
   };
 
   const setLeadStatus = async (lead: PartnerLead, status: string) => {
@@ -631,6 +637,7 @@ export default function PartnersManager() {
 
       {modal.open && <PartnerModal partner={modal.partner} prefill={modal.prefill} onClose={closeModal} onSaved={onModalSaved} />}
       {provisionFor && <ProvisionDrawer partner={provisionFor} onClose={() => setProvisionFor(null)} />}
+      {confirmDialog}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Megaphone, Loader2, Plus, Trash2, Pencil, X, Check } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Banner = { id: string; title: string | null; subtitle: string | null; image_url: string | null; link_url: string | null; is_active: boolean; sort: number };
 
@@ -31,6 +32,7 @@ export default function PromoBannersPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<Partial<Banner> | null>(null);
   const [saving, setSaving] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     try {
@@ -60,10 +62,11 @@ export default function PromoBannersPage() {
     }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("prm.confirmDelete"))) return;
-    const res = await fetch(`/api/admin/promo/banners?id=${id}`, { method: "DELETE" });
-    if (res.ok) { toast.success(t("prm.tDeleted")); load(); }
+  const remove = (id: string) => {
+    confirm(t("prm.confirmDelete"), async () => {
+      const res = await fetch(`/api/admin/promo/banners?id=${id}`, { method: "DELETE" });
+      if (res.ok) { toast.success(t("prm.tDeleted")); load(); }
+    });
   };
 
   const toggle = async (b: Banner) => {
@@ -142,6 +145,7 @@ export default function PromoBannersPage() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

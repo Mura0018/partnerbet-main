@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Bot, Loader2, CheckCircle2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 export default function PartnerBotPage() {
   const supabase = createClient();
@@ -13,6 +14,7 @@ export default function PartnerBotPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -46,14 +48,15 @@ export default function PartnerBotPage() {
     finally { setBusy(false); }
   };
 
-  const disconnect = async () => {
-    if (!confirm("Botni uzishni tasdiqlaysizmi?")) return;
-    setBusy(true);
-    try {
-      await fetch("/api/partner/bot", { method: "DELETE" });
-      setUsername(null);
-      toast.success("Bot uzildi");
-    } finally { setBusy(false); }
+  const disconnect = () => {
+    confirm("Botni uzishni tasdiqlaysizmi?", async () => {
+      setBusy(true);
+      try {
+        await fetch("/api/partner/bot", { method: "DELETE" });
+        setUsername(null);
+        toast.success("Bot uzildi");
+      } finally { setBusy(false); }
+    });
   };
 
   if (loading) return <div className="p-6 text-[13px] text-muted">Yuklanmoqda...</div>;
@@ -107,6 +110,7 @@ export default function PartnerBotPage() {
         <ShieldCheck size={16} className="text-[#4ADE80] shrink-0 mt-0.5" />
         <span>Tokeningiz maxfiy saqlanadi — qayta ko'rsatilmaydi va hech kim (biz ham) ko'ra olmaydi.</span>
       </div>
+      {confirmDialog}
     </div>
   );
 }

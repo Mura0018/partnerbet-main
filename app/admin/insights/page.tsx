@@ -5,6 +5,7 @@ import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Insight = {
   id: string;
@@ -33,6 +34,7 @@ export default function InsightsManager() {
   const [loading, setLoading] = useState(true);
 
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -64,11 +66,12 @@ export default function InsightsManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("med.insConfirmDelete"))) return;
-    // Soft delete: keeps the row (and its audit history) instead of erasing it.
-    await supabase.from("match_insights").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("med.insConfirmDelete"), async () => {
+      // Soft delete: keeps the row (and its audit history) instead of erasing it.
+      await supabase.from("match_insights").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -165,6 +168,7 @@ export default function InsightsManager() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

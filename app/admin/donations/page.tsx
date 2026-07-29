@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Heart, LayoutDashboard, CreditCard, Download, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Tab = "dashboard" | "methods";
 
@@ -165,6 +166,7 @@ function PaymentMethodsTab() {
   });
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase.from("payment_methods").select("*").is("deleted_at", null).order("display_order");
@@ -213,10 +215,11 @@ function PaymentMethodsTab() {
     await supabase.from("payment_methods").update({ is_active: !m.is_active }).eq("id", m.id);
     load();
   };
-  const remove = async (id: string) => {
-    if (!confirm(t("don.confirmDel"))) return;
-    await supabase.from("payment_methods").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("don.confirmDel"), async () => {
+      await supabase.from("payment_methods").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
   const move = async (index: number, direction: -1 | 1) => {
     const target = methods[index + direction];
@@ -323,6 +326,7 @@ function PaymentMethodsTab() {
       {credentialsMethod && (
         <GatewayCredentialsModal method={credentialsMethod} onClose={() => setCredentialsMethod(null)} />
       )}
+      {confirmDialog}
     </div>
   );
 }
