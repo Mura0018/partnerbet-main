@@ -18,15 +18,23 @@ export async function sendTelegramMessage(
   replyMarkup: unknown = OPEN_APP_KEYBOARD
 ): Promise<void> {
   const token = await getApiCredential("telegram_bot_token");
+  console.log("[notify][DEBUG] token:", token ? `found (len=${token.length})` : "NOT FOUND");
   if (!token) return;
 
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text, reply_markup: replyMarkup }),
     });
-  } catch {
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error("[notify][DEBUG] Telegram sendMessage muvaffaqiyatsiz:", res.status, body);
+    } else {
+      console.log("[notify][DEBUG] Telegram sendMessage muvaffaqiyatli:", res.status);
+    }
+  } catch (err) {
+    console.error("[notify][DEBUG] fetch xatosi:", err);
     // Swallow — notification delivery is best-effort.
   }
 }
