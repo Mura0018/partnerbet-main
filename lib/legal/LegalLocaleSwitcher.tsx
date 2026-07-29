@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Globe } from "lucide-react";
 import { PANEL_LOCALES, DEFAULT_LOCALE, LOCALE_LABELS, LOCALE_COOKIE, Locale } from "@/lib/i18n/dictionaries";
+import { Select } from "@/lib/ui/Select";
 
 // Faqat PANEL_LOCALES (uz/ru) taklif qilinadi: `en` lug'ati to'liq emas,
 // uni tanlagan foydalanuvchi saytning ko'p qismida o'zbekcha fallback ko'rardi.
@@ -14,7 +15,7 @@ import { PANEL_LOCALES, DEFAULT_LOCALE, LOCALE_LABELS, LOCALE_COOKIE, Locale } f
 export function LegalLocaleSwitcher({ current }: { current: Locale }) {
   const router = useRouter();
 
-  const setLocale = (locale: Locale) => {
+  const setLocale = (locale: string) => {
     document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
     router.refresh();
   };
@@ -22,15 +23,12 @@ export function LegalLocaleSwitcher({ current }: { current: Locale }) {
   return (
     <div className="inline-flex items-center gap-1.5 rounded-lg border border-subtle px-2.5 py-1.5">
       <Globe size={13} className="text-muted" />
-      <select
+      <Select
         value={PANEL_LOCALES.includes(current) ? current : DEFAULT_LOCALE}
-        onChange={(e) => setLocale(e.target.value as Locale)}
-        className="bg-transparent text-[12px] font-medium text-muted outline-none cursor-pointer"
-      >
-        {PANEL_LOCALES.map((l) => (
-          <option key={l} value={l} className="bg-bg-panel text-white">{LOCALE_LABELS[l]}</option>
-        ))}
-      </select>
+        onChange={setLocale}
+        options={PANEL_LOCALES.map((l) => ({ value: l, label: LOCALE_LABELS[l] }))}
+        className="flex items-center gap-1 bg-transparent text-[12px] font-medium text-muted cursor-pointer"
+      />
     </div>
   );
 }
