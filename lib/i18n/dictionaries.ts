@@ -689,7 +689,7 @@ export const dictionaries = {
       operator: "Operator",
     },
     donations: {
-      title: "WINORAni qo'llab-quvvatlang",
+      title: "BetCore'ni qo'llab-quvvatlang",
       subtitle: "Sizning hissangiz saytni rivojlantirishga yordam beradi",
       chooseAmount: "Miqdorni tanlang",
       customAmount: "Boshqa miqdor",
@@ -1383,7 +1383,7 @@ export const dictionaries = {
       operator: "Оператор",
     },
     donations: {
-      title: "Поддержите WINORA",
+      title: "Поддержите BetCore",
       subtitle: "Ваш вклад поможет развитию платформы",
       chooseAmount: "Выберите сумму",
       customAmount: "Другая сумма",
@@ -1511,7 +1511,7 @@ export const dictionaries = {
       operator: "Operator",
     },
     donations: {
-      title: "Support WINORA",
+      title: "Support BetCore",
       subtitle: "Your contribution helps the platform grow",
       chooseAmount: "Choose an amount",
       customAmount: "Custom amount",

@@ -300,7 +300,7 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-6 text-[11px] text-muted leading-relaxed max-w-md">
-            {t("home.disclaimer", { site: siteSettings.identity.site_name || "WINORA" })}
+            {t("home.disclaimer", { site: siteSettings.identity.site_name || "BetCore" })}
           </p>
         </div>
 
@@ -441,7 +441,7 @@ export default function Home() {
         <div className="rounded-2xl border border-accent/20 bg-gradient-to-br from-panel to-bg p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1">
             <Badge tone="gold"><Flame size={11} /> Latest version</Badge>
-            <h2 className="text-[26px] md:text-[32px] font-bold mt-4">Get the WINORA app</h2>
+            <h2 className="text-[26px] md:text-[32px] font-bold mt-4">Get the BetCore app</h2>
             <p className="text-[14px] text-muted mt-2 max-w-md leading-relaxed">
               {t("home.apkSub")}
             </p>
@@ -540,11 +540,11 @@ export default function Home() {
           </div>
 
           <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-subtle">
-            {t("home.disclaimer", { site: siteSettings.identity.site_name || "WINORA" })}
+            {t("home.disclaimer", { site: siteSettings.identity.site_name || "BetCore" })}
           </p>
 
           <div className="mt-6 pt-5 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
-            <span>© {new Date().getFullYear()} {siteSettings.identity.site_name || "WINORA"}. Barcha huquqlar himoyalangan.</span>
+            <span>© {new Date().getFullYear()} {siteSettings.identity.site_name || "BetCore"}. Barcha huquqlar himoyalangan.</span>
             <span>Ishonchli. Xavfsiz. Professional.</span>
           </div>
         </div>
