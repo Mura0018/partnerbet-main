@@ -31,7 +31,7 @@ async function handleLinkCommand(chatId: number, text: string) {
 
   await sendTelegramMessage(
     chatId,
-    `🟦 BetCore Pay\n\n✅ Ulandi! Endi yangi buyurtmalar haqida shu yerga xabar kelib turadi.`,
+    `🟦 BetCore Pay\n\nUlandi. Endi yangi buyurtmalar haqida shu yerga xabar keladi.`,
     undefined
   );
 }
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     console.log("[webhook][DEBUG] /start shoxiga kirdi");
     await sendTelegramMessage(
       chatId,
-      "🟦 BetCore Pay\n\nAssalomu alaykum! BetCore Pay botiga xush kelibsiz.\n\n💳 Hisob to'ldirish\n💵 Pul yechish\n🎧 Operator bilan aloqa\n\nBoshlash uchun quyidagi tugmani bosing:",
+      "🟦 BetCore Pay\n\nBetCore Pay botiga xush kelibsiz.\n\nHisob to'ldirish\nPul yechish\nOperator bilan aloqa\n\nBoshlash uchun quyidagi tugmani bosing:",
       OPEN_APP_KEYBOARD
     );
   } else if (/^\/link\b/i.test(text)) {

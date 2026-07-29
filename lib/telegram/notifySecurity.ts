@@ -47,8 +47,8 @@ export async function notifySecurityAlert(opts: {
       if (!s.telegram_chat_id) return Promise.resolve();
       const isSuperAdmin = s.roles?.key === "super_admin";
       const text = isSuperAdmin
-        ? `🔴 XAVFSIZLIK OGOHLANTIRISHI\n\n${opts.title}\n${opts.detail}${ipLine}\n\nXavfsizlik jurnalini tekshiring: ${SECURITY_LOG_URL}`
-        : `🔴 XAVFSIZLIK OGOHLANTIRISHI\n\n${opts.title}\n${opts.detail}\n\nBoshliqqa xabar bering.`;
+        ? `🔴 Xavfsizlik ogohlantirishi\n\n${opts.title}\n${opts.detail}${ipLine}\n\nXavfsizlik jurnalini tekshiring: ${SECURITY_LOG_URL}`
+        : `🔴 Xavfsizlik ogohlantirishi\n\n${opts.title}\n${opts.detail}\n\nBoshliqqa xabar bering.`;
       return sendTelegramMessage(s.telegram_chat_id, text, undefined);
     })
   );
