@@ -47,20 +47,20 @@ export default function PartnerTeamPage() {
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = { email_taken: "Bu email band.", weak_password: "Parol kamida 10 belgi: harf, raqam va belgi.", forbidden: "Ruxsatingiz yo'q." };
-        const msg = map[data.error] ?? "Xatolik yuz berdi.";
-        setError(msg); toast.error("Xodim qo'shilmadi: " + msg); return;
+        const msg = map[data.error] ?? "Xodim qo'shilmadi. Qayta urining.";
+        setError(msg); toast.error("Xodim qo'shilmadi."); return;
       }
       setShowAdd(false); setForm({ fullName: "", email: "", password: "" });
       loadMembers();
-      toast.success("Xodim qo'shildi ✅");
-    } catch { setError("Ulanishda xatolik."); toast.error("Ulanishda xatolik."); }
+      toast.success("Xodim qo'shildi");
+    } catch { setError("Ulanmadi. Qayta urining."); toast.error("Ulanmadi. Qayta urining."); }
     finally { setSaving(false); }
   };
 
   const removeStaff = (id: string) => {
     confirm("Xodimni o'chirishni tasdiqlaysizmi?", async () => {
       const { error } = await supabase.from("partner_members").delete().eq("id", id);
-      if (error) toast.error("O'chirilmadi: " + error.message);
+      if (error) { console.error("[team] o'chirilmadi:", error); toast.error("O'chirilmadi. Qayta urining."); }
       else toast.success("Xodim o'chirildi");
       loadMembers();
     });

@@ -160,7 +160,7 @@ export default function CashdesksManager() {
     try {
       const res = await fetch("/api/admin/cashdesks");
       const data = await res.json();
-      if (!res.ok) { toast.error(t("csh.tLoadErr") + (data.error ?? "")); return; }
+      if (!res.ok) { console.error("[cashdesks] ro'yxat yuklanmadi:", data.error); toast.error(t("csh.tLoadErr")); return; }
       setRows(data.cashdesks ?? []);
       setOperators(data.operators ?? []);
       // Balanslarni non-blocking, har kassa alohida.
@@ -212,8 +212,13 @@ export default function CashdesksManager() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const msg = data.error === "duplicate_cashdesk_id" ? t("csh.tDuplicate") : (data.error ?? "xatolik");
-        toast.error(t("csh.tSaveFailed") + msg); return;
+        if (data.error === "duplicate_cashdesk_id") {
+          toast.error(t("csh.tDuplicate"));
+        } else {
+          console.error("[cashdesks] saqlanmadi:", data.error);
+          toast.error(t("csh.tSaveFailed"));
+        }
+        return;
       }
       toast.success(isEdit ? t("csh.tUpdated") : t("csh.tAdded"));
       setForm(null);
@@ -230,7 +235,7 @@ export default function CashdesksManager() {
       try {
         const res = await fetch(`/api/admin/cashdesks/${c.id}`, { method: "DELETE" });
         const data = await res.json();
-        if (!res.ok) { toast.error(t("csh.tDelFailed") + (data.error ?? "")); return; }
+        if (!res.ok) { console.error("[cashdesks] kassa o'chirilmadi:", data.error); toast.error(t("csh.tDelFailed")); return; }
         toast.success(t("csh.tDeleted"));
         await load();
       } catch {

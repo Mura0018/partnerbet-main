@@ -35,16 +35,16 @@ export default function PartnerBotPage() {
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = { invalid_token: "Token noto'g'ri — BotFather'dan tekshiring.", telegram_unreachable: "Telegram bilan ulanib bo'lmadi. Qayta urining.", forbidden: "Faqat partner admin botni ulaydi." };
-        const msg = map[data.error] ?? "Xatolik yuz berdi.";
+        const msg = map[data.error] ?? "Bot ulanmadi. Qayta urining.";
         setError(msg);
-        toast.error("Bot ulanmadi: " + msg);
+        toast.error("Bot ulanmadi.");
         return;
       }
       setToken("");
       setUsername(data.username || "");
-      toast.success(`Bot ulandi ✅ @${data.username || ""}`);
+      toast.success(`Bot ulandi — @${data.username || ""}`);
       if (data.menuSet === false) toast.info("Bot ulandi, lekin menyu tugmasi o'rnatilmadi — qayta ulashga urinib ko'ring.");
-    } catch { setError("Ulanishda xatolik."); toast.error("Ulanishda xatolik. Internetni tekshiring."); }
+    } catch { setError("Ulanmadi. Internetni tekshiring."); toast.error("Ulanmadi. Internetni tekshiring."); }
     finally { setBusy(false); }
   };
 

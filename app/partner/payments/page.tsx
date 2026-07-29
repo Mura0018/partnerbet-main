@@ -55,8 +55,8 @@ export default function PartnerPaymentsPage() {
     setSaving(true);
     const { error } = await supabase.from("partner_payment_methods").insert({ partner_id: partnerId, kind: form.kind, number: form.number.trim(), holder: form.holder.trim() || null });
     setSaving(false);
-    if (error) { toast.error("Qo'shilmadi: " + error.message); return; }
-    toast.success("To'lov usuli qo'shildi ✅");
+    if (error) { console.error("[payments] qo'shilmadi:", error); toast.error("Qo'shilmadi. Qayta urining."); return; }
+    toast.success("To'lov usuli qo'shildi");
     setForm({ kind: "click", number: "", holder: "" });
     setShowAdd(false);
     loadMethods(partnerId);
@@ -65,7 +65,7 @@ export default function PartnerPaymentsPage() {
   const remove = (id: string) => {
     confirm("O'chirishni tasdiqlaysizmi?", async () => {
       const { error } = await supabase.from("partner_payment_methods").delete().eq("id", id);
-      if (error) toast.error("O'chirilmadi: " + error.message);
+      if (error) { console.error("[payments] o'chirilmadi:", error); toast.error("O'chirilmadi. Qayta urining."); }
       else { toast.success("O'chirildi"); if (partnerId) loadMethods(partnerId); }
     });
   };
@@ -83,7 +83,7 @@ export default function PartnerPaymentsPage() {
       {missing ? (
         <div className="rounded-xl border border-[#F4C76A]/30 bg-[#F4C76A]/10 p-4 flex items-start gap-3">
           <AlertTriangle size={18} className="text-[#F4C76A] shrink-0 mt-0.5" />
-          <div className="text-[13px]"><div className="font-semibold text-[#F4C76A] mb-1">Jadval topilmadi</div><div className="text-muted">0062 migratsiyasini Supabase'da ishga tushiring.</div></div>
+          <div className="text-[13px]"><div className="font-semibold text-[#F4C76A] mb-1">Hozircha mavjud emas</div><div className="text-muted">Administrator bilan bog'laning.</div></div>
         </div>
       ) : (
         <>

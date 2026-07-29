@@ -96,7 +96,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
         const map: Record<string, string> = { email_taken: t("prt.eEmailTaken"), forbidden: t("prt.eForbidden") };
         const msg = map[data.error] ?? t("prt.eGeneric");
         setMError(msg);
-        toast.error(t("prt.tMemberFail") + msg);
+        toast.error(t("prt.tMemberFail"));
         return;
       }
       setShowAddMember(false);
@@ -126,7 +126,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const removeMember = (id: string) => {
     confirm(t("prt.confirmRemoveMember"), async () => {
       const { error } = await supabase.from("partner_members").delete().eq("id", id);
-      if (error) toast.error(t("prt.tRemoveFail") + error.message);
+      if (error) { console.error("[partners] a'zo chiqarilmadi:", error); toast.error(t("prt.tRemoveFail")); }
       else toast.success(t("prt.tRemoved"));
       loadMembers();
     });
@@ -141,7 +141,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       amount: Number(invForm.amount) || 0, currency: partner.currency, status: "unpaid", created_by: user?.id ?? null,
     });
     setInvSaving(false);
-    if (error) { toast.error(t("prt.tInvoiceFail") + error.message); return; }
+    if (error) { console.error("[partners] invoice yaratilmadi:", error); toast.error(t("prt.tInvoiceFail")); return; }
     toast.success(t("prt.tInvoiceOk"));
     setInvForm((p) => ({ ...p, amount: "" }));
     loadInvoices();
@@ -149,7 +149,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const toggleInvoicePaid = async (inv: any) => {
     const next = inv.status === "paid" ? "unpaid" : "paid";
     const { error } = await supabase.from("partner_invoices").update({ status: next, paid_at: next === "paid" ? new Date().toISOString() : null }).eq("id", inv.id);
-    if (error) toast.error(t("prt.tChangeFail") + error.message);
+    if (error) { console.error("[partners] o'zgartirilmadi:", error); toast.error(t("prt.tChangeFail")); }
     else { toast.success(next === "paid" ? t("prt.tMarkedPaid") : t("prt.tMarkedUnpaid")); loadInvoices(); }
   };
 
@@ -157,13 +157,13 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
     const next = !assign[id];
     setAssign((p) => ({ ...p, [id]: next }));
     const { error } = await supabase.from("partner_service_assignments").upsert({ partner_id: partner.id, service_id: id, enabled: next }, { onConflict: "partner_id,service_id" });
-    if (error) { setAssign((p) => ({ ...p, [id]: !next })); toast.error(t("prt.tNotSaved") + error.message); }
+    if (error) { setAssign((p) => ({ ...p, [id]: !next })); console.error("[partners] xizmat saqlanmadi:", error); toast.error(t("prt.tNotSaved")); }
   };
   const toggleTheme = async (id: string) => {
     const next = !themeAccess[id];
     setThemeAccess((p) => ({ ...p, [id]: next }));
     const { error } = await supabase.from("partner_theme_access").upsert({ partner_id: partner.id, theme_id: id, enabled: next }, { onConflict: "partner_id,theme_id" });
-    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); toast.error(t("prt.tNotSaved") + error.message); }
+    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); console.error("[partners] tema saqlanmadi:", error); toast.error(t("prt.tNotSaved")); }
   };
 
   return (
@@ -368,17 +368,18 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
       // Xatoni OBYEKT bo'yicha tekshiramiz (bo'sh message'li xato ham ushlanadi) +
       // qator haqiqatan yozildi va o'qildi (row) — shundagina muvaffaqiyat.
       if (opError || !row) {
-        const msg = opError?.message || opError?.hint || opError?.code || t("prt.eSaveUnknown");
-        setError(t("prt.eSavePrefix") + msg);
-        toast.error(t("prt.tNotSaved") + msg);
+        console.error("[partners] saqlashda xatolik:", opError);
+        setError(t("prt.eSavePrefix"));
+        toast.error(t("prt.tNotSaved"));
         return;
       }
       toast.success(editing ? t("prt.tUpdated") : t("prt.tCreated"));
       onSaved();
       onClose();
     } catch (err: any) {
+      console.error("[partners] kutilmagan xatolik:", err);
       setError(t("prt.eUnexpected"));
-      toast.error(t("prt.tErrPrefix") + (err?.message ?? t("prt.unknown")) + t("prt.tErrSuffix"));
+      toast.error(t("prt.eConnCheck"));
     } finally {
       setSaving(false);
     }
@@ -486,7 +487,7 @@ export default function PartnersManager() {
       supabase.from("partners").select("*").order("created_at", { ascending: false }),
       supabase.from("partner_leads").select("id, name, phone, company, message, status, created_at").order("created_at", { ascending: false }),
     ]);
-    if (pErr) toast.error(t("prt.tLoadErr") + (pErr.message || pErr.code || t("prt.unknown")));
+    if (pErr) { console.error("[partners] ro'yxat yuklanmadi:", pErr); toast.error(t("prt.tLoadErr")); }
     setPartners((pData as Partner[]) ?? []);
     setLeads((lData as PartnerLead[]) ?? []);
     setLoading(false);
@@ -498,7 +499,7 @@ export default function PartnersManager() {
   const remove = (p: Partner) => {
     confirm(t("prt.confirmDelete", { name: p.name }), async () => {
       const { error } = await supabase.from("partners").delete().eq("id", p.id);
-      if (error) toast.error(t("prt.tDelFail") + error.message);
+      if (error) { console.error("[partners] hamkor o'chirilmadi:", error); toast.error(t("prt.tDelFail")); }
       else { toast.success(t("prt.tDeleted")); load(); }
     });
   };

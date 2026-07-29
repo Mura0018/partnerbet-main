@@ -281,7 +281,12 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
         if (data.error === "payout_blocked") { setPayoutError(t("ord.payoutBlocked")); setBlockedWarning({ reason: data.reason, until: data.until }); return; }
         if (data.error === "code_invalid") { setPayoutError(t("ord.payoutCodeInvalid")); setPayoutState("none"); return; }
         if (data.payoutStatus === "pending") { setPayoutError(t("ord.payoutCheckStatus")); setPayoutState("pending"); return; }
-        if (data.payoutStatus === "failed") { setPayoutError(CASHDESK_ERROR_LABELS[data.error] ?? data.error ?? t("ord.genericError")); setPayoutState("failed"); return; }
+        if (data.payoutStatus === "failed") {
+          if (!CASHDESK_ERROR_LABELS[data.error]) console.error("[orders] payout xatosi:", data.error);
+          setPayoutError(CASHDESK_ERROR_LABELS[data.error] ?? t("ord.genericError"));
+          setPayoutState("failed");
+          return;
+        }
         setPayoutError(t("ord.genericError"));
         return;
       }
@@ -306,7 +311,8 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         if (data.error === "cashdesk_failed") {
-          setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? `${t("ord.cd_error")}: ${data.detail}`);
+          if (!CASHDESK_ERROR_LABELS[data.detail]) console.error("[orders] kassa xatosi:", data.detail);
+          setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? t("ord.cd_error"));
         } else if (data.error === "reason_required") {
           setApiError(t("ord.reasonRequired"));
         } else {
@@ -659,7 +665,8 @@ function MyBusyToggle() {
 
     const { error } = await supabase.from("profiles").update({ is_busy: next, busy_reason: nextReason || null }).eq("id", user.id);
     if (error) {
-      toast.error(t("wid.saveFailed2") + error.message);
+      console.error("[orders] holat saqlanmadi:", error);
+      toast.error(t("wid.saveFailed2"));
       setSaving(false);
       return;
     }

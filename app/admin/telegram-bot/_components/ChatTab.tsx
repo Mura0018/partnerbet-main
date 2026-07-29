@@ -200,7 +200,8 @@ export function ChatTab() {
     if (user) {
       const { error } = await supabase.from("team_chat_messages").insert({ sender_id: user.id, message: text.trim(), reply_to_id: replyTo?.id ?? null });
       if (error) {
-        toast.error(t("cht.eSend") + error.message);
+        console.error("[chat] xabar yuborilmadi:", error);
+        toast.error(t("cht.eSend"));
         setSending(false);
         return;
       }

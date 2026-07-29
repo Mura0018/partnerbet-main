@@ -118,10 +118,10 @@ function ProvidersTab() {
         body: JSON.stringify({ providerId }),
       });
       const json = await res.json();
-      if (res.status === 429) toast.error("Juda ko'p urinish. Bir necha daqiqadan so'ng qayta urinib ko'ring.");
-      else if (!json.success) toast.error(`Ulanish muvaffaqiyatsiz: ${json.message ?? "noma'lum xato"}`);
+      if (res.status === 429) toast.error("Juda ko'p urinish. Birozdan keyin qayta urining.");
+      else if (!json.success) { console.error("[streaming] ulanish muvaffaqiyatsiz:", json.message); toast.error("Ulanish muvaffaqiyatsiz. Kalitlarni tekshiring."); }
     } catch {
-      toast.error("Ulanishni tekshirishda xatolik.");
+      toast.error("Tekshirib bo'lmadi. Qayta urining.");
     } finally {
       setTestingId(null);
       load();

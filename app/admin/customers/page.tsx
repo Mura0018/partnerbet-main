@@ -102,7 +102,7 @@ export default function CustomersManager() {
         body: JSON.stringify({ customerId: detail.customer.id, reason: nameConfirmReason.trim() }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(t("cus.tConfirmFailed") + (data.error ?? "")); return; }
+      if (!res.ok) { console.error("[customers] tasdiqlanmadi:", data.error); toast.error(t("cus.tConfirmFailed")); return; }
       toast.success(t("cus.tConfirmed"));
       setNameConfirmReason("");
       await openDetail(detail.customer.id);
@@ -123,7 +123,7 @@ export default function CustomersManager() {
       try {
         const res = await fetch("/api/admin/customers/hide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids, hidden }) });
         const data = await res.json();
-        if (!res.ok) { toast.error(t("cus.tFailed") + (data.error ?? "")); return; }
+        if (!res.ok) { console.error("[customers] bajarilmadi:", data.error); toast.error(t("cus.tFailed")); return; }
         toast.success(hidden ? t("cus.tHidden", { n: data.updated }) : t("cus.tRestored", { n: data.updated }));
         load(page);
       } catch { toast.error(t("cus.tConnErr")); }

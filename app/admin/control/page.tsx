@@ -47,7 +47,7 @@ export default function ControlCenter() {
       const { error } = await supabase
         .from("site_settings")
         .upsert({ key, value, updated_by: user?.id, updated_at: new Date().toISOString() }, { onConflict: "key" });
-      if (error) { toast.error(t("ctl.saveFailed") + error.message); return; }
+      if (error) { console.error("[control] saqlanmadi:", error); toast.error(t("ctl.saveFailed")); return; }
       patch(key, value); // normalizatsiya qilingan qiymatни qaytarib qo'yamiz
       toast.success(t("ctl.saved"));
     } finally {
