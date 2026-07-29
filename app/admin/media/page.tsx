@@ -102,7 +102,7 @@ export default function MediaLibraryPage() {
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`rounded-xl border-2 border-dashed p-8 text-center mb-6 cursor-pointer transition ${
+        className={`rounded-xl border-2 border-dashed p-8 text-center mb-6 cursor-pointer transition active:scale-[0.99] active:border-accent/60 ${
           dragOver ? "border-accent bg-accent/5" : "border-subtle hover:border-subtle"
         }`}
       >

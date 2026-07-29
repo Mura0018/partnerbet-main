@@ -75,7 +75,7 @@ function ReceiptViewer({ path }: { path: string }) {
         src={url}
         alt="To'lov cheki"
         onClick={() => setExpanded(true)}
-        className="w-full max-h-56 object-contain rounded-lg border border-subtle cursor-zoom-in bg-black/20"
+        className="w-full max-h-56 object-contain rounded-lg border border-subtle cursor-zoom-in bg-black/20 transition-transform active:scale-[0.98]"
       />
       {expanded && (
         <div

@@ -174,7 +174,7 @@ function CustomerSupportImage({ localUrl, path, getInitData, onOpen }: { localUr
   }, [localUrl, path]);
   if (!url) return <p className="text-[11px] text-white/70">{t("tg.imgLoading")}</p>;
   // F2b: to'liq ochish sahifa darajasида boshqariladi (BackButton uni yopadi).
-  return <img src={url} alt={t("tg.imgAlt")} onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in" />;
+  return <img src={url} alt={t("tg.imgAlt")} onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in transition-transform active:scale-95" />;
 }
 
 // F2e: to'liq ekran rasm — qo'lda (ikki barmoq) yaqinlashtirish/surish.

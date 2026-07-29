@@ -50,7 +50,7 @@ export function LuxuryCard({
       <div style={{ perspective: "1200px" }}>
         <div
           onClick={() => setFlipped((f) => !f)}
-          className="relative w-full aspect-[1.586/1] cursor-pointer transition-transform duration-500"
+          className="relative w-full aspect-[1.586/1] cursor-pointer transition-transform duration-500 active:scale-[0.98]"
           style={{ transformStyle: "preserve-3d", transform: flipped ? "rotateY(180deg)" : "none" }}
         >
           {/* front */}
