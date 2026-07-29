@@ -100,7 +100,7 @@ export const dictionaries = {
     },
     wid: {
       limitsTitle: "Xavfsizlik limitlari (so'mda)", maxOrder: "Bitta buyurtma maksimumi", dailyLimit: "Kunlik mijoz limiti",
-      saved: "Saqlandi ✓", saveFailed: "Saqlanmadi. Qayta urinib ko'ring.", statusSaveFailed: "Holat saqlanmadi: ",
+      goToControl: "Boshqaruv markazidan o'zgartiring →", statusSaveFailed: "Holat saqlanmadi: ",
       nowActive: "endi faol.", wentBusy: "band holatiga o'tdi.",
       workStatus: "Ish holatingiz:", active: "Faol", busy: "Band", markBusy: "Band deb belgilash", markActive: "Faol deb belgilash",
       saveFailed2: "Saqlanmadi: ", busyMarked: "bandman deb belgiladi", ordersMayMove: "— buyurtmalari boshqa operatorga o'tishi mumkin.", nowFree: "yana bo'sh.",
@@ -794,7 +794,7 @@ export const dictionaries = {
     },
     wid: {
       limitsTitle: "Лимиты безопасности (в сумах)", maxOrder: "Максимум одного заказа", dailyLimit: "Дневной лимит клиента",
-      saved: "Сохранено ✓", saveFailed: "Не сохранено. Попробуйте снова.", statusSaveFailed: "Статус не сохранён: ",
+      goToControl: "Изменить в Центре управления →", statusSaveFailed: "Статус не сохранён: ",
       nowActive: "теперь активен.", wentBusy: "перешёл в занятость.",
       workStatus: "Ваш статус:", active: "Активен", busy: "Занят", markBusy: "Отметить занятым", markActive: "Отметить активным",
       saveFailed2: "Не сохранено: ", busyMarked: "отметил себя занятым", ordersMayMove: "— его заказы могут перейти другому оператору.", nowFree: "снова свободен.",
