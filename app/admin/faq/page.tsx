@@ -30,7 +30,7 @@ export default function FaqAdminPage() {
     const result = editingId
       ? await supabase.from("faqs").update(payload).eq("id", editingId)
       : await supabase.from("faqs").insert({ ...payload, position: faqs.length });
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setForm({ question: "", answer: "", category: "" });
     setEditingId(null);
     load();

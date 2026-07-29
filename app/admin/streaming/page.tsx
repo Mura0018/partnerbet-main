@@ -89,7 +89,7 @@ function ProvidersTab() {
     const result = editingId
       ? await supabase.from("streaming_providers").update(payload).eq("id", editingId)
       : await supabase.from("streaming_providers").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setShowForm(false);
     load();
   };
@@ -145,7 +145,7 @@ function ProvidersTab() {
                   {p.base_api_url} · priority {p.priority}
                   {p.last_sync_at && ` · oxirgi tekshiruv: ${new Date(p.last_sync_at).toLocaleString()}`}
                 </div>
-                {p.last_error && <div className="text-[11px] text-[#FF6B85] mt-1">{p.last_error}</div>}
+                {p.last_error && <div className="text-[11px] text-[#FF6B85] mt-1">Oxirgi xato: {p.last_error}</div>}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button onClick={() => testConnection(p.id)} disabled={testingId === p.id} className="px-3 py-1.5 rounded-md border border-subtle text-[11px] font-semibold hover:bg-white/5 disabled:opacity-50 flex items-center gap-1.5">
@@ -325,7 +325,7 @@ function MatchStreamsTab() {
       ends_at: form.ends_at || null,
     };
     const { error: insertError } = await supabase.from("match_streams").insert(payload);
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ football_provider: "api_football", external_fixture_id: "", streaming_provider_id: "", external_stream_id: "", is_primary: false, starts_at: "", ends_at: "" });
     load();
   };

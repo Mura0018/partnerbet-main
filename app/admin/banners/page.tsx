@@ -85,7 +85,7 @@ export default function BannersManager() {
       const media = await uploadImage(file);
       setForm((prev) => ({ ...prev, content: media.publicUrl }));
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setUploading(false);
     }
@@ -112,7 +112,7 @@ export default function BannersManager() {
     else payload.embed_code = form.content;
 
     const { error: insertError } = await supabase.from("advertisements").insert(payload);
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm(EMPTY);
     load();
   };

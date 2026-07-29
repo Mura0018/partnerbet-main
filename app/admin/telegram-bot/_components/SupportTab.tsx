@@ -219,7 +219,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(t("sup.errPrefix") + JSON.stringify(data));
+        toast.error(t("sup.errPrefix") + (data.error ?? "noma'lum xato"));
       } else {
         toast.success(t("sup.endSent"));
       }

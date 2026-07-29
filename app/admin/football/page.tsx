@@ -61,7 +61,7 @@ function FeaturedLeaguesTab() {
     setError("");
     if (!form.name.trim() || !form.external_league_id.trim()) { setError("Nom va provayderdagi Liga ID kiriting."); return; }
     const { error: insertError } = await supabase.from("featured_leagues").insert(form);
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ provider: "api_football", external_league_id: "", name: "", country: "", season: "", position: 0 });
     load();
   };
@@ -122,7 +122,7 @@ function FeaturedFixturesTab() {
     setError("");
     if (!form.external_fixture_id.trim()) { setError("O'yin ID kiriting."); return; }
     const { error: insertError } = await supabase.from("featured_fixtures").insert(form);
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ provider: "api_football", external_fixture_id: "", note: "", position: 0 });
     load();
   };
@@ -181,7 +181,7 @@ function VideosTab() {
       const media = await uploadImage(file);
       setThumbMediaId(media.id);
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setThumbUploading(false);
     }
@@ -192,7 +192,7 @@ function VideosTab() {
     setError("");
     if (!form.title.trim() || !isValidHttpUrl(form.video_url)) { setError("Sarlavha va to'g'ri video URL kiriting."); return; }
     const { error: insertError } = await supabase.from("football_videos").insert({ ...form, thumbnail_media_id: thumbMediaId });
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ title: "", video_url: "", description: "", is_featured: false });
     setThumbMediaId(null);
     load();

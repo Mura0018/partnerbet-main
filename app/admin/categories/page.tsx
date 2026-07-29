@@ -68,7 +68,7 @@ export default function CategoriesPage() {
     const result = editingId
       ? await supabase.from("categories").update(payload).eq("id", editingId)
       : await supabase.from("categories").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     openNew();
     load();
   };

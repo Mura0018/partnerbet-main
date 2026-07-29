@@ -305,7 +305,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
       const media = await uploadImage(file);
       updateLocal("branding", { [field]: media.id, [`${field}_url`]: media.publicUrl });
     } catch (e: any) {
-      setError(e.message ?? t("set.bUploadErr"));
+      setError(e.message ? `${t("set.bUploadErr")}: ${e.message}` : t("set.bUploadErr"));
     } finally {
       setUploading(false);
     }

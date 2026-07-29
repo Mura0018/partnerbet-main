@@ -203,7 +203,7 @@ function PaymentMethodsTab() {
     const result = editingId
       ? await supabase.from("payment_methods").update(payload).eq("id", editingId)
       : await supabase.from("payment_methods").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setShowForm(false);
     load();
   };

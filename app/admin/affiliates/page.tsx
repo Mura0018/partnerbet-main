@@ -209,7 +209,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
       const media = await uploadImage(file);
       setForm({ ...form, logo_media_id: media.id, logo_url: media.publicUrl });
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setLogoUploading(false);
     }
@@ -261,7 +261,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
     if (currentPartner) {
       const { error: updateError } = await supabase.from("affiliate_partners").update(payload).eq("id", currentPartner.id);
       setSaving(false);
-      if (updateError) { setError(updateError.message); return; }
+      if (updateError) { setError(`Saqlashda xatolik: ${updateError.message}`); return; }
       onSaved();
     } else {
       const { data, error: insertError } = await supabase
@@ -270,7 +270,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
         .select("*")
         .single();
       setSaving(false);
-      if (insertError || !data) { setError(insertError?.message ?? "Saqlashda xatolik."); return; }
+      if (insertError || !data) { setError(insertError?.message ? `Saqlashda xatolik: ${insertError.message}` : "Saqlashda xatolik."); return; }
       setCurrentPartner(data as Partner);
       setTab("promos");
     }
@@ -436,7 +436,7 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
       is_featured: form.is_featured,
       expires_at: form.expires_at || null,
     });
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ code: "", bonus_description: "", is_featured: false, expires_at: "" });
     load();
   };
@@ -506,7 +506,7 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
       partner_id: partnerId, match_type: form.match_type, match_value: form.match_value.trim(),
       target_url: form.target_url.trim(), priority: Number(form.priority) || 0,
     });
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ match_type: "country", match_value: "", target_url: "", priority: 0 });
     load();
   };

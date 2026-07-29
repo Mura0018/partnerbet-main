@@ -102,7 +102,7 @@ export default function BlogManager() {
       const media = await uploadImage(file);
       setForm((prev: any) => ({ ...prev, cover_media_id: media.id, cover_url: media.publicUrl }));
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setCoverUploading(false);
     }
@@ -147,10 +147,10 @@ export default function BlogManager() {
     let postId = editingId;
     if (editingId) {
       const { error: updateError } = await supabase.from("posts").update(payload).eq("id", editingId);
-      if (updateError) { setError(updateError.message); setSaving(false); return; }
+      if (updateError) { setError(`Saqlashda xatolik: ${updateError.message}`); setSaving(false); return; }
     } else {
       const { data, error: insertError } = await supabase.from("posts").insert(payload).select("id").single();
-      if (insertError || !data) { setError(insertError?.message ?? "Saqlashda xatolik."); setSaving(false); return; }
+      if (insertError || !data) { setError(insertError?.message ? `Saqlashda xatolik: ${insertError.message}` : "Saqlashda xatolik."); setSaving(false); return; }
       postId = data.id;
     }
 

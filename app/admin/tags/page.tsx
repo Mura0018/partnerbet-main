@@ -40,7 +40,7 @@ export default function TagsPage() {
     const result = editingId
       ? await supabase.from("tags").update(payload).eq("id", editingId)
       : await supabase.from("tags").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setName(""); setEditingId(null);
     load();
   };

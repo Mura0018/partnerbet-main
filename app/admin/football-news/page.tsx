@@ -78,7 +78,7 @@ export default function FootballNewsManager() {
       const media = await uploadImage(file);
       setForm((prev: any) => ({ ...prev, cover_media_id: media.id, cover_url: media.publicUrl }));
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setCoverUploading(false);
     }
@@ -111,7 +111,7 @@ export default function FootballNewsManager() {
       : await supabase.from("football_news").insert(payload);
 
     setSaving(false);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setShowForm(false);
     load();
   };
