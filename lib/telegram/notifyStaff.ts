@@ -28,7 +28,7 @@ export async function notifyOperatorsNewOrder(type: "topup" | "withdraw", amount
 
   const label = type === "topup" ? "Hisob to'ldirish" : "Pul yechish";
   const text =
-    `🟦 BETCORE PAY\n\n🔔 Yangi buyurtma\n\n${label}\n💰 Summa: ${amount.toLocaleString("ru-RU")} so'm\n🆔 Hisob ID: ${accountId}\n\n` +
+    `🟦 BetCore Pay\n\n🔔 Yangi buyurtma\n\n${label}\nSumma: ${amount.toLocaleString("ru-RU")} so'm\nHisob ID: ${accountId}\n\n` +
     `Ko'rib chiqish uchun admin panelga o'ting: ${MINIAPP_ADMIN_URL}`;
 
   await Promise.all((staff ?? []).map((s) => (s.telegram_chat_id ? sendTelegramMessage(s.telegram_chat_id, text, undefined) : Promise.resolve())));

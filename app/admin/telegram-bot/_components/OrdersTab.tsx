@@ -11,6 +11,8 @@ import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useV
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
+import { toast } from "@/lib/ui/toast";
+import { Select } from "@/lib/ui/Select";
 
 const REJECT_REASON_KEYS = ["ord.rt1", "ord.rt2", "ord.rt3", "ord.rt4", "ord.rt5"];
 
@@ -73,7 +75,7 @@ function ReceiptViewer({ path }: { path: string }) {
         src={url}
         alt="To'lov cheki"
         onClick={() => setExpanded(true)}
-        className="w-full max-h-56 object-contain rounded-lg border border-subtle cursor-zoom-in bg-black/20"
+        className="w-full max-h-56 object-contain rounded-lg border border-subtle cursor-zoom-in bg-black/20 transition-transform active:scale-[0.98]"
       />
       {expanded && (
         <div
@@ -279,7 +281,12 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
         if (data.error === "payout_blocked") { setPayoutError(t("ord.payoutBlocked")); setBlockedWarning({ reason: data.reason, until: data.until }); return; }
         if (data.error === "code_invalid") { setPayoutError(t("ord.payoutCodeInvalid")); setPayoutState("none"); return; }
         if (data.payoutStatus === "pending") { setPayoutError(t("ord.payoutCheckStatus")); setPayoutState("pending"); return; }
-        if (data.payoutStatus === "failed") { setPayoutError(CASHDESK_ERROR_LABELS[data.error] ?? data.error ?? t("ord.genericError")); setPayoutState("failed"); return; }
+        if (data.payoutStatus === "failed") {
+          if (!CASHDESK_ERROR_LABELS[data.error]) console.error("[orders] payout xatosi:", data.error);
+          setPayoutError(CASHDESK_ERROR_LABELS[data.error] ?? t("ord.genericError"));
+          setPayoutState("failed");
+          return;
+        }
         setPayoutError(t("ord.genericError"));
         return;
       }
@@ -304,7 +311,8 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         if (data.error === "cashdesk_failed") {
-          setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? `${t("ord.cd_error")}: ${data.detail}`);
+          if (!CASHDESK_ERROR_LABELS[data.detail]) console.error("[orders] kassa xatosi:", data.detail);
+          setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? t("ord.cd_error"));
         } else if (data.error === "reason_required") {
           setApiError(t("ord.reasonRequired"));
         } else {
@@ -657,7 +665,8 @@ function MyBusyToggle() {
 
     const { error } = await supabase.from("profiles").update({ is_busy: next, busy_reason: nextReason || null }).eq("id", user.id);
     if (error) {
-      alert(t("wid.saveFailed2") + error.message);
+      console.error("[orders] holat saqlanmadi:", error);
+      toast.error(t("wid.saveFailed2"));
       setSaving(false);
       return;
     }
@@ -1021,7 +1030,7 @@ export function OrdersTab() {
         body: JSON.stringify({ orderId: o.id }),
       });
       const data = await res.json();
-      if (!data.ok) alert(t("wid.takeoverTaken"));
+      if (!data.ok) toast.error(t("wid.takeoverTaken"));
     } catch {
       /* tarmoq xatosi — jim */
     } finally {
@@ -1080,17 +1089,16 @@ export function OrdersTab() {
           >
             {t("ord.unclaimed")}
           </button>
-          <select
+          <Select
             value={operatorFilter}
-            onChange={(e) => setOperatorFilter(e.target.value)}
-            className="ml-auto bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
-          >
-            <option value="all">{t("ord.allOperators")}</option>
-            {currentUserId && <option value={currentUserId}>{t("ord.onlyMine")}</option>}
-            {Object.entries(operatorNames).filter(([id]) => id !== currentUserId).map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
+            onChange={setOperatorFilter}
+            className="ml-auto bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] flex items-center justify-between gap-2"
+            options={[
+              { value: "all", label: t("ord.allOperators") },
+              ...(currentUserId ? [{ value: currentUserId, label: t("ord.onlyMine") }] : []),
+              ...Object.entries(operatorNames).filter(([id]) => id !== currentUserId).map(([id, name]) => ({ value: id, label: name })),
+            ]}
+          />
         </div>
       </div>
 

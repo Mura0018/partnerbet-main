@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase";
 import { GlobalChat } from "@/lib/chat/GlobalChat";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Partner = {
   id: string;
@@ -42,6 +44,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const [invSaving, setInvSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   const loadMembers = async () => {
     const { data } = await supabase.from("partner_members").select("id, profile_id, partner_role, profiles(full_name)").eq("partner_id", partner.id);
@@ -93,7 +96,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
         const map: Record<string, string> = { email_taken: t("prt.eEmailTaken"), forbidden: t("prt.eForbidden") };
         const msg = map[data.error] ?? t("prt.eGeneric");
         setMError(msg);
-        toast.error(t("prt.tMemberFail") + msg);
+        toast.error(t("prt.tMemberFail"));
         return;
       }
       setShowAddMember(false);
@@ -120,12 +123,13 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 
   const copyInvite = () => { if (inviteLink) { navigator.clipboard?.writeText(inviteLink); toast.success(t("prt.tLinkCopied")); } };
 
-  const removeMember = async (id: string) => {
-    if (!confirm(t("prt.confirmRemoveMember"))) return;
-    const { error } = await supabase.from("partner_members").delete().eq("id", id);
-    if (error) toast.error(t("prt.tRemoveFail") + error.message);
-    else toast.success(t("prt.tRemoved"));
-    loadMembers();
+  const removeMember = (id: string) => {
+    confirm(t("prt.confirmRemoveMember"), async () => {
+      const { error } = await supabase.from("partner_members").delete().eq("id", id);
+      if (error) { console.error("[partners] a'zo chiqarilmadi:", error); toast.error(t("prt.tRemoveFail")); }
+      else toast.success(t("prt.tRemoved"));
+      loadMembers();
+    });
   };
 
   const createInvoice = async () => {
@@ -137,7 +141,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       amount: Number(invForm.amount) || 0, currency: partner.currency, status: "unpaid", created_by: user?.id ?? null,
     });
     setInvSaving(false);
-    if (error) { toast.error(t("prt.tInvoiceFail") + error.message); return; }
+    if (error) { console.error("[partners] invoice yaratilmadi:", error); toast.error(t("prt.tInvoiceFail")); return; }
     toast.success(t("prt.tInvoiceOk"));
     setInvForm((p) => ({ ...p, amount: "" }));
     loadInvoices();
@@ -145,7 +149,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const toggleInvoicePaid = async (inv: any) => {
     const next = inv.status === "paid" ? "unpaid" : "paid";
     const { error } = await supabase.from("partner_invoices").update({ status: next, paid_at: next === "paid" ? new Date().toISOString() : null }).eq("id", inv.id);
-    if (error) toast.error(t("prt.tChangeFail") + error.message);
+    if (error) { console.error("[partners] o'zgartirilmadi:", error); toast.error(t("prt.tChangeFail")); }
     else { toast.success(next === "paid" ? t("prt.tMarkedPaid") : t("prt.tMarkedUnpaid")); loadInvoices(); }
   };
 
@@ -153,13 +157,13 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
     const next = !assign[id];
     setAssign((p) => ({ ...p, [id]: next }));
     const { error } = await supabase.from("partner_service_assignments").upsert({ partner_id: partner.id, service_id: id, enabled: next }, { onConflict: "partner_id,service_id" });
-    if (error) { setAssign((p) => ({ ...p, [id]: !next })); toast.error(t("prt.tNotSaved") + error.message); }
+    if (error) { setAssign((p) => ({ ...p, [id]: !next })); console.error("[partners] xizmat saqlanmadi:", error); toast.error(t("prt.tNotSaved")); }
   };
   const toggleTheme = async (id: string) => {
     const next = !themeAccess[id];
     setThemeAccess((p) => ({ ...p, [id]: next }));
     const { error } = await supabase.from("partner_theme_access").upsert({ partner_id: partner.id, theme_id: id, enabled: next }, { onConflict: "partner_id,theme_id" });
-    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); toast.error(t("prt.tNotSaved") + error.message); }
+    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); console.error("[partners] tema saqlanmadi:", error); toast.error(t("prt.tNotSaved")); }
   };
 
   return (
@@ -227,10 +231,15 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                     <input placeholder={t("prt.phFullName")} value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <input placeholder={t("prt.phEmail")} type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <p className="text-[11px] text-muted">{t("prt.noPassNote")}</p>
-                    <select value={mForm.partnerRole} onChange={(e) => setMForm((p) => ({ ...p, partnerRole: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
-                      <option value="partner_admin">{t("prt.roleAdmin")}</option>
-                      <option value="staff">{t("prt.roleStaff")}</option>
-                    </select>
+                    <Select
+                      value={mForm.partnerRole}
+                      onChange={(v) => setMForm((p) => ({ ...p, partnerRole: v }))}
+                      className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+                      options={[
+                        { value: "partner_admin", label: t("prt.roleAdmin") },
+                        { value: "staff", label: t("prt.roleStaff") },
+                      ]}
+                    />
                     {mError && <p className="text-[12px] text-[#FF6B85]">{mError}</p>}
                     <button onClick={createMember} disabled={mSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
                       {mSaving ? <Loader2 size={14} className="animate-spin mx-auto" /> : t("prt.create")}
@@ -268,10 +277,15 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                 <div className="rounded-lg glass-card p-3 mb-2.5 space-y-2">
                   <div className="flex gap-2">
                     <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-subtle rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
-                    <select value={invForm.model} onChange={(e) => setInvForm((p) => ({ ...p, model: e.target.value }))} className="bg-white/5 border border-subtle rounded-lg py-2 px-2 text-[12px] outline-none focus:border-accent">
-                      <option value="subscription">{t("prt.subscription")}</option>
-                      <option value="commission">{t("prt.commission")}</option>
-                    </select>
+                    <Select
+                      value={invForm.model}
+                      onChange={(v) => setInvForm((p) => ({ ...p, model: v }))}
+                      className="bg-white/5 border border-subtle rounded-lg py-2 px-2 text-[12px] flex items-center justify-between gap-2"
+                      options={[
+                        { value: "subscription", label: t("prt.subscription") },
+                        { value: "commission", label: t("prt.commission") },
+                      ]}
+                    />
                     <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={t("prt.phAmount", { cur: partner.currency })} className="flex-1 min-w-0 bg-white/5 border border-subtle rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
                   </div>
                   <button onClick={createInvoice} disabled={invSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[12.5px] disabled:opacity-50">{invSaving ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("prt.createInvoice")}</button>
@@ -294,6 +308,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
           )}
         </div>
       </div>
+      {confirmDialog}
     </div>
   );
 }
@@ -353,17 +368,18 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
       // Xatoni OBYEKT bo'yicha tekshiramiz (bo'sh message'li xato ham ushlanadi) +
       // qator haqiqatan yozildi va o'qildi (row) — shundagina muvaffaqiyat.
       if (opError || !row) {
-        const msg = opError?.message || opError?.hint || opError?.code || t("prt.eSaveUnknown");
-        setError(t("prt.eSavePrefix") + msg);
-        toast.error(t("prt.tNotSaved") + msg);
+        console.error("[partners] saqlashda xatolik:", opError);
+        setError(t("prt.eSavePrefix"));
+        toast.error(t("prt.tNotSaved"));
         return;
       }
       toast.success(editing ? t("prt.tUpdated") : t("prt.tCreated"));
       onSaved();
       onClose();
     } catch (err: any) {
+      console.error("[partners] kutilmagan xatolik:", err);
       setError(t("prt.eUnexpected"));
-      toast.error(t("prt.tErrPrefix") + (err?.message ?? t("prt.unknown")) + t("prt.tErrSuffix"));
+      toast.error(t("prt.eConnCheck"));
     } finally {
       setSaving(false);
     }
@@ -388,9 +404,12 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
           </div>
           <div>
             <label className="block text-[12px] text-muted mb-1">{t("prt.fCurrency")}</label>
-            <select className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <Select
+              className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+              value={currency}
+              onChange={setCurrency}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
           </div>
         </div>
 
@@ -418,11 +437,16 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
 
         <div className="mb-5">
           <label className="block text-[12px] text-muted mb-1">{t("prt.fStatus")}</label>
-          <select className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={status} onChange={(e) => setStatus(e.target.value as Partner["status"])}>
-            <option value="active">{t("prt.stActive")}</option>
-            <option value="pending">{t("prt.stPending")}</option>
-            <option value="suspended">{t("prt.stSuspended")}</option>
-          </select>
+          <Select
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+            value={status}
+            onChange={(v) => setStatus(v as Partner["status"])}
+            options={[
+              { value: "active", label: t("prt.stActive") },
+              { value: "pending", label: t("prt.stPending") },
+              { value: "suspended", label: t("prt.stSuspended") },
+            ]}
+          />
         </div>
 
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
@@ -455,6 +479,7 @@ export default function PartnersManager() {
   const [modal, setModal] = useState<ModalState>({ open: false, partner: null });
   const [provisionFor, setProvisionFor] = useState<Partner | null>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -462,7 +487,7 @@ export default function PartnersManager() {
       supabase.from("partners").select("*").order("created_at", { ascending: false }),
       supabase.from("partner_leads").select("id, name, phone, company, message, status, created_at").order("created_at", { ascending: false }),
     ]);
-    if (pErr) toast.error(t("prt.tLoadErr") + (pErr.message || pErr.code || t("prt.unknown")));
+    if (pErr) { console.error("[partners] ro'yxat yuklanmadi:", pErr); toast.error(t("prt.tLoadErr")); }
     setPartners((pData as Partner[]) ?? []);
     setLeads((lData as PartnerLead[]) ?? []);
     setLoading(false);
@@ -471,11 +496,12 @@ export default function PartnersManager() {
 
   const newLeadsCount = leads.filter((l) => l.status === "new").length;
 
-  const remove = async (p: Partner) => {
-    if (!confirm(t("prt.confirmDelete", { name: p.name }))) return;
-    const { error } = await supabase.from("partners").delete().eq("id", p.id);
-    if (error) toast.error(t("prt.tDelFail") + error.message);
-    else { toast.success(t("prt.tDeleted")); load(); }
+  const remove = (p: Partner) => {
+    confirm(t("prt.confirmDelete", { name: p.name }), async () => {
+      const { error } = await supabase.from("partners").delete().eq("id", p.id);
+      if (error) { console.error("[partners] hamkor o'chirilmadi:", error); toast.error(t("prt.tDelFail")); }
+      else { toast.success(t("prt.tDeleted")); load(); }
+    });
   };
 
   const setLeadStatus = async (lead: PartnerLead, status: string) => {
@@ -612,6 +638,7 @@ export default function PartnersManager() {
 
       {modal.open && <PartnerModal partner={modal.partner} prefill={modal.prefill} onClose={closeModal} onSaved={onModalSaved} />}
       {provisionFor && <ProvisionDrawer partner={provisionFor} onClose={() => setProvisionFor(null)} />}
+      {confirmDialog}
     </div>
   );
 }

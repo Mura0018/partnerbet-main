@@ -88,6 +88,19 @@
 
 html {
   scroll-behavior: smooth;
+  /* Eski Android WebView'da tugma bosganda chiqadigan standart oq/kulrang
+     "tap highlight" o'rtimini o'chiradi (band 6, 0-topilma). Buning o'rniga
+     pastdagi :active qatlami bosish sezilishini ta'minlaydi — shunchaki
+     olib tashlash emas, almashtirish. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Bosish sezilishi zaxira qatlami — :where() bilan 0 specificity, shuning
+   uchun har qanday komponentning o'z active: klassi bundan ustun turadi.
+   Maqsad: tap-highlight o'chirilgach, hech bir tugma "sezilmaydigan"
+   bo'lib qolmasligi (band 6, 0-band davomi). */
+:where(button, a, [role="button"], summary):not(:disabled):active {
+  opacity: 0.7;
 }
 
 ::selection {

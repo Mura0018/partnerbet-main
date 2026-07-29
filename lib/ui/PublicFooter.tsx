@@ -118,12 +118,12 @@ export function PublicFooter() {
 
         {/* Compliance line */}
         <p className="text-[10.5px] text-[#5b7089] leading-relaxed mt-7 pt-5 border-t border-subtle">
-          {t("home.disclaimer", { site: siteName || "WINORA" })}
+          {t("home.disclaimer", { site: siteName || "BetCore" })}
         </p>
 
         {/* Bottom bar */}
         <div className="mt-6 pt-5 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#5b6f85]">
-          <span>© {new Date().getFullYear()} {siteName || "WINORA"}. Barcha huquqlar himoyalangan.</span>
+          <span>© {new Date().getFullYear()} {siteName || "BetCore"}. Barcha huquqlar himoyalangan.</span>
           <span>Ishonchli. Xavfsiz. Professional.</span>
         </div>
       </div>

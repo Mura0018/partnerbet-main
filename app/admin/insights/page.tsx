@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Insight = {
   id: string;
@@ -32,6 +34,7 @@ export default function InsightsManager() {
   const [loading, setLoading] = useState(true);
 
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -63,11 +66,12 @@ export default function InsightsManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("med.insConfirmDelete"))) return;
-    // Soft delete: keeps the row (and its audit history) instead of erasing it.
-    await supabase.from("match_insights").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("med.insConfirmDelete"), async () => {
+      // Soft delete: keeps the row (and its audit history) instead of erasing it.
+      await supabase.from("match_insights").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -140,13 +144,12 @@ export default function InsightsManager() {
 
             <div className="mb-3">
               <label className="block text-[12px] text-muted mb-1">{t("med.fStatus")}</label>
-              <select
+              <Select
                 value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]"
-              >
-                {["UPCOMING", "LIVE", "WIN", "LOST", "PUSH"].map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+                onChange={(v) => setForm({ ...form, status: v })}
+                className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+                options={["UPCOMING", "LIVE", "WIN", "LOST", "PUSH"].map((s) => ({ value: s, label: s }))}
+              />
             </div>
 
             <div className="mb-5">
@@ -165,6 +168,7 @@ export default function InsightsManager() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -52,6 +52,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { WithdrawCodeGuide } from "@/lib/ui/WithdrawCodeGuide";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type SupportMessage = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
@@ -173,7 +174,7 @@ function CustomerSupportImage({ localUrl, path, getInitData, onOpen }: { localUr
   }, [localUrl, path]);
   if (!url) return <p className="text-[11px] text-white/70">{t("tg.imgLoading")}</p>;
   // F2b: to'liq ochish sahifa darajasида boshqariladi (BackButton uni yopadi).
-  return <img src={url} alt={t("tg.imgAlt")} onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in" />;
+  return <img src={url} alt={t("tg.imgAlt")} onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in transition-transform active:scale-95" />;
 }
 
 // F2e: to'liq ekran rasm — qo'lda (ikki barmoq) yaqinlashtirish/surish.
@@ -522,6 +523,7 @@ function dayLabel(t: (k: any, v?: any) => string, iso: string): string {
 
 export default function TelegramAppPage() {
   const { t, locale, setLocale } = useLocale();
+  const { confirm, confirmDialog } = useConfirm();
   const [screen, setScreen] = useState<Screen>("loading");
   // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
   // BackButton avval shuni yopadi, keyin ekrandan chiqadi.
@@ -587,6 +589,7 @@ export default function TelegramAppPage() {
   const [tuReceiptFileName, setTuReceiptFileName] = useState("");
   const [tuStep, setTuStep] = useState(1); // T1: bosqichли to'ldirish
   const [tuVerifying, setTuVerifying] = useState(false);
+  const [tuIdConfirm, setTuIdConfirm] = useState(false);
 
   // Withdraw form
   const [wdPlatform, setWdPlatform] = useState(PLATFORMS[0]);
@@ -848,7 +851,7 @@ export default function TelegramAppPage() {
           linked_to_other_telegram: t("tg.eLinkedOther"),
           rate_limited: t("tg.errRate"),
         };
-        setError(messages[data.error] ?? "Xatolik yuz berdi.");
+        setError(messages[data.error] ?? t("tg.eGeneric2"));
         return;
       }
       setCustomer(data.customer);
@@ -907,7 +910,7 @@ export default function TelegramAppPage() {
           weak_password: t("tg.eWeakPass"),
           rate_limited: t("tg.errRate"),
         };
-        setFpError(messages[data.error] ?? "Xatolik yuz berdi.");
+        setFpError(messages[data.error] ?? t("tg.eGeneric2"));
         return;
       }
       setPhone(fpPhone.trim());
@@ -916,10 +919,10 @@ export default function TelegramAppPage() {
       setFpPhone(""); setFpCode(""); setFpNewPassword(""); setFpInfo(""); setFpError("");
       setMode("login");
       setError("");
-      setAuthInfo("Parol yangilandi — endi yangi parolingiz bilan kiring.");
+      setAuthInfo(t("tg.fpSuccess"));
       setScreen("auth");
     } catch {
-      setFpError("Ulanishda xatolik. Qayta urinib ko'ring.");
+      setFpError(t("tg.eConn"));
     } finally {
       setFpSubmitting(false);
     }
@@ -928,7 +931,7 @@ export default function TelegramAppPage() {
   const resetForms = () => {
     setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
     setTuOrderId(null); setTuRequisite(null); setTuNeedsFullName(false); setTuFullNameInput("");
-    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1);
+    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1); setTuIdConfirm(false);
     setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails(""); setWdRecipientName("");
   };
 
@@ -966,7 +969,11 @@ export default function TelegramAppPage() {
       });
       const d = await res.json();
       if (!res.ok || d.error) {
-        setError(d.error === "not_found" ? t("tg.eIdNotFound2") : d.error === "not_configured" ? t("tg.eCdOff") : t("tg.eVerify"));
+        if (d.error === "not_configured") {
+          setTuIdConfirm(true);
+          return;
+        }
+        setError(d.error === "not_found" ? t("tg.eIdNotFound2") : t("tg.eVerify"));
         return;
       }
       setTuStep(2);
@@ -1001,9 +1008,9 @@ export default function TelegramAppPage() {
         if (data.error === "player_not_found") {
           setError(t("tg.eIdNotFound"));
         } else if (data.error === "order_limit_exceeded") {
-          setError(`Bitta buyurtma uchun maksimal summa: ${Number(data.limit).toLocaleString("ru-RU")} so'm.`);
+          setError(t("tg.eOrderLimit", { limit: Number(data.limit).toLocaleString("ru-RU") }));
         } else if (data.error === "daily_limit_exceeded") {
-          setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
+          setError(t("tg.eDailyLimit", { limit: Number(data.limit).toLocaleString("ru-RU") }));
         } else if (data.error === "too_many_pending_orders") {
           setError(t("tg.ePendingOrders"));
         } else if (data.error === "topup_disabled") {
@@ -1529,14 +1536,15 @@ export default function TelegramAppPage() {
     setSupportMessages((prev) => prev.filter((m) => m.clientId !== clientId));
   };
 
-  const deleteSupportMessage = async (id: string) => {
-    if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
-    await fetch("/api/telegram/miniapp/support/delete-message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData: getInitData(), messageId: id }),
+  const deleteSupportMessage = (id: string) => {
+    confirm("Xabarni o'chirishni tasdiqlaysizmi?", async () => {
+      await fetch("/api/telegram/miniapp/support/delete-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), messageId: id }),
+      });
+      await loadSupport(true);
     });
-    await loadSupport(true);
   };
 
   const supportMessageById = (id: string | null) => (id ? supportMessages.find((m) => m.id === id) ?? null : null);
@@ -1678,7 +1686,7 @@ export default function TelegramAppPage() {
         upload_failed: t("tg.vUpload"),
         insert_failed: t("tg.vInsert"),
       };
-      setSupportError(map[err] ?? `Ovozli xabar yuborilmadi${err ? ` (${err})` : ""}. Qayta urinib ko'ring.`);
+      setSupportError(map[err] ?? "Ovozli xabar yuborilmadi. Qayta urinib ko'ring.");
     } catch {
       setSupportError("Tarmoq xatosi. Ovozli xabar yuborilmadi.");
     } finally {
@@ -1988,7 +1996,22 @@ export default function TelegramAppPage() {
             {[1, 2, 3].map((n) => <div key={n} className={`h-1.5 flex-1 rounded-full ${n <= tuStep ? "bg-accent" : "bg-white/10"}`} />)}
           </div>
 
-          {tuStep === 1 && (
+          {tuStep === 1 && tuIdConfirm && (
+            <div>
+              <div className="mb-4 rounded-xl bg-accent/10 border border-accent/25 px-4 py-4 text-center">
+                <div className="text-[26px] font-extrabold tracking-wide mb-2">{tuAccountId.trim()}</div>
+                <div className="text-[13px] text-[#93a5ba]">{t("tg.idConfirmMsg", { id: tuAccountId.trim() })}</div>
+              </div>
+              <button type="button" onClick={() => { setTuIdConfirm(false); setTuStep(2); }} className={buttonCls}>
+                {t("tg.continueBtn")}
+              </button>
+              <button type="button" onClick={() => setTuIdConfirm(false)} className="w-full mt-2 py-2.5 text-[13px] text-[#93a5ba]">
+                {t("tg.idChange")}
+              </button>
+            </div>
+          )}
+
+          {tuStep === 1 && !tuIdConfirm && (
             <div>
               <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
               <div className="mb-3.5">
@@ -2428,6 +2451,7 @@ export default function TelegramAppPage() {
             <Send size={14} />
           </button>
         </div>
+        {confirmDialog}
       </div>
     );
   }

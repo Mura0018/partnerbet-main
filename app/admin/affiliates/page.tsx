@@ -8,6 +8,8 @@ import {
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { isValidHttpUrl, isValidDeepLink } from "@/lib/validation/url";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Partner = {
   id: string;
@@ -79,6 +81,7 @@ export default function AffiliatesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -103,10 +106,11 @@ export default function AffiliatesPage() {
     await supabase.from("affiliate_partners").update({ is_featured: !p.is_featured }).eq("id", p.id);
     load();
   };
-  const remove = async (id: string) => {
-    if (!confirm(t("aff.confirmDel"))) return;
-    await supabase.from("affiliate_partners").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("aff.confirmDel"), async () => {
+      await supabase.from("affiliate_partners").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -176,6 +180,7 @@ export default function AffiliatesPage() {
           onSaved={() => { setShowModal(false); load(); }}
         />
       )}
+      {confirmDialog}
     </div>
   );
 }
@@ -209,7 +214,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
       const media = await uploadImage(file);
       setForm({ ...form, logo_media_id: media.id, logo_url: media.publicUrl });
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setLogoUploading(false);
     }
@@ -261,7 +266,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
     if (currentPartner) {
       const { error: updateError } = await supabase.from("affiliate_partners").update(payload).eq("id", currentPartner.id);
       setSaving(false);
-      if (updateError) { setError(updateError.message); return; }
+      if (updateError) { setError(`Saqlashda xatolik: ${updateError.message}`); return; }
       onSaved();
     } else {
       const { data, error: insertError } = await supabase
@@ -270,7 +275,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
         .select("*")
         .single();
       setSaving(false);
-      if (insertError || !data) { setError(insertError?.message ?? "Saqlashda xatolik."); return; }
+      if (insertError || !data) { setError(insertError?.message ? `Saqlashda xatolik: ${insertError.message}` : "Saqlashda xatolik."); return; }
       setCurrentPartner(data as Partner);
       setTab("promos");
     }
@@ -436,7 +441,7 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
       is_featured: form.is_featured,
       expires_at: form.expires_at || null,
     });
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ code: "", bonus_description: "", is_featured: false, expires_at: "" });
     load();
   };
@@ -506,7 +511,7 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
       partner_id: partnerId, match_type: form.match_type, match_value: form.match_value.trim(),
       target_url: form.target_url.trim(), priority: Number(form.priority) || 0,
     });
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ match_type: "country", match_value: "", target_url: "", priority: 0 });
     load();
   };
@@ -523,11 +528,16 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
       </p>
       <form onSubmit={add} className="rounded-lg border border-subtle p-4 mb-4 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <select className={inputCls} value={form.match_type} onChange={(e) => setForm({ ...form, match_type: e.target.value as any })}>
-            <option value="country">{t("aff.rCountry")}</option>
-            <option value="language">{t("aff.rLang")}</option>
-            <option value="device">{t("aff.rDevice")}</option>
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.match_type}
+            onChange={(v) => setForm({ ...form, match_type: v as any })}
+            options={[
+              { value: "country", label: t("aff.rCountry") },
+              { value: "language", label: t("aff.rLang") },
+              { value: "device", label: t("aff.rDevice") },
+            ]}
+          />
           <input className={inputCls} placeholder={form.match_type === "device" ? "mobile/desktop/tablet" : form.match_type === "country" ? "UZ" : "uz"} value={form.match_value} onChange={(e) => setForm({ ...form, match_value: e.target.value })} />
           <input type="number" className={inputCls} placeholder={t("aff.phPriority")} value={form.priority} onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })} />
         </div>

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
 
 type SettingsMap = Record<string, any>;
 type SecretStatuses = Record<string, boolean>;
@@ -148,7 +149,7 @@ function GeneralTab({ settings, updateLocal, saveKey }: TabProps) {
   return (
     <div className="rounded-xl glass-card p-5">
       <Field label={t("set.gSiteName")}>
-        <input className={inputCls} value={identity.site_name ?? ""} onChange={(e) => updateLocal("site_identity", { site_name: e.target.value })} placeholder="WINORA" />
+        <input className={inputCls} value={identity.site_name ?? ""} onChange={(e) => updateLocal("site_identity", { site_name: e.target.value })} placeholder="BetCore" />
       </Field>
       <Field label={t("set.gTagline")}>
         <input className={inputCls} value={identity.tagline ?? ""} onChange={(e) => updateLocal("site_identity", { tagline: e.target.value })} />
@@ -305,7 +306,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
       const media = await uploadImage(file);
       updateLocal("branding", { [field]: media.id, [`${field}_url`]: media.publicUrl });
     } catch (e: any) {
-      setError(e.message ?? t("set.bUploadErr"));
+      setError(e.message ? `${t("set.bUploadErr")}: ${e.message}` : t("set.bUploadErr"));
     } finally {
       setUploading(false);
     }
@@ -333,7 +334,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
               ) : (
                 <div className="w-5 h-5 rounded bg-gradient-to-br from-accent to-accent-dim" />
               )}
-              <span className="text-[10px] font-bold">WINORA</span>
+              <span className="text-[10px] font-bold">BetCore</span>
             </div>
             <span className="text-[9px] text-muted">{t("set.bAdminPanel")}</span>
           </div>
@@ -344,7 +345,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
               ) : (
                 <div className="w-5 h-5 rounded bg-gradient-to-br from-accent to-accent-dim" />
               )}
-              <span className="text-[10px] font-bold">WINORA</span>
+              <span className="text-[10px] font-bold">BetCore</span>
             </div>
             <span className="text-[9px] text-muted">{t("set.bSite")}</span>
           </div>
@@ -557,9 +558,12 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
           {t("set.fcDesc")}
         </p>
         <Field label={t("set.fcActive")}>
-          <select className={inputCls} value={footballProvider.active ?? ""} onChange={(e) => updateLocal("football_provider", { active: e.target.value || null })}>
-            {PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={footballProvider.active ?? ""}
+            onChange={(v) => updateLocal("football_provider", { active: v || null })}
+            options={PROVIDERS.map((p) => ({ value: p.id, label: p.label }))}
+          />
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label={t("set.fcLeagueId")}>

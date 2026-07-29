@@ -7,6 +7,8 @@ import { Plus, Trash2, Pencil, X, Upload, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { RichTextEditor } from "@/lib/editor/RichTextEditor";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type NewsItem = {
   id: string;
@@ -53,6 +55,7 @@ export default function FootballNewsManager() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ data: itemsData }, { data: categoriesData }] = await Promise.all([
@@ -78,7 +81,7 @@ export default function FootballNewsManager() {
       const media = await uploadImage(file);
       setForm((prev: any) => ({ ...prev, cover_media_id: media.id, cover_url: media.publicUrl }));
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setCoverUploading(false);
     }
@@ -111,15 +114,16 @@ export default function FootballNewsManager() {
       : await supabase.from("football_news").insert(payload);
 
     setSaving(false);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setShowForm(false);
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("post.confirmDelNews"))) return;
-    await supabase.from("football_news").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("post.confirmDelNews"), async () => {
+      await supabase.from("football_news").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const categoryName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? "—";
@@ -186,10 +190,15 @@ export default function FootballNewsManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fCategory")}</label>
-                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputCls}>
-                  <option value="">— tanlanmagan —</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.category_id}
+                  onChange={(v) => setForm({ ...form, category_id: v })}
+                  options={[
+                    { value: "", label: "— tanlanmagan —" },
+                    ...categories.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fLeague")}</label>
@@ -211,9 +220,12 @@ export default function FootballNewsManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fStatus")}</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_LABEL[s].labelKey as any)}</option>)}
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.status}
+                  onChange={(v) => setForm({ ...form, status: v })}
+                  options={STATUSES.map((s) => ({ value: s, label: t(STATUS_LABEL[s].labelKey as any) }))}
+                />
               </div>
               {form.status === "scheduled" && (
                 <div>
@@ -230,6 +242,7 @@ export default function FootballNewsManager() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

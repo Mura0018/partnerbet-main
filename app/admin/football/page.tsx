@@ -6,6 +6,13 @@ import { Plus, Trash2, Upload, Loader2, Trophy, Star, Video } from "lucide-react
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { isValidHttpUrl } from "@/lib/validation/url";
+import { Select } from "@/lib/ui/Select";
+
+const FOOTBALL_PROVIDER_OPTIONS = [
+  { value: "api_football", label: "API-Football" },
+  { value: "sportmonks", label: "Sportmonks" },
+  { value: "football_data_org", label: "Football-Data.org" },
+];
 
 const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 type Tab = "leagues" | "fixtures" | "videos";
@@ -61,7 +68,7 @@ function FeaturedLeaguesTab() {
     setError("");
     if (!form.name.trim() || !form.external_league_id.trim()) { setError("Nom va provayderdagi Liga ID kiriting."); return; }
     const { error: insertError } = await supabase.from("featured_leagues").insert(form);
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ provider: "api_football", external_league_id: "", name: "", country: "", season: "", position: 0 });
     load();
   };
@@ -76,11 +83,12 @@ function FeaturedLeaguesTab() {
       </p>
       <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <select className={inputCls} value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })}>
-            <option value="api_football">API-Football</option>
-            <option value="sportmonks">Sportmonks</option>
-            <option value="football_data_org">Football-Data.org</option>
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.provider}
+            onChange={(v) => setForm({ ...form, provider: v })}
+            options={FOOTBALL_PROVIDER_OPTIONS}
+          />
           <input className={inputCls} placeholder={t("fbl.phLeagueId")} value={form.external_league_id} onChange={(e) => setForm({ ...form, external_league_id: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -122,7 +130,7 @@ function FeaturedFixturesTab() {
     setError("");
     if (!form.external_fixture_id.trim()) { setError("O'yin ID kiriting."); return; }
     const { error: insertError } = await supabase.from("featured_fixtures").insert(form);
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ provider: "api_football", external_fixture_id: "", note: "", position: 0 });
     load();
   };
@@ -136,11 +144,12 @@ function FeaturedFixturesTab() {
       </p>
       <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <select className={inputCls} value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })}>
-            <option value="api_football">API-Football</option>
-            <option value="sportmonks">Sportmonks</option>
-            <option value="football_data_org">Football-Data.org</option>
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.provider}
+            onChange={(v) => setForm({ ...form, provider: v })}
+            options={FOOTBALL_PROVIDER_OPTIONS}
+          />
           <input className={inputCls} placeholder={t("fbl.phFixtureId")} value={form.external_fixture_id} onChange={(e) => setForm({ ...form, external_fixture_id: e.target.value })} />
         </div>
         <input className={inputCls} placeholder={t("fbl.phEditorNote")} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
@@ -181,7 +190,7 @@ function VideosTab() {
       const media = await uploadImage(file);
       setThumbMediaId(media.id);
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setThumbUploading(false);
     }
@@ -192,7 +201,7 @@ function VideosTab() {
     setError("");
     if (!form.title.trim() || !isValidHttpUrl(form.video_url)) { setError("Sarlavha va to'g'ri video URL kiriting."); return; }
     const { error: insertError } = await supabase.from("football_videos").insert({ ...form, thumbnail_media_id: thumbMediaId });
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ title: "", video_url: "", description: "", is_featured: false });
     setThumbMediaId(null);
     load();

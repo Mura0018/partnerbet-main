@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PartnerDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const d = dictionaries[await getServerLocale()];
-  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "WINORA";
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "BetCore";
   const { slug } = await params;
   const partner = await getPartner(slug);
   if (!partner) notFound();

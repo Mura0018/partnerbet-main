@@ -50,10 +50,9 @@ function formatAmount(amount: number): string {
 
 export function buildOrderCreatedMessage(type: "topup" | "withdraw", amount: number): string {
   return (
-    `🟦 BETCORE PAY\n\n` +
-    `✅ ${TYPE_LABEL[type]} buyurtmangiz qabul qilindi\n\n` +
-    `💰 Summa: ${formatAmount(amount)}\n` +
-    `📌 Holat: ⏳ Kutilmoqda\n\n` +
+    `🟦 BetCore Pay\n\n` +
+    `${TYPE_LABEL[type]} buyurtmangiz qabul qilindi. Holat: kutilmoqda.\n` +
+    `Summa: ${formatAmount(amount)}\n\n` +
     `Operator tez orada ko'rib chiqadi — natijani shu yerda va ilovada "Buyurtmalarim" bo'limida ko'rasiz.`
   );
 }
@@ -66,12 +65,11 @@ export function buildOrderResolvedMessage(
 ): string {
   const isCompleted = status === "completed";
   return (
-    `🟦 BETCORE PAY\n\n` +
-    `${isCompleted ? "✅" : "❌"} ${TYPE_LABEL[type]} buyurtmangiz ${isCompleted ? "BAJARILDI" : "RAD ETILDI"}\n\n` +
-    `💰 Summa: ${formatAmount(amount)}\n` +
-    `📌 Holat: ${isCompleted ? "✅ Bajarildi" : "❌ Rad etildi"}\n` +
+    `🟦 BetCore Pay\n\n` +
+    `${TYPE_LABEL[type]} buyurtmangiz ${isCompleted ? "bajarildi" : "rad etildi"}.\n` +
+    `Summa: ${formatAmount(amount)}\n` +
     (note
-      ? `\n${isCompleted ? "📝 Operator izohi" : "📝 Sabab"}: ${note}`
+      ? `\n${isCompleted ? "Operator izohi" : "Sabab"}: ${note}`
       : isCompleted
       ? ""
       : `\nBatafsil uchun "Operator bilan aloqa" bo'limiga yozing.`)
@@ -79,5 +77,5 @@ export function buildOrderResolvedMessage(
 }
 
 export function buildSupportReplyMessage(text: string): string {
-  return `🟦 BETCORE PAY\n\n💬 Operator javobi:\n\n${text}`;
+  return `🟦 BetCore Pay\n\n💬 Operator javobi:\n\n${text}`;
 }

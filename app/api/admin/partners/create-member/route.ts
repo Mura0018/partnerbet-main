@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       to: email,
       subject: "BetCore Pay — hisobingizni faollashtiring",
       html: renderActionEmail({
-        heading: "Xush kelibsiz!",
+        heading: "Xush kelibsiz",
         body: "Sizga BetCore Pay hamkor paneli uchun hisob yaratildi. Parolingizni o'rnatish uchun quyidagi tugmani bosing.",
         buttonLabel: "Parol o'rnatish",
         url: inviteUrl,

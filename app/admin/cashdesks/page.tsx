@@ -5,6 +5,8 @@ import { Landmark, Plus, Loader2, Pencil, Trash2, X, RefreshCw, DownloadCloud, A
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Operator = { id: string; full_name: string | null; email: string | null };
 type Cashdesk = {
@@ -75,6 +77,7 @@ export default function CashdesksManager() {
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   // W3.2 — "Imzo diagnostikasi" (faqat super_admin, faqat Balance).
   const [diagCashdeskId, setDiagCashdeskId] = useState("");
@@ -157,7 +160,7 @@ export default function CashdesksManager() {
     try {
       const res = await fetch("/api/admin/cashdesks");
       const data = await res.json();
-      if (!res.ok) { toast.error(t("csh.tLoadErr") + (data.error ?? "")); return; }
+      if (!res.ok) { console.error("[cashdesks] ro'yxat yuklanmadi:", data.error); toast.error(t("csh.tLoadErr")); return; }
       setRows(data.cashdesks ?? []);
       setOperators(data.operators ?? []);
       // Balanslarni non-blocking, har kassa alohida.
@@ -209,8 +212,13 @@ export default function CashdesksManager() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const msg = data.error === "duplicate_cashdesk_id" ? t("csh.tDuplicate") : (data.error ?? "xatolik");
-        toast.error(t("csh.tSaveFailed") + msg); return;
+        if (data.error === "duplicate_cashdesk_id") {
+          toast.error(t("csh.tDuplicate"));
+        } else {
+          console.error("[cashdesks] saqlanmadi:", data.error);
+          toast.error(t("csh.tSaveFailed"));
+        }
+        return;
       }
       toast.success(isEdit ? t("csh.tUpdated") : t("csh.tAdded"));
       setForm(null);
@@ -222,17 +230,18 @@ export default function CashdesksManager() {
     }
   };
 
-  const remove = async (c: Cashdesk) => {
-    if (!confirm(t("csh.confirmDelete", { name: c.name }))) return;
-    try {
-      const res = await fetch(`/api/admin/cashdesks/${c.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) { toast.error(t("csh.tDelFailed") + (data.error ?? "")); return; }
-      toast.success(t("csh.tDeleted"));
-      await load();
-    } catch {
-      toast.error("Ulanishda xatolik.");
-    }
+  const remove = (c: Cashdesk) => {
+    confirm(t("csh.confirmDelete", { name: c.name }), async () => {
+      try {
+        const res = await fetch(`/api/admin/cashdesks/${c.id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) { console.error("[cashdesks] kassa o'chirilmadi:", data.error); toast.error(t("csh.tDelFailed")); return; }
+        toast.success(t("csh.tDeleted"));
+        await load();
+      } catch {
+        toast.error("Ulanishda xatolik.");
+      }
+    });
   };
 
   const importLegacy = async () => {
@@ -354,18 +363,27 @@ export default function CashdesksManager() {
             hash/cashierpass hech qachon to'liq ko'rsatilmaydi (faqat oxirgi 4 belgi). Daqiqasiga 5 marta cheklov.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
-            <select className={inp} value={diagCashdeskId} onChange={(e) => setDiagCashdeskId(e.target.value)}>
-              <option value="">— kassani tanlang (faol-emaslari ham) —</option>
-              {rows.map((c) => (
-                <option key={c.id} value={c.id}>{c.name} ({c.cashdesk_id}){!c.is_active ? " — faol emas" : ""}</option>
-              ))}
-            </select>
-            <select className={inp} value={diagOffset} onChange={(e) => setDiagOffset(Number(e.target.value))}>
-              {DT_OFFSETS.map((o) => <option key={o.hours} value={o.hours}>{o.label}</option>)}
-            </select>
-            <select className={inp} value={diagVariant} onChange={(e) => setDiagVariant(Number(e.target.value))}>
-              {Object.entries(SIGNATURE_VARIANT_LABELS).map(([v, label]) => <option key={v} value={v}>{label}</option>)}
-            </select>
+            <Select
+              className={`${inp} flex items-center justify-between gap-2`}
+              value={diagCashdeskId}
+              onChange={setDiagCashdeskId}
+              options={[
+                { value: "", label: "— kassani tanlang (faol-emaslari ham) —" },
+                ...rows.map((c) => ({ value: c.id, label: `${c.name} (${c.cashdesk_id})${!c.is_active ? " — faol emas" : ""}` })),
+              ]}
+            />
+            <Select
+              className={`${inp} flex items-center justify-between gap-2`}
+              value={String(diagOffset)}
+              onChange={(v) => setDiagOffset(Number(v))}
+              options={DT_OFFSETS.map((o) => ({ value: String(o.hours), label: o.label }))}
+            />
+            <Select
+              className={`${inp} flex items-center justify-between gap-2`}
+              value={String(diagVariant)}
+              onChange={(v) => setDiagVariant(Number(v))}
+              options={Object.entries(SIGNATURE_VARIANT_LABELS).map(([v, label]) => ({ value: v, label }))}
+            />
           </div>
           <div className="flex gap-2 mb-3">
             <button onClick={diagTestOne} disabled={diagBusy || !diagCashdeskId}
@@ -432,10 +450,15 @@ export default function CashdesksManager() {
               </div>
               <p className="text-[11px] text-white/30 -mt-1">{t("csh.encNote")}</p>
               <Field label={t("csh.fOwner")}>
-                <select className={inp} value={form.owner_operator_id} onChange={(e) => setForm({ ...form, owner_operator_id: e.target.value })}>
-                  <option value="">{t("csh.notSelected")}</option>
-                  {operators.map((o) => <option key={o.id} value={o.id}>{o.full_name || o.email}</option>)}
-                </select>
+                <Select
+                  className={`${inp} flex items-center justify-between gap-2`}
+                  value={form.owner_operator_id}
+                  onChange={(v) => setForm({ ...form, owner_operator_id: v })}
+                  options={[
+                    { value: "", label: t("csh.notSelected") },
+                    ...operators.map((o) => ({ value: o.id, label: o.full_name || o.email || "" })),
+                  ]}
+                />
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label={t("csh.fRegion")}><input className={inp} value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} placeholder={t("csh.phOptional")} /></Field>
@@ -456,6 +479,7 @@ export default function CashdesksManager() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

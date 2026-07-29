@@ -4,6 +4,8 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import { Heart, LayoutDashboard, CreditCard, Download, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Tab = "dashboard" | "methods";
 
@@ -164,6 +166,7 @@ function PaymentMethodsTab() {
   });
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase.from("payment_methods").select("*").is("deleted_at", null).order("display_order");
@@ -203,7 +206,7 @@ function PaymentMethodsTab() {
     const result = editingId
       ? await supabase.from("payment_methods").update(payload).eq("id", editingId)
       : await supabase.from("payment_methods").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setShowForm(false);
     load();
   };
@@ -212,10 +215,11 @@ function PaymentMethodsTab() {
     await supabase.from("payment_methods").update({ is_active: !m.is_active }).eq("id", m.id);
     load();
   };
-  const remove = async (id: string) => {
-    if (!confirm(t("don.confirmDel"))) return;
-    await supabase.from("payment_methods").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("don.confirmDel"), async () => {
+      await supabase.from("payment_methods").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
   const move = async (index: number, direction: -1 | 1) => {
     const target = methods[index + direction];
@@ -269,19 +273,29 @@ function PaymentMethodsTab() {
             <input className={`${inputCls} mb-3`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
             <label className="block text-[12px] text-muted mb-1">{t("don.fType")}</label>
-            <select className={`${inputCls} mb-3`} value={form.method_type} onChange={(e) => setForm({ ...form, method_type: e.target.value as any })}>
-              <option value="gateway">{t("don.tGateway")}</option>
-              <option value="crypto">{t("don.tCrypto")}</option>
-            </select>
+            <Select
+              className={`${inputCls} mb-3 flex items-center justify-between gap-2`}
+              value={form.method_type}
+              onChange={(v) => setForm({ ...form, method_type: v as any })}
+              options={[
+                { value: "gateway", label: t("don.tGateway") },
+                { value: "crypto", label: t("don.tCrypto") },
+              ]}
+            />
 
             {form.method_type === "gateway" ? (
               <>
                 <label className="block text-[12px] text-muted mb-1">{t("don.provider")}</label>
-                <select className={`${inputCls} mb-3`} value={form.provider_key} onChange={(e) => setForm({ ...form, provider_key: e.target.value })}>
-                  <option value="stripe">Stripe</option>
-                  <option value="paypal">PayPal</option>
-                  <option value="generic">{t("don.pGeneric")}</option>
-                </select>
+                <Select
+                  className={`${inputCls} mb-3 flex items-center justify-between gap-2`}
+                  value={form.provider_key}
+                  onChange={(v) => setForm({ ...form, provider_key: v })}
+                  options={[
+                    { value: "stripe", label: "Stripe" },
+                    { value: "paypal", label: "PayPal" },
+                    { value: "generic", label: t("don.pGeneric") },
+                  ]}
+                />
                 {form.provider_key === "generic" && (
                   <>
                     <label className="block text-[12px] text-muted mb-1">{t("don.baseUrl")}</label>
@@ -312,6 +326,7 @@ function PaymentMethodsTab() {
       {credentialsMethod && (
         <GatewayCredentialsModal method={credentialsMethod} onClose={() => setCredentialsMethod(null)} />
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Users, Search, X, Loader2, ChevronLeft, ChevronRight, Gift, EyeOff, Eye, RotateCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Row = { id: string; full_name: string | null; phone: string; created_at: string; partnerName: string | null; orderCount: number; nameMismatchPending: boolean };
 type Partner = { id: string; name: string };
@@ -42,6 +44,7 @@ export default function CustomersManager() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const [showHidden, setShowHidden] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
   const [nameMismatchFilter, setNameMismatchFilter] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -99,7 +102,7 @@ export default function CustomersManager() {
         body: JSON.stringify({ customerId: detail.customer.id, reason: nameConfirmReason.trim() }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(t("cus.tConfirmFailed") + (data.error ?? "")); return; }
+      if (!res.ok) { console.error("[customers] tasdiqlanmadi:", data.error); toast.error(t("cus.tConfirmFailed")); return; }
       toast.success(t("cus.tConfirmed"));
       setNameConfirmReason("");
       await openDetail(detail.customer.id);
@@ -112,19 +115,22 @@ export default function CustomersManager() {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const toggleAll = () => setSelectedIds(() => (allSelected ? new Set<string>() : new Set(rows.map((r) => r.id))));
 
-  const applyHide = async (hidden: boolean) => {
+  const applyHide = (hidden: boolean) => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
-    if (hidden && !confirm(t("cus.confirmHide", { n: ids.length }))) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/admin/customers/hide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids, hidden }) });
-      const data = await res.json();
-      if (!res.ok) { toast.error(t("cus.tFailed") + (data.error ?? "")); return; }
-      toast.success(hidden ? t("cus.tHidden", { n: data.updated }) : t("cus.tRestored", { n: data.updated }));
-      load(page);
-    } catch { toast.error(t("cus.tConnErr")); }
-    finally { setBusy(false); }
+    const run = async () => {
+      setBusy(true);
+      try {
+        const res = await fetch("/api/admin/customers/hide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids, hidden }) });
+        const data = await res.json();
+        if (!res.ok) { console.error("[customers] bajarilmadi:", data.error); toast.error(t("cus.tFailed")); return; }
+        toast.success(hidden ? t("cus.tHidden", { n: data.updated }) : t("cus.tRestored", { n: data.updated }));
+        load(page);
+      } catch { toast.error(t("cus.tConnErr")); }
+      finally { setBusy(false); }
+    };
+    if (hidden) confirm(t("cus.confirmHide", { n: ids.length }), run);
+    else run();
   };
 
   const lastPage = Math.max(0, Math.ceil(total / pageSize) - 1);
@@ -144,12 +150,16 @@ export default function CustomersManager() {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("cus.searchPh")}
             className="w-full bg-white/5 border border-subtle rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent" />
         </div>
-        <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)}
-          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
-          <option value="all">{t("cus.allCustomers")}</option>
-          <option value="platform">{t("cus.platform")}</option>
-          {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <Select
+          value={partnerId}
+          onChange={setPartnerId}
+          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+          options={[
+            { value: "all", label: t("cus.allCustomers") },
+            { value: "platform", label: t("cus.platform") },
+            ...partners.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
         <button onClick={() => setShowHidden((v) => !v)}
           className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12.5px] font-medium border whitespace-nowrap ${showHidden ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted hover:text-white"}`}>
           {showHidden ? <><Eye size={14} /> {t("cus.normalList")}</> : <><EyeOff size={14} /> {t("cus.hiddenList")}</>}
@@ -331,6 +341,7 @@ export default function CustomersManager() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Category = {
   id: string;
@@ -26,6 +28,7 @@ export default function CategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase
@@ -68,15 +71,16 @@ export default function CategoriesPage() {
     const result = editingId
       ? await supabase.from("categories").update(payload).eq("id", editingId)
       : await supabase.from("categories").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     openNew();
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("cnt.catConfirmDel"))) return;
-    await supabase.from("categories").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("cnt.catConfirmDel"), async () => {
+      await supabase.from("categories").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -94,10 +98,15 @@ export default function CategoriesPage() {
           <input className={inputCls} placeholder={t("cnt.catPhName")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className={inputCls} placeholder={t("cnt.catPhSlug")} value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} />
         </div>
-        <select className={inputCls} value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })}>
-          <option value="">{t("cnt.catNoParent")}</option>
-          {categories.filter((c) => c.id !== editingId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={form.parent_id}
+          onChange={(v) => setForm({ ...form, parent_id: v })}
+          options={[
+            { value: "", label: t("cnt.catNoParent") },
+            ...categories.filter((c) => c.id !== editingId).map((c) => ({ value: c.id, label: c.name })),
+          ]}
+        />
         <textarea rows={2} className={inputCls} placeholder={t("cnt.catPhDesc")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         {error && <p className="text-[12px] text-[#FF6B85]">{error}</p>}
         <div className="flex gap-2">
@@ -123,6 +132,7 @@ export default function CategoriesPage() {
         ))}
         {categories.length === 0 && <p className="text-[12px] text-[#5b6f85] text-center py-6">{t("cnt.catEmpty")}</p>}
       </div>
+      {confirmDialog}
     </div>
   );
 }

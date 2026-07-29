@@ -80,7 +80,7 @@ export default function SupportPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok || !json.checkoutUrl) { setError(json.error ?? t("donations.genericError")); setSubmitting(false); return; }
+      if (!res.ok || !json.checkoutUrl) { setError(t("donations.genericError")); setSubmitting(false); return; }
       window.location.href = json.checkoutUrl;
     } catch {
       setError(t("donations.genericError"));

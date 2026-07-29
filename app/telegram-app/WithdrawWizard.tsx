@@ -29,6 +29,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirmId, setConfirmId] = useState(false);
 
   const [platform, setPlatform] = useState("1xBet");
   const [customPlatform, setCustomPlatform] = useState("");
@@ -62,7 +63,11 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
       });
       const d = await res.json();
       if (!res.ok || d.error) {
-        setError(d.error === "not_found" ? t("wz.eIdNotFound") : d.error === "not_configured" ? t("wz.eCdOff") : t("wz.eVerify"));
+        if (d.error === "not_configured") {
+          setConfirmId(true);
+          return;
+        }
+        setError(d.error === "not_found" ? t("wz.eIdNotFound") : t("wz.eVerify"));
         return;
       }
       setPlayerName(d.playerName ?? "");
@@ -110,8 +115,8 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
         else if (d.error === "temporarily_blocked") setError(t("wz.eBlocked"));
         else if (d.error === "full_name_required") setNeedsFullName(true);
         else if (d.error === "name_mismatch") setError(t("wz.eNameMismatch"));
-        else if (d.error === "order_limit_exceeded") setError(`${t("wz.eGeneric")} (limit: ${Number(d.limit).toLocaleString("ru-RU")})`);
-        else if (d.error === "daily_limit_exceeded") setError(`${t("wz.eGeneric")} (limit: ${Number(d.limit).toLocaleString("ru-RU")})`);
+        else if (d.error === "order_limit_exceeded") setError(t("wz.eOrderLimit", { limit: Number(d.limit).toLocaleString("ru-RU") }));
+        else if (d.error === "daily_limit_exceeded") setError(t("wz.eDailyLimit", { limit: Number(d.limit).toLocaleString("ru-RU") }));
         else setError(t("wz.eGeneric"));
         return;
       }
@@ -161,7 +166,22 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
     <div>
       <Steps />
 
-      {step === 1 && (
+      {step === 1 && confirmId && (
+        <div>
+          <div className="mb-4 rounded-xl bg-accent/10 border border-accent/25 px-4 py-4 text-center">
+            <div className="text-[26px] font-extrabold tracking-wide mb-2">{accountId.trim()}</div>
+            <div className="text-[13px] text-[#93a5ba]">{t("wz.idConfirmMsg", { id: accountId.trim() })}</div>
+          </div>
+          <button type="button" onClick={() => { setConfirmId(false); setPlayerName(""); setRecipient(""); setStep(2); }} className={buttonCls}>
+            {t("wz.continueBtn")}
+          </button>
+          <button type="button" onClick={() => setConfirmId(false)} className="w-full mt-2 py-2.5 text-[13px] text-[#93a5ba]">
+            {t("wz.idChange")}
+          </button>
+        </div>
+      )}
+
+      {step === 1 && !confirmId && (
         <div>
           <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.platform")}</label>
           <div className="grid grid-cols-2 gap-2 mb-3">

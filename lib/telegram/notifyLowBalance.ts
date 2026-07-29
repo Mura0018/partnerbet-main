@@ -24,10 +24,10 @@ export async function notifySuperAdminsLowBalance(
 
   const balStr = balance == null ? "?" : balance.toLocaleString("ru-RU");
   const text =
-    `🟥 BETCORE PAY — PAST BALANS\n\n` +
-    `🏦 Kassa: ${cashdeskName}\n` +
-    `💰 Balans: ${balStr} so'm\n` +
-    `⚠️ Chegara: ${threshold.toLocaleString("ru-RU")} so'm\n\n` +
+    `🟥 BetCore Pay — past balans\n\n` +
+    `Kassa: ${cashdeskName}\n` +
+    `Balans: ${balStr} so'm\n` +
+    `Chegara: ${threshold.toLocaleString("ru-RU")} so'm\n\n` +
     `Kassani to'ldirish kerak.`;
 
   await Promise.all(

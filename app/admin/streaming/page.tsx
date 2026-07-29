@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { isValidHttpUrl } from "@/lib/validation/url";
+import { toast } from "@/lib/ui/toast";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -70,6 +73,7 @@ function ProvidersTab() {
   const [testingId, setTestingId] = useState<string | null>(null);
   const [credentialsProviderId, setCredentialsProviderId] = useState<string | null>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase.from("streaming_providers").select("*").is("deleted_at", null).order("priority");
@@ -88,7 +92,7 @@ function ProvidersTab() {
     const result = editingId
       ? await supabase.from("streaming_providers").update(payload).eq("id", editingId)
       : await supabase.from("streaming_providers").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setShowForm(false);
     load();
   };
@@ -98,10 +102,11 @@ function ProvidersTab() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("strm.confirmDel"))) return;
-    await supabase.from("streaming_providers").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("strm.confirmDel"), async () => {
+      await supabase.from("streaming_providers").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const testConnection = async (providerId: string) => {
@@ -113,10 +118,10 @@ function ProvidersTab() {
         body: JSON.stringify({ providerId }),
       });
       const json = await res.json();
-      if (res.status === 429) alert("Juda ko'p urinish. Bir necha daqiqadan so'ng qayta urinib ko'ring.");
-      else if (!json.success) alert(`Ulanish muvaffaqiyatsiz: ${json.message ?? "noma'lum xato"}`);
+      if (res.status === 429) toast.error("Juda ko'p urinish. Birozdan keyin qayta urining.");
+      else if (!json.success) { console.error("[streaming] ulanish muvaffaqiyatsiz:", json.message); toast.error("Ulanish muvaffaqiyatsiz. Kalitlarni tekshiring."); }
     } catch {
-      alert("Ulanishni tekshirishda xatolik.");
+      toast.error("Tekshirib bo'lmadi. Qayta urining.");
     } finally {
       setTestingId(null);
       load();
@@ -144,7 +149,7 @@ function ProvidersTab() {
                   {p.base_api_url} · priority {p.priority}
                   {p.last_sync_at && ` · oxirgi tekshiruv: ${new Date(p.last_sync_at).toLocaleString()}`}
                 </div>
-                {p.last_error && <div className="text-[11px] text-[#FF6B85] mt-1">{p.last_error}</div>}
+                {p.last_error && <div className="text-[11px] text-[#FF6B85] mt-1">Oxirgi xato: {p.last_error}</div>}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button onClick={() => testConnection(p.id)} disabled={testingId === p.id} className="px-3 py-1.5 rounded-md border border-subtle text-[11px] font-semibold hover:bg-white/5 disabled:opacity-50 flex items-center gap-1.5">
@@ -186,6 +191,7 @@ function ProvidersTab() {
       {credentialsProviderId && (
         <CredentialsModal providerId={credentialsProviderId} onClose={() => setCredentialsProviderId(null)} />
       )}
+      {confirmDialog}
     </div>
   );
 }
@@ -324,7 +330,7 @@ function MatchStreamsTab() {
       ends_at: form.ends_at || null,
     };
     const { error: insertError } = await supabase.from("match_streams").insert(payload);
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm({ football_provider: "api_football", external_fixture_id: "", streaming_provider_id: "", external_stream_id: "", is_primary: false, starts_at: "", ends_at: "" });
     load();
   };
@@ -348,16 +354,24 @@ function MatchStreamsTab() {
 
       <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <select className={inputCls} value={form.football_provider} onChange={(e) => setForm({ ...form, football_provider: e.target.value })}>
-            {FOOTBALL_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.football_provider}
+            onChange={(v) => setForm({ ...form, football_provider: v })}
+            options={FOOTBALL_PROVIDERS.map((p) => ({ value: p.id, label: p.label }))}
+          />
           <input className={inputCls} placeholder={t("strm.phFixtureId")} value={form.external_fixture_id} onChange={(e) => setForm({ ...form, external_fixture_id: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <select className={inputCls} value={form.streaming_provider_id} onChange={(e) => setForm({ ...form, streaming_provider_id: e.target.value })}>
-            <option value="">— Streaming provider tanlang —</option>
-            {providers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.streaming_provider_id}
+            onChange={(v) => setForm({ ...form, streaming_provider_id: v })}
+            options={[
+              { value: "", label: "— Streaming provider tanlang —" },
+              ...providers.map((p) => ({ value: p.id, label: p.name })),
+            ]}
+          />
           <input className={inputCls} placeholder={t("strm.phStreamId")} value={form.external_stream_id} onChange={(e) => setForm({ ...form, external_stream_id: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

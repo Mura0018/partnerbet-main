@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Send, Users, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 
@@ -16,6 +17,7 @@ export default function PushNotificationsPage() {
   const [result, setResult] = useState<{ recipients: number; failures: number } | null>(null);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ count }, { data: logData }] = await Promise.all([
@@ -32,25 +34,25 @@ export default function PushNotificationsPage() {
     setError("");
     setResult(null);
     if (!form.title.trim() || !form.body.trim()) { setError(t("cnt.pushEReq")); return; }
-    if (!confirm(t("cnt.pushConfirm", { n: subscriberCount ?? 0 }))) return;
-
-    setSending(true);
-    try {
-      const res = await fetch("/api/admin/push/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const json = await res.json();
-      if (!res.ok) { setError(json.error ?? t("cnt.pushEGeneric")); return; }
-      setResult(json);
-      setForm({ title: "", body: "", url: "" });
-      load();
-    } catch {
-      setError(t("cnt.pushEGeneric"));
-    } finally {
-      setSending(false);
-    }
+    confirm(t("cnt.pushConfirm", { n: subscriberCount ?? 0 }), async () => {
+      setSending(true);
+      try {
+        const res = await fetch("/api/admin/push/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        const json = await res.json();
+        if (!res.ok) { setError(json.error ?? t("cnt.pushEGeneric")); return; }
+        setResult(json);
+        setForm({ title: "", body: "", url: "" });
+        load();
+      } catch {
+        setError(t("cnt.pushEGeneric"));
+      } finally {
+        setSending(false);
+      }
+    });
   };
 
   return (
@@ -89,6 +91,7 @@ export default function PushNotificationsPage() {
         ))}
         {log.length === 0 && <p className="text-[12px] text-[#5b6f85]">{t("cnt.pushEmpty")}</p>}
       </div>
+      {confirmDialog}
     </div>
   );
 }

@@ -44,8 +44,8 @@ export default function PartnerThemePage() {
     setSaving(t.key);
     const { error } = await supabase.from("partners").update({ theme_key: t.key }).eq("id", partnerId);
     setSaving(null);
-    if (!error) { setCurrent(t.key); toast.success(`"${t.name}" temasi tanlandi ✅`); }
-    else toast.error("Saqlashda xatolik: " + error.message);
+    if (!error) { setCurrent(t.key); toast.success(`"${t.name}" temasi tanlandi`); }
+    else { console.error("[theme] saqlanmadi:", error); toast.error("Tema saqlanmadi. Qayta urining."); }
   };
 
   if (loading) return <div className="p-6 text-[13px] text-muted">Yuklanmoqda...</div>;

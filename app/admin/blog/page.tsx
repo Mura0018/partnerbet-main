@@ -8,6 +8,9 @@ import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { RichTextEditor } from "@/lib/editor/RichTextEditor";
 import { usePermission } from "@/lib/auth/permissions";
+import { PromptModal } from "@/lib/ui/PromptModal";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Post = {
   id: string;
@@ -59,8 +62,10 @@ export default function BlogManager() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [tagPromptOpen, setTagPromptOpen] = useState(false);
   const canManageTaxonomy = usePermission("taxonomy.manage");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ data: postsData }, { data: categoriesData }, { data: tagsData }, { data: postTagsData }] = await Promise.all([
@@ -100,7 +105,7 @@ export default function BlogManager() {
       const media = await uploadImage(file);
       setForm((prev: any) => ({ ...prev, cover_media_id: media.id, cover_url: media.publicUrl }));
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setCoverUploading(false);
     }
@@ -145,10 +150,10 @@ export default function BlogManager() {
     let postId = editingId;
     if (editingId) {
       const { error: updateError } = await supabase.from("posts").update(payload).eq("id", editingId);
-      if (updateError) { setError(updateError.message); setSaving(false); return; }
+      if (updateError) { setError(`Saqlashda xatolik: ${updateError.message}`); setSaving(false); return; }
     } else {
       const { data, error: insertError } = await supabase.from("posts").insert(payload).select("id").single();
-      if (insertError || !data) { setError(insertError?.message ?? "Saqlashda xatolik."); setSaving(false); return; }
+      if (insertError || !data) { setError(insertError?.message ? `Saqlashda xatolik: ${insertError.message}` : "Saqlashda xatolik."); setSaving(false); return; }
       postId = data.id;
     }
 
@@ -165,10 +170,11 @@ export default function BlogManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("post.confirmDelPost"))) return;
-    await supabase.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("post.confirmDelPost"), async () => {
+      await supabase.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const categoryName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? "—";
@@ -240,16 +246,28 @@ export default function BlogManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fCategory")}</label>
-                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputCls}>
-                  <option value="">— tanlanmagan —</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.category_id}
+                  onChange={(v) => setForm({ ...form, category_id: v })}
+                  options={[
+                    { value: "", label: "— tanlanmagan —" },
+                    ...categories.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fLang")}</label>
-                <select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className={inputCls}>
-                  <option value="en">English</option><option value="ru">Русский</option><option value="uz">O'zbek</option>
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.language}
+                  onChange={(v) => setForm({ ...form, language: v })}
+                  options={[
+                    { value: "en", label: "English" },
+                    { value: "ru", label: "Русский" },
+                    { value: "uz", label: "O'zbek" },
+                  ]}
+                />
               </div>
             </div>
 
@@ -262,12 +280,18 @@ export default function BlogManager() {
                 </button>
               ))}
               {canManageTaxonomy && (
-                <button type="button" onClick={() => { const n = window.prompt("Yangi teg nomi:"); if (n) quickAddTag(n); }}
+                <button type="button" onClick={() => setTagPromptOpen(true)}
                   className="px-2.5 py-1 rounded-full text-[11px] border border-dashed border-subtle text-[#5b6f85]">
                   + Yangi teg
                 </button>
               )}
             </div>
+            <PromptModal
+              open={tagPromptOpen}
+              title="Yangi teg nomi"
+              onSubmit={(n) => { setTagPromptOpen(false); if (n.trim()) quickAddTag(n.trim()); }}
+              onCancel={() => setTagPromptOpen(false)}
+            />
 
             <label className="block text-[12px] text-muted mb-1">{t("post.fBody")}</label>
             <div className="mb-3">
@@ -284,9 +308,12 @@ export default function BlogManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fStatus")}</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_LABEL[s].labelKey as any)}</option>)}
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.status}
+                  onChange={(v) => setForm({ ...form, status: v })}
+                  options={STATUSES.map((s) => ({ value: s, label: t(STATUS_LABEL[s].labelKey as any) }))}
+                />
               </div>
               {form.status === "scheduled" && (
                 <div>
@@ -303,6 +330,7 @@ export default function BlogManager() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

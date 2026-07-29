@@ -7,6 +7,9 @@ import { createClient } from "@/lib/supabase";
 import { checkPasswordStrength } from "@/lib/auth/password";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
+import { toast } from "@/lib/ui/toast";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Role = { id: string; key: string; name: string };
 type UserRow = {
@@ -140,12 +143,12 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
         </div>
         <div className="mb-5">
           <label className="block text-[12px] text-muted mb-1">{t("usr.fRole")}</label>
-          <select
-            className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]"
-            value={roleId} onChange={(e) => setRoleId(e.target.value)}
-          >
-            {roles.map((r) => <option key={r.id} value={r.id}>{t(`roles.${r.key}` as any)}</option>)}
-          </select>
+          <Select
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+            value={roleId}
+            onChange={setRoleId}
+            options={roles.map((r) => ({ value: r.id, label: t(`roles.${r.key}` as any) }))}
+          />
         </div>
 
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
@@ -166,6 +169,7 @@ export default function UsersManager() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -187,7 +191,7 @@ export default function UsersManager() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(
+      toast.error(
         data.error === "forbidden_role_assignment"
           ? t("usr.eRoleForbidden")
           : t("usr.eRoleChange")
@@ -201,15 +205,16 @@ export default function UsersManager() {
     load();
   };
 
-  const deleteUser = async (user: UserRow) => {
-    if (!confirm(t("usr.confirmDelete", { name: user.full_name || t("usr.thisUser") }))) return;
-    const res = await fetch("/api/admin/users/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
+  const deleteUser = (user: UserRow) => {
+    confirm(t("usr.confirmDelete", { name: user.full_name || t("usr.thisUser") }), async () => {
+      const res = await fetch("/api/admin/users/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (res.ok) load();
+      else toast.error(t("usr.eDelete"));
     });
-    if (res.ok) load();
-    else alert(t("usr.eDelete"));
   };
 
   return (
@@ -250,16 +255,13 @@ export default function UsersManager() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <select
+                    <Select
                       value={u.role_id}
                       disabled={isSelf}
-                      onChange={(e) => changeRole(u.id, e.target.value)}
-                      className="bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] disabled:opacity-50"
-                    >
-                      {roles.map((r) => (
-                        <option key={r.id} value={r.id}>{t(`roles.${r.key}` as any)}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => changeRole(u.id, v)}
+                      className="bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] disabled:opacity-50 flex items-center justify-between gap-2"
+                      options={roles.map((r) => ({ value: r.id, label: t(`roles.${r.key}` as any) }))}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-[11px] border ${u.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-subtle"}`}>
@@ -297,6 +299,7 @@ export default function UsersManager() {
       </div>
 
       {showCreate && <CreateUserModal roles={roles} onClose={() => setShowCreate(false)} onCreated={load} />}
+      {confirmDialog}
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
 import { uploadImage } from "@/lib/media/upload";
 import { sanitizeRichText } from "@/lib/editor/sanitize";
 import { ImageGallery } from "@/lib/editor/ImageGalleryExtension";
+import { PromptModal } from "@/lib/ui/PromptModal";
 
 function ToolbarButton({
   onClick, active, disabled, children, label,
@@ -40,6 +41,9 @@ function ToolbarButton({
 export function RichTextEditor({ value, onChange }: { value: string; onChange: (html: string) => void }) {
   const [uploadingImage, setUploadingImage] = React.useState(false);
   const [uploadingGallery, setUploadingGallery] = React.useState(false);
+  const [linkPromptOpen, setLinkPromptOpen] = React.useState(false);
+  const [linkPromptValue, setLinkPromptValue] = React.useState("");
+  const [videoPromptOpen, setVideoPromptOpen] = React.useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -87,9 +91,13 @@ export function RichTextEditor({ value, onChange }: { value: string; onChange: (
 
   const setLink = useCallback(() => {
     if (!editor) return;
-    const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("Havola URL manzili:", previousUrl);
-    if (url === null) return;
+    setLinkPromptValue(editor.getAttributes("link").href ?? "");
+    setLinkPromptOpen(true);
+  }, [editor]);
+
+  const applyLink = useCallback((url: string) => {
+    setLinkPromptOpen(false);
+    if (!editor) return;
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
@@ -99,8 +107,12 @@ export function RichTextEditor({ value, onChange }: { value: string; onChange: (
 
   const insertVideo = useCallback(() => {
     if (!editor) return;
-    const url = window.prompt("Video havolasi (YouTube):");
-    if (!url) return;
+    setVideoPromptOpen(true);
+  }, [editor]);
+
+  const applyVideo = useCallback((url: string) => {
+    setVideoPromptOpen(false);
+    if (!editor || !url) return;
     editor.commands.setYoutubeVideo({ src: url });
   }, [editor]);
 
@@ -137,6 +149,21 @@ export function RichTextEditor({ value, onChange }: { value: string; onChange: (
         <ToolbarButton label="Qaytarish" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}><Redo size={14} /></ToolbarButton>
       </div>
       <EditorContent editor={editor} />
+      <PromptModal
+        open={linkPromptOpen}
+        title="Havola URL manzili"
+        placeholder="https://..."
+        defaultValue={linkPromptValue}
+        onSubmit={applyLink}
+        onCancel={() => setLinkPromptOpen(false)}
+      />
+      <PromptModal
+        open={videoPromptOpen}
+        title="Video havolasi (YouTube)"
+        placeholder="https://youtube.com/..."
+        onSubmit={applyVideo}
+        onCancel={() => setVideoPromptOpen(false)}
+      />
     </div>
   );
 }

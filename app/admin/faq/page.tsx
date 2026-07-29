@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, GripVertical } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Faq = { id: string; question: string; answer: string; category: string | null; position: number; is_active: boolean };
 const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
@@ -15,6 +16,7 @@ export default function FaqAdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase.from("faqs").select("*").is("deleted_at", null).order("position");
@@ -30,7 +32,7 @@ export default function FaqAdminPage() {
     const result = editingId
       ? await supabase.from("faqs").update(payload).eq("id", editingId)
       : await supabase.from("faqs").insert({ ...payload, position: faqs.length });
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     setForm({ question: "", answer: "", category: "" });
     setEditingId(null);
     load();
@@ -46,10 +48,11 @@ export default function FaqAdminPage() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("cnt.faqConfirmDel"))) return;
-    await supabase.from("faqs").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("cnt.faqConfirmDel"), async () => {
+      await supabase.from("faqs").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const move = async (index: number, direction: -1 | 1) => {
@@ -100,6 +103,7 @@ export default function FaqAdminPage() {
         ))}
         {faqs.length === 0 && <p className="text-[12px] text-muted text-center py-6">{t("cnt.faqEmpty")}</p>}
       </div>
+      {confirmDialog}
     </div>
   );
 }

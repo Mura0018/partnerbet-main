@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Apk = {
   id: string; version: string; download_url: string; changelog: string;
@@ -15,6 +16,7 @@ export default function ApkManager() {
   const [releases, setReleases] = useState<Apk[]>([]);
   const [form, setForm] = useState({ version: "", download_url: "", changelog: "", min_android: "8.0" });
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase
@@ -39,11 +41,12 @@ export default function ApkManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("cnt.apkConfirmDel"))) return;
-    // Soft delete: keeps the row (and its audit history) instead of erasing it.
-    await supabase.from("apk_releases").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("cnt.apkConfirmDel"), async () => {
+      // Soft delete: keeps the row (and its audit history) instead of erasing it.
+      await supabase.from("apk_releases").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -90,6 +93,7 @@ export default function ApkManager() {
           </div>
         ))}
       </div>
+      {confirmDialog}
     </div>
   );
 }

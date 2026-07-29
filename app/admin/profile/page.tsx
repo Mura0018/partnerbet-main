@@ -12,6 +12,7 @@ import { checkPasswordStrength } from "@/lib/auth/password";
 import { PasswordStrengthMeter } from "@/lib/auth/PasswordStrengthMeter";
 import { useCurrentProfile } from "@/lib/auth/permissions";
 import { uploadImage } from "@/lib/media/upload";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -33,6 +34,7 @@ function TwoFactorSection() {
   const [verifyError, setVerifyError] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [unenrolling, setUnenrolling] = useState<string | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
 
   const loadFactors = async () => {
     setLoading(true);
@@ -103,13 +105,14 @@ function TwoFactorSection() {
     }
   };
 
-  const unenroll = async (factorId: string) => {
-    if (!confirm(t("prof.confirmDisable2fa"))) return;
-    setUnenrolling(factorId);
-    const supabase = createClient();
-    await supabase.auth.mfa.unenroll({ factorId });
-    setUnenrolling(null);
-    await loadFactors();
+  const unenroll = (factorId: string) => {
+    confirm(t("prof.confirmDisable2fa"), async () => {
+      setUnenrolling(factorId);
+      const supabase = createClient();
+      await supabase.auth.mfa.unenroll({ factorId });
+      setUnenrolling(null);
+      await loadFactors();
+    });
   };
 
   if (loading) return null;
@@ -172,6 +175,7 @@ function TwoFactorSection() {
           )}
         </form>
       )}
+      {confirmDialog}
     </div>
   );
 }

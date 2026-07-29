@@ -48,7 +48,7 @@ function SetPasswordInner() {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) {
-          setError(data.error === "weak_password" ? "Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi)." : "Xatolik yuz berdi.");
+          setError(data.error === "weak_password" ? "Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi)." : "Parol saqlanmadi. Qayta urining.");
           return;
         }
         setDone(true);
@@ -66,7 +66,7 @@ function SetPasswordInner() {
             weak_password: "Parol kamida 10 belgi: katta harf, kichik harf, raqam va belgi (@ ! # kabi).",
             rate_limited: "Juda ko'p urinish. Birozdan so'ng qayta urining.",
           };
-          setError(map[data.error] ?? "Xatolik yuz berdi.");
+          setError(map[data.error] ?? "Parol saqlanmadi. Qayta urining.");
           return;
         }
         setDone(true);
@@ -74,7 +74,7 @@ function SetPasswordInner() {
         setError("Havola noto'g'ri.");
       }
     } catch {
-      setError("Ulanishda xatolik. Qayta urining.");
+      setError("Ulanmadi. Qayta urining.");
     } finally {
       setBusy(false);
     }

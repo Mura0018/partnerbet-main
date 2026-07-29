@@ -5,6 +5,7 @@ import { Users, Loader2, Trash2, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
 import { checkPasswordStrength } from "@/lib/auth/password";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 export default function PartnerTeamPage() {
   const supabase = createClient();
@@ -15,6 +16,7 @@ export default function PartnerTeamPage() {
   const [form, setForm] = useState({ fullName: "", email: "", password: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { confirm, confirmDialog } = useConfirm();
 
   const loadMembers = async () => {
     const { data } = await supabase.from("partner_members").select("id, partner_role, profiles(full_name)");
@@ -45,22 +47,23 @@ export default function PartnerTeamPage() {
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = { email_taken: "Bu email band.", weak_password: "Parol kamida 10 belgi: harf, raqam va belgi.", forbidden: "Ruxsatingiz yo'q." };
-        const msg = map[data.error] ?? "Xatolik yuz berdi.";
-        setError(msg); toast.error("Xodim qo'shilmadi: " + msg); return;
+        const msg = map[data.error] ?? "Xodim qo'shilmadi. Qayta urining.";
+        setError(msg); toast.error("Xodim qo'shilmadi."); return;
       }
       setShowAdd(false); setForm({ fullName: "", email: "", password: "" });
       loadMembers();
-      toast.success("Xodim qo'shildi ✅");
-    } catch { setError("Ulanishda xatolik."); toast.error("Ulanishda xatolik."); }
+      toast.success("Xodim qo'shildi");
+    } catch { setError("Ulanmadi. Qayta urining."); toast.error("Ulanmadi. Qayta urining."); }
     finally { setSaving(false); }
   };
 
-  const removeStaff = async (id: string) => {
-    if (!confirm("Xodimni o'chirishni tasdiqlaysizmi?")) return;
-    const { error } = await supabase.from("partner_members").delete().eq("id", id);
-    if (error) toast.error("O'chirilmadi: " + error.message);
-    else toast.success("Xodim o'chirildi");
-    loadMembers();
+  const removeStaff = (id: string) => {
+    confirm("Xodimni o'chirishni tasdiqlaysizmi?", async () => {
+      const { error } = await supabase.from("partner_members").delete().eq("id", id);
+      if (error) { console.error("[team] o'chirilmadi:", error); toast.error("O'chirilmadi. Qayta urining."); }
+      else toast.success("Xodim o'chirildi");
+      loadMembers();
+    });
   };
 
   if (loading) return <div className="p-6 text-[13px] text-muted">Yuklanmoqda...</div>;
@@ -96,6 +99,7 @@ export default function PartnerTeamPage() {
           </div>
         ))}
       </div>
+      {confirmDialog}
     </div>
   );
 }
