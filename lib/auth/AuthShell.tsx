@@ -45,10 +45,10 @@ export function AuthShell({
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "28px 28px" }}
       />
 
-      <span className="auth-chip absolute top-[9%] left-[6%] text-[15px] font-bold" style={{ color: "rgba(200,220,255,0.16)", animationDelay: "0s" }}>1xBet</span>
-      <span className="auth-chip absolute top-[16%] right-[7%] text-[12px] font-bold" style={{ color: "rgba(200,220,255,0.13)", animationDelay: "2s" }}>1xBet</span>
-      <span className="auth-chip absolute bottom-[16%] left-[5%] text-[13px] font-bold" style={{ color: "rgba(200,220,255,0.14)", animationDelay: "4s" }}>1xBet</span>
-      <span className="auth-chip absolute bottom-[10%] right-[6%] text-[12px] font-bold" style={{ color: "rgba(200,220,255,0.12)", animationDelay: "1s" }}>1xBet</span>
+      <span className="auth-chip absolute top-[9%] left-[6%] text-[15px] font-bold" style={{ color: "rgba(200,220,255,0.16)", animationDelay: "0s" }}>BETCORE</span>
+      <span className="auth-chip absolute top-[16%] right-[7%] text-[12px] font-bold" style={{ color: "rgba(200,220,255,0.13)", animationDelay: "2s" }}>BETCORE</span>
+      <span className="auth-chip absolute bottom-[16%] left-[5%] text-[13px] font-bold" style={{ color: "rgba(200,220,255,0.14)", animationDelay: "4s" }}>BETCORE</span>
+      <span className="auth-chip absolute bottom-[10%] right-[6%] text-[12px] font-bold" style={{ color: "rgba(200,220,255,0.12)", animationDelay: "1s" }}>BETCORE</span>
 
       <div className="absolute top-5 right-5">
         <LocaleSwitcher />
