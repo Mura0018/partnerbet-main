@@ -524,6 +524,7 @@ export const dictionaries = {
       fullNamePrompt: "Ismingiz va familiyangizni kiriting", fullNamePh: "Masalan: Aliyev Vali", submitName: "Yuborish",
       eNameRequired: "Ism va familiyangizni kiriting.",
       eOrderSend: "Buyurtma yuborishda xatolik. Qayta urinib ko'ring.", eIdNotFound2: "Bunday hisob ID topilmadi.", eCdOff: "Bu xizmat vaqtincha mavjud emas. Biroz keyinroq urinib ko'ring.", eVerify: "Tekshirishda xatolik.", eAmount: "Summani kiriting.",
+      idConfirmMsg: "Kiritilgan ID: {id}. To'g'ri bo'lsa davom eting.", idChange: "ID ni o'zgartirish",
       wReceipt: "Buyurtma yaratildi, lekin chek yuklanmadi. \"Operator bilan aloqa\" orqali chekni yuboring.",
       topupTitle: "Hisob to'ldirish", withdrawTitle: "Pul yechish", accId: "Hisob ID", sum: "Summa", phSum: "Masalan: 50000", continueBtn: "Davom etish",
       receipt: "To'lov cheki (skrinshot)", pickImage: "Rasm tanlash", paid: "To'ladim, buyurtma berish",
@@ -562,6 +563,7 @@ export const dictionaries = {
     wz: {
       platform: "Platforma", platformPh: "Platforma nomi", accId: "Hisob ID", accIdPh: "Masalan: 123456789",
       ePlatformId: "Platforma va ID ni kiriting.", eIdNotFound: "Bunday hisob ID topilmadi.", eCdOff: "Bu xizmat vaqtincha mavjud emas. Biroz keyinroq urinib ko'ring.", eVerify: "Tekshirishda xatolik.",
+      idConfirmMsg: "Kiritilgan ID: {id}. To'g'ri bo'lsa davom eting.", idChange: "ID ni o'zgartirish",
       verify: "Tekshirish", player: "O'yinchi:",
       payoutWarn: "1xbet ilovasida yechish kodini oling. Buyurtma yuborilgach operator uni ko'rib chiqadi va shu kod bilan pulni yechadi — kod eskirsa, sizdan yangisini so'raymiz.",
       code: "Yechish kodi", codePh: "Masalan: A1b2", eCode: "Yechish kodini kiriting.",
@@ -1218,6 +1220,7 @@ export const dictionaries = {
       fullNamePrompt: "Введите имя и фамилию", fullNamePh: "Например: Алиев Вали", submitName: "Отправить",
       eNameRequired: "Введите имя и фамилию.",
       eOrderSend: "Ошибка при отправке заказа. Попробуйте снова.", eIdNotFound2: "Такой ID счёта не найден.", eCdOff: "Сервис временно недоступен. Попробуйте немного позже.", eVerify: "Ошибка при проверке.", eAmount: "Введите сумму.",
+      idConfirmMsg: "Введённый ID: {id}. Если верно, продолжите.", idChange: "Изменить ID",
       wReceipt: "Заказ создан, но чек не загрузился. Отправьте чек через \"Связь с оператором\".",
       topupTitle: "Пополнение счёта", withdrawTitle: "Вывод средств", accId: "ID счёта", sum: "Сумма", phSum: "Например: 50000", continueBtn: "Продолжить",
       receipt: "Чек об оплате (скриншот)", pickImage: "Выбрать изображение", paid: "Я оплатил, оформить заказ",
@@ -1256,6 +1259,7 @@ export const dictionaries = {
     wz: {
       platform: "Платформа", platformPh: "Название платформы", accId: "ID счёта", accIdPh: "Например: 123456789",
       ePlatformId: "Укажите платформу и ID.", eIdNotFound: "Такой ID счёта не найден.", eCdOff: "Сервис временно недоступен. Попробуйте немного позже.", eVerify: "Ошибка при проверке.",
+      idConfirmMsg: "Введённый ID: {id}. Если верно, продолжите.", idChange: "Изменить ID",
       verify: "Проверить", player: "Игрок:",
       payoutWarn: "Получите код вывода в приложении 1xbet. После отправки заказа оператор проверит его и выведет деньги этим кодом — если код устареет, мы попросим новый.",
       code: "Код вывода", codePh: "Например: A1b2", eCode: "Введите код вывода.",

@@ -587,6 +587,7 @@ export default function TelegramAppPage() {
   const [tuReceiptFileName, setTuReceiptFileName] = useState("");
   const [tuStep, setTuStep] = useState(1); // T1: bosqichли to'ldirish
   const [tuVerifying, setTuVerifying] = useState(false);
+  const [tuIdConfirm, setTuIdConfirm] = useState(false);
 
   // Withdraw form
   const [wdPlatform, setWdPlatform] = useState(PLATFORMS[0]);
@@ -928,7 +929,7 @@ export default function TelegramAppPage() {
   const resetForms = () => {
     setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
     setTuOrderId(null); setTuRequisite(null); setTuNeedsFullName(false); setTuFullNameInput("");
-    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1);
+    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1); setTuIdConfirm(false);
     setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails(""); setWdRecipientName("");
   };
 
@@ -966,7 +967,11 @@ export default function TelegramAppPage() {
       });
       const d = await res.json();
       if (!res.ok || d.error) {
-        setError(d.error === "not_found" ? t("tg.eIdNotFound2") : d.error === "not_configured" ? t("tg.eCdOff") : t("tg.eVerify"));
+        if (d.error === "not_configured") {
+          setTuIdConfirm(true);
+          return;
+        }
+        setError(d.error === "not_found" ? t("tg.eIdNotFound2") : t("tg.eVerify"));
         return;
       }
       setTuStep(2);
@@ -1988,7 +1993,22 @@ export default function TelegramAppPage() {
             {[1, 2, 3].map((n) => <div key={n} className={`h-1.5 flex-1 rounded-full ${n <= tuStep ? "bg-accent" : "bg-white/10"}`} />)}
           </div>
 
-          {tuStep === 1 && (
+          {tuStep === 1 && tuIdConfirm && (
+            <div>
+              <div className="mb-4 rounded-xl bg-accent/10 border border-accent/25 px-4 py-4 text-center">
+                <div className="text-[26px] font-extrabold tracking-wide mb-2">{tuAccountId.trim()}</div>
+                <div className="text-[13px] text-[#93a5ba]">{t("tg.idConfirmMsg", { id: tuAccountId.trim() })}</div>
+              </div>
+              <button type="button" onClick={() => { setTuIdConfirm(false); setTuStep(2); }} className={buttonCls}>
+                {t("tg.continueBtn")}
+              </button>
+              <button type="button" onClick={() => setTuIdConfirm(false)} className="w-full mt-2 py-2.5 text-[13px] text-[#93a5ba]">
+                {t("tg.idChange")}
+              </button>
+            </div>
+          )}
+
+          {tuStep === 1 && !tuIdConfirm && (
             <div>
               <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
               <div className="mb-3.5">
