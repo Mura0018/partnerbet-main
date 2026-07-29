@@ -25,12 +25,14 @@ export function NotificationBell() {
         if (result.success) {
           setState("granted");
         } else {
-          alert("Obuna yozilmadi: " + (result.error ?? "noma'lum xato"));
+          console.error("[push] Obuna yozilmadi:", result.error);
+          alert("Bildirishnomaga obuna bo'lib bo'lmadi. Birozdan keyin qayta urinib ko'ring.");
           setState(await getPushPermissionState());
         }
       }
     } catch (err: any) {
-      alert("Kutilmagan xato: " + (err?.message || String(err)));
+      console.error("[push] Kutilmagan xato:", err);
+      alert("Bildirishnomaga obuna bo'lib bo'lmadi. Birozdan keyin qayta urinib ko'ring.");
     } finally {
       setBusy(false);
     }

@@ -39,13 +39,15 @@ export class StripeProvider implements PaymentGatewayProvider {
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
-        return { success: false, error: errorBody?.error?.message ?? `Stripe ${res.status} xatosi qaytardi.` };
+        console.error("[donations] Stripe checkout session xatosi:", res.status, errorBody);
+        return { success: false, error: "provider_error" };
       }
 
       const session = await res.json();
       return { success: true, checkoutUrl: session.url, externalSessionId: session.id };
     } catch (err: any) {
-      return { success: false, error: err?.message ?? "Stripe bilan bog'lanishda xatolik." };
+      console.error("[donations] Stripe bilan bog'lanishda xatolik:", err);
+      return { success: false, error: "provider_error" };
     }
   }
 

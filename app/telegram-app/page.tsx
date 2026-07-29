@@ -1678,7 +1678,7 @@ export default function TelegramAppPage() {
         upload_failed: t("tg.vUpload"),
         insert_failed: t("tg.vInsert"),
       };
-      setSupportError(map[err] ?? `Ovozli xabar yuborilmadi${err ? ` (${err})` : ""}. Qayta urinib ko'ring.`);
+      setSupportError(map[err] ?? "Ovozli xabar yuborilmadi. Qayta urinib ko'ring.");
     } catch {
       setSupportError("Tarmoq xatosi. Ovozli xabar yuborilmadi.");
     } finally {

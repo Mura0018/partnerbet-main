@@ -82,8 +82,9 @@ export async function POST(req: NextRequest) {
   });
 
   if (!result.success) {
+    console.error("[donations] checkout yaratishda xatolik:", result.error);
     await admin.from("donations").update({ status: "failed" }).eq("id", donation.id);
-    return NextResponse.json({ error: result.error }, { status: 502 });
+    return NextResponse.json({ error: "checkout_failed" }, { status: 502 });
   }
 
   await admin.from("donations").update({ external_transaction_id: result.externalSessionId }).eq("id", donation.id);
