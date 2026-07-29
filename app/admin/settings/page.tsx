@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   Globe, Palette, Share2, Search, BarChart3, KeyRound, Wrench, Upload, Check, Loader2,
 } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -501,13 +502,6 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
     { key: "telegram_bot_token", label: t("set.kTgToken"), placeholder: "123456789:ABC..." },
     { key: "telegram_webhook_secret", label: t("set.kWebhookSecret"), placeholder: t("set.phWebhookSecret") },
   ];
-  const CASHDESK_KEYS: { key: string; label: string; placeholder: string }[] = [
-    { key: "cashdesk_login", label: t("set.kCdLogin"), placeholder: t("set.phCdLogin") },
-    { key: "cashdesk_pass", label: t("set.kCdPass"), placeholder: t("set.phCdPass") },
-    { key: "cashdesk_hash", label: t("set.kCdHash"), placeholder: t("set.phCdHash") },
-    { key: "cashdesk_id", label: t("set.kCdId"), placeholder: t("set.phCdId") },
-  ];
-
   const save = async (key: string) => {
     if (!values[key]) return;
     setError("");
@@ -607,7 +601,9 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
         <p className="text-[11px] text-[#5b6f85] mb-3 leading-relaxed">
           {t("set.cashdeskHint")}
         </p>
-        {CASHDESK_KEYS.map(renderKeyRow)}
+        <Link href="/admin/cashdesks" className="text-[12px] text-accent hover:underline">
+          {t("set.cashdeskLink")}
+        </Link>
       </div>
     </div>
   );

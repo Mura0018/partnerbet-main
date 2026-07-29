@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { DONATION_MAX_AMOUNT } from "@/lib/donations/constants";
 
 // Crypto donations cannot be verified automatically (no blockchain
 // monitoring is implemented — see DONATION_SYSTEM.md for why that's out
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   const amount = Number(body.amount);
-  if (!body.paymentMethodId || !Number.isFinite(amount) || amount <= 0 || amount > 1000000) {
+  if (!body.paymentMethodId || !Number.isFinite(amount) || amount <= 0 || amount > DONATION_MAX_AMOUNT) {
     return NextResponse.json({ error: "invalid_amount" }, { status: 400 });
   }
 

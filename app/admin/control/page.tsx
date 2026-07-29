@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { SlidersHorizontal, Loader2, Wallet, Landmark, HandCoins, Gauge, MessageSquare, Wrench, Power, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
@@ -161,19 +162,23 @@ export default function ControlCenter() {
           <SaveBtn k="cashdesk_alert" value={{ level2: num(alert.level2, 3), level3: num(alert.level3, 5), window_hours: num(alert.window_hours, 24) }} />
         </Card>
 
-        {/* JAMOA CHATI (xodim tarafi) */}
+        {/* JAMOA CHATI (xodim tarafi) — tahrirlash ChatTab.tsx'da (operators.oversight huquqi bilan) */}
         <Card icon={<MessageSquare size={16} />} title={t("ctl.chatRules")} side={t("ctl.chatRulesSide")}>
-          <textarea rows={4} className={inp} value={rules.text ?? ""} onChange={(e) => patch("team_chat_rules", { text: e.target.value })} />
-          <div className="mt-3"><SaveBtn k="team_chat_rules" value={{ text: String(rules.text ?? "") }} /></div>
+          <p className="text-[12px] text-white/70 whitespace-pre-wrap min-h-[4rem]">{rules.text || t("ctl.chatRulesEmpty")}</p>
+          <div className="mt-3"><Link href="/admin/telegram-bot?chat=1" className="text-[12px] text-accent hover:underline">{t("ctl.goToChat")}</Link></div>
         </Card>
 
-        {/* SOVRINLI KARTA / BONUS (mijoz tarafi) */}
+        {/* SOVRINLI KARTA / BONUS (mijoz tarafi) — to'liq forma admin/promo'da, bu yerda faqat holat */}
         <Card icon={<Trophy size={16} />} title={t("ctl.promo")} side={t("ctl.promoSide")}>
           <div className="mb-3">
-            <Toggle on={!!promo.enabled} label={t("ctl.promoLabel")} onClick={() => patch("promo", { enabled: !promo.enabled })} />
+            <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium border ${
+              promo.enabled ? "bg-[#4ADE80]/15 border-[#4ADE80]/40 text-[#4ADE80]" : "bg-[#FF6B85]/10 border-[#FF6B85]/30 text-[#FF6B85]"
+            }`}>
+              <Power size={13} /> {t("ctl.promoLabel")}: {promo.enabled ? t("ctl.on") : t("ctl.off")}
+            </span>
             <p className="text-[10.5px] text-white/30 mt-2">{t("ctl.promoHint")}</p>
           </div>
-          <SaveBtn k="promo" value={{ ...promo, enabled: !!promo.enabled }} />
+          <Link href="/admin/promo" className="text-[12px] text-accent hover:underline">{t("ctl.goToPromo")}</Link>
         </Card>
 
         {/* SAYT (umumiy) */}

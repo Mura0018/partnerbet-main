@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, ChevronRight, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
@@ -34,7 +35,6 @@ type Order = {
   received_holder_name: string | null;
   player_name: string | null;
   auto_processed: boolean;
-  payout_done: boolean;
   payout_status: "none" | "pending" | "success" | "failed";
   payout_attempt_count: number;
   handoff_open: boolean;
@@ -590,9 +590,6 @@ function LimitsEditor() {
   const { t } = useLocale();
   const [values, setValues] = useState({ max_order_amount: "", daily_customer_limit: "" });
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [saveError, setSaveError] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -607,59 +604,23 @@ function LimitsEditor() {
     })();
   }, []);
 
-  const save = async () => {
-    setSaving(true);
-    setSaveError(false);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("site_settings")
-      .update({
-        value: { max_order_amount: Number(values.max_order_amount) || 0, daily_customer_limit: Number(values.daily_customer_limit) || 0 },
-        updated_by: user?.id,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("key", "betcore_pay_limits");
-    setSaving(false);
-    if (error) {
-      setSaveError(true);
-      return;
-    }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
   if (loading) return null;
 
   return (
     <div className="mb-4 rounded-lg glass-card px-3.5 py-3">
       <div className="text-[11px] text-muted mb-2">{t("wid.limitsTitle")}</div>
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-4">
         <div>
           <label className="block text-[10px] text-[#5b6f85] mb-1">{t("wid.maxOrder")}</label>
-          <input
-            type="number"
-            className="w-36 bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px]"
-            value={values.max_order_amount}
-            onChange={(e) => setValues((prev) => ({ ...prev, max_order_amount: e.target.value }))}
-          />
+          <div className="text-[13px] font-semibold">{values.max_order_amount || "—"}</div>
         </div>
         <div>
           <label className="block text-[10px] text-[#5b6f85] mb-1">{t("wid.dailyLimit")}</label>
-          <input
-            type="number"
-            className="w-36 bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px]"
-            value={values.daily_customer_limit}
-            onChange={(e) => setValues((prev) => ({ ...prev, daily_customer_limit: e.target.value }))}
-          />
+          <div className="text-[13px] font-semibold">{values.daily_customer_limit || "—"}</div>
         </div>
-        <button
-          onClick={save}
-          disabled={saving}
-          className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold disabled:opacity-60"
-        >
-          {saving ? "…" : saved ? t("wid.saved") : t("common.save")}
-        </button>
-        {saveError && <span className="text-[11px] text-[#FF6B85] self-center">{t("wid.saveFailed")}</span>}
+        <Link href="/admin/control" className="text-[12px] text-accent hover:underline">
+          {t("wid.goToControl")}
+        </Link>
       </div>
     </div>
   );

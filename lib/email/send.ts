@@ -14,16 +14,6 @@ export async function sendEmail({ to, subject, html, text }: EmailInput): Promis
   const provider = env.emailProvider;
   const from = env.emailFrom;
 
-  // DIAGNOSTIKA: runtime env holatини aniq ko'rsatamiz (from maxfiy emas;
-  // kalitlar faqat bor/yo'q sifatida — qiymat oshkor qilinmaydi).
-  console.log(
-    `[email] config -> provider="${provider}", ` +
-    `EMAIL_FROM=${from ? `"${from}"` : "BO'SH/YO'Q"}, ` +
-    `RESEND_API_KEY=${env.resendApiKey ? "bor" : "YO'Q"}, ` +
-    `BREVO_API_KEY=${env.brevoApiKey ? "bor" : "YO'Q"}, ` +
-    `to="${to}"`
-  );
-
   if (!from) {
     console.warn(
       "[email] EMAIL_FROM runtime'да BO'SH. Vercel > Settings > Environment Variables'да " +

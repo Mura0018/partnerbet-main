@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getPaymentGatewayProvider } from "@/lib/donations/registry";
+import { DONATION_MAX_AMOUNT } from "@/lib/donations/constants";
 import { env } from "@/lib/env";
 
 const RATE_LIMIT_WINDOW_MINUTES = 15;
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   // --- Input validation (never trust the client for amount/currency) ---
   const amount = Number(body.amount);
   const currency = (body.currency ?? "USD").toUpperCase();
-  if (!body.paymentMethodId || !Number.isFinite(amount) || amount <= 0 || amount > 1000000) {
+  if (!body.paymentMethodId || !Number.isFinite(amount) || amount <= 0 || amount > DONATION_MAX_AMOUNT) {
     return NextResponse.json({ error: "invalid_amount" }, { status: 400 });
   }
   if (!["USD", "EUR", "UZS"].includes(currency)) {
