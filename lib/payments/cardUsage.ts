@@ -31,7 +31,7 @@ export async function bumpCardUsage(operatorId: string, accountNumber: string): 
     if (operator?.telegram_chat_id) {
       await sendTelegramMessage(
         operator.telegram_chat_id,
-        `🟦 BETCORE PAY\n\n⚠️ Rekvizit limiti tugadi\n\n"${accountNumber}" — ${method.usage_limit} marta ishlatildi va endi o'chirildi.\n\nAdmin panelda "Mening to'lovlarim" bo'limiga kirib, o'rniga yangi rekvizit qo'shing.`,
+        `🟦 BetCore Pay\n\n⚠️ Rekvizit limiti tugadi\n\n"${accountNumber}" — ${method.usage_limit} marta ishlatildi va endi o'chirildi.\n\nAdmin panelda "Mening to'lovlarim" bo'limiga kirib, o'rniga yangi rekvizit qo'shing.`,
         undefined
       );
     }

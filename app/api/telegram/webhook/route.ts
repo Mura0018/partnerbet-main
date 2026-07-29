@@ -8,7 +8,7 @@ const SECRET_HEADER = "x-telegram-bot-api-secret-token";
 async function handleLinkCommand(chatId: number, text: string) {
   const code = text.replace(/^\/link/i, "").trim().toUpperCase();
   if (!code) {
-    await sendTelegramMessage(chatId, "🟦 BETCORE PAY\n\nKodni kiriting: /link ABC123\n\nKodni admin panelda oling.", undefined);
+    await sendTelegramMessage(chatId, "🟦 BetCore Pay\n\nKodni kiriting: /link ABC123\n\nKodni admin panelda oling.", undefined);
     return;
   }
 
@@ -20,7 +20,7 @@ async function handleLinkCommand(chatId: number, text: string) {
     .maybeSingle();
 
   if (!profile || !profile.telegram_link_code_expires_at || new Date(profile.telegram_link_code_expires_at).getTime() < Date.now()) {
-    await sendTelegramMessage(chatId, "🟦 BETCORE PAY\n\n❌ Kod noto'g'ri yoki muddati tugagan. Admin panelda yangi kod oling.", undefined);
+    await sendTelegramMessage(chatId, "🟦 BetCore Pay\n\n❌ Kod noto'g'ri yoki muddati tugagan. Admin panelda yangi kod oling.", undefined);
     return;
   }
 
@@ -31,7 +31,7 @@ async function handleLinkCommand(chatId: number, text: string) {
 
   await sendTelegramMessage(
     chatId,
-    `🟦 BETCORE PAY\n\n✅ Ulandi! Endi yangi buyurtmalar haqida shu yerga xabar kelib turadi.`,
+    `🟦 BetCore Pay\n\n✅ Ulandi! Endi yangi buyurtmalar haqida shu yerga xabar kelib turadi.`,
     undefined
   );
 }
@@ -68,13 +68,13 @@ export async function POST(req: NextRequest) {
   if (text === "/start") {
     await sendTelegramMessage(
       chatId,
-      "🟦 BETCORE PAY\n\nAssalomu alaykum! BetCore Pay botiga xush kelibsiz.\n\n💳 Hisob to'ldirish\n💵 Pul yechish\n🎧 Operator bilan aloqa\n\nBoshlash uchun quyidagi tugmani bosing:",
+      "🟦 BetCore Pay\n\nAssalomu alaykum! BetCore Pay botiga xush kelibsiz.\n\n💳 Hisob to'ldirish\n💵 Pul yechish\n🎧 Operator bilan aloqa\n\nBoshlash uchun quyidagi tugmani bosing:",
       OPEN_APP_KEYBOARD
     );
   } else if (/^\/link\b/i.test(text)) {
     await handleLinkCommand(chatId, text);
   } else {
-    await sendTelegramMessage(chatId, "🟦 BETCORE PAY\n\nIlovani ochish uchun quyidagi tugmani bosing:", OPEN_APP_KEYBOARD);
+    await sendTelegramMessage(chatId, "🟦 BetCore Pay\n\nIlovani ochish uchun quyidagi tugmani bosing:", OPEN_APP_KEYBOARD);
   }
 
   return NextResponse.json({ ok: true });

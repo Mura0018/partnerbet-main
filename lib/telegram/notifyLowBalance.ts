@@ -24,7 +24,7 @@ export async function notifySuperAdminsLowBalance(
 
   const balStr = balance == null ? "?" : balance.toLocaleString("ru-RU");
   const text =
-    `🟥 BETCORE PAY — PAST BALANS\n\n` +
+    `🟥 BetCore Pay — PAST BALANS\n\n` +
     `🏦 Kassa: ${cashdeskName}\n` +
     `💰 Balans: ${balStr} so'm\n` +
     `⚠️ Chegara: ${threshold.toLocaleString("ru-RU")} so'm\n\n` +

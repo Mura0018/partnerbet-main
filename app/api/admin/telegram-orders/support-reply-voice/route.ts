@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
   const { data: customer } = await admin.from("customers").select("telegram_id").eq("id", customerId).maybeSingle();
   if (customer?.telegram_id) {
-    await sendTelegramMessage(customer.telegram_id, "🟦 BETCORE PAY\n\n🎤 Operatordan ovozli xabar keldi. Ilovada tinglang.");
+    await sendTelegramMessage(customer.telegram_id, "🟦 BetCore Pay\n\n🎤 Operatordan ovozli xabar keldi. Ilovada tinglang.");
   }
 
   return NextResponse.json({ success: true });

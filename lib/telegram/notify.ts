@@ -42,7 +42,7 @@ function formatAmount(amount: number): string {
 
 export function buildOrderCreatedMessage(type: "topup" | "withdraw", amount: number): string {
   return (
-    `🟦 BETCORE PAY\n\n` +
+    `🟦 BetCore Pay\n\n` +
     `✅ ${TYPE_LABEL[type]} buyurtmangiz qabul qilindi\n\n` +
     `💰 Summa: ${formatAmount(amount)}\n` +
     `📌 Holat: ⏳ Kutilmoqda\n\n` +
@@ -58,7 +58,7 @@ export function buildOrderResolvedMessage(
 ): string {
   const isCompleted = status === "completed";
   return (
-    `🟦 BETCORE PAY\n\n` +
+    `🟦 BetCore Pay\n\n` +
     `${isCompleted ? "✅" : "❌"} ${TYPE_LABEL[type]} buyurtmangiz ${isCompleted ? "BAJARILDI" : "RAD ETILDI"}\n\n` +
     `💰 Summa: ${formatAmount(amount)}\n` +
     `📌 Holat: ${isCompleted ? "✅ Bajarildi" : "❌ Rad etildi"}\n` +
@@ -71,5 +71,5 @@ export function buildOrderResolvedMessage(
 }
 
 export function buildSupportReplyMessage(text: string): string {
-  return `🟦 BETCORE PAY\n\n💬 Operator javobi:\n\n${text}`;
+  return `🟦 BetCore Pay\n\n💬 Operator javobi:\n\n${text}`;
 }
