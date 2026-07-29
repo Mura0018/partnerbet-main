@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { CreditCard, Plus, Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
+import { Select } from "@/lib/ui/Select";
 
 const KINDS: { key: string; label: string }[] = [
   { key: "click", label: "Click" },
@@ -85,9 +86,12 @@ export default function PartnerPaymentsPage() {
         <>
           {showAdd && (
             <div className="rounded-xl border border-subtle bg-white/[0.03] p-4 mb-4 space-y-2.5">
-              <select value={form.kind} onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
-                {KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
-              </select>
+              <Select
+                className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+                value={form.kind}
+                onChange={(v) => setForm((p) => ({ ...p, kind: v }))}
+                options={KINDS.map((k) => ({ value: k.key, label: k.label }))}
+              />
               <input value={form.number} onChange={(e) => setForm((p) => ({ ...p, number: e.target.value }))} placeholder="Raqam / hisob" className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
               <input value={form.holder} onChange={(e) => setForm((p) => ({ ...p, holder: e.target.value }))} placeholder="Egasi (ixtiyoriy)" className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
               <button onClick={add} disabled={saving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">{saving ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Saqlash"}</button>

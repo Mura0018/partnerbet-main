@@ -8,6 +8,7 @@ import {
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { isValidHttpUrl, isValidDeepLink } from "@/lib/validation/url";
+import { Select } from "@/lib/ui/Select";
 
 type Partner = {
   id: string;
@@ -523,11 +524,16 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
       </p>
       <form onSubmit={add} className="rounded-lg border border-subtle p-4 mb-4 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <select className={inputCls} value={form.match_type} onChange={(e) => setForm({ ...form, match_type: e.target.value as any })}>
-            <option value="country">{t("aff.rCountry")}</option>
-            <option value="language">{t("aff.rLang")}</option>
-            <option value="device">{t("aff.rDevice")}</option>
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.match_type}
+            onChange={(v) => setForm({ ...form, match_type: v as any })}
+            options={[
+              { value: "country", label: t("aff.rCountry") },
+              { value: "language", label: t("aff.rLang") },
+              { value: "device", label: t("aff.rDevice") },
+            ]}
+          />
           <input className={inputCls} placeholder={form.match_type === "device" ? "mobile/desktop/tablet" : form.match_type === "country" ? "UZ" : "uz"} value={form.match_value} onChange={(e) => setForm({ ...form, match_value: e.target.value })} />
           <input type="number" className={inputCls} placeholder={t("aff.phPriority")} value={form.priority} onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })} />
         </div>

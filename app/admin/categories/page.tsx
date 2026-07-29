@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
 
 type Category = {
   id: string;
@@ -94,10 +95,15 @@ export default function CategoriesPage() {
           <input className={inputCls} placeholder={t("cnt.catPhName")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className={inputCls} placeholder={t("cnt.catPhSlug")} value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} />
         </div>
-        <select className={inputCls} value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })}>
-          <option value="">{t("cnt.catNoParent")}</option>
-          {categories.filter((c) => c.id !== editingId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={form.parent_id}
+          onChange={(v) => setForm({ ...form, parent_id: v })}
+          options={[
+            { value: "", label: t("cnt.catNoParent") },
+            ...categories.filter((c) => c.id !== editingId).map((c) => ({ value: c.id, label: c.name })),
+          ]}
+        />
         <textarea rows={2} className={inputCls} placeholder={t("cnt.catPhDesc")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         {error && <p className="text-[12px] text-[#FF6B85]">{error}</p>}
         <div className="flex gap-2">

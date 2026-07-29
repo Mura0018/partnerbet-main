@@ -8,6 +8,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
 
 type SettingsMap = Record<string, any>;
 type SecretStatuses = Record<string, boolean>;
@@ -557,9 +558,12 @@ function ApiKeysTab({ settings, updateLocal, saveKey, secretStatuses, onSaved }:
           {t("set.fcDesc")}
         </p>
         <Field label={t("set.fcActive")}>
-          <select className={inputCls} value={footballProvider.active ?? ""} onChange={(e) => updateLocal("football_provider", { active: e.target.value || null })}>
-            {PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={footballProvider.active ?? ""}
+            onChange={(v) => updateLocal("football_provider", { active: v || null })}
+            options={PROVIDERS.map((p) => ({ value: p.id, label: p.label }))}
+          />
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label={t("set.fcLeagueId")}>

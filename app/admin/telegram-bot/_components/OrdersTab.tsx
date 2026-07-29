@@ -12,6 +12,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { toast } from "@/lib/ui/toast";
+import { Select } from "@/lib/ui/Select";
 
 const REJECT_REASON_KEYS = ["ord.rt1", "ord.rt2", "ord.rt3", "ord.rt4", "ord.rt5"];
 
@@ -1081,17 +1082,16 @@ export function OrdersTab() {
           >
             {t("ord.unclaimed")}
           </button>
-          <select
+          <Select
             value={operatorFilter}
-            onChange={(e) => setOperatorFilter(e.target.value)}
-            className="ml-auto bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] outline-none focus:border-accent"
-          >
-            <option value="all">{t("ord.allOperators")}</option>
-            {currentUserId && <option value={currentUserId}>{t("ord.onlyMine")}</option>}
-            {Object.entries(operatorNames).filter(([id]) => id !== currentUserId).map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
+            onChange={setOperatorFilter}
+            className="ml-auto bg-white/5 border border-subtle rounded-lg py-1.5 px-2.5 text-[12px] flex items-center justify-between gap-2"
+            options={[
+              { value: "all", label: t("ord.allOperators") },
+              ...(currentUserId ? [{ value: currentUserId, label: t("ord.onlyMine") }] : []),
+              ...Object.entries(operatorNames).filter(([id]) => id !== currentUserId).map(([id, name]) => ({ value: id, label: name })),
+            ]}
+          />
         </div>
       </div>
 

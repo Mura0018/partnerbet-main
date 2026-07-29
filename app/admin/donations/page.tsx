@@ -4,6 +4,7 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 import React, { useEffect, useState } from "react";
 import { Heart, LayoutDashboard, CreditCard, Download, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { Select } from "@/lib/ui/Select";
 
 type Tab = "dashboard" | "methods";
 
@@ -269,19 +270,29 @@ function PaymentMethodsTab() {
             <input className={`${inputCls} mb-3`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
             <label className="block text-[12px] text-muted mb-1">{t("don.fType")}</label>
-            <select className={`${inputCls} mb-3`} value={form.method_type} onChange={(e) => setForm({ ...form, method_type: e.target.value as any })}>
-              <option value="gateway">{t("don.tGateway")}</option>
-              <option value="crypto">{t("don.tCrypto")}</option>
-            </select>
+            <Select
+              className={`${inputCls} mb-3 flex items-center justify-between gap-2`}
+              value={form.method_type}
+              onChange={(v) => setForm({ ...form, method_type: v as any })}
+              options={[
+                { value: "gateway", label: t("don.tGateway") },
+                { value: "crypto", label: t("don.tCrypto") },
+              ]}
+            />
 
             {form.method_type === "gateway" ? (
               <>
                 <label className="block text-[12px] text-muted mb-1">{t("don.provider")}</label>
-                <select className={`${inputCls} mb-3`} value={form.provider_key} onChange={(e) => setForm({ ...form, provider_key: e.target.value })}>
-                  <option value="stripe">Stripe</option>
-                  <option value="paypal">PayPal</option>
-                  <option value="generic">{t("don.pGeneric")}</option>
-                </select>
+                <Select
+                  className={`${inputCls} mb-3 flex items-center justify-between gap-2`}
+                  value={form.provider_key}
+                  onChange={(v) => setForm({ ...form, provider_key: v })}
+                  options={[
+                    { value: "stripe", label: "Stripe" },
+                    { value: "paypal", label: "PayPal" },
+                    { value: "generic", label: t("don.pGeneric") },
+                  ]}
+                />
                 {form.provider_key === "generic" && (
                   <>
                     <label className="block text-[12px] text-muted mb-1">{t("don.baseUrl")}</label>

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Users, Search, X, Loader2, ChevronLeft, ChevronRight, Gift, EyeOff, Eye, RotateCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
 
 type Row = { id: string; full_name: string | null; phone: string; created_at: string; partnerName: string | null; orderCount: number; nameMismatchPending: boolean };
 type Partner = { id: string; name: string };
@@ -144,12 +145,16 @@ export default function CustomersManager() {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("cus.searchPh")}
             className="w-full bg-white/5 border border-subtle rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent" />
         </div>
-        <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)}
-          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
-          <option value="all">{t("cus.allCustomers")}</option>
-          <option value="platform">{t("cus.platform")}</option>
-          {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <Select
+          value={partnerId}
+          onChange={setPartnerId}
+          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+          options={[
+            { value: "all", label: t("cus.allCustomers") },
+            { value: "platform", label: t("cus.platform") },
+            ...partners.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
         <button onClick={() => setShowHidden((v) => !v)}
           className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12.5px] font-medium border whitespace-nowrap ${showHidden ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted hover:text-white"}`}>
           {showHidden ? <><Eye size={14} /> {t("cus.normalList")}</> : <><EyeOff size={14} /> {t("cus.hiddenList")}</>}

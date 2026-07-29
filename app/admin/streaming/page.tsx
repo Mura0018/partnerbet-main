@@ -8,6 +8,7 @@ import {
 import { createClient } from "@/lib/supabase";
 import { isValidHttpUrl } from "@/lib/validation/url";
 import { toast } from "@/lib/ui/toast";
+import { Select } from "@/lib/ui/Select";
 
 const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -349,16 +350,24 @@ function MatchStreamsTab() {
 
       <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <select className={inputCls} value={form.football_provider} onChange={(e) => setForm({ ...form, football_provider: e.target.value })}>
-            {FOOTBALL_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.football_provider}
+            onChange={(v) => setForm({ ...form, football_provider: v })}
+            options={FOOTBALL_PROVIDERS.map((p) => ({ value: p.id, label: p.label }))}
+          />
           <input className={inputCls} placeholder={t("strm.phFixtureId")} value={form.external_fixture_id} onChange={(e) => setForm({ ...form, external_fixture_id: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <select className={inputCls} value={form.streaming_provider_id} onChange={(e) => setForm({ ...form, streaming_provider_id: e.target.value })}>
-            <option value="">— Streaming provider tanlang —</option>
-            {providers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.streaming_provider_id}
+            onChange={(v) => setForm({ ...form, streaming_provider_id: v })}
+            options={[
+              { value: "", label: "— Streaming provider tanlang —" },
+              ...providers.map((p) => ({ value: p.id, label: p.name })),
+            ]}
+          />
           <input className={inputCls} placeholder={t("strm.phStreamId")} value={form.external_stream_id} onChange={(e) => setForm({ ...form, external_stream_id: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

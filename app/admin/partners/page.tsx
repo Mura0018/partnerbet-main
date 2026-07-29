@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 import { GlobalChat } from "@/lib/chat/GlobalChat";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
 
 type Partner = {
   id: string;
@@ -227,10 +228,15 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                     <input placeholder={t("prt.phFullName")} value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <input placeholder={t("prt.phEmail")} type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <p className="text-[11px] text-muted">{t("prt.noPassNote")}</p>
-                    <select value={mForm.partnerRole} onChange={(e) => setMForm((p) => ({ ...p, partnerRole: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
-                      <option value="partner_admin">{t("prt.roleAdmin")}</option>
-                      <option value="staff">{t("prt.roleStaff")}</option>
-                    </select>
+                    <Select
+                      value={mForm.partnerRole}
+                      onChange={(v) => setMForm((p) => ({ ...p, partnerRole: v }))}
+                      className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+                      options={[
+                        { value: "partner_admin", label: t("prt.roleAdmin") },
+                        { value: "staff", label: t("prt.roleStaff") },
+                      ]}
+                    />
                     {mError && <p className="text-[12px] text-[#FF6B85]">{mError}</p>}
                     <button onClick={createMember} disabled={mSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
                       {mSaving ? <Loader2 size={14} className="animate-spin mx-auto" /> : t("prt.create")}
@@ -268,10 +274,15 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                 <div className="rounded-lg glass-card p-3 mb-2.5 space-y-2">
                   <div className="flex gap-2">
                     <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-subtle rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
-                    <select value={invForm.model} onChange={(e) => setInvForm((p) => ({ ...p, model: e.target.value }))} className="bg-white/5 border border-subtle rounded-lg py-2 px-2 text-[12px] outline-none focus:border-accent">
-                      <option value="subscription">{t("prt.subscription")}</option>
-                      <option value="commission">{t("prt.commission")}</option>
-                    </select>
+                    <Select
+                      value={invForm.model}
+                      onChange={(v) => setInvForm((p) => ({ ...p, model: v }))}
+                      className="bg-white/5 border border-subtle rounded-lg py-2 px-2 text-[12px] flex items-center justify-between gap-2"
+                      options={[
+                        { value: "subscription", label: t("prt.subscription") },
+                        { value: "commission", label: t("prt.commission") },
+                      ]}
+                    />
                     <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={t("prt.phAmount", { cur: partner.currency })} className="flex-1 min-w-0 bg-white/5 border border-subtle rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
                   </div>
                   <button onClick={createInvoice} disabled={invSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[12.5px] disabled:opacity-50">{invSaving ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("prt.createInvoice")}</button>
@@ -388,9 +399,12 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
           </div>
           <div>
             <label className="block text-[12px] text-muted mb-1">{t("prt.fCurrency")}</label>
-            <select className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <Select
+              className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+              value={currency}
+              onChange={setCurrency}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
           </div>
         </div>
 
@@ -418,11 +432,16 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
 
         <div className="mb-5">
           <label className="block text-[12px] text-muted mb-1">{t("prt.fStatus")}</label>
-          <select className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={status} onChange={(e) => setStatus(e.target.value as Partner["status"])}>
-            <option value="active">{t("prt.stActive")}</option>
-            <option value="pending">{t("prt.stPending")}</option>
-            <option value="suspended">{t("prt.stSuspended")}</option>
-          </select>
+          <Select
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+            value={status}
+            onChange={(v) => setStatus(v as Partner["status"])}
+            options={[
+              { value: "active", label: t("prt.stActive") },
+              { value: "pending", label: t("prt.stPending") },
+              { value: "suspended", label: t("prt.stSuspended") },
+            ]}
+          />
         </div>
 
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}

@@ -10,6 +10,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
 
 type OperatorPaymentMethod = {
   id: string;
@@ -167,15 +168,12 @@ export function MyPaymentMethodsTab() {
           <div className="text-[13px] font-semibold mb-3">{editingId ? t("pay.editTitle") : t("pay.newTitle")}</div>
           <div className="mb-3">
             <label className="block text-[12px] text-muted mb-1.5">{t("pay.fType")}</label>
-            <select
-              className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]"
+            <Select
+              className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
               value={form.method_type}
-              onChange={(e) => setForm((prev) => ({ ...prev, method_type: e.target.value as OperatorPaymentMethod["method_type"] }))}
-            >
-              {(Object.keys(METHOD_TYPE_KEYS) as OperatorPaymentMethod["method_type"][]).map((k) => (
-                <option key={k} value={k}>{t(METHOD_TYPE_KEYS[k] as any)}</option>
-              ))}
-            </select>
+              onChange={(v) => setForm((prev) => ({ ...prev, method_type: v as OperatorPaymentMethod["method_type"] }))}
+              options={(Object.keys(METHOD_TYPE_KEYS) as OperatorPaymentMethod["method_type"][]).map((k) => ({ value: k, label: t(METHOD_TYPE_KEYS[k] as any) }))}
+            />
           </div>
           <div className="mb-3">
             <label className="block text-[12px] text-muted mb-1.5">{t("pay.fNumber")}</label>

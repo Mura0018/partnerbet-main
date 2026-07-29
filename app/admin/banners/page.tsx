@@ -6,6 +6,7 @@ import { Plus, Trash2, Eye, EyeOff, Upload, Loader2, Search, Copy, CheckSquare, 
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { isValidHttpUrl } from "@/lib/validation/url";
+import { Select } from "@/lib/ui/Select";
 
 type Banner = {
   id: string;
@@ -231,16 +232,27 @@ export default function BannersManager() {
 
       <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })} className={inputCls}>
-            <option value="image">{t("bnr.typeImage")}</option>
-            <option value="embed">{t("bnr.typeCode")}</option>
-          </select>
-          <select value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })} className={inputCls}>
-            {PLACEMENTS.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <select value={form.banner_size} onChange={(e) => setForm({ ...form, banner_size: e.target.value })} className={inputCls}>
-            {BANNER_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.kind}
+            onChange={(v) => setForm({ ...form, kind: v as any })}
+            options={[
+              { value: "image", label: t("bnr.typeImage") },
+              { value: "embed", label: t("bnr.typeCode") },
+            ]}
+          />
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.placement}
+            onChange={(v) => setForm({ ...form, placement: v })}
+            options={PLACEMENTS.map((p) => ({ value: p, label: p }))}
+          />
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.banner_size}
+            onChange={(v) => setForm({ ...form, banner_size: v })}
+            options={BANNER_SIZES.map((s) => ({ value: s, label: s }))}
+          />
         </div>
 
         {form.kind === "image" ? (
@@ -258,10 +270,15 @@ export default function BannersManager() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input placeholder={t("bnr.phTarget")} value={form.target_url} onChange={(e) => setForm({ ...form, target_url: e.target.value })} className={inputCls} />
-          <select value={form.partner_id} onChange={(e) => setForm({ ...form, partner_id: e.target.value })} className={inputCls}>
-            <option value="">— hamkor tanlanmagan —</option>
-            {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.partner_id}
+            onChange={(v) => setForm({ ...form, partner_id: v })}
+            options={[
+              { value: "", label: "— hamkor tanlanmagan —" },
+              ...partners.map((p) => ({ value: p.id, label: p.name })),
+            ]}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -295,22 +312,37 @@ export default function BannersManager() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
           <input placeholder={t("bnr.phSearch")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`${inputCls} pl-9`} />
         </div>
-        <select value={filterPlacement} onChange={(e) => setFilterPlacement(e.target.value)} className={inputCls}>
-          <option value="">{t("bnr.allPlacements")}</option>
-          {PLACEMENTS.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <select value={filterKind} onChange={(e) => setFilterKind(e.target.value)} className={inputCls}>
-          <option value="">{t("bnr.allTypes")}</option>
-          <option value="image">{t("bnr.image")}</option>
-          <option value="embed">{t("bnr.typeCode")}</option>
-        </select>
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={inputCls}>
-          <option value="">{t("bnr.allStatuses")}</option>
-          <option value="active">{t("bnr.active")}</option>
-          <option value="inactive">{t("bnr.disabled")}</option>
-          <option value="scheduled">{t("bnr.scheduled")}</option>
-          <option value="expired">{t("bnr.expired")}</option>
-        </select>
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={filterPlacement}
+          onChange={setFilterPlacement}
+          options={[
+            { value: "", label: t("bnr.allPlacements") },
+            ...PLACEMENTS.map((p) => ({ value: p, label: p })),
+          ]}
+        />
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={filterKind}
+          onChange={setFilterKind}
+          options={[
+            { value: "", label: t("bnr.allTypes") },
+            { value: "image", label: t("bnr.image") },
+            { value: "embed", label: t("bnr.typeCode") },
+          ]}
+        />
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={filterStatus}
+          onChange={setFilterStatus}
+          options={[
+            { value: "", label: t("bnr.allStatuses") },
+            { value: "active", label: t("bnr.active") },
+            { value: "inactive", label: t("bnr.disabled") },
+            { value: "scheduled", label: t("bnr.scheduled") },
+            { value: "expired", label: t("bnr.expired") },
+          ]}
+        />
       </div>
 
       {selectedIds.size > 0 && (

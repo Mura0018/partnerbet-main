@@ -7,6 +7,7 @@ import { Plus, Trash2, Pencil, X, Upload, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { RichTextEditor } from "@/lib/editor/RichTextEditor";
+import { Select } from "@/lib/ui/Select";
 
 type NewsItem = {
   id: string;
@@ -186,10 +187,15 @@ export default function FootballNewsManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fCategory")}</label>
-                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputCls}>
-                  <option value="">— tanlanmagan —</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.category_id}
+                  onChange={(v) => setForm({ ...form, category_id: v })}
+                  options={[
+                    { value: "", label: "— tanlanmagan —" },
+                    ...categories.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fLeague")}</label>
@@ -211,9 +217,12 @@ export default function FootballNewsManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fStatus")}</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_LABEL[s].labelKey as any)}</option>)}
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.status}
+                  onChange={(v) => setForm({ ...form, status: v })}
+                  options={STATUSES.map((s) => ({ value: s, label: t(STATUS_LABEL[s].labelKey as any) }))}
+                />
               </div>
               {form.status === "scheduled" && (
                 <div>

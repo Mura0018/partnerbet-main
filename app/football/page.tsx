@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Radio, Trophy, Star, Newspaper, Video, ChevronDown } from "lucide-react";
+import { Radio, Trophy, Star, Newspaper, Video } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { PublicHeader } from "@/lib/ui/PublicHeader";
 import { PublicFooter } from "@/lib/ui/PublicFooter";
 import { SectionHeading } from "@/lib/ui/primitives";
 import { WatchLiveButton } from "@/lib/streaming/WatchLiveButton";
+import { Select } from "@/lib/ui/Select";
 
 function EmptyState({ message }: { message: string }) {
   return (
@@ -191,16 +192,12 @@ export default function FootballCenterPage() {
               <h2 className="text-[18px] font-bold">League Tables</h2>
             </div>
             {leagues.length > 0 && (
-              <div className="relative">
-                <select
-                  value={selectedLeague?.id ?? ""}
-                  onChange={(e) => setSelectedLeague(leagues.find((l) => l.id === e.target.value))}
-                  className="appearance-none bg-white/5 border border-subtle rounded-lg py-2 pl-3 pr-8 text-[12px]"
-                >
-                  {leagues.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
-                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-              </div>
+              <Select
+                value={selectedLeague?.id ?? ""}
+                onChange={(v) => setSelectedLeague(leagues.find((l) => l.id === v))}
+                className="bg-white/5 border border-subtle rounded-lg py-2 pl-3 pr-3 text-[12px] flex items-center justify-between gap-2"
+                options={leagues.map((l) => ({ value: l.id, label: l.name }))}
+              />
             )}
           </div>
 
