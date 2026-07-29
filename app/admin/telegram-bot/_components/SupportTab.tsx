@@ -10,6 +10,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { toast } from "@/lib/ui/toast";
 
 type SupportThread = {
   customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string;
@@ -218,9 +219,9 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(t("sup.errPrefix") + JSON.stringify(data));
+        toast.error(t("sup.errPrefix") + JSON.stringify(data));
       } else {
-        alert(t("sup.endSent"));
+        toast.success(t("sup.endSent"));
       }
     } finally {
       setArchiving(false);

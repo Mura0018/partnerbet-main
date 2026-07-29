@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { RichTextEditor } from "@/lib/editor/RichTextEditor";
 import { usePermission } from "@/lib/auth/permissions";
+import { PromptModal } from "@/lib/ui/PromptModal";
 
 type Post = {
   id: string;
@@ -59,6 +60,7 @@ export default function BlogManager() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [tagPromptOpen, setTagPromptOpen] = useState(false);
   const canManageTaxonomy = usePermission("taxonomy.manage");
   const supabase = createClient();
 
@@ -262,12 +264,18 @@ export default function BlogManager() {
                 </button>
               ))}
               {canManageTaxonomy && (
-                <button type="button" onClick={() => { const n = window.prompt("Yangi teg nomi:"); if (n) quickAddTag(n); }}
+                <button type="button" onClick={() => setTagPromptOpen(true)}
                   className="px-2.5 py-1 rounded-full text-[11px] border border-dashed border-subtle text-[#5b6f85]">
                   + Yangi teg
                 </button>
               )}
             </div>
+            <PromptModal
+              open={tagPromptOpen}
+              title="Yangi teg nomi"
+              onSubmit={(n) => { setTagPromptOpen(false); if (n.trim()) quickAddTag(n.trim()); }}
+              onCancel={() => setTagPromptOpen(false)}
+            />
 
             <label className="block text-[12px] text-muted mb-1">{t("post.fBody")}</label>
             <div className="mb-3">

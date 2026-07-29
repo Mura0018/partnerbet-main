@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { isValidHttpUrl } from "@/lib/validation/url";
+import { toast } from "@/lib/ui/toast";
 
 const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -113,10 +114,10 @@ function ProvidersTab() {
         body: JSON.stringify({ providerId }),
       });
       const json = await res.json();
-      if (res.status === 429) alert("Juda ko'p urinish. Bir necha daqiqadan so'ng qayta urinib ko'ring.");
-      else if (!json.success) alert(`Ulanish muvaffaqiyatsiz: ${json.message ?? "noma'lum xato"}`);
+      if (res.status === 429) toast.error("Juda ko'p urinish. Bir necha daqiqadan so'ng qayta urinib ko'ring.");
+      else if (!json.success) toast.error(`Ulanish muvaffaqiyatsiz: ${json.message ?? "noma'lum xato"}`);
     } catch {
-      alert("Ulanishni tekshirishda xatolik.");
+      toast.error("Ulanishni tekshirishda xatolik.");
     } finally {
       setTestingId(null);
       load();

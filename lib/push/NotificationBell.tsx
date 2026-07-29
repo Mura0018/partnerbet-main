@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { getPushPermissionState, subscribeToPush, unsubscribeFromPush, isPushSupported } from "@/lib/push/subscribe";
+import { toast } from "@/lib/ui/toast";
 
 export function NotificationBell() {
   const [state, setState] = useState<NotificationPermission | "unsupported" | "loading">("loading");
@@ -26,13 +27,13 @@ export function NotificationBell() {
           setState("granted");
         } else {
           console.error("[push] Obuna yozilmadi:", result.error);
-          alert("Bildirishnomaga obuna bo'lib bo'lmadi. Birozdan keyin qayta urinib ko'ring.");
+          toast.error("Bildirishnomaga obuna bo'lib bo'lmadi. Birozdan keyin qayta urinib ko'ring.");
           setState(await getPushPermissionState());
         }
       }
     } catch (err: any) {
       console.error("[push] Kutilmagan xato:", err);
-      alert("Bildirishnomaga obuna bo'lib bo'lmadi. Birozdan keyin qayta urinib ko'ring.");
+      toast.error("Bildirishnomaga obuna bo'lib bo'lmadi. Birozdan keyin qayta urinib ko'ring.");
     } finally {
       setBusy(false);
     }

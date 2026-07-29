@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase";
 import { checkPasswordStrength } from "@/lib/auth/password";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
+import { toast } from "@/lib/ui/toast";
 
 type Role = { id: string; key: string; name: string };
 type UserRow = {
@@ -187,7 +188,7 @@ export default function UsersManager() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(
+      toast.error(
         data.error === "forbidden_role_assignment"
           ? t("usr.eRoleForbidden")
           : t("usr.eRoleChange")
@@ -209,7 +210,7 @@ export default function UsersManager() {
       body: JSON.stringify({ userId: user.id }),
     });
     if (res.ok) load();
-    else alert(t("usr.eDelete"));
+    else toast.error(t("usr.eDelete"));
   };
 
   return (

@@ -11,6 +11,7 @@ import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useV
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
+import { toast } from "@/lib/ui/toast";
 
 const REJECT_REASON_KEYS = ["ord.rt1", "ord.rt2", "ord.rt3", "ord.rt4", "ord.rt5"];
 
@@ -657,7 +658,7 @@ function MyBusyToggle() {
 
     const { error } = await supabase.from("profiles").update({ is_busy: next, busy_reason: nextReason || null }).eq("id", user.id);
     if (error) {
-      alert(t("wid.saveFailed2") + error.message);
+      toast.error(t("wid.saveFailed2") + error.message);
       setSaving(false);
       return;
     }
@@ -1021,7 +1022,7 @@ export function OrdersTab() {
         body: JSON.stringify({ orderId: o.id }),
       });
       const data = await res.json();
-      if (!data.ok) alert(t("wid.takeoverTaken"));
+      if (!data.ok) toast.error(t("wid.takeoverTaken"));
     } catch {
       /* tarmoq xatosi — jim */
     } finally {

@@ -10,6 +10,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { toast } from "@/lib/ui/toast";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -197,7 +198,7 @@ export function ChatTab() {
     if (user) {
       const { error } = await supabase.from("team_chat_messages").insert({ sender_id: user.id, message: text.trim(), reply_to_id: replyTo?.id ?? null });
       if (error) {
-        alert(t("cht.eSend") + error.message);
+        toast.error(t("cht.eSend") + error.message);
         setSending(false);
         return;
       }

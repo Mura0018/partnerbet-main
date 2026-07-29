@@ -3,6 +3,7 @@ import "./globals.css";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
 import { createPublicServerClient } from "@/lib/supabasePublic";
 import { buildThemeCssVars } from "@/lib/theme";
+import { Toaster } from "@/lib/ui/toast";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://couponbet.org";
 const DEFAULT_SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "BetCore";
@@ -74,6 +75,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="bg-bg text-white antialiased">
         <LocaleProvider>{children}</LocaleProvider>
+        <Toaster />
       </body>
     </html>
   );
