@@ -107,7 +107,7 @@ export default function TariffsManager() {
           <AlertTriangle size={18} className="text-[#F4C76A] shrink-0 mt-0.5" />
           <div className="text-[13px]">
             <div className="font-semibold text-[#F4C76A] mb-1">{t("trf.missingTitle")}</div>
-            <div className="text-muted">{t("trf.missingPost")}</div>
+            <div className="text-muted">{t("trf.missingPre")}<span className="font-mono">0060_partner_bot_themes_tariffs.sql</span>{t("trf.missingPost")}</div>
           </div>
         </div>
       ) : tariffs.length === 0 ? (
