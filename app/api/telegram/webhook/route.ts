@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     console.log("[webhook][DEBUG] /start shoxiga kirdi");
     await sendTelegramMessage(
       chatId,
-      "🟦 BetCore Pay\n\nBetCore Pay botiga xush kelibsiz.\n\nHisob to'ldirish\nPul yechish\nOperator bilan aloqa\n\nBoshlash uchun quyidagi tugmani bosing:",
+      "🟦 BetCore Pay\n\nAssalomu alaykum. BetCore Pay botiga xush kelibsiz.\n\nHisob to'ldirish\nPul yechish\nOperator bilan aloqa\n\nBoshlash uchun quyidagi tugmani bosing:",
       OPEN_APP_KEYBOARD
     );
   } else if (/^\/link\b/i.test(text)) {
