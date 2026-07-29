@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { SlidersHorizontal, Loader2, Wallet, Landmark, HandCoins, Gauge, MessageSquare, Wrench, Power, Trophy } from "lucide-react";
+import { SlidersHorizontal, Loader2, Wallet, Landmark, HandCoins, Gauge, MessageSquare, Wrench, Power, Trophy, Radio } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -66,6 +66,7 @@ export default function ControlCenter() {
   const rules = s.team_chat_rules || {};
   const maint = s.maintenance || {};
   const promo = s.promo || {};
+  const dailySignal = s.daily_team_signal || {};
 
   const Toggle = ({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) => (
     <button
@@ -179,6 +180,16 @@ export default function ControlCenter() {
             <p className="text-[10.5px] text-white/30 mt-2">{t("ctl.promoHint")}</p>
           </div>
           <Link href="/admin/promo" className="text-[12px] text-accent hover:underline">{t("ctl.goToPromo")}</Link>
+        </Card>
+
+        {/* KUNLIK BOT SIGNALI (umumiy) */}
+        <Card icon={<Radio size={16} />} title={t("ctl.dailySignal")} side={t("ctl.dailySignalSide")}>
+          <div className="mb-3">
+            <L>{t("ctl.dailySignalChatId")}</L>
+            <input className={inp} value={dailySignal.chat_id ?? ""} placeholder="-1001234567890" onChange={(e) => patch("daily_team_signal", { chat_id: e.target.value })} />
+            <p className="text-[10.5px] text-white/30 mt-2">{t("ctl.dailySignalHint")}</p>
+          </div>
+          <SaveBtn k="daily_team_signal" value={{ chat_id: dailySignal.chat_id?.trim() || null }} />
         </Card>
 
         {/* SAYT (umumiy) */}

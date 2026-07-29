@@ -124,6 +124,8 @@ export const dictionaries = {
       promo: "Sovrinli karta (aksiya)", promoSide: "Mijoz tarafi — bonus / sovrin", promoLabel: "Aksiya", promoHint: "Yoniq bo'lsa mijozlar sovrin kartasini oladi. Reyting: Sovrinli karta bo'limi.", goToPromo: "Sovrinli karta bo'limiga o'tish →",
       site: "Sayt holati", siteSide: "Umumiy — texnik ish rejimi", maintenance: "Texnik ish", maintenanceHint: "Yoniq bo'lsa sayt tashrifchilariga texnik ish ekrani ko'rinadi (adminlar kiradi).",
       on: "Yoniq", off: "O'chiq", save: "Saqlash", saved: "Saqlandi", saveFailed: "Saqlanmadi. Qayta urining.",
+      dailySignal: "Kunlik bot signali", dailySignalSide: "Umumiy — jamoa Telegram guruhiga kunlik holat xabari",
+      dailySignalChatId: "Qabul qiluvchi chat ID", dailySignalHint: "Bot shu chatga (guruhga) qo'shilgan bo'lishi kerak. Guruh ID odatda manfiy son (masalan -1001234567890).",
     },
     csh: {
       title: "Kassalar", subtitle: "Ko'p kassa (multi-cashdesk) — poydevor", newCashdesk: "Yangi kassa", importLegacy: "Mavjud kassani ko'chirish",
@@ -825,6 +827,8 @@ export const dictionaries = {
       promo: "Призовая карта (акция)", promoSide: "Сторона клиента — бонус / приз", promoLabel: "Акция", promoHint: "Если включено, клиенты получают призовую карту. Рейтинг: раздел Призовая карта.", goToPromo: "Перейти в раздел Призовая карта →",
       site: "Состояние сайта", siteSide: "Общее — режим тех. работ", maintenance: "Тех. работы", maintenanceHint: "Если включено, посетители сайта видят экран тех. работ (админы заходят).",
       on: "Вкл", off: "Выкл", save: "Сохранить", saved: "Сохранено", saveFailed: "Не сохранено. Попробуйте снова.",
+      dailySignal: "Ежедневный сигнал бота", dailySignalSide: "Общее — ежедневный статус в командный Telegram-чат",
+      dailySignalChatId: "ID чата-получателя", dailySignalHint: "Бот должен быть добавлен в этот чат (группу). ID группы обычно отрицательное число (например -1001234567890).",
     },
     csh: {
       title: "Кассы", subtitle: "Мульти-касса — основа", newCashdesk: "Новая касса", importLegacy: "Перенести существующую кассу",
