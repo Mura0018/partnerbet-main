@@ -115,8 +115,8 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
         else if (d.error === "temporarily_blocked") setError(t("wz.eBlocked"));
         else if (d.error === "full_name_required") setNeedsFullName(true);
         else if (d.error === "name_mismatch") setError(t("wz.eNameMismatch"));
-        else if (d.error === "order_limit_exceeded") setError(`${t("wz.eGeneric")} (limit: ${Number(d.limit).toLocaleString("ru-RU")})`);
-        else if (d.error === "daily_limit_exceeded") setError(`${t("wz.eGeneric")} (limit: ${Number(d.limit).toLocaleString("ru-RU")})`);
+        else if (d.error === "order_limit_exceeded") setError(t("wz.eOrderLimit", { limit: Number(d.limit).toLocaleString("ru-RU") }));
+        else if (d.error === "daily_limit_exceeded") setError(t("wz.eDailyLimit", { limit: Number(d.limit).toLocaleString("ru-RU") }));
         else setError(t("wz.eGeneric"));
         return;
       }

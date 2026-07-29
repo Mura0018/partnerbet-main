@@ -851,7 +851,7 @@ export default function TelegramAppPage() {
           linked_to_other_telegram: t("tg.eLinkedOther"),
           rate_limited: t("tg.errRate"),
         };
-        setError(messages[data.error] ?? "Xatolik yuz berdi.");
+        setError(messages[data.error] ?? t("tg.eGeneric2"));
         return;
       }
       setCustomer(data.customer);
@@ -910,7 +910,7 @@ export default function TelegramAppPage() {
           weak_password: t("tg.eWeakPass"),
           rate_limited: t("tg.errRate"),
         };
-        setFpError(messages[data.error] ?? "Xatolik yuz berdi.");
+        setFpError(messages[data.error] ?? t("tg.eGeneric2"));
         return;
       }
       setPhone(fpPhone.trim());
@@ -919,10 +919,10 @@ export default function TelegramAppPage() {
       setFpPhone(""); setFpCode(""); setFpNewPassword(""); setFpInfo(""); setFpError("");
       setMode("login");
       setError("");
-      setAuthInfo("Parol yangilandi — endi yangi parolingiz bilan kiring.");
+      setAuthInfo(t("tg.fpSuccess"));
       setScreen("auth");
     } catch {
-      setFpError("Ulanishda xatolik. Qayta urinib ko'ring.");
+      setFpError(t("tg.eConn"));
     } finally {
       setFpSubmitting(false);
     }
@@ -1008,9 +1008,9 @@ export default function TelegramAppPage() {
         if (data.error === "player_not_found") {
           setError(t("tg.eIdNotFound"));
         } else if (data.error === "order_limit_exceeded") {
-          setError(`Bitta buyurtma uchun maksimal summa: ${Number(data.limit).toLocaleString("ru-RU")} so'm.`);
+          setError(t("tg.eOrderLimit", { limit: Number(data.limit).toLocaleString("ru-RU") }));
         } else if (data.error === "daily_limit_exceeded") {
-          setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
+          setError(t("tg.eDailyLimit", { limit: Number(data.limit).toLocaleString("ru-RU") }));
         } else if (data.error === "too_many_pending_orders") {
           setError(t("tg.ePendingOrders"));
         } else if (data.error === "topup_disabled") {
