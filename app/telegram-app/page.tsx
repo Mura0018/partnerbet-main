@@ -2270,25 +2270,25 @@ export default function TelegramAppPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3.5">
-        <button onClick={() => { setError(""); setScreen("topup"); }} className={menuCardCls}>
+        <button onClick={() => { setError(""); setScreen("topup"); }} className="m-action">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D7FFF] to-[#2456c9] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <Download size={17} className="text-white" />
           </div>
           <div className="text-[13px] font-bold">{t("tg.mTopup")}</div>
         </button>
-        <button onClick={() => { setError(""); setScreen("withdraw"); }} className={menuCardCls}>
+        <button onClick={() => { setError(""); setScreen("withdraw"); }} className="m-action">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F4C76A] to-[#c99a3e] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <ArrowUpFromLine size={17} className="text-[#2a1e05]" />
           </div>
           <div className="text-[13px] font-bold">{t("tg.mWithdraw")}</div>
         </button>
-        <button onClick={openOrders} className={menuCardCls}>
+        <button onClick={openOrders} className="m-action">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4ADE80] to-[#22a355] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <ListOrdered size={17} className="text-[#06170e]" />
           </div>
           <div className="text-[13px] font-bold">{t("tg.mOrders")}</div>
         </button>
-        <button onClick={() => openSupport()} className={menuCardCls}>
+        <button onClick={() => openSupport()} className="m-action">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f2d9c] flex items-center justify-center mb-3 shadow-[3px_3px_8px_rgba(0,0,0,0.4)]">
             <Headset size={17} className="text-white" />
           </div>
