@@ -2339,12 +2339,6 @@ export default function TelegramAppPage() {
       {/* Reklama banner (bizning app) */}
       {!partnerId && <PromoBanner />}
 
-      <style>{`
-        @keyframes hkShimmer { 0%{background-position:0% 0} 100%{background-position:300% 0} }
-        @keyframes hkFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-        @keyframes hkGlow { 0%,100%{box-shadow:0 0 26px 4px rgba(244,199,106,0.28)} 50%{box-shadow:0 0 40px 10px rgba(61,127,255,0.34)} }
-        @keyframes hkRise { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-      `}</style>
       </div>
       <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
     </div>
