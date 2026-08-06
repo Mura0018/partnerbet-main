@@ -153,6 +153,51 @@
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
+/* Banner — jimirlovchi gradient chegara (tashqi) + yuza (ichki).
+   Tashqi gradientning O'ZI TSX'da inline style'da qoladi: har banner o'z
+   brend aksentiga ega (oltin-ko'k-binafsha / firuza-oltin). Bu klass faqat
+   shakl, soya va bosilish tilini beradi — .m-card/.m-action bilan bir xil. */
+.m-banner {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 1.5px;
+  text-align: left;
+  box-shadow: 0 14px 30px -16px rgba(0, 0, 0, 0.7);
+  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.15s;
+}
+.m-banner:active {
+  transform: scale(0.975);
+  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.7);
+}
+.m-banner-inner {
+  position: relative;
+  border-radius: 16.5px; /* 18px tashqi - 1.5px padding */
+  background: linear-gradient(155deg, var(--surf-3), var(--surf-2));
+}
+/* Sovrin banneri — firuza tus. Bu variant ATAYLAB temaga ergashmaydi:
+   uning yagona vazifasi hamkorlik bannerdan ajralib turish. Agar u ham
+   var(--t-card) ga o'tsa, neon temada ikkalasi bir xil bo'lib, farq
+   yo'qolardi. Qiymatlar eski TSX'dagidek aynan saqlangan. */
+.m-banner-inner--em {
+  background: linear-gradient(to bottom right, #04231F, #0a2e28);
+}
+
+/* Tema: ichki yuza .m-card bilan bir xil yo'l tutadi — LEKIN --em variant
+   :not() bilan chetlab o'tiladi (firuza hamma temada qoladi).
+   Radius esa --em uchun ham o'zgaradi — u firuza belgisining qismi emas. */
+:root[data-app-theme="neon"] .m-banner {
+  border-radius: 12px;
+}
+:root[data-app-theme="neon"] .m-banner-inner {
+  border-radius: 10.5px;
+}
+:root[data-app-theme="neon"] .m-banner-inner:not(.m-banner-inner--em),
+:root[data-app-theme="royal"] .m-banner-inner:not(.m-banner-inner--em) {
+  background-image: var(--t-card);
+}
+
 /* Hamkorlik/banner animatsiyalari.
    Ilgari bular menu ekranining ichidagi <style> blokida edi — menu unmount
    bo'lganda ta'riflar DOM'dan yo'qolib, hamkorlik ekranida (hkRise/hkFloat/

@@ -2300,10 +2300,10 @@ export default function TelegramAppPage() {
       {!partnerId && (
       <button
         onClick={() => { setError(""); setScreen("hamkorlik"); }}
-        className="group relative w-full mt-3.5 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)] active:translate-y-[2px] transition-all"
+        className="group m-banner mt-3.5"
         style={{ background: "linear-gradient(120deg,#F4C76A,#3D7FFF,#7c3aed,#F4C76A)", backgroundSize: "300% 100%", animation: "hkShimmer 6s linear infinite" }}
       >
-        <div className="relative rounded-2xl bg-gradient-to-br from-[#0e2038] to-[#0a1a30] px-4 py-3.5 flex items-center gap-3.5">
+        <div className="m-banner-inner px-4 py-3.5 flex items-center gap-3.5">
           <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#F4C76A] to-[#c99a3e] flex items-center justify-center shadow-[3px_3px_10px_rgba(0,0,0,0.45)]" style={{ animation: "hkFloat 3.4s ease-in-out infinite" }}>
             <Handshake size={20} className="text-[#2a1e05]" />
           </div>
@@ -2320,10 +2320,10 @@ export default function TelegramAppPage() {
       {!partnerId && (
       <button
         onClick={() => { setError(""); setScreen("promo"); }}
-        className="group relative w-full mt-3.5 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(28,224,195,0.12)] active:translate-y-[2px] transition-all"
+        className="group m-banner mt-3.5"
         style={{ background: "linear-gradient(120deg,#1CE0C3,#F4C76A,#1CE0C3)", backgroundSize: "300% 100%", animation: "hkShimmer 6s linear infinite" }}
       >
-        <div className="relative rounded-2xl bg-gradient-to-br from-[#04231F] to-[#0a2e28] px-4 py-3.5 flex items-center gap-3.5">
+        <div className="m-banner-inner m-banner-inner--em px-4 py-3.5 flex items-center gap-3.5">
           <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#1CE0C3] to-[#0a8f7d] flex items-center justify-center shadow-[3px_3px_10px_rgba(0,0,0,0.45)]" style={{ animation: "hkFloat 3.4s ease-in-out infinite" }}>
             <Gift size={20} className="text-[#04231F]" />
           </div>
