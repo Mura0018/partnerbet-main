@@ -2235,7 +2235,7 @@ export default function TelegramAppPage() {
     <div className={`${bgCls} p-5 pb-24 relative`}>
       <FloatingAmbience />
       <div className="relative z-10">
-      <div className="rounded-2xl bg-gradient-to-br from-[#123f77] to-[#0e2038] p-5 mb-5 shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)]">
+      <div className="m-card p-5 mb-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] text-[#93a5ba] mb-1">{t("tg.welcome")}</p>

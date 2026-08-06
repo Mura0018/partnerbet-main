@@ -124,15 +124,30 @@
   transform: scale(0.975);
   box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
+/* Yuza karta — bosilmaydigan konteyner (salom bloki va h.k.).
+   .m-action bilan bir oilada (bir xil radius/chegara/soya tili), lekin
+   :active holati yo'q va padding bermaydi — joylashuv (p-*, mb-*) TSX
+   tomonda Tailwind'da qoladi. */
+.m-card {
+  position: relative;
+  border-radius: 18px;
+  background: linear-gradient(155deg, var(--surf-3), var(--surf-2));
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 14px 30px -16px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
 /* Eski app-theme (neon/royal) bilan mos qolishi uchun — .app-card-bg qanday
-   o'zgarsa, .m-action ham shunday o'zgaradi (globals.css bilan bir xil qiymatlar). */
-:root[data-app-theme="neon"] .m-action {
+   o'zgarsa, .m-action va .m-card ham shunday o'zgaradi (globals.css bilan bir
+   xil qiymatlar). Ikkalasi bitta qoidada — kelajakda ajralib ketmasligi uchun. */
+:root[data-app-theme="neon"] .m-action,
+:root[data-app-theme="neon"] .m-card {
   background-image: var(--t-card);
   border-radius: 12px;
   border-color: rgba(34, 211, 238, 0.35);
   box-shadow: 0 0 16px rgba(34, 211, 238, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-:root[data-app-theme="royal"] .m-action {
+:root[data-app-theme="royal"] .m-action,
+:root[data-app-theme="royal"] .m-card {
   background-image: var(--t-card);
   border-color: rgba(244, 199, 106, 0.35);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
