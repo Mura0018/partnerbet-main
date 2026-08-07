@@ -119,22 +119,6 @@
   100% { background-position: -200% 0; }
 }
 
-/* Asosiy amal tugmasi — gradient yuza + inset yorug'lik + active scale */
-.m-action {
-  position: relative;
-  border-radius: 18px;
-  padding: 16px;
-  text-align: left;
-  background: linear-gradient(155deg, var(--surf-3), var(--surf-2));
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 14px 30px -16px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.15s;
-}
-.m-action:active {
-  transform: scale(0.975);
-  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
 /* Hamkorlik/banner animatsiyalari.
    Ilgari bular menu ekranining ichidagi <style> blokida edi — menu unmount
    bo'lganda ta'riflar DOM'dan yo'qolib, hamkorlik ekranida (hkRise/hkFloat/
