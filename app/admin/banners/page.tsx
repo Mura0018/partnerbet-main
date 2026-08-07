@@ -6,6 +6,8 @@ import { Plus, Trash2, Eye, EyeOff, Upload, Loader2, Search, Copy, CheckSquare, 
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { isValidHttpUrl } from "@/lib/validation/url";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Banner = {
   id: string;
@@ -29,7 +31,7 @@ type Partner = { id: string; name: string; slug: string };
 
 const PLACEMENTS = ["homepage", "blog", "insights", "football_news", "apk_page", "popup", "sticky", "sidebar", "footer", "header"];
 const BANNER_SIZES = ["desktop", "tablet", "mobile", "square", "popup", "sticky", "hero"];
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 
 const EMPTY = {
   kind: "image" as "image" | "embed", placement: "homepage", banner_size: "desktop",
@@ -50,6 +52,7 @@ export default function BannersManager() {
   const [filterStatus, setFilterStatus] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ data: bannersData }, { data: partnersData }] = await Promise.all([
@@ -85,7 +88,7 @@ export default function BannersManager() {
       const media = await uploadImage(file);
       setForm((prev) => ({ ...prev, content: media.publicUrl }));
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setUploading(false);
     }
@@ -112,7 +115,7 @@ export default function BannersManager() {
     else payload.embed_code = form.content;
 
     const { error: insertError } = await supabase.from("advertisements").insert(payload);
-    if (insertError) { setError(insertError.message); return; }
+    if (insertError) { setError(`Saqlashda xatolik: ${insertError.message}`); return; }
     setForm(EMPTY);
     load();
   };
@@ -121,10 +124,11 @@ export default function BannersManager() {
     await supabase.from("advertisements").update({ is_active: !b.is_active }).eq("id", b.id);
     load();
   };
-  const remove = async (id: string) => {
-    if (!confirm(t("bnr.confirmDel"))) return;
-    await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("bnr.confirmDel"), async () => {
+      await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const partnerName = (id: string | null) => partners.find((p) => p.id === id)?.name;
@@ -161,12 +165,13 @@ export default function BannersManager() {
     setSelectedIds(new Set());
     load();
   };
-  const bulkDelete = async () => {
+  const bulkDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`${selectedIds.size} ta banner o'chirilsinmi?`)) return;
-    await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).in("id", Array.from(selectedIds));
-    setSelectedIds(new Set());
-    load();
+    confirm(`${selectedIds.size} ta banner o'chirilsinmi?`, async () => {
+      await supabase.from("advertisements").update({ deleted_at: new Date().toISOString() }).in("id", Array.from(selectedIds));
+      setSelectedIds(new Set());
+      load();
+    });
   };
   const clone = async (b: Banner) => {
     const { id, views, clicks, ...rest } = b;
@@ -231,22 +236,33 @@ export default function BannersManager() {
 
       <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })} className={inputCls}>
-            <option value="image">{t("bnr.typeImage")}</option>
-            <option value="embed">{t("bnr.typeCode")}</option>
-          </select>
-          <select value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })} className={inputCls}>
-            {PLACEMENTS.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <select value={form.banner_size} onChange={(e) => setForm({ ...form, banner_size: e.target.value })} className={inputCls}>
-            {BANNER_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.kind}
+            onChange={(v) => setForm({ ...form, kind: v as any })}
+            options={[
+              { value: "image", label: t("bnr.typeImage") },
+              { value: "embed", label: t("bnr.typeCode") },
+            ]}
+          />
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.placement}
+            onChange={(v) => setForm({ ...form, placement: v })}
+            options={PLACEMENTS.map((p) => ({ value: p, label: p }))}
+          />
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.banner_size}
+            onChange={(v) => setForm({ ...form, banner_size: v })}
+            options={BANNER_SIZES.map((s) => ({ value: s, label: s }))}
+          />
         </div>
 
         {form.kind === "image" ? (
           <div className="flex items-center gap-3">
-            {form.content && <img src={form.content} alt="" className="w-14 h-14 rounded-lg object-cover border border-white/10" />}
-            <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-[12px] cursor-pointer hover:bg-white/5">
+            {form.content && <img src={form.content} alt="" className="w-14 h-14 rounded-lg object-cover border border-subtle" />}
+            <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-subtle text-[12px] cursor-pointer hover:bg-white/5">
               {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} Rasm yuklash
               <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" disabled={uploading}
                 onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
@@ -258,17 +274,22 @@ export default function BannersManager() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input placeholder={t("bnr.phTarget")} value={form.target_url} onChange={(e) => setForm({ ...form, target_url: e.target.value })} className={inputCls} />
-          <select value={form.partner_id} onChange={(e) => setForm({ ...form, partner_id: e.target.value })} className={inputCls}>
-            <option value="">— hamkor tanlanmagan —</option>
-            {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <Select
+            className={`${inputCls} flex items-center justify-between gap-2`}
+            value={form.partner_id}
+            onChange={(v) => setForm({ ...form, partner_id: v })}
+            options={[
+              { value: "", label: "— hamkor tanlanmagan —" },
+              ...partners.map((p) => ({ value: p.id, label: p.name })),
+            ]}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input placeholder={t("bnr.phCountries")} value={form.countriesInput} onChange={(e) => setForm({ ...form, countriesInput: e.target.value })} className={inputCls} />
           <div className="flex gap-2 items-center">
             {["uz", "ru", "en"].map((l) => (
-              <button key={l} type="button" onClick={() => toggleLanguage(l)} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border uppercase ${form.languages.includes(l) ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>{l}</button>
+              <button key={l} type="button" onClick={() => toggleLanguage(l)} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border uppercase ${form.languages.includes(l) ? "bg-accent/10 text-accent border-accent/30" : "border-subtle text-muted"}`}>{l}</button>
             ))}
           </div>
         </div>
@@ -295,22 +316,37 @@ export default function BannersManager() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5b6f85]" />
           <input placeholder={t("bnr.phSearch")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`${inputCls} pl-9`} />
         </div>
-        <select value={filterPlacement} onChange={(e) => setFilterPlacement(e.target.value)} className={inputCls}>
-          <option value="">{t("bnr.allPlacements")}</option>
-          {PLACEMENTS.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <select value={filterKind} onChange={(e) => setFilterKind(e.target.value)} className={inputCls}>
-          <option value="">{t("bnr.allTypes")}</option>
-          <option value="image">{t("bnr.image")}</option>
-          <option value="embed">{t("bnr.typeCode")}</option>
-        </select>
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={inputCls}>
-          <option value="">{t("bnr.allStatuses")}</option>
-          <option value="active">{t("bnr.active")}</option>
-          <option value="inactive">{t("bnr.disabled")}</option>
-          <option value="scheduled">{t("bnr.scheduled")}</option>
-          <option value="expired">{t("bnr.expired")}</option>
-        </select>
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={filterPlacement}
+          onChange={setFilterPlacement}
+          options={[
+            { value: "", label: t("bnr.allPlacements") },
+            ...PLACEMENTS.map((p) => ({ value: p, label: p })),
+          ]}
+        />
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={filterKind}
+          onChange={setFilterKind}
+          options={[
+            { value: "", label: t("bnr.allTypes") },
+            { value: "image", label: t("bnr.image") },
+            { value: "embed", label: t("bnr.typeCode") },
+          ]}
+        />
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={filterStatus}
+          onChange={setFilterStatus}
+          options={[
+            { value: "", label: t("bnr.allStatuses") },
+            { value: "active", label: t("bnr.active") },
+            { value: "inactive", label: t("bnr.disabled") },
+            { value: "scheduled", label: t("bnr.scheduled") },
+            { value: "expired", label: t("bnr.expired") },
+          ]}
+        />
       </div>
 
       {selectedIds.size > 0 && (
@@ -337,7 +373,7 @@ export default function BannersManager() {
               <button onClick={() => toggleSelect(b.id)} className="shrink-0 text-muted hover:text-white" aria-label="Tanlash">
                 {selectedIds.has(b.id) ? <CheckSquare size={16} className="text-accent" /> : <Square size={16} />}
               </button>
-              {b.image_url && <img src={b.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-white/10 shrink-0" />}
+              {b.image_url && <img src={b.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-subtle shrink-0" />}
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-[11px] flex-wrap">
                   <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/30">{b.kind}</span>
@@ -365,6 +401,7 @@ export default function BannersManager() {
           </div>
         )}
       </div>
+      {confirmDialog}
     </div>
   );
 }

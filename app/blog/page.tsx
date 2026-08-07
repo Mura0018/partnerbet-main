@@ -54,9 +54,9 @@ export default async function BlogListPage({
 
         {categories && categories.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-8">
-            <Link href="/blog" className={`px-3 py-1.5 rounded-full text-[12px] border ${!category ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>Barchasi</Link>
+            <Link href="/blog" className={`px-3 py-1.5 rounded-full text-[12px] border ${!category ? "bg-accent/10 text-accent border-accent/30" : "border-subtle text-muted"}`}>Barchasi</Link>
             {categories.map((c) => (
-              <Link key={c.id} href={`/blog?category=${c.slug}`} className={`px-3 py-1.5 rounded-full text-[12px] border ${category === c.slug ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>
+              <Link key={c.id} href={`/blog?category=${c.slug}`} className={`px-3 py-1.5 rounded-full text-[12px] border ${category === c.slug ? "bg-accent/10 text-accent border-accent/30" : "border-subtle text-muted"}`}>
                 {c.name}
               </Link>
             ))}
@@ -64,7 +64,7 @@ export default async function BlogListPage({
         )}
 
         {posts.length === 0 ? (
-          <div className="rounded-xl border border-white/8 bg-white/[0.02] p-10 text-center text-[13px] text-muted">
+          <div className="rounded-xl border border-subtle bg-white/[0.02] p-10 text-center text-[13px] text-muted">
             Hozircha maqola yo'q.
           </div>
         ) : (

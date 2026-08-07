@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Category = {
   id: string;
@@ -14,7 +16,7 @@ type Category = {
   description: string | null;
 };
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 export default function CategoriesPage() {
@@ -26,6 +28,7 @@ export default function CategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase
@@ -68,15 +71,16 @@ export default function CategoriesPage() {
     const result = editingId
       ? await supabase.from("categories").update(payload).eq("id", editingId)
       : await supabase.from("categories").insert(payload);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(`Saqlashda xatolik: ${result.error.message}`); return; }
     openNew();
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("cnt.catConfirmDel"))) return;
-    await supabase.from("categories").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("cnt.catConfirmDel"), async () => {
+      await supabase.from("categories").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -85,8 +89,8 @@ export default function CategoriesPage() {
       <p className="text-[13px] text-muted mb-6">{t("cnt.catSub")}</p>
 
       <div className="flex gap-2 mb-6">
-        <button onClick={() => setContentType("post")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${contentType === "post" ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>{t("cnt.catTabBlog")}</button>
-        <button onClick={() => setContentType("football_news")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${contentType === "football_news" ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>{t("cnt.catTabNews")}</button>
+        <button onClick={() => setContentType("post")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${contentType === "post" ? "bg-accent/10 text-accent border-accent/30" : "border-subtle text-muted"}`}>{t("cnt.catTabBlog")}</button>
+        <button onClick={() => setContentType("football_news")} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${contentType === "football_news" ? "bg-accent/10 text-accent border-accent/30" : "border-subtle text-muted"}`}>{t("cnt.catTabNews")}</button>
       </div>
 
       <form onSubmit={save} className="rounded-xl glass-card p-5 mb-6 space-y-2">
@@ -94,23 +98,28 @@ export default function CategoriesPage() {
           <input className={inputCls} placeholder={t("cnt.catPhName")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className={inputCls} placeholder={t("cnt.catPhSlug")} value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} />
         </div>
-        <select className={inputCls} value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })}>
-          <option value="">{t("cnt.catNoParent")}</option>
-          {categories.filter((c) => c.id !== editingId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <Select
+          className={`${inputCls} flex items-center justify-between gap-2`}
+          value={form.parent_id}
+          onChange={(v) => setForm({ ...form, parent_id: v })}
+          options={[
+            { value: "", label: t("cnt.catNoParent") },
+            ...categories.filter((c) => c.id !== editingId).map((c) => ({ value: c.id, label: c.name })),
+          ]}
+        />
         <textarea rows={2} className={inputCls} placeholder={t("cnt.catPhDesc")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         {error && <p className="text-[12px] text-[#FF6B85]">{error}</p>}
         <div className="flex gap-2">
           <button type="submit" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold">
             <Plus size={14} /> {editingId ? t("cnt.save") : t("cnt.add")}
           </button>
-          {editingId && <button type="button" onClick={openNew} className="px-4 py-2 rounded-lg border border-white/10 text-[12px]">{t("cnt.cancel")}</button>}
+          {editingId && <button type="button" onClick={openNew} className="px-4 py-2 rounded-lg border border-subtle text-[12px]">{t("cnt.cancel")}</button>}
         </div>
       </form>
 
       <div className="space-y-2">
         {categories.map((c) => (
-          <div key={c.id} className="flex items-center justify-between rounded-lg border border-white/8 p-3">
+          <div key={c.id} className="flex items-center justify-between rounded-lg border border-subtle p-3">
             <div>
               <div className="text-[13px] font-medium">{c.name} <span className="text-[11px] text-[#5b6f85] font-normal">/{c.slug} · {postCounts[c.id] ?? 0} {t("cnt.catPosts")}</span></div>
               {c.parent_id && <div className="text-[11px] text-[#5b6f85]">↳ {categories.find((p) => p.id === c.parent_id)?.name}</div>}
@@ -123,6 +132,7 @@ export default function CategoriesPage() {
         ))}
         {categories.length === 0 && <p className="text-[12px] text-[#5b6f85] text-center py-6">{t("cnt.catEmpty")}</p>}
       </div>
+      {confirmDialog}
     </div>
   );
 }

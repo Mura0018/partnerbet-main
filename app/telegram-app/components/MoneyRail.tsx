@@ -8,15 +8,20 @@ type RailOrder = {
   status: "pending" | "completed" | "rejected";
   operator_name?: string | null;
   created_at: string;
+  // order_confirmations'da shu buyurtma uchun haqiqiy tasdiq (confirmed=true) bormi.
+  payment_confirmed?: boolean;
 };
 
-// 4 bekatli pul yo'li. Klient tomonda mavjud maydonlar bilan MAP qilinadi
-// (payout_done/sla_deadline klientda yo'q — 3-bekat vizual oraliq, qaror bo'yicha):
-//   1 Yuborildi           : pending & operator yo'q
-//   2 Operator qabul qildi : pending & operator bor
-//   3 To'lov tasdiqlandi   : vizual oraliq (real DB holati emas)
-//   4 1xbet hisobingizda   : completed
-//   rejected               : qizil "Rad etildi"
+// 4 bekatli pul yo'li:
+//   1 Yuborildi            : pending & operator yo'q
+//   2 Operator qabul qildi  : pending & operator bor
+//   3 To'lov tasdiqlandi    : order_confirmations'da HAQIQIY tasdiq (confirmed=true)
+//   4 1xbet hisobingizda    : completed
+//   rejected                : qizil "Rad etildi"
+// Tasdiq ixtiyoriy — yozuv bo'lmasa, 3-bekat YONMAYDI (ko'rsatilmaydi) va
+// buyurtma tugallangan bo'lsa rail 2-bekatdan to'g'ridan-to'g'ri 4-bekatga
+// o'tadi. Pul yo'li (fill chizig'i) baribir 100% ga to'ladi — buyurtma
+// haqiqatan tugallangan, faqat 3-bekatning o'zi dalilsiz qolgan.
 export function MoneyRail({ order }: { order: RailOrder }) {
   const { t } = useLocale();
   const [elapsed, setElapsed] = useState("");
@@ -24,9 +29,13 @@ export function MoneyRail({ order }: { order: RailOrder }) {
   const rejected = order.status === "rejected";
   const completed = order.status === "completed";
   const hasOp = !!order.operator_name;
-  // activeStation: 0..3 (bekat 1..4)
-  const activeStation = completed ? 3 : hasOp ? 1 : 0;
-  const fill = completed ? 1 : activeStation === 1 ? 0.5 : 0.12; // 2-bekatda 3 tomon yarim (vizual)
+  const paymentConfirmed = !!order.payment_confirmed;
+  const lit: boolean[] = completed
+    ? [true, true, paymentConfirmed, true]
+    : hasOp
+    ? [true, true, false, false]
+    : [true, false, false, false];
+  const fill = completed ? 1 : hasOp ? 0.5 : 0.12; // 2-bekatda 3 tomon yarim (vizual)
 
   useEffect(() => {
     if (completed || rejected) return;
@@ -79,7 +88,7 @@ export function MoneyRail({ order }: { order: RailOrder }) {
       {/* bekatlar */}
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7 }}>
         {STATIONS.map((label, i) => {
-          const on = !rejected && i <= activeStation;
+          const on = !rejected && lit[i];
           const isLast = i === 3;
           const dot = rejected ? (i === 0 ? "var(--red)" : "#2a3a52") : on ? (isLast && completed ? "var(--gold)" : trackColor) : "#2a3a52";
           return (

@@ -47,7 +47,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
 
   const sidebar = (
     <>
-      <div className="h-16 flex items-center gap-2 px-5 border-b border-white/8 shrink-0">
+      <div className="h-16 flex items-center gap-2 px-5 border-b border-subtle shrink-0">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center shrink-0">
           <Building2 size={16} className="text-white" />
         </div>
@@ -68,7 +68,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
           );
         })}
       </nav>
-      <div className="p-3 border-t border-white/8 shrink-0">
+      <div className="p-3 border-t border-subtle shrink-0">
         <button onClick={logout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium text-[#FF6B85] hover:bg-[#FF3B5C]/10">
           <LogOut size={16} /> Chiqish
         </button>
@@ -78,7 +78,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="min-h-[100svh] bg-bg text-white md:flex overflow-x-hidden">
-      <div className="md:hidden h-14 flex items-center justify-between px-4 border-b border-white/8 bg-panel/40 sticky top-0 z-30">
+      <div className="md:hidden h-14 flex items-center justify-between px-4 border-b border-subtle bg-panel/40 sticky top-0 z-30">
         <button onClick={() => setOpen(true)} className="p-2 -ml-2 rounded-lg hover:bg-white/10" aria-label="Menyu"><Menu size={20} /></button>
         <span className="font-bold text-[13px] truncate">{partner?.name || "Hamkor paneli"}</span>
         <div className="w-9" />
@@ -86,7 +86,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
 
       {open && <div className="md:hidden fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />}
 
-      <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-60 shrink-0 border-r border-white/8 bg-bg-elevated md:bg-panel/40 flex flex-col transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+      <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-60 shrink-0 border-r border-subtle bg-bg-elevated md:bg-panel/40 flex flex-col transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         {sidebar}
       </aside>
 

@@ -53,11 +53,11 @@ export default function PartnerDashboard() {
 
       {/* Plan + xizmatlar */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-4">
           <div className="text-[11px] text-muted mb-1">Tarif</div>
           <div className="text-[18px] font-bold">{partner?.plan === "premium" ? "Premium" : "Free"}</div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-4">
           <div className="text-[11px] text-muted mb-1">Yoqilgan xizmatlar</div>
           <div className="text-[18px] font-bold">{services.length}</div>
         </div>
@@ -79,7 +79,7 @@ export default function PartnerDashboard() {
           { href: "/partner/team", label: "Jamoa", icon: Users, d: "Xodim qo'shish" },
           { href: "/partner/billing", label: "Hisob", icon: Receipt, d: "To'lovlaringiz" },
         ].map((q) => (
-          <Link key={q.href} href={q.href} className="group flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4 hover:border-accent/40">
+          <Link key={q.href} href={q.href} className="group flex items-center gap-3 rounded-xl border border-subtle bg-white/[0.02] p-4 hover:border-accent/40">
             <q.icon size={18} className="text-accent shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-semibold">{q.label}</div>

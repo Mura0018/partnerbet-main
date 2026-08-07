@@ -16,10 +16,26 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
   const { data: c } = await admin
     .from("customers")
-    .select("id, full_name, phone, created_at, partner_id, telegram_id, owner_operator_id")
+    .select("id, full_name, phone, created_at, partner_id, telegram_id, owner_operator_id, name_override_by, name_override_at, name_override_reason")
     .eq("id", id)
     .maybeSingle();
   if (!c) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+  // W1.4: hali hal qilinmagan ism-nomuvofiqlik (bo'lsa — eng so'nggisi).
+  const { data: pendingMismatch } = await admin
+    .from("name_mismatch_flags")
+    .select("id, registered_name, player_name, platform, account_id, created_at")
+    .eq("customer_id", id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let nameOverrideByName: string | null = null;
+  if ((c as any).name_override_by) {
+    const { data: op } = await admin.from("profiles").select("display_name, full_name").eq("id", (c as any).name_override_by).maybeSingle();
+    nameOverrideByName = (op as any)?.display_name || (op as any)?.full_name || null;
+  }
 
   let partnerName: string | null = null;
   if ((c as any).partner_id) {
@@ -54,6 +70,10 @@ export async function GET(req: NextRequest) {
       telegram_id: (c as any).telegram_id,
       partnerName,
       ownerName,
+      nameMismatch: pendingMismatch ?? null,
+      nameOverride: (c as any).name_override_by
+        ? { by: nameOverrideByName, at: (c as any).name_override_at, reason: (c as any).name_override_reason }
+        : null,
     },
     orders: (orders as any[]) ?? [],
   });

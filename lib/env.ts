@@ -23,7 +23,7 @@ export const env = {
     return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   },
   get siteName() {
-    return process.env.NEXT_PUBLIC_SITE_NAME || "WINORA";
+    return process.env.NEXT_PUBLIC_SITE_NAME || "BetCore";
   },
   // --- EMAIL (ixtiyoriy — sozlanmasa email yuborilmaydi, oqim buzilmaydi) ---
   get emailProvider() {

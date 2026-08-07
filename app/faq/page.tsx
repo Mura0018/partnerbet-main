@@ -44,7 +44,7 @@ export default async function FaqPage() {
         ) : (
           <div className="space-y-3">
             {faqs.map((f: any) => (
-              <details key={f.id} className="group rounded-2xl border border-white/8 bg-white/[0.02] p-5 [&_summary::-webkit-details-marker]:hidden">
+              <details key={f.id} className="group rounded-2xl border border-subtle bg-white/[0.02] p-5 [&_summary::-webkit-details-marker]:hidden">
                 <summary className="flex items-center justify-between cursor-pointer font-semibold text-[15px]">
                   {f.question}
                   <span className="text-muted group-open:rotate-45 transition-transform text-[20px] leading-none">+</span>

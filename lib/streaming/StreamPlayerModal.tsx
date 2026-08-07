@@ -53,8 +53,8 @@ export function StreamPlayerModal({ matchStreamId, providerName, onClose }: { ma
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-3xl rounded-2xl border border-white/10 bg-bg-panel overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-white/8">
+      <div className="w-full max-w-3xl rounded-2xl border border-subtle bg-bg-panel overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-subtle">
           <span className="text-[13px] font-semibold">▶ {providerName}</span>
           <button onClick={onClose} aria-label="Yopish" className="p-1.5 rounded-md hover:bg-white/10"><X size={18} /></button>
         </div>

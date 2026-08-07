@@ -49,7 +49,7 @@ export function WatchLiveButton({ footballProvider, externalFixtureId }: { footb
         </button>
 
         {showSelector && providers.length > 1 && (
-          <div className="absolute top-full mt-1.5 right-0 z-20 rounded-lg border border-white/10 bg-bg-panel shadow-xl overflow-hidden min-w-[160px]">
+          <div className="absolute top-full mt-1.5 right-0 z-20 rounded-lg border border-subtle bg-bg-panel shadow-xl overflow-hidden min-w-[160px]">
             {providers.map((p) => (
               <button
                 key={p.matchStreamId}

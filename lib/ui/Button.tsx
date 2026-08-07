@@ -7,7 +7,7 @@ type Size = "sm" | "md" | "lg";
 const VARIANT_CLASSES: Record<Variant, string> = {
   cta: "bg-gradient-to-r from-cta to-cta-dim text-white shadow-[0_0_24px_rgba(23,201,100,0.35)] hover:brightness-110",
   primary: "bg-gradient-to-r from-accent to-accent-dim text-white shadow-[0_0_24px_rgba(61,127,255,0.35)] hover:brightness-110",
-  outline: "border border-white/15 text-white hover:bg-white/5",
+  outline: "border border-subtle text-white hover:bg-white/5",
   ghost: "text-muted hover:text-white hover:bg-white/5",
 };
 

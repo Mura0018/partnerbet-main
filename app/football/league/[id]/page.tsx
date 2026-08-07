@@ -47,9 +47,9 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       <Container className="py-14">
         <div className="flex items-center gap-4 mb-8">
           {league.logo_url ? (
-            <img src={league.logo_url} alt={league.name} className="w-14 h-14 rounded-xl object-cover border border-white/10" />
+            <img src={league.logo_url} alt={league.name} className="w-14 h-14 rounded-xl object-cover border border-subtle" />
           ) : (
-            <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center"><Trophy size={22} className="text-vip" /></div>
+            <div className="w-14 h-14 rounded-xl bg-white/5 border border-subtle flex items-center justify-center"><Trophy size={22} className="text-vip" /></div>
           )}
           <div>
             <h1 className="text-[28px] font-extrabold">{league.name}</h1>
@@ -63,12 +63,12 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           <div className="grid md:grid-cols-3 gap-5">
             <div className="md:col-span-2">
               <SectionHeading title="Turnir jadvali" />
-              <div className="rounded-2xl border border-white/8 overflow-hidden">
-                <table className="w-full text-[13px]">
+              <div className="rounded-2xl border border-subtle overflow-x-auto">
+                <table className="w-full min-w-[460px] text-[13px]">
                   <thead className="bg-white/[0.03] text-[10px] text-muted uppercase">
                     <tr><th className="text-left px-4 py-3">#</th><th className="text-left px-4 py-3">Jamoa</th><th className="px-2 py-3">O</th><th className="px-2 py-3">G</th><th className="px-2 py-3">D</th><th className="px-2 py-3">M</th><th className="px-4 py-3">Ochko</th></tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-subtle">
                     {standings.map((row: any) => (
                       <tr key={row.team.id}>
                         <td className="px-4 py-3">{row.position}</td>
@@ -88,7 +88,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
             </div>
             <div>
               <SectionHeading title="Top Scorers" />
-              <div className="rounded-2xl border border-white/8 p-4">
+              <div className="rounded-2xl border border-subtle p-4">
                 {topScorers.length === 0 ? (
                   <p className="text-[12px] text-muted">Ma'lumot yo'q</p>
                 ) : (

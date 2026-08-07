@@ -31,6 +31,27 @@
   --color-vip: 255 182 39;          /* #FFB627 — ratings / featured badges only, never buttons */
   --color-muted: 143 163 196;       /* #8FA3C4 */
   --color-danger: 255 70 103;       /* #FF4667 */
+  --border-subtle: rgba(255, 255, 255, 0.06); /* barcha divider/chegaralar — hairline */
+}
+
+/* Gradient hairline — sarlavha/nav ustidagi ajratuvchi (chetlari shaffof).
+   Ota elementga `position: relative` kerak. */
+.divider-gradient {
+  position: relative;
+}
+.divider-gradient::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.13) 22%, rgba(255, 255, 255, 0.13) 78%, transparent);
+  pointer-events: none;
+}
+.divider-gradient-top::after {
+  bottom: auto;
+  top: 0;
 }
 
 /* Mijoz mini-app tema fon class'lari (kafolatlangan; Tailwind JIT'ga bog'liq emas) */
@@ -67,6 +88,19 @@
 
 html {
   scroll-behavior: smooth;
+  /* Eski Android WebView'da tugma bosganda chiqadigan standart oq/kulrang
+     "tap highlight" o'rtimini o'chiradi (band 6, 0-topilma). Buning o'rniga
+     pastdagi :active qatlami bosish sezilishini ta'minlaydi — shunchaki
+     olib tashlash emas, almashtirish. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Bosish sezilishi zaxira qatlami — :where() bilan 0 specificity, shuning
+   uchun har qanday komponentning o'z active: klassi bundan ustun turadi.
+   Maqsad: tap-highlight o'chirilgach, hech bir tugma "sezilmaydigan"
+   bo'lib qolmasligi (band 6, 0-band davomi). */
+:where(button, a, [role="button"], summary):not(:disabled):active {
+  opacity: 0.7;
 }
 
 ::selection {

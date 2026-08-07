@@ -8,7 +8,7 @@ export const CHAT_THEMES: Record<ChatThemeKey, { label: string; from: string; to
   rose: { label: "Pushti", from: "#F43F5E", to: "#BE123C", swatch: "#F43F5E" },
 };
 
-export const DEFAULT_CHAT_THEME: ChatThemeKey = "blue";
+const DEFAULT_CHAT_THEME: ChatThemeKey = "blue";
 
 export function chatThemeGradient(theme: string | null | undefined): string {
   const t = CHAT_THEMES[(theme as ChatThemeKey) ?? DEFAULT_CHAT_THEME] ?? CHAT_THEMES.blue;

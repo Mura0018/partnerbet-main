@@ -8,6 +8,9 @@ import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { RichTextEditor } from "@/lib/editor/RichTextEditor";
 import { usePermission } from "@/lib/auth/permissions";
+import { PromptModal } from "@/lib/ui/PromptModal";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Post = {
   id: string;
@@ -31,13 +34,13 @@ type Tag = { id: string; name: string };
 
 const STATUSES: Post["status"][] = ["draft", "scheduled", "published", "archived"];
 const STATUS_LABEL: Record<Post["status"], { labelKey: string; className: string }> = {
-  draft: { labelKey: "post.draft", className: "bg-white/5 text-[#5b6f85] border-white/10" },
+  draft: { labelKey: "post.draft", className: "bg-white/5 text-[#5b6f85] border-subtle" },
   scheduled: { labelKey: "post.scheduled", className: "bg-vip/10 text-vip border-vip/30" },
   published: { labelKey: "post.published", className: "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" },
-  archived: { labelKey: "post.archived", className: "bg-white/5 text-[#5b6f85] border-white/10" },
+  archived: { labelKey: "post.archived", className: "bg-white/5 text-[#5b6f85] border-subtle" },
 };
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 const EMPTY: any = {
@@ -59,8 +62,10 @@ export default function BlogManager() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [tagPromptOpen, setTagPromptOpen] = useState(false);
   const canManageTaxonomy = usePermission("taxonomy.manage");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ data: postsData }, { data: categoriesData }, { data: tagsData }, { data: postTagsData }] = await Promise.all([
@@ -100,7 +105,7 @@ export default function BlogManager() {
       const media = await uploadImage(file);
       setForm((prev: any) => ({ ...prev, cover_media_id: media.id, cover_url: media.publicUrl }));
     } catch (e: any) {
-      setError(e.message ?? "Yuklashda xatolik.");
+      setError(e.message ? `Yuklashda xatolik: ${e.message}` : "Yuklashda xatolik.");
     } finally {
       setCoverUploading(false);
     }
@@ -145,10 +150,10 @@ export default function BlogManager() {
     let postId = editingId;
     if (editingId) {
       const { error: updateError } = await supabase.from("posts").update(payload).eq("id", editingId);
-      if (updateError) { setError(updateError.message); setSaving(false); return; }
+      if (updateError) { setError(`Saqlashda xatolik: ${updateError.message}`); setSaving(false); return; }
     } else {
       const { data, error: insertError } = await supabase.from("posts").insert(payload).select("id").single();
-      if (insertError || !data) { setError(insertError?.message ?? "Saqlashda xatolik."); setSaving(false); return; }
+      if (insertError || !data) { setError(insertError?.message ? `Saqlashda xatolik: ${insertError.message}` : "Saqlashda xatolik."); setSaving(false); return; }
       postId = data.id;
     }
 
@@ -165,10 +170,11 @@ export default function BlogManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("post.confirmDelPost"))) return;
-    await supabase.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("post.confirmDelPost"), async () => {
+      await supabase.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const categoryName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? "—";
@@ -192,7 +198,7 @@ export default function BlogManager() {
         {posts.map((p) => (
           <div key={p.id} className="flex items-center justify-between rounded-xl glass-card p-4">
             <div className="flex items-center gap-3 min-w-0">
-              {p.cover_url && <img src={p.cover_url} alt="" className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />}
+              {p.cover_url && <img src={p.cover_url} alt="" className="w-12 h-12 rounded-lg object-cover border border-subtle shrink-0" />}
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-[12px] mb-1 flex-wrap">
                   <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/30">{categoryName(p.category_id)}</span>
@@ -215,7 +221,7 @@ export default function BlogManager() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-          <form onSubmit={save} className="w-full max-w-2xl rounded-2xl border border-white/10 bg-panel max-h-[90vh] overflow-y-auto p-6">
+          <form onSubmit={save} className="w-full max-w-2xl rounded-2xl border border-subtle bg-panel max-h-[90vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-[16px]">{editingId ? "Tahrirlash" : "Yangi maqola"}</h2>
               <button type="button" onClick={() => setShowForm(false)} aria-label="Yopish"><X size={18} /></button>
@@ -229,8 +235,8 @@ export default function BlogManager() {
 
             <label className="block text-[12px] text-muted mb-1">{t("post.fCover")}</label>
             <div className="flex items-center gap-3 mb-3">
-              {form.cover_url && <img src={form.cover_url} alt="" className="w-14 h-14 rounded-lg object-cover border border-white/10" />}
-              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-[12px] cursor-pointer hover:bg-white/5">
+              {form.cover_url && <img src={form.cover_url} alt="" className="w-14 h-14 rounded-lg object-cover border border-subtle" />}
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-subtle text-[12px] cursor-pointer hover:bg-white/5">
                 {coverUploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} Yuklash
                 <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={coverUploading}
                   onChange={(e) => e.target.files?.[0] && handleCoverUpload(e.target.files[0])} />
@@ -240,16 +246,28 @@ export default function BlogManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fCategory")}</label>
-                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputCls}>
-                  <option value="">— tanlanmagan —</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.category_id}
+                  onChange={(v) => setForm({ ...form, category_id: v })}
+                  options={[
+                    { value: "", label: "— tanlanmagan —" },
+                    ...categories.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fLang")}</label>
-                <select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className={inputCls}>
-                  <option value="en">English</option><option value="ru">Русский</option><option value="uz">O'zbek</option>
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.language}
+                  onChange={(v) => setForm({ ...form, language: v })}
+                  options={[
+                    { value: "en", label: "English" },
+                    { value: "ru", label: "Русский" },
+                    { value: "uz", label: "O'zbek" },
+                  ]}
+                />
               </div>
             </div>
 
@@ -257,17 +275,23 @@ export default function BlogManager() {
             <div className="flex flex-wrap gap-1.5 mb-3">
               {allTags.map((tg) => (
                 <button key={tg.id} type="button" onClick={() => toggleTag(tg.id)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] border ${selectedTagIds.includes(tg.id) ? "bg-accent/10 text-accent border-accent/30" : "border-white/10 text-muted"}`}>
+                  className={`px-2.5 py-1 rounded-full text-[11px] border ${selectedTagIds.includes(tg.id) ? "bg-accent/10 text-accent border-accent/30" : "border-subtle text-muted"}`}>
                   {tg.name}
                 </button>
               ))}
               {canManageTaxonomy && (
-                <button type="button" onClick={() => { const n = window.prompt("Yangi teg nomi:"); if (n) quickAddTag(n); }}
-                  className="px-2.5 py-1 rounded-full text-[11px] border border-dashed border-white/20 text-[#5b6f85]">
+                <button type="button" onClick={() => setTagPromptOpen(true)}
+                  className="px-2.5 py-1 rounded-full text-[11px] border border-dashed border-subtle text-[#5b6f85]">
                   + Yangi teg
                 </button>
               )}
             </div>
+            <PromptModal
+              open={tagPromptOpen}
+              title="Yangi teg nomi"
+              onSubmit={(n) => { setTagPromptOpen(false); if (n.trim()) quickAddTag(n.trim()); }}
+              onCancel={() => setTagPromptOpen(false)}
+            />
 
             <label className="block text-[12px] text-muted mb-1">{t("post.fBody")}</label>
             <div className="mb-3">
@@ -284,9 +308,12 @@ export default function BlogManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] text-muted mb-1">{t("post.fStatus")}</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_LABEL[s].labelKey as any)}</option>)}
-                </select>
+                <Select
+                  className={`${inputCls} flex items-center justify-between gap-2`}
+                  value={form.status}
+                  onChange={(v) => setForm({ ...form, status: v })}
+                  options={STATUSES.map((s) => ({ value: s, label: t(STATUS_LABEL[s].labelKey as any) }))}
+                />
               </div>
               {form.status === "scheduled" && (
                 <div>
@@ -303,6 +330,7 @@ export default function BlogManager() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

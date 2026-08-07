@@ -2,16 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Radio, Trophy, Star, Newspaper, Video, ChevronDown } from "lucide-react";
+import { Radio, Trophy, Star, Newspaper, Video } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { PublicHeader } from "@/lib/ui/PublicHeader";
 import { PublicFooter } from "@/lib/ui/PublicFooter";
 import { SectionHeading } from "@/lib/ui/primitives";
 import { WatchLiveButton } from "@/lib/streaming/WatchLiveButton";
+import { Select } from "@/lib/ui/Select";
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-8 text-center text-[13px] text-muted">
+    <div className="rounded-xl border border-subtle bg-white/[0.02] p-8 text-center text-[13px] text-muted">
       {message}
     </div>
   );
@@ -19,7 +20,7 @@ function EmptyState({ message }: { message: string }) {
 
 function NotConfiguredState() {
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-10 text-center">
+    <div className="rounded-xl border border-subtle bg-white/[0.02] p-10 text-center">
       <div className="w-12 h-12 mx-auto rounded-xl bg-white/5 flex items-center justify-center mb-4">
         <Radio size={20} className="text-muted" />
       </div>
@@ -31,7 +32,7 @@ function NotConfiguredState() {
 
 function FixtureRow({ f, footballProvider }: { f: any; footballProvider: string | null }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/5 last:border-0">
+    <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-subtle last:border-0">
       <span className="text-[11px] text-muted w-20 shrink-0">
         {f.status === "live" ? (
           <span className="text-[#FF6B85] font-semibold">{f.minute ? `${f.minute}'` : "LIVE"}</span>
@@ -162,7 +163,7 @@ export default function FootballCenterPage() {
           ) : liveFixtures.length === 0 ? (
             <EmptyState message="Hozircha jonli o'yin yo'q." />
           ) : (
-            <div className="rounded-xl border border-white/8 overflow-hidden">
+            <div className="rounded-xl border border-subtle overflow-hidden">
               {liveFixtures.slice(0, 8).map((f) => <FixtureRow key={f.id} f={f} footballProvider={activeProvider} />)}
             </div>
           )}
@@ -191,16 +192,12 @@ export default function FootballCenterPage() {
               <h2 className="text-[18px] font-bold">League Tables</h2>
             </div>
             {leagues.length > 0 && (
-              <div className="relative">
-                <select
-                  value={selectedLeague?.id ?? ""}
-                  onChange={(e) => setSelectedLeague(leagues.find((l) => l.id === e.target.value))}
-                  className="appearance-none bg-white/5 border border-white/10 rounded-lg py-2 pl-3 pr-8 text-[12px]"
-                >
-                  {leagues.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
-                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-              </div>
+              <Select
+                value={selectedLeague?.id ?? ""}
+                onChange={(v) => setSelectedLeague(leagues.find((l) => l.id === v))}
+                className="bg-white/5 border border-subtle rounded-lg py-2 pl-3 pr-3 text-[12px] flex items-center justify-between gap-2"
+                options={leagues.map((l) => ({ value: l.id, label: l.name }))}
+              />
             )}
           </div>
 
@@ -213,12 +210,12 @@ export default function FootballCenterPage() {
           ) : (
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <div className="rounded-xl border border-white/8 overflow-hidden">
-                  <table className="w-full text-[12px]">
+                <div className="rounded-xl border border-subtle overflow-x-auto">
+                  <table className="w-full min-w-[420px] text-[12px]">
                     <thead className="bg-white/[0.03] text-[10px] text-muted uppercase">
                       <tr><th className="text-left px-3 py-2">#</th><th className="text-left px-3 py-2">Jamoa</th><th className="px-2 py-2">O</th><th className="px-2 py-2">G</th><th className="px-2 py-2">D</th><th className="px-2 py-2">M</th><th className="px-3 py-2">Ochko</th></tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-subtle">
                       {standings.map((row: any) => (
                         <tr key={row.team.id}>
                           <td className="px-3 py-2">{row.position}</td>
@@ -241,7 +238,7 @@ export default function FootballCenterPage() {
                   </Link>
                 )}
               </div>
-              <div className="rounded-xl border border-white/8 p-4">
+              <div className="rounded-xl border border-subtle p-4">
                 <div className="text-[12px] text-muted mb-3">Top Scorers</div>
                 {topScorers.length === 0 ? (
                   <p className="text-[11px] text-muted">Ma'lumot yo'q</p>
@@ -271,7 +268,7 @@ export default function FootballCenterPage() {
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {news.map((n) => (
-                <Link key={n.id} href={`/football/news/${n.slug}`} className="rounded-xl border border-white/8 bg-white/[0.02] p-4 block hover:border-accent/30 transition">
+                <Link key={n.id} href={`/football/news/${n.slug}`} className="rounded-xl border border-subtle bg-white/[0.02] p-4 block hover:border-accent/30 transition">
                   <div className="font-semibold text-[14px]">{n.title}</div>
                   <p className="text-[12px] text-muted mt-1.5 line-clamp-2">{n.excerpt}</p>
                 </Link>
@@ -291,7 +288,7 @@ export default function FootballCenterPage() {
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {videos.map((v) => (
-                <a key={v.id} href={v.video_url} target="_blank" rel="noopener noreferrer" className="rounded-xl border border-white/8 bg-white/[0.02] p-4 block hover:border-accent/30 transition">
+                <a key={v.id} href={v.video_url} target="_blank" rel="noopener noreferrer" className="rounded-xl border border-subtle bg-white/[0.02] p-4 block hover:border-accent/30 transition">
                   <div className="font-semibold text-[14px] flex items-center gap-2">
                     {v.is_featured && <Star size={11} className="text-vip" fill="currentColor" />} {v.title}
                   </div>

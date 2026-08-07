@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Landmark, Plus, Loader2, Pencil, Trash2, X, RefreshCw, DownloadCloud, AlertTriangle } from "lucide-react";
+import { Landmark, Plus, Loader2, Pencil, Trash2, X, RefreshCw, DownloadCloud, AlertTriangle, ShieldCheck } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useCurrentProfile } from "@/lib/auth/permissions";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Operator = { id: string; full_name: string | null; email: string | null };
 type Cashdesk = {
@@ -19,6 +22,28 @@ type Cashdesk = {
   created_at: string;
 };
 type BalState = { loading: boolean; ok?: boolean; balance?: number | null; low?: boolean; error?: string };
+
+// W3.2/W3.3/W3.4 — "Imzo diagnostikasi" natijasi (bitta sinov = bitta qator).
+type DiagRow = {
+  variant: number;
+  dtOffsetHours: number;
+  httpStatus: number | null;
+  networkError: boolean;
+  rawResponse: any;
+  aMasked: string;
+  bMasked: string;
+};
+const DT_OFFSETS = [
+  { hours: 0, label: "UTC" },
+  { hours: 3, label: "UTC+3 (Moskva)" },
+  { hours: 5, label: "UTC+5 (Toshkent)" },
+];
+const SIGNATURE_VARIANT_LABELS: Record<number, string> = {
+  1: "1 — joriy (o'zgarmas)",
+  2: "2 — registr (Kalit=Qiymat)",
+  3: "3 — tartib (A/B teskari)",
+  4: "4 — ajratuvchi (;)",
+};
 
 const fmtSum = (n: number | null | undefined) => (n == null ? "—" : Number(n).toLocaleString("ru-RU"));
 
@@ -43,6 +68,8 @@ const emptyForm: FormState = {
 
 export default function CashdesksManager() {
   const { t } = useLocale();
+  const { profile } = useCurrentProfile();
+  const isSuperAdmin = profile?.roles?.key === "super_admin";
   const [rows, setRows] = useState<Cashdesk[]>([]);
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +77,64 @@ export default function CashdesksManager() {
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
+
+  // W3.2 — "Imzo diagnostikasi" (faqat super_admin, faqat Balance).
+  const [diagCashdeskId, setDiagCashdeskId] = useState("");
+  const [diagVariant, setDiagVariant] = useState(1);
+  const [diagOffset, setDiagOffset] = useState(0);
+  const [diagBusy, setDiagBusy] = useState(false);
+  const [diagError, setDiagError] = useState("");
+  const [diagRows, setDiagRows] = useState<DiagRow[]>([]);
+
+  const runDiagnose = async (variant: number, dtOffsetHours: number) => {
+    if (!diagCashdeskId) { setDiagError("Avval kassani tanlang."); return null; }
+    try {
+      const res = await fetch(`/api/admin/cashdesks/${diagCashdeskId}/diagnose`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variant, dtOffsetHours }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDiagError(data.error === "rate_limited" ? "Juda ko'p urinish — bir daqiqadan keyin qayta urining." : data.error === "not_found_or_inactive" ? "Kassa topilmadi." : (data.error ?? "Xatolik"));
+        return null;
+      }
+      const row: DiagRow = {
+        variant: data.variant, dtOffsetHours: data.dtOffsetHours, httpStatus: data.httpStatus,
+        networkError: data.networkError, rawResponse: data.rawResponse, aMasked: data.aMasked, bMasked: data.bMasked,
+      };
+      setDiagRows((r) => [row, ...r]);
+      return row;
+    } catch {
+      setDiagError("Ulanishda xatolik.");
+      return null;
+    }
+  };
+
+  const diagTestOne = async () => {
+    setDiagError("");
+    setDiagBusy(true);
+    try {
+      await runDiagnose(diagVariant, diagOffset);
+    } finally {
+      setDiagBusy(false);
+    }
+  };
+
+  // W3.3: "birinchi gumondor" — 3 ta vaqt mintaqasini birdan, joriy (1-)
+  // imzo varianti bilan sinaydi.
+  const diagTestAllOffsets = async () => {
+    setDiagError("");
+    setDiagBusy(true);
+    try {
+      for (const o of DT_OFFSETS) {
+        await runDiagnose(1, o.hours);
+      }
+    } finally {
+      setDiagBusy(false);
+    }
+  };
 
   const ownerName = (id: string | null) => {
     if (!id) return "—";
@@ -75,7 +160,7 @@ export default function CashdesksManager() {
     try {
       const res = await fetch("/api/admin/cashdesks");
       const data = await res.json();
-      if (!res.ok) { toast.error(t("csh.tLoadErr") + (data.error ?? "")); return; }
+      if (!res.ok) { console.error("[cashdesks] ro'yxat yuklanmadi:", data.error); toast.error(t("csh.tLoadErr")); return; }
       setRows(data.cashdesks ?? []);
       setOperators(data.operators ?? []);
       // Balanslarni non-blocking, har kassa alohida.
@@ -127,8 +212,13 @@ export default function CashdesksManager() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const msg = data.error === "duplicate_cashdesk_id" ? t("csh.tDuplicate") : (data.error ?? "xatolik");
-        toast.error(t("csh.tSaveFailed") + msg); return;
+        if (data.error === "duplicate_cashdesk_id") {
+          toast.error(t("csh.tDuplicate"));
+        } else {
+          console.error("[cashdesks] saqlanmadi:", data.error);
+          toast.error(t("csh.tSaveFailed"));
+        }
+        return;
       }
       toast.success(isEdit ? t("csh.tUpdated") : t("csh.tAdded"));
       setForm(null);
@@ -140,17 +230,18 @@ export default function CashdesksManager() {
     }
   };
 
-  const remove = async (c: Cashdesk) => {
-    if (!confirm(t("csh.confirmDelete", { name: c.name }))) return;
-    try {
-      const res = await fetch(`/api/admin/cashdesks/${c.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) { toast.error(t("csh.tDelFailed") + (data.error ?? "")); return; }
-      toast.success(t("csh.tDeleted"));
-      await load();
-    } catch {
-      toast.error("Ulanishda xatolik.");
-    }
+  const remove = (c: Cashdesk) => {
+    confirm(t("csh.confirmDelete", { name: c.name }), async () => {
+      try {
+        const res = await fetch(`/api/admin/cashdesks/${c.id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) { console.error("[cashdesks] kassa o'chirilmadi:", data.error); toast.error(t("csh.tDelFailed")); return; }
+        toast.success(t("csh.tDeleted"));
+        await load();
+      } catch {
+        toast.error("Ulanishda xatolik.");
+      }
+    });
   };
 
   const importLegacy = async () => {
@@ -199,13 +290,13 @@ export default function CashdesksManager() {
       {loading ? (
         <div className="flex items-center justify-center py-20 text-white/40"><Loader2 className="animate-spin" /></div>
       ) : rows.length === 0 ? (
-        <div className="text-center py-16 text-white/40 text-sm border border-white/10 rounded-2xl">
+        <div className="text-center py-16 text-white/40 text-sm border border-subtle rounded-2xl">
           {t("csh.empty")}
         </div>
       ) : (
-        <div className="overflow-x-auto border border-white/10 rounded-2xl">
+        <div className="overflow-x-auto border border-subtle rounded-2xl">
           <table className="w-full text-sm">
-            <thead className="text-white/40 text-xs border-b border-white/10">
+            <thead className="text-white/40 text-xs border-b border-subtle">
               <tr>
                 <th className="text-left font-medium px-4 py-3">{t("csh.hName")}</th>
                 <th className="text-left font-medium px-4 py-3">{t("csh.hKrm")}</th>
@@ -221,7 +312,7 @@ export default function CashdesksManager() {
               {rows.map((c) => {
                 const b = balances[c.id];
                 return (
-                  <tr key={c.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
+                  <tr key={c.id} className="border-b border-subtle last:border-0 hover:bg-white/[0.02]">
                     <td className="px-4 py-3 text-white font-medium">{c.name}</td>
                     <td className="px-4 py-3 text-white/60">{c.cashdesk_id}</td>
                     <td className="px-4 py-3 text-white/60">{ownerName(c.owner_operator_id)}</td>
@@ -261,10 +352,87 @@ export default function CashdesksManager() {
         </div>
       )}
 
+      {isSuperAdmin && (
+        <div className="mt-6 border border-subtle rounded-2xl p-4 md:p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <ShieldCheck size={17} className="text-[#1CE0C3]" />
+            <h2 className="text-white font-semibold text-sm">Imzo diagnostikasi</h2>
+          </div>
+          <p className="text-[11.5px] text-white/40 mb-3 leading-relaxed">
+            FAQAT Balance metodini chaqiradi — pul harakatlanmaydi. Deposit/Payout bu yerdan hech qachon chaqirilmaydi.
+            hash/cashierpass hech qachon to'liq ko'rsatilmaydi (faqat oxirgi 4 belgi). Daqiqasiga 5 marta cheklov.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+            <Select
+              className={`${inp} flex items-center justify-between gap-2`}
+              value={diagCashdeskId}
+              onChange={setDiagCashdeskId}
+              options={[
+                { value: "", label: "— kassani tanlang (faol-emaslari ham) —" },
+                ...rows.map((c) => ({ value: c.id, label: `${c.name} (${c.cashdesk_id})${!c.is_active ? " — faol emas" : ""}` })),
+              ]}
+            />
+            <Select
+              className={`${inp} flex items-center justify-between gap-2`}
+              value={String(diagOffset)}
+              onChange={(v) => setDiagOffset(Number(v))}
+              options={DT_OFFSETS.map((o) => ({ value: String(o.hours), label: o.label }))}
+            />
+            <Select
+              className={`${inp} flex items-center justify-between gap-2`}
+              value={String(diagVariant)}
+              onChange={(v) => setDiagVariant(Number(v))}
+              options={Object.entries(SIGNATURE_VARIANT_LABELS).map(([v, label]) => ({ value: v, label }))}
+            />
+          </div>
+          <div className="flex gap-2 mb-3">
+            <button onClick={diagTestOne} disabled={diagBusy || !diagCashdeskId}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-white/10 text-white hover:bg-white/15 disabled:opacity-50">
+              {diagBusy ? <Loader2 size={15} className="animate-spin" /> : null} Shu kombinatsiyani sinash
+            </button>
+            <button onClick={diagTestAllOffsets} disabled={diagBusy || !diagCashdeskId}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-white/5 text-white/70 hover:bg-white/10 disabled:opacity-50">
+              3 ta vaqt mintaqasini birdan sinash (1-variant)
+            </button>
+          </div>
+          {diagError && <p className="text-[12px] text-[#FF6B85] mb-3">{diagError}</p>}
+          {diagRows.length > 0 && (
+            <div className="overflow-x-auto border border-subtle rounded-xl">
+              <table className="w-full text-[12.5px]">
+                <thead className="text-white/40 text-[11px] border-b border-subtle">
+                  <tr>
+                    <th className="text-left font-medium px-3 py-2">Variant</th>
+                    <th className="text-left font-medium px-3 py-2">Vaqt siljishi</th>
+                    <th className="text-left font-medium px-3 py-2">HTTP</th>
+                    <th className="text-left font-medium px-3 py-2">Javob</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {diagRows.map((r, i) => (
+                    <tr key={i} className="border-b border-subtle last:border-0">
+                      <td className="px-3 py-2 text-white/70">{SIGNATURE_VARIANT_LABELS[r.variant] ?? r.variant}</td>
+                      <td className="px-3 py-2 text-white/70">{DT_OFFSETS.find((o) => o.hours === r.dtOffsetHours)?.label ?? `${r.dtOffsetHours}h`}</td>
+                      <td className="px-3 py-2 font-mono font-bold">
+                        <span className={r.httpStatus === 200 ? "text-[#4ADE80]" : r.networkError ? "text-white/40" : "text-[#FF6B85]"}>
+                          {r.networkError ? "—" : r.httpStatus}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-white/50 max-w-[280px] truncate" title={JSON.stringify(r.rawResponse)}>
+                        {r.networkError ? "tarmoq xatosi" : JSON.stringify(r.rawResponse)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {form && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !saving && setForm(null)}>
-          <div className="bg-[#0E1518] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 sticky top-0 bg-[#0E1518]">
+          <div className="bg-[#0E1518] border border-subtle rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-subtle sticky top-0 bg-[#0E1518]">
               <h2 className="text-white font-semibold">{form.id ? t("csh.editTitle") : t("csh.newTitle")}</h2>
               <button onClick={() => !saving && setForm(null)} className="p-1 rounded-lg hover:bg-white/10 text-white/50"><X size={18} /></button>
             </div>
@@ -282,10 +450,15 @@ export default function CashdesksManager() {
               </div>
               <p className="text-[11px] text-white/30 -mt-1">{t("csh.encNote")}</p>
               <Field label={t("csh.fOwner")}>
-                <select className={inp} value={form.owner_operator_id} onChange={(e) => setForm({ ...form, owner_operator_id: e.target.value })}>
-                  <option value="">{t("csh.notSelected")}</option>
-                  {operators.map((o) => <option key={o.id} value={o.id}>{o.full_name || o.email}</option>)}
-                </select>
+                <Select
+                  className={`${inp} flex items-center justify-between gap-2`}
+                  value={form.owner_operator_id}
+                  onChange={(v) => setForm({ ...form, owner_operator_id: v })}
+                  options={[
+                    { value: "", label: t("csh.notSelected") },
+                    ...operators.map((o) => ({ value: o.id, label: o.full_name || o.email || "" })),
+                  ]}
+                />
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label={t("csh.fRegion")}><input className={inp} value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} placeholder={t("csh.phOptional")} /></Field>
@@ -297,7 +470,7 @@ export default function CashdesksManager() {
                 {t("csh.activeCheckbox")}
               </label>
             </div>
-            <div className="flex justify-end gap-2 px-5 py-4 border-t border-white/10">
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-subtle">
               <button onClick={() => setForm(null)} disabled={saving} className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5">{t("csh.cancel")}</button>
               <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-[#1CE0C3] text-[#04231F] hover:brightness-110 disabled:opacity-50">
                 {saving && <Loader2 size={15} className="animate-spin" />} {t("csh.save")}
@@ -306,11 +479,12 @@ export default function CashdesksManager() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }
 
-const inp = "w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-[#1CE0C3]/50 placeholder:text-white/25";
+const inp = "w-full px-3 py-2 rounded-xl bg-white/5 border border-subtle text-white text-sm outline-none focus:border-[#1CE0C3]/50 placeholder:text-white/25";
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">

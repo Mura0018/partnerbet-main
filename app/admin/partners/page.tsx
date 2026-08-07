@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase";
 import { GlobalChat } from "@/lib/chat/GlobalChat";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Partner = {
   id: string;
@@ -42,6 +44,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const [invSaving, setInvSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   const loadMembers = async () => {
     const { data } = await supabase.from("partner_members").select("id, profile_id, partner_role, profiles(full_name)").eq("partner_id", partner.id);
@@ -93,7 +96,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
         const map: Record<string, string> = { email_taken: t("prt.eEmailTaken"), forbidden: t("prt.eForbidden") };
         const msg = map[data.error] ?? t("prt.eGeneric");
         setMError(msg);
-        toast.error(t("prt.tMemberFail") + msg);
+        toast.error(t("prt.tMemberFail"));
         return;
       }
       setShowAddMember(false);
@@ -120,12 +123,13 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
 
   const copyInvite = () => { if (inviteLink) { navigator.clipboard?.writeText(inviteLink); toast.success(t("prt.tLinkCopied")); } };
 
-  const removeMember = async (id: string) => {
-    if (!confirm(t("prt.confirmRemoveMember"))) return;
-    const { error } = await supabase.from("partner_members").delete().eq("id", id);
-    if (error) toast.error(t("prt.tRemoveFail") + error.message);
-    else toast.success(t("prt.tRemoved"));
-    loadMembers();
+  const removeMember = (id: string) => {
+    confirm(t("prt.confirmRemoveMember"), async () => {
+      const { error } = await supabase.from("partner_members").delete().eq("id", id);
+      if (error) { console.error("[partners] a'zo chiqarilmadi:", error); toast.error(t("prt.tRemoveFail")); }
+      else toast.success(t("prt.tRemoved"));
+      loadMembers();
+    });
   };
 
   const createInvoice = async () => {
@@ -137,7 +141,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
       amount: Number(invForm.amount) || 0, currency: partner.currency, status: "unpaid", created_by: user?.id ?? null,
     });
     setInvSaving(false);
-    if (error) { toast.error(t("prt.tInvoiceFail") + error.message); return; }
+    if (error) { console.error("[partners] invoice yaratilmadi:", error); toast.error(t("prt.tInvoiceFail")); return; }
     toast.success(t("prt.tInvoiceOk"));
     setInvForm((p) => ({ ...p, amount: "" }));
     loadInvoices();
@@ -145,7 +149,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
   const toggleInvoicePaid = async (inv: any) => {
     const next = inv.status === "paid" ? "unpaid" : "paid";
     const { error } = await supabase.from("partner_invoices").update({ status: next, paid_at: next === "paid" ? new Date().toISOString() : null }).eq("id", inv.id);
-    if (error) toast.error(t("prt.tChangeFail") + error.message);
+    if (error) { console.error("[partners] o'zgartirilmadi:", error); toast.error(t("prt.tChangeFail")); }
     else { toast.success(next === "paid" ? t("prt.tMarkedPaid") : t("prt.tMarkedUnpaid")); loadInvoices(); }
   };
 
@@ -153,20 +157,20 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
     const next = !assign[id];
     setAssign((p) => ({ ...p, [id]: next }));
     const { error } = await supabase.from("partner_service_assignments").upsert({ partner_id: partner.id, service_id: id, enabled: next }, { onConflict: "partner_id,service_id" });
-    if (error) { setAssign((p) => ({ ...p, [id]: !next })); toast.error(t("prt.tNotSaved") + error.message); }
+    if (error) { setAssign((p) => ({ ...p, [id]: !next })); console.error("[partners] xizmat saqlanmadi:", error); toast.error(t("prt.tNotSaved")); }
   };
   const toggleTheme = async (id: string) => {
     const next = !themeAccess[id];
     setThemeAccess((p) => ({ ...p, [id]: next }));
     const { error } = await supabase.from("partner_theme_access").upsert({ partner_id: partner.id, theme_id: id, enabled: next }, { onConflict: "partner_id,theme_id" });
-    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); toast.error(t("prt.tNotSaved") + error.message); }
+    if (error) { setThemeAccess((p) => ({ ...p, [id]: !next })); console.error("[partners] tema saqlanmadi:", error); toast.error(t("prt.tNotSaved")); }
   };
 
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
-      <div className="absolute inset-y-0 right-0 w-full sm:w-[440px] bg-bg border-l border-white/10 flex flex-col shadow-2xl">
-        <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/8 shrink-0">
+      <div className="absolute inset-y-0 right-0 w-full sm:w-[440px] bg-bg border-l border-subtle flex flex-col shadow-2xl">
+        <div className="flex items-center gap-2 px-4 py-3.5 border-b border-subtle shrink-0">
           <SlidersHorizontal size={18} className="text-accent" />
           <h2 className="text-[15px] font-bold flex-1 truncate">{t("prt.setup")} — {partner.name}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10" aria-label={t("prt.close")}><X size={18} /></button>
@@ -183,7 +187,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
             <>
               <div>
                 <div className="flex items-center gap-2 mb-2"><Bot size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hBot")}</h3></div>
-                <div className={`rounded-lg px-3 py-2.5 text-[12.5px] border ${partner.bot_username ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/[0.03] border-white/10 text-muted"}`}>
+                <div className={`rounded-lg px-3 py-2.5 text-[12.5px] border ${partner.bot_username ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/[0.03] border-subtle text-muted"}`}>
                   {partner.bot_username ? `${t("prt.botConnected")} — @${partner.bot_username}` : t("prt.botNotConnected")}
                 </div>
               </div>
@@ -224,13 +228,18 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                 </div>
                 {showAddMember && (
                   <div className="rounded-lg glass-card p-3 mb-2.5 space-y-2">
-                    <input placeholder={t("prt.phFullName")} value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
-                    <input placeholder={t("prt.phEmail")} type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <input placeholder={t("prt.phFullName")} value={mForm.fullName} onChange={(e) => setMForm((p) => ({ ...p, fullName: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+                    <input placeholder={t("prt.phEmail")} type="email" value={mForm.email} onChange={(e) => setMForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
                     <p className="text-[11px] text-muted">{t("prt.noPassNote")}</p>
-                    <select value={mForm.partnerRole} onChange={(e) => setMForm((p) => ({ ...p, partnerRole: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
-                      <option value="partner_admin">{t("prt.roleAdmin")}</option>
-                      <option value="staff">{t("prt.roleStaff")}</option>
-                    </select>
+                    <Select
+                      value={mForm.partnerRole}
+                      onChange={(v) => setMForm((p) => ({ ...p, partnerRole: v }))}
+                      className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+                      options={[
+                        { value: "partner_admin", label: t("prt.roleAdmin") },
+                        { value: "staff", label: t("prt.roleStaff") },
+                      ]}
+                    />
                     {mError && <p className="text-[12px] text-[#FF6B85]">{mError}</p>}
                     <button onClick={createMember} disabled={mSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-50">
                       {mSaving ? <Loader2 size={14} className="animate-spin mx-auto" /> : t("prt.create")}
@@ -241,7 +250,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                   <div className="rounded-lg border border-[#4ADE80]/30 bg-[#4ADE80]/10 p-3 mb-2.5">
                     <div className="text-[11px] text-[#4ADE80] font-semibold mb-1.5">{t("prt.inviteTitle")}</div>
                     <div className="flex items-center gap-2">
-                      <input readOnly value={inviteLink} onFocus={(e) => e.target.select()} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-md py-1.5 px-2 text-[11px] font-mono" />
+                      <input readOnly value={inviteLink} onFocus={(e) => e.target.select()} className="flex-1 min-w-0 bg-white/5 border border-subtle rounded-md py-1.5 px-2 text-[11px] font-mono" />
                       <button onClick={copyInvite} className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-md bg-accent/20 text-[#7db8ff] font-medium">{t("prt.copy")}</button>
                       <button onClick={() => setInviteLink(null)} className="shrink-0 p-1.5 rounded-md hover:bg-white/10 text-muted"><X size={13} /></button>
                     </div>
@@ -267,12 +276,17 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
                 <div className="flex items-center gap-2 mb-2"><CalendarClock size={15} className="text-accent" /><h3 className="text-[13px] font-bold">{t("prt.hBilling")}</h3></div>
                 <div className="rounded-lg glass-card p-3 mb-2.5 space-y-2">
                   <div className="flex gap-2">
-                    <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
-                    <select value={invForm.model} onChange={(e) => setInvForm((p) => ({ ...p, model: e.target.value }))} className="bg-white/5 border border-white/10 rounded-lg py-2 px-2 text-[12px] outline-none focus:border-accent">
-                      <option value="subscription">{t("prt.subscription")}</option>
-                      <option value="commission">{t("prt.commission")}</option>
-                    </select>
-                    <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={t("prt.phAmount", { cur: partner.currency })} className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
+                    <input value={invForm.period} onChange={(e) => setInvForm((p) => ({ ...p, period: e.target.value }))} placeholder="2026-07" className="w-24 bg-white/5 border border-subtle rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
+                    <Select
+                      value={invForm.model}
+                      onChange={(v) => setInvForm((p) => ({ ...p, model: v }))}
+                      className="bg-white/5 border border-subtle rounded-lg py-2 px-2 text-[12px] flex items-center justify-between gap-2"
+                      options={[
+                        { value: "subscription", label: t("prt.subscription") },
+                        { value: "commission", label: t("prt.commission") },
+                      ]}
+                    />
+                    <input value={invForm.amount} onChange={(e) => setInvForm((p) => ({ ...p, amount: e.target.value }))} type="number" placeholder={t("prt.phAmount", { cur: partner.currency })} className="flex-1 min-w-0 bg-white/5 border border-subtle rounded-lg py-2 px-2.5 text-[12px] outline-none focus:border-accent" />
                   </div>
                   <button onClick={createInvoice} disabled={invSaving} className="w-full py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[12.5px] disabled:opacity-50">{invSaving ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("prt.createInvoice")}</button>
                 </div>
@@ -294,6 +308,7 @@ function ProvisionDrawer({ partner, onClose }: { partner: Partner; onClose: () =
           )}
         </div>
       </div>
+      {confirmDialog}
     </div>
   );
 }
@@ -353,17 +368,18 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
       // Xatoni OBYEKT bo'yicha tekshiramiz (bo'sh message'li xato ham ushlanadi) +
       // qator haqiqatan yozildi va o'qildi (row) — shundagina muvaffaqiyat.
       if (opError || !row) {
-        const msg = opError?.message || opError?.hint || opError?.code || t("prt.eSaveUnknown");
-        setError(t("prt.eSavePrefix") + msg);
-        toast.error(t("prt.tNotSaved") + msg);
+        console.error("[partners] saqlashda xatolik:", opError);
+        setError(t("prt.eSavePrefix"));
+        toast.error(t("prt.tNotSaved"));
         return;
       }
       toast.success(editing ? t("prt.tUpdated") : t("prt.tCreated"));
       onSaved();
       onClose();
     } catch (err: any) {
+      console.error("[partners] kutilmagan xatolik:", err);
       setError(t("prt.eUnexpected"));
-      toast.error(t("prt.tErrPrefix") + (err?.message ?? t("prt.unknown")) + t("prt.tErrSuffix"));
+      toast.error(t("prt.eConnCheck"));
     } finally {
       setSaving(false);
     }
@@ -371,7 +387,7 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-      <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
+      <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-subtle bg-panel p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-[16px]">{editing ? t("prt.editTitle") : t("prt.newTitle")}</h2>
           <button type="button" onClick={onClose} aria-label={t("prt.close")}><X size={18} /></button>
@@ -380,23 +396,26 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="col-span-2">
             <label className="block text-[12px] text-muted mb-1">{t("prt.fName")}</label>
-            <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={name} onChange={(e) => setName(e.target.value)} />
+            <input className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
             <label className="block text-[12px] text-muted mb-1">{t("prt.fCompany")}</label>
-            <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder="1xbet" value={company} onChange={(e) => setCompany(e.target.value)} />
+            <input className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder="1xbet" value={company} onChange={(e) => setCompany(e.target.value)} />
           </div>
           <div>
             <label className="block text-[12px] text-muted mb-1">{t("prt.fCurrency")}</label>
-            <select className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <Select
+              className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+              value={currency}
+              onChange={setCurrency}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
           </div>
         </div>
 
         <div className="mb-3">
           <label className="block text-[12px] text-muted mb-1">{t("prt.fContact")}</label>
-          <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phContact")} value={contact} onChange={(e) => setContact(e.target.value)} />
+          <input className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phContact")} value={contact} onChange={(e) => setContact(e.target.value)} />
         </div>
 
         <div className="mb-3">
@@ -404,25 +423,30 @@ function PartnerModal({ partner, prefill, onClose, onSaved }: { partner: Partner
           <div className="flex gap-1.5 mb-2">
             {(["commission", "subscription"] as const).map((b) => (
               <button key={b} type="button" onClick={() => setBilling(b)}
-                className={`flex-1 py-2 rounded-lg text-[12.5px] font-medium border ${billing === b ? "bg-accent/20 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}>
+                className={`flex-1 py-2 rounded-lg text-[12.5px] font-medium border ${billing === b ? "bg-accent/20 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}>
                 {b === "commission" ? t("prt.bCommission") : t("prt.bSubscription")}
               </button>
             ))}
           </div>
           {billing === "commission" ? (
-            <input type="number" step="0.01" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phCommission")} value={commission} onChange={(e) => setCommission(e.target.value)} />
+            <input type="number" step="0.01" className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phCommission")} value={commission} onChange={(e) => setCommission(e.target.value)} />
           ) : (
-            <input type="number" className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phSubscription", { cur: currency })} value={subscription} onChange={(e) => setSubscription(e.target.value)} />
+            <input type="number" className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" placeholder={t("prt.phSubscription", { cur: currency })} value={subscription} onChange={(e) => setSubscription(e.target.value)} />
           )}
         </div>
 
         <div className="mb-5">
           <label className="block text-[12px] text-muted mb-1">{t("prt.fStatus")}</label>
-          <select className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" value={status} onChange={(e) => setStatus(e.target.value as Partner["status"])}>
-            <option value="active">{t("prt.stActive")}</option>
-            <option value="pending">{t("prt.stPending")}</option>
-            <option value="suspended">{t("prt.stSuspended")}</option>
-          </select>
+          <Select
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+            value={status}
+            onChange={(v) => setStatus(v as Partner["status"])}
+            options={[
+              { value: "active", label: t("prt.stActive") },
+              { value: "pending", label: t("prt.stPending") },
+              { value: "suspended", label: t("prt.stSuspended") },
+            ]}
+          />
         </div>
 
         {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
@@ -455,6 +479,7 @@ export default function PartnersManager() {
   const [modal, setModal] = useState<ModalState>({ open: false, partner: null });
   const [provisionFor, setProvisionFor] = useState<Partner | null>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -462,7 +487,7 @@ export default function PartnersManager() {
       supabase.from("partners").select("*").order("created_at", { ascending: false }),
       supabase.from("partner_leads").select("id, name, phone, company, message, status, created_at").order("created_at", { ascending: false }),
     ]);
-    if (pErr) toast.error(t("prt.tLoadErr") + (pErr.message || pErr.code || t("prt.unknown")));
+    if (pErr) { console.error("[partners] ro'yxat yuklanmadi:", pErr); toast.error(t("prt.tLoadErr")); }
     setPartners((pData as Partner[]) ?? []);
     setLeads((lData as PartnerLead[]) ?? []);
     setLoading(false);
@@ -471,11 +496,12 @@ export default function PartnersManager() {
 
   const newLeadsCount = leads.filter((l) => l.status === "new").length;
 
-  const remove = async (p: Partner) => {
-    if (!confirm(t("prt.confirmDelete", { name: p.name }))) return;
-    const { error } = await supabase.from("partners").delete().eq("id", p.id);
-    if (error) toast.error(t("prt.tDelFail") + error.message);
-    else { toast.success(t("prt.tDeleted")); load(); }
+  const remove = (p: Partner) => {
+    confirm(t("prt.confirmDelete", { name: p.name }), async () => {
+      const { error } = await supabase.from("partners").delete().eq("id", p.id);
+      if (error) { console.error("[partners] hamkor o'chirilmadi:", error); toast.error(t("prt.tDelFail")); }
+      else { toast.success(t("prt.tDeleted")); load(); }
+    });
   };
 
   const setLeadStatus = async (lead: PartnerLead, status: string) => {
@@ -553,7 +579,7 @@ export default function PartnersManager() {
                     <span className="text-[#5b6f85]">·</span>
                     <span>{p.currency}</span>
                   </div>
-                  <div className="mt-auto flex items-center gap-1.5 pt-2 border-t border-white/5">
+                  <div className="mt-auto flex items-center gap-1.5 pt-2 border-t border-subtle">
                     <button onClick={() => setProvisionFor(p)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
                       <SlidersHorizontal size={13} /> {t("prt.setupBtn")}
                     </button>
@@ -592,7 +618,7 @@ export default function PartnersManager() {
                   </div>
                   {l.message && <p className="text-[12.5px] text-white/85 bg-white/[0.03] rounded-lg px-3 py-2 my-2">{l.message}</p>}
                   <div className="text-[10.5px] text-[#5b6f85] mb-2.5">{new Date(l.created_at).toLocaleString("ru-RU")}</div>
-                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-white/5">
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-subtle">
                     <button onClick={() => setModal({ open: true, partner: null, prefill: { name: l.company || l.name || "", company: l.company || "" }, leadId: l.id })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
                       <ArrowRight size={13} /> {t("prt.createPartner")}
                     </button>
@@ -612,6 +638,7 @@ export default function PartnersManager() {
 
       {modal.open && <PartnerModal partner={modal.partner} prefill={modal.prefill} onClose={closeModal} onSaved={onModalSaved} />}
       {provisionFor && <ProvisionDrawer partner={provisionFor} onClose={() => setProvisionFor(null)} />}
+      {confirmDialog}
     </div>
   );
 }

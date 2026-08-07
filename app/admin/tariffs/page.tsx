@@ -5,6 +5,7 @@ import { Receipt, Loader2, Check, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
 
 type Tariff = {
   id: string;
@@ -38,7 +39,7 @@ function TariffRow({ tf, onSaved }: { tf: Tariff; onSaved: () => void }) {
       .eq("id", tf.id);
     setSaving(false);
     if (!error) { setSaved(true); setTimeout(() => setSaved(false), 1500); onSaved(); toast.success(t("trf.tSaved", { name: tf.name })); }
-    else toast.error(t("trf.tSaveErr") + error.message);
+    else { console.error("[tariffs] narx saqlanmadi:", error); toast.error(t("trf.tSaveErr")); }
   };
 
   return (
@@ -56,13 +57,16 @@ function TariffRow({ tf, onSaved }: { tf: Tariff; onSaved: () => void }) {
       <div className="flex flex-wrap items-end gap-2.5">
         <div>
           <label className="block text-[10.5px] text-[#5b6f85] mb-1">{t("trf.price")}</label>
-          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-40 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
+          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-40 bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent" />
         </div>
         <div>
           <label className="block text-[10.5px] text-[#5b6f85] mb-1">{t("trf.currency")}</label>
-          <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent">
-            {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <Select
+            className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+            value={currency}
+            onChange={setCurrency}
+            options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+          />
         </div>
         <button onClick={save} disabled={!dirty || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px] disabled:opacity-40">
           {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <><Check size={14} /> {t("trf.saved")}</> : t("trf.save")}

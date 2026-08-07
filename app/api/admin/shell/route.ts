@@ -35,11 +35,11 @@ export async function GET() {
   let role: string | null = null;
   let roleId: string | null = null;
   let isPartner = false;
-  let me = { name: "", rating: 0, isBusy: false, busyReason: "" as string | null };
+  let me = { name: "", rating: 0, isBusy: false, busyReason: "" as string | null, isOnline: true };
   try {
     const { data: prof } = await admin
       .from("profiles")
-      .select("display_name, full_name, rating, is_busy, busy_reason, role_id, roles(key)")
+      .select("display_name, full_name, rating, is_busy, busy_reason, is_online, role_id, roles(key)")
       .eq("id", user.id)
       .maybeSingle();
     if (prof) {
@@ -50,6 +50,7 @@ export async function GET() {
         rating: Number((prof as any).rating ?? 0),
         isBusy: !!(prof as any).is_busy,
         busyReason: (prof as any).busy_reason ?? "",
+        isOnline: (prof as any).is_online ?? true,
       };
     }
   } catch {

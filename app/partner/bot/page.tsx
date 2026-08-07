@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Bot, Loader2, CheckCircle2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "@/lib/ui/toast";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 export default function PartnerBotPage() {
   const supabase = createClient();
@@ -13,6 +14,7 @@ export default function PartnerBotPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -33,27 +35,28 @@ export default function PartnerBotPage() {
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = { invalid_token: "Token noto'g'ri — BotFather'dan tekshiring.", telegram_unreachable: "Telegram bilan ulanib bo'lmadi. Qayta urining.", forbidden: "Faqat partner admin botni ulaydi." };
-        const msg = map[data.error] ?? "Xatolik yuz berdi.";
+        const msg = map[data.error] ?? "Bot ulanmadi. Qayta urining.";
         setError(msg);
-        toast.error("Bot ulanmadi: " + msg);
+        toast.error("Bot ulanmadi.");
         return;
       }
       setToken("");
       setUsername(data.username || "");
-      toast.success(`Bot ulandi ✅ @${data.username || ""}`);
+      toast.success(`Bot ulandi — @${data.username || ""}`);
       if (data.menuSet === false) toast.info("Bot ulandi, lekin menyu tugmasi o'rnatilmadi — qayta ulashga urinib ko'ring.");
-    } catch { setError("Ulanishda xatolik."); toast.error("Ulanishda xatolik. Internetni tekshiring."); }
+    } catch { setError("Ulanmadi. Internetni tekshiring."); toast.error("Ulanmadi. Internetni tekshiring."); }
     finally { setBusy(false); }
   };
 
-  const disconnect = async () => {
-    if (!confirm("Botni uzishni tasdiqlaysizmi?")) return;
-    setBusy(true);
-    try {
-      await fetch("/api/partner/bot", { method: "DELETE" });
-      setUsername(null);
-      toast.success("Bot uzildi");
-    } finally { setBusy(false); }
+  const disconnect = () => {
+    confirm("Botni uzishni tasdiqlaysizmi?", async () => {
+      setBusy(true);
+      try {
+        await fetch("/api/partner/bot", { method: "DELETE" });
+        setUsername(null);
+        toast.success("Bot uzildi");
+      } finally { setBusy(false); }
+    });
   };
 
   if (loading) return <div className="p-6 text-[13px] text-muted">Yuklanmoqda...</div>;
@@ -75,23 +78,23 @@ export default function PartnerBotPage() {
             <div className="text-[14px] font-bold">Bot ulangan</div>
             <div className="text-[12px] text-muted">@{username}</div>
           </div>
-          {isAdmin && <button onClick={disconnect} disabled={busy} className="shrink-0 text-[12px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white">Uzish</button>}
+          {isAdmin && <button onClick={disconnect} disabled={busy} className="shrink-0 text-[12px] px-3 py-1.5 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white">Uzish</button>}
         </div>
       ) : null}
 
       {username && (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 mb-5 text-[12.5px] text-muted">
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-4 mb-5 text-[12.5px] text-muted">
           Mijozlaringiz botingizni ochib, pastdagi <span className="text-white font-medium">menyu (☰)</span> tugmasi orqali BetCore Pay app'ini ochadi.
           <div className="text-[11px] text-[#5b6f85] mt-1.5">Eslatma: app'ning hamkor ko'rinishi (tema/to'lov) keyingi bosqichda to'liq ulanadi.</div>
         </div>
       )}
 
       {!username && (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 mb-5">
+        <div className="rounded-xl border border-subtle bg-white/[0.02] p-5 mb-5">
           {isAdmin ? (
             <>
               <label className="block text-[12px] text-muted mb-1.5">Bot tokeni (@BotFather → /newbot)</label>
-              <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="123456:AA...." className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-accent mb-3 font-mono" />
+              <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="123456:AA...." className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-accent mb-3 font-mono" />
               {error && <p className="text-[12px] text-[#FF6B85] mb-3">{error}</p>}
               <button onClick={connect} disabled={busy} className="w-full py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[14px] disabled:opacity-50">
                 {busy ? <Loader2 size={15} className="animate-spin mx-auto" /> : "Ulash"}
@@ -107,6 +110,7 @@ export default function PartnerBotPage() {
         <ShieldCheck size={16} className="text-[#4ADE80] shrink-0 mt-0.5" />
         <span>Tokeningiz maxfiy saqlanadi — qayta ko'rsatilmaydi va hech kim (biz ham) ko'ra olmaydi.</span>
       </div>
+      {confirmDialog}
     </div>
   );
 }

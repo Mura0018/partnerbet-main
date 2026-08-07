@@ -3,6 +3,7 @@
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useEffect, useState } from "react";
 import { Loader2, Ban, Unlock } from "lucide-react";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type SecurityEvent = {
   id: string;
@@ -21,7 +22,7 @@ type BlockedIp = { ip_address: string; reason: string | null; blocked_at: string
 const RISK_STYLE: Record<SecurityEvent["risk"], string> = {
   high: "border-[#FF6B85]/30 bg-[#FF6B85]/[0.06]",
   medium: "border-[#F4C76A]/30 bg-[#F4C76A]/[0.06]",
-  low: "border-white/8 bg-white/[0.02]",
+  low: "border-subtle bg-white/[0.02]",
 };
 
 export default function SecurityLogPage() {
@@ -31,6 +32,7 @@ export default function SecurityLogPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "high" | "medium">("all");
   const [actingIp, setActingIp] = useState<string | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const res = await fetch("/api/admin/security-log");
@@ -46,19 +48,20 @@ export default function SecurityLogPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const blockIp = async (ip: string) => {
-    if (!confirm(`${ip} manzilini bloklashni tasdiqlaysizmi? Bu manzildan hech kim tizimga kira olmaydi.`)) return;
-    setActingIp(ip);
-    try {
-      await fetch("/api/admin/security-log/block-ip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ip, action: "block", reason: t("sec.blockReason") }),
-      });
-      await load();
-    } finally {
-      setActingIp(null);
-    }
+  const blockIp = (ip: string) => {
+    confirm(`${ip} manzilini bloklashni tasdiqlaysizmi? Bu manzildan hech kim tizimga kira olmaydi.`, async () => {
+      setActingIp(ip);
+      try {
+        await fetch("/api/admin/security-log/block-ip", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ip, action: "block", reason: t("sec.blockReason") }),
+        });
+        await load();
+      } finally {
+        setActingIp(null);
+      }
+    });
   };
 
   const unblockIp = async (ip: string) => {
@@ -123,7 +126,7 @@ export default function SecurityLogPage() {
                     <button
                       onClick={() => unblockIp(b.ip_address)}
                       disabled={actingIp === b.ip_address}
-                      className="shrink-0 flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-muted hover:text-white disabled:opacity-50"
+                      className="shrink-0 flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white disabled:opacity-50"
                     >
                       <Unlock size={12} /> {t("sec.unblock")}
                     </button>
@@ -136,19 +139,19 @@ export default function SecurityLogPage() {
           <div className="flex gap-2 mb-4">
             <button
               onClick={() => setFilter("all")}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${filter === "all" ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${filter === "all" ? "bg-accent/15 border-accent text-white" : "bg-white/[0.02] border-subtle text-muted"}`}
             >
               {t("sec.fAll")}
             </button>
             <button
               onClick={() => setFilter("high")}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${filter === "high" ? "bg-[#FF6B85]/15 border-[#FF6B85] text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${filter === "high" ? "bg-[#FF6B85]/15 border-[#FF6B85] text-white" : "bg-white/[0.02] border-subtle text-muted"}`}
             >
               {t("sec.fHigh")}
             </button>
             <button
               onClick={() => setFilter("medium")}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${filter === "medium" ? "bg-[#F4C76A]/15 border-[#F4C76A] text-white" : "bg-white/[0.02] border-white/10 text-muted"}`}
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${filter === "medium" ? "bg-[#F4C76A]/15 border-[#F4C76A] text-white" : "bg-white/[0.02] border-subtle text-muted"}`}
             >
               {t("sec.fMedium")}
             </button>
@@ -185,6 +188,7 @@ export default function SecurityLogPage() {
           )}
         </>
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { Select } from "@/lib/ui/Select";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Insight = {
   id: string;
@@ -32,6 +34,7 @@ export default function InsightsManager() {
   const [loading, setLoading] = useState(true);
 
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     setLoading(true);
@@ -63,11 +66,12 @@ export default function InsightsManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("med.insConfirmDelete"))) return;
-    // Soft delete: keeps the row (and its audit history) instead of erasing it.
-    await supabase.from("match_insights").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("med.insConfirmDelete"), async () => {
+      // Soft delete: keeps the row (and its audit history) instead of erasing it.
+      await supabase.from("match_insights").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -103,7 +107,7 @@ export default function InsightsManager() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-5">
-          <form onSubmit={save} className="w-full max-w-lg rounded-2xl border border-white/10 bg-panel p-6 max-h-[90vh] overflow-y-auto">
+          <form onSubmit={save} className="w-full max-w-lg rounded-2xl border border-subtle bg-panel p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-[16px]">{editingId ? t("med.insEdit") : t("med.insNew")}</h2>
               <button type="button" onClick={() => setShowForm(false)} aria-label={t("med.insClose")}><X size={18} /></button>
@@ -123,7 +127,7 @@ export default function InsightsManager() {
                   type={f.type} required
                   value={(form as any)[f.key]}
                   onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+                  className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
                 />
               </div>
             ))}
@@ -140,13 +144,12 @@ export default function InsightsManager() {
 
             <div className="mb-3">
               <label className="block text-[12px] text-muted mb-1">{t("med.fStatus")}</label>
-              <select
+              <Select
                 value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]"
-              >
-                {["UPCOMING", "LIVE", "WIN", "LOST", "PUSH"].map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+                onChange={(v) => setForm({ ...form, status: v })}
+                className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] flex items-center justify-between gap-2"
+                options={["UPCOMING", "LIVE", "WIN", "LOST", "PUSH"].map((s) => ({ value: s, label: s }))}
+              />
             </div>
 
             <div className="mb-5">
@@ -155,7 +158,7 @@ export default function InsightsManager() {
                 required rows={3}
                 value={form.analysis}
                 onChange={(e) => setForm({ ...form, analysis: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
+                className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] outline-none focus:border-accent"
               />
             </div>
 
@@ -165,6 +168,7 @@ export default function InsightsManager() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

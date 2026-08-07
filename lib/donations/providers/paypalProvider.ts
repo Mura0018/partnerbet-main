@@ -34,7 +34,10 @@ export class PayPalProvider implements PaymentGatewayProvider {
     donationId: string; amount: number; currency: string; successUrl: string; cancelUrl: string;
   }): Promise<CheckoutSessionResult> {
     const token = await this.getAccessToken();
-    if (!token) return { success: false, error: "PayPal autentifikatsiyasi muvaffaqiyatsiz." };
+    if (!token) {
+      console.error("[donations] PayPal autentifikatsiyasi muvaffaqiyatsiz.");
+      return { success: false, error: "provider_error" };
+    }
 
     try {
       const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
@@ -46,7 +49,7 @@ export class PayPalProvider implements PaymentGatewayProvider {
             {
               custom_id: params.donationId,
               amount: { currency_code: params.currency, value: params.amount.toFixed(2) },
-              description: "Donation to WINORA",
+              description: "Donation to BetCore",
             },
           ],
           application_context: {
@@ -59,16 +62,21 @@ export class PayPalProvider implements PaymentGatewayProvider {
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
-        return { success: false, error: errorBody?.message ?? `PayPal ${res.status} xatosi qaytardi.` };
+        console.error("[donations] PayPal checkout order xatosi:", res.status, errorBody);
+        return { success: false, error: "provider_error" };
       }
 
       const order = await res.json();
       const approveLink = order.links?.find((l: any) => l.rel === "approve")?.href;
-      if (!approveLink) return { success: false, error: "PayPal tasdiqlash havolasi topilmadi." };
+      if (!approveLink) {
+        console.error("[donations] PayPal javobida tasdiqlash havolasi topilmadi:", order);
+        return { success: false, error: "provider_error" };
+      }
 
       return { success: true, checkoutUrl: approveLink, externalSessionId: order.id };
     } catch (err: any) {
-      return { success: false, error: err?.message ?? "PayPal bilan bog'lanishda xatolik." };
+      console.error("[donations] PayPal bilan bog'lanishda xatolik:", err);
+      return { success: false, error: "provider_error" };
     }
   }
 

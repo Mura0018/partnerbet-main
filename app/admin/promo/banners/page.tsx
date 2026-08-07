@@ -4,10 +4,11 @@ import React, { useEffect, useState } from "react";
 import { Megaphone, Loader2, Plus, Trash2, Pencil, X, Check } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Banner = { id: string; title: string | null; subtitle: string | null; image_url: string | null; link_url: string | null; is_active: boolean; sort: number };
 
-const inp = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-accent";
+const inp = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-accent";
 
 // 10 ta tayyor shablon — bosilganda formani to'ldiradi (havolani admin qo'yadi).
 const TEMPLATES: { title: string; subtitle: string }[] = [
@@ -31,6 +32,7 @@ export default function PromoBannersPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<Partial<Banner> | null>(null);
   const [saving, setSaving] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     try {
@@ -60,10 +62,11 @@ export default function PromoBannersPage() {
     }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("prm.confirmDelete"))) return;
-    const res = await fetch(`/api/admin/promo/banners?id=${id}`, { method: "DELETE" });
-    if (res.ok) { toast.success(t("prm.tDeleted")); load(); }
+  const remove = (id: string) => {
+    confirm(t("prm.confirmDelete"), async () => {
+      const res = await fetch(`/api/admin/promo/banners?id=${id}`, { method: "DELETE" });
+      if (res.ok) { toast.success(t("prm.tDeleted")); load(); }
+    });
   };
 
   const toggle = async (b: Banner) => {
@@ -87,7 +90,7 @@ export default function PromoBannersPage() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="text-center py-14 text-white/40 text-sm border border-white/10 rounded-2xl">{t("prm.emptyBanners")}</div>
+        <div className="text-center py-14 text-white/40 text-sm border border-subtle rounded-2xl">{t("prm.emptyBanners")}</div>
       ) : (
         <div className="space-y-2.5">
           {rows.map((b) => (
@@ -97,7 +100,7 @@ export default function PromoBannersPage() {
                 <div className="text-white text-[13px] font-semibold truncate">{b.title || "—"}</div>
                 <div className="text-white/40 text-[11px] truncate">{b.subtitle || b.link_url || ""}</div>
               </div>
-              <button onClick={() => toggle(b)} className={`shrink-0 text-[10px] px-2 py-1 rounded-full border ${b.is_active ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/5 border-white/10 text-white/40"}`}>{b.is_active ? t("prm.active") : t("prm.offShort")}</button>
+              <button onClick={() => toggle(b)} className={`shrink-0 text-[10px] px-2 py-1 rounded-full border ${b.is_active ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/5 border-subtle text-white/40"}`}>{b.is_active ? t("prm.active") : t("prm.offShort")}</button>
               <button onClick={() => setForm(b)} className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 text-white/60"><Pencil size={15} /></button>
               <button onClick={() => remove(b.id)} className="shrink-0 p-1.5 rounded-lg hover:bg-[#FF6B85]/10 text-[#FF6B85]"><Trash2 size={15} /></button>
             </div>
@@ -107,8 +110,8 @@ export default function PromoBannersPage() {
 
       {form && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !saving && setForm(null)}>
-          <div className="bg-[#0E1518] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div className="bg-[#0E1518] border border-subtle rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-subtle">
               <h2 className="text-white font-semibold">{form.id ? t("prm.editBanner") : t("prm.newBanner")}</h2>
               <button onClick={() => setForm(null)} className="p-1 rounded-lg hover:bg-white/10 text-white/50"><X size={18} /></button>
             </div>
@@ -117,7 +120,7 @@ export default function PromoBannersPage() {
                 <span className="block text-[11px] text-white/40 mb-1.5">{t("prm.readyTemplates")}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {TEMPLATES.map((tpl, i) => (
-                    <button key={i} onClick={() => setForm((f) => ({ ...f, title: tpl.title, subtitle: tpl.subtitle }))} className="text-[10.5px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-accent/40">{tpl.title}</button>
+                    <button key={i} onClick={() => setForm((f) => ({ ...f, title: tpl.title, subtitle: tpl.subtitle }))} className="text-[10.5px] px-2 py-1 rounded-full bg-white/5 border border-subtle text-white/60 hover:text-white hover:border-accent/40">{tpl.title}</button>
                   ))}
                 </div>
               </div>
@@ -133,7 +136,7 @@ export default function PromoBannersPage() {
                 </label>
               </div>
             </div>
-            <div className="flex justify-end gap-2 px-5 py-4 border-t border-white/10">
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-subtle">
               <button onClick={() => setForm(null)} disabled={saving} className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5">{t("prm.cancel")}</button>
               <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-[#F4C76A] text-[#2a1e05] disabled:opacity-50">
                 {saving ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} {t("prm.save")}
@@ -142,6 +145,7 @@ export default function PromoBannersPage() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

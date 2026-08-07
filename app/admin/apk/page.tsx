@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type Apk = {
   id: string; version: string; download_url: string; changelog: string;
@@ -15,6 +16,7 @@ export default function ApkManager() {
   const [releases, setReleases] = useState<Apk[]>([]);
   const [form, setForm] = useState({ version: "", download_url: "", changelog: "", min_android: "8.0" });
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase
@@ -39,11 +41,12 @@ export default function ApkManager() {
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("cnt.apkConfirmDel"))) return;
-    // Soft delete: keeps the row (and its audit history) instead of erasing it.
-    await supabase.from("apk_releases").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("cnt.apkConfirmDel"), async () => {
+      // Soft delete: keeps the row (and its audit history) instead of erasing it.
+      await supabase.from("apk_releases").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   return (
@@ -54,16 +57,16 @@ export default function ApkManager() {
       <form onSubmit={add} className="rounded-xl glass-card p-5 mb-6 grid md:grid-cols-2 gap-3">
         <input required placeholder={t("cnt.apkPhVersion")} value={form.version}
           onChange={(e) => setForm({ ...form, version: e.target.value })}
-          className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]" />
+          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]" />
         <input required placeholder={t("cnt.apkPhUrl")} value={form.download_url}
           onChange={(e) => setForm({ ...form, download_url: e.target.value })}
-          className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]" />
+          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]" />
         <input placeholder={t("cnt.apkPhMin")} value={form.min_android}
           onChange={(e) => setForm({ ...form, min_android: e.target.value })}
-          className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]" />
+          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]" />
         <input placeholder={t("cnt.apkPhLog")} value={form.changelog}
           onChange={(e) => setForm({ ...form, changelog: e.target.value })}
-          className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px]" />
+          className="bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px]" />
         <button type="submit" className="md:col-span-2 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-gradient-to-r from-accent to-accent-dim font-semibold text-[13px]">
           <Plus size={15} /> {t("cnt.apkAdd")}
         </button>
@@ -90,6 +93,7 @@ export default function ApkManager() {
           </div>
         ))}
       </div>
+      {confirmDialog}
     </div>
   );
 }

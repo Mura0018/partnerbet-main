@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
             event_type: "alert",
             message: `🟥 Tizim: ${opName} takroriy e'tiborsizlik (${n} handoff/${alertSettings.windowHours}s) — super_admin nazoratiga olindi.`,
           });
-          await Promise.all(superAdminChats.map((c: number) => sendTelegramMessage(c, `🟥 BETCORE PAY\n\n${opName} takroriy e'tiborsizlik (${n} handoff) — nazorat kerak.`, undefined)));
+          await Promise.all(superAdminChats.map((c: number) => sendTelegramMessage(c, `🟥 BetCore Pay\n\n${opName} takroriy e'tiborsizlik (${n} handoff) — nazorat kerak.`, undefined)));
         } else if (n === alertSettings.level2) {
           // 2-daraja: jamoa chati + admin e'tibori
           await recordAlert(admin, order.claimed_by, order.id, 2, `Takror e'tiborsizlik (${n} handoff/${alertSettings.windowHours}s)`);
@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
       const text = `⏰ Qarz to'lanmadi: ${debtorName} → ${creditorName}: ${Number(d.amount || 0).toLocaleString("ru-RU")} so'm (${escalationHours} soatdan oshdi).`;
 
       await admin.from("team_chat_messages").insert({ sender_id: superAdmin.id, is_system: true, event_type: "debt", message: `🟥 Tizim: ${text}` });
-      await Promise.all(superAdminChats.map((c: number) => sendTelegramMessage(c, `🟥 BETCORE PAY\n\n${text}`, undefined)));
+      await Promise.all(superAdminChats.map((c: number) => sendTelegramMessage(c, `🟥 BetCore Pay\n\n${text}`, undefined)));
       await admin.from("operator_debts").update({ escalated_at: new Date().toISOString() }).eq("id", d.id);
       debtEscalated++;
     }

@@ -4,11 +4,15 @@ import { resolveCustomerContext } from "@/lib/telegram/resolveCustomer";
 import { sendTelegramMessage, buildOrderCreatedMessage } from "@/lib/telegram/notify";
 import { notifyOperatorsNewOrder } from "@/lib/telegram/notifyStaff";
 import { bumpCardUsage } from "@/lib/payments/cardUsage";
+import { pickRequisiteForOrder, bumpPartnerRequisiteUsage, recordRequisiteReveal } from "@/lib/payments/pickRequisite";
+import { checkCustomerBlocked } from "@/lib/customers/abandonBlock";
+import { checkCustomerNameMatch } from "@/lib/customers/nameCheckGate";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { findCashdeskPlayer } from "@/lib/cashdesk/client";
 import { resolveOrderCashdesk } from "@/lib/cashdesk/pickCashdesk";
 import { getSlaMinutes } from "@/lib/cashdesk/sla";
+import { getTimezone, startOfDayInTimezone } from "@/lib/site/timezone";
 
 const PAYMENT_METHODS = ["click", "payme", "card", "crypto"] as const;
 
@@ -22,13 +26,23 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
-  const { initData, type, platform, accountId, amount, paymentMethod, withdrawCode, payoutDetails, recipientName, paymentOperatorId, receivedAccountNumber, receivedHolderName } = body ?? {};
+  // W1.1: paymentOperatorId/receivedAccountNumber/receivedHolderName endi
+  // MIJOZDAN qabul qilinmaydi — ilgari mijoz o'zi ko'rgan kartani "aynan
+  // shu edi" deb qaytarib yuborardi va server buni tekshirmasdan ishonardi.
+  // Endi rekvizit shu endpoint ICHIDA, server tomonda tanlanadi (pastda).
+  const { initData, type, platform, accountId, amount, paymentMethod, withdrawCode, payoutDetails, recipientName } = body ?? {};
 
   if (!initData) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
   const cc = await resolveCustomerContext(initData);
   if (!cc || cc.denied || !cc.customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
   const customer = cc.customer;
+
+  // W1.3: ketma-ket to'lovsiz (expired) buyurtma ochgan mijoz vaqtincha bloklangan.
+  const block = await checkCustomerBlocked(customer.id);
+  if (block.blocked) {
+    return NextResponse.json({ error: "temporarily_blocked", until: block.until }, { status: 403 });
+  }
 
   if (type !== "topup" && type !== "withdraw") {
     return NextResponse.json({ error: "invalid_type" }, { status: 400 });
@@ -52,6 +66,12 @@ export async function POST(req: NextRequest) {
   if (type === "withdraw" && (!recipientName || String(recipientName).trim().length === 0)) {
     return NextResponse.json({ error: "invalid_recipient_name" }, { status: 400 });
   }
+  // W2.1: rekvizitsiz withdraw buyurtmasi YARATILMAYDI — mijoz "pulni
+  // qayerga olaman" javobini endi PAYOUTDAN OLDIN beradi (rekvizit
+  // buyurtma bilan birga keladi, keyingi alohida "details" qadami yo'q).
+  if (type === "withdraw" && (!payoutDetails || String(payoutDetails).trim().length === 0)) {
+    return NextResponse.json({ error: "invalid_payout_details" }, { status: 400 });
+  }
 
   // If the cashdesk API is configured, verify the account_id is a real
   // player before creating the order — this is what catches a mistyped
@@ -67,6 +87,16 @@ export async function POST(req: NextRequest) {
     currencyId = lookup.data.currencyId != null ? String(lookup.data.currencyId) : null;
   } else if (lookup.error !== "not_configured" && lookup.error !== "network_error" && lookup.error !== "request_failed") {
     return NextResponse.json({ error: "player_not_found" }, { status: 404 });
+  }
+
+  // W1.4: mijozning ro'yxatdan o'tgan ismi bilan cashdesk'dan kelgan
+  // player_name'ni yumshoq solishtiramiz. playerName topilmagan bo'lsa
+  // (cashdesk sozlanmagan/tarmoq xatosi) solishtirish umuman bo'lmaydi.
+  if (playerName) {
+    const nameCheck = await checkCustomerNameMatch(customer.id, customer.full_name, playerName, String(platform).trim(), String(accountId).trim());
+    if (!nameCheck.allowed) {
+      return NextResponse.json({ error: nameCheck.reason }, { status: 403 });
+    }
   }
 
   const adminForLimits = createAdminClient();
@@ -112,8 +142,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "order_limit_exceeded", limit: maxOrderAmount }, { status: 400 });
   }
 
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  // Server UTC'da ishlaydi (Vercel) — "bugun" ni site_settings.timezone
+  // (standart Asia/Tashkent) bo'yicha hisoblaymiz, aks holda kunlik limit
+  // Toshkentda ertalab 05:00 da yangilanardi.
+  const startOfToday = startOfDayInTimezone(new Date(), await getTimezone());
   const { data: todaysOrders } = await adminForLimits
     .from("telegram_orders")
     .select("amount")
@@ -123,6 +155,19 @@ export async function POST(req: NextRequest) {
   const todaysTotal = (todaysOrders ?? []).reduce((sum, o: any) => sum + Number(o.amount), 0);
   if (todaysTotal + amountNum > dailyCustomerLimit) {
     return NextResponse.json({ error: "daily_limit_exceeded", limit: dailyCustomerLimit }, { status: 400 });
+  }
+
+  // W1.1/W1.6: topup uchun rekvizit AYNAN SHU YERDA, server tomonda
+  // tanlanadi (platforma va hamkor mijozlari bir xil fair-rotation
+  // mantig'idan o'tadi — pickRequisiteForOrder). Rekvizit topilmasa
+  // (faol karta yo'q) buyurtma umuman yaratilmaydi — bo'sh/soxta
+  // rekvizit bilan ochilib qolmaydi.
+  let requisite: Awaited<ReturnType<typeof pickRequisiteForOrder>> = null;
+  if (type === "topup") {
+    requisite = await pickRequisiteForOrder(paymentMethod, cc.partnerId ?? null);
+    if (!requisite) {
+      return NextResponse.json({ error: "no_payment_method_available" }, { status: 503 });
+    }
   }
 
   const supabase = createAdminClient();
@@ -138,9 +183,9 @@ export async function POST(req: NextRequest) {
       withdraw_code: type === "withdraw" ? String(withdrawCode).trim().slice(0, 20) : null,
       payout_details: payoutDetails ? String(payoutDetails).trim().slice(0, 500) : null,
       recipient_name: type === "withdraw" ? String(recipientName).trim().slice(0, 150) : null,
-      payment_operator_id: type === "topup" && paymentOperatorId ? String(paymentOperatorId) : null,
-      received_account_number: type === "topup" && receivedAccountNumber ? String(receivedAccountNumber).trim().slice(0, 100) : null,
-      received_holder_name: type === "topup" && receivedHolderName ? String(receivedHolderName).trim().slice(0, 150) : null,
+      payment_operator_id: requisite?.operatorId ?? null,
+      received_account_number: requisite?.accountNumber ?? null,
+      received_holder_name: requisite?.holderName ?? null,
       player_name: playerName,
       currency_id: currencyId,
       partner_id: cc.partnerId,
@@ -184,11 +229,35 @@ export async function POST(req: NextRequest) {
 
   await sendTelegramMessage(customer.telegram_id, buildOrderCreatedMessage(type, amountNum));
   await notifyOperatorsNewOrder(type, amountNum, playerName ?? String(accountId).trim());
-  if (type === "topup" && paymentOperatorId && receivedAccountNumber) {
-    await bumpCardUsage(String(paymentOperatorId), String(receivedAccountNumber).trim());
+
+  // W1.1/W1.2: fair-rotation bump + "har ko'rsatish qayd etiladi" audit yozuvi.
+  // Best-effort — bu ikkalasi ham buyurtma yaratishni bloklamasligi kerak
+  // (pul/buyurtma allaqachon amalga oshgan, tashqi audit yozuvi ikkinchi darajali).
+  if (type === "topup" && requisite) {
+    try {
+      if (requisite.isPartner) await bumpPartnerRequisiteUsage(requisite.methodRowId);
+      else await bumpCardUsage(String(requisite.operatorId), requisite.accountNumber);
+      await recordRequisiteReveal({
+        customerId: customer.id,
+        orderId: order.id,
+        methodType: paymentMethod,
+        picked: requisite,
+        ip,
+      });
+    } catch {
+      /* bump/audit best-effort */
+    }
   }
 
-  return NextResponse.json({ order });
+  return NextResponse.json({
+    order,
+    // W1.1: mijoz endi rekvizitni mustaqil GET /payment-info orqali emas,
+    // shu javobdan oladi (topup uchun).
+    requisite:
+      type === "topup" && requisite
+        ? { accountNumber: requisite.accountNumber, holderName: requisite.holderName, methodType: paymentMethod }
+        : null,
+  });
 }
 
 export async function GET(req: NextRequest) {
@@ -203,12 +272,26 @@ export async function GET(req: NextRequest) {
   const customer = cc.customer;
 
   const supabase = createAdminClient();
-  const { data: orders } = await supabase
+  const BASE_COLUMNS = "id, type, platform, account_id, amount, payment_method, status, operator_note, created_at, operator_id, claimed_by";
+  let orders: any[] | null;
+  let ordersError: any;
+  ({ data: orders, error: ordersError } = await supabase
     .from("telegram_orders")
-    .select("id, type, platform, account_id, amount, payment_method, status, operator_note, created_at, operator_id, claimed_by")
+    .select(`${BASE_COLUMNS}, payout_status, payout_attempt_count`)
     .eq("customer_id", customer.id)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(50));
+  if (ordersError) {
+    // payout_status/payout_attempt_count ustunlari hali yo'q (migratsiya
+    // 0092 qo'yilmagan) — eski qisqa ustun ro'yxati bilan qayta so'raymiz,
+    // aks holda mijozning butun buyurtma tarixi BO'SH ko'rinib qolardi.
+    ({ data: orders } = await supabase
+      .from("telegram_orders")
+      .select(BASE_COLUMNS)
+      .eq("customer_id", customer.id)
+      .order("created_at", { ascending: false })
+      .limit(50));
+  }
 
   // F2b: kartaning orqa tomonida "qaysi operator" ko'rsatish uchun operator
   // ismini qo'shamiz (operator_id, aks holda claimed_by bo'yicha).
@@ -220,10 +303,31 @@ export async function GET(req: NextRequest) {
     const { data: profs } = await supabase.from("profiles").select("id, display_name, full_name").in("id", opIds);
     for (const p of profs ?? []) nameById.set(p.id, p.display_name || p.full_name || "Operator");
   }
+
+  // MoneyRail 3-bekat ("To'lov tasdiqlandi") — order_confirmations'da shu
+  // buyurtma uchun HAQIQIY tasdiq (confirmed=true) bormi. Operator/izoh/summa
+  // kabi ichki tafsilotlar mijozga chiqarilmaydi — faqat bitta bool.
+  const orderIds = (orders ?? []).map((o: any) => o.id);
+  const confirmedIds = new Set<string>();
+  if (orderIds.length) {
+    const { data: confirmations } = await supabase
+      .from("order_confirmations")
+      .select("order_id")
+      .in("order_id", orderIds)
+      .eq("confirmed", true);
+    for (const c of (confirmations ?? []) as any[]) confirmedIds.add(c.order_id);
+  }
+
   const withNames = (orders ?? []).map((o: any) => {
     const opId = o.operator_id ?? o.claimed_by;
     const { operator_id, claimed_by, ...rest } = o;
-    return { ...rest, operator_name: opId ? nameById.get(opId) ?? null : null };
+    return {
+      ...rest,
+      payout_status: o.payout_status ?? "none",
+      payout_attempt_count: o.payout_attempt_count ?? 0,
+      operator_name: opId ? nameById.get(opId) ?? null : null,
+      payment_confirmed: confirmedIds.has(o.id),
+    };
   });
 
   return NextResponse.json({ orders: withNames });

@@ -36,6 +36,12 @@ type Order = {
   created_at: string;
   // F2b: kartaning orqasida "qaysi operator" ni ko'rsatish uchun.
   operator_name?: string | null;
+  // MoneyRail 3-bekat — order_confirmations'da haqiqiy tasdiq bormi.
+  payment_confirmed?: boolean;
+  // W2.4: withdraw payout holati — 'none' + payout_attempt_count>0 bo'lsa,
+  // avvalgi kod muvaffaqiyatsiz bo'lgan (mijozdan yangisi kutilmoqda).
+  payout_status?: "none" | "pending" | "success" | "failed";
+  payout_attempt_count?: number;
 };
 
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
@@ -46,6 +52,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { WithdrawCodeGuide } from "@/lib/ui/WithdrawCodeGuide";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type SupportMessage = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
@@ -64,12 +71,31 @@ type SupportMessage = {
   _localImageUrl?: string;
 };
 
-type PaymentInfo = {
-  cardNumber: string; cardHolder: string; cardOperatorId: string | null;
-  clickNumber: string; clickHolder: string; clickOperatorId: string | null;
-  paymeNumber: string; paymeHolder: string; paymeOperatorId: string | null;
-  cryptoWallet: string; cryptoOperatorId: string | null;
-};
+// F1/F4: poll (4s) optimistik xabar hali "sending" holatida bo'lganda ham
+// serverga yetib borgan bo'lishi mumkin (o'zining deliverSupportMessage
+// javobi hali kelmagan) — id bo'yicha solishtirish bunday holatda mos
+// kelmaydi (clientId hali server id bilan almashtirilmagan), natijada
+// bitta xabar ikki marta ko'rinib qoladi. Mazmuni (yuboruvchi+matn/rasm)
+// va vaqt oralig'i bo'yicha taqqoslab, allaqachon kelgan optimistik
+// xabarni pending ro'yxatidan chiqarib tashlaymiz.
+function optimisticMatchesServer(pending: SupportMessage, serverMsg: SupportMessage): boolean {
+  if (pending.sender !== serverMsg.sender) return false;
+  const draft = pending._draft;
+  if (!draft) return false;
+  if (draft.kind === "text") {
+    if (serverMsg.message !== draft.message) return false;
+  } else if (draft.kind === "image") {
+    if ((serverMsg.message ?? null) !== (draft.caption ?? null)) return false;
+    if (!serverMsg.image_path) return false;
+  }
+  const dt = Math.abs(new Date(serverMsg.created_at).getTime() - new Date(pending.created_at).getTime());
+  return dt < 20000;
+}
+
+// W1.1: rekvizit endi mustaqil (buyurtmasiz) ko'rilmaydi — bu tur endi
+// FAQAT allaqachon yaratilgan bitta topup buyurtmaning tanlangan rekvizitini
+// ifodalaydi (POST /orders javobidan yoki GET /payment-info?orderId= dan).
+type TopupRequisite = { accountNumber: string; holderName: string; methodType: PaymentMethod };
 
 const PLATFORMS = ["1xBet", "Melbet", "Betwinner", "Boshqa"];
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; labelKey?: string }[] = [
@@ -85,29 +111,25 @@ const STATUS_LABEL: Record<Order["status"], { labelKey: string; color: string; i
 };
 
 const inputCls =
-  "w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[14px] text-white outline-none placeholder:text-[#5b7089] transition-shadow duration-200 focus:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),0_0_0_2px_rgba(61,127,255,0.5),0_0_16px_rgba(61,127,255,0.35)] " +
-  "shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)] " +
-  "focus:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.12),0_0_0_2px_rgba(61,127,255,0.4)] transition-shadow";
-
-const selectCls = inputCls + " appearance-none";
+  "w-full bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-xl py-3.5 px-4 text-[14px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-3)] transition-colors " +
+  "focus:border-[var(--em)] focus:shadow-[0_0_0_2px_rgba(18,217,160,0.25),0_0_16px_rgba(18,217,160,0.15)]";
 
 const buttonCls =
-  "w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-[15px] text-white " +
-  "app-btn-bg " +
-  "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.15)] " +
-  "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4),inset_-2px_-2px_6px_rgba(255,255,255,0.05)] " +
+  "w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-[15px] text-[var(--bg)] " +
+  "bg-gradient-to-r from-[var(--em)] to-[var(--cy)] " +
+  "shadow-[0_6px_20px_rgba(18,217,160,0.3)] " +
+  "active:scale-[0.98] active:shadow-[0_3px_10px_rgba(18,217,160,0.2)] " +
   "transition-all disabled:opacity-50";
 
 const titleShadow = {
-  textShadow: "4px 5px 10px rgba(0,0,0,0.6), -2px -2px 5px rgba(120,180,255,0.3), 0 0 20px rgba(80,150,255,0.25)",
+  textShadow: "0 2px 10px rgba(0,0,0,0.5)",
 };
 
 const menuCardCls =
-  "rounded-2xl app-card-bg p-4 text-left " +
-  "shadow-[7px_7px_16px_rgba(0,0,0,0.5),-4px_-4px_12px_rgba(120,180,255,0.08)] " +
-  "active:translate-y-[3px] active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4)] transition-all";
+  "rounded-2xl bg-[var(--surf-2)] border border-[var(--border-subtle)] p-4 text-left " +
+  "active:scale-[0.98] transition-all";
 
-const bgCls = "min-h-screen app-bg text-white";
+const bgCls = "min-h-screen text-[var(--ink)]";
 
 function VoicePlayer({ path, getInitData }: { path: string; getInitData: () => string }) {
   const { t } = useLocale();
@@ -152,7 +174,7 @@ function CustomerSupportImage({ localUrl, path, getInitData, onOpen }: { localUr
   }, [localUrl, path]);
   if (!url) return <p className="text-[11px] text-white/70">{t("tg.imgLoading")}</p>;
   // F2b: to'liq ochish sahifa darajasида boshqariladi (BackButton uni yopadi).
-  return <img src={url} alt={t("tg.imgAlt")} onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in" />;
+  return <img src={url} alt={t("tg.imgAlt")} onClick={() => onOpen(url)} className="max-w-[200px] rounded-lg cursor-zoom-in transition-transform active:scale-95" />;
 }
 
 // F2e: to'liq ekran rasm — qo'lda (ikki barmoq) yaqinlashtirish/surish.
@@ -304,10 +326,10 @@ function AccountIdVerifyField({
             </button>
           </div>
           <div
-            className="absolute inset-0 flex items-center gap-3 bg-[#0e2038] rounded-xl px-4 shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]"
+            className="absolute inset-0 flex items-center gap-3 bg-[var(--surf-2)] border border-[var(--em)]/40 shadow-[0_0_0_1px_rgba(18,217,160,0.12),0_0_16px_rgba(18,217,160,0.15)] rounded-xl px-4"
             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
-            <div className="w-9 h-9 rounded-full bg-[#4ADE80]/15 flex items-center justify-center text-[#4ADE80] shrink-0">
+            <div className="w-9 h-9 rounded-full bg-[var(--em)]/15 flex items-center justify-center text-[var(--em)] shrink-0">
               <CheckCircle2 size={18} />
             </div>
             <div className="flex-1 min-w-0">
@@ -345,26 +367,17 @@ function ScreenHeader({ title, onBack, onHome }: { title: string; onBack: () => 
   );
 }
 
-function PaymentMethodPicker({
-  value,
-  onChange,
-  paymentInfo,
-}: {
-  value: PaymentMethod;
-  onChange: (m: PaymentMethod) => void;
-  paymentInfo: PaymentInfo | null;
-}) {
+// W1.1: bu yerda endi karta/rekvizit KO'RSATILMAYDI — usul tanlash shunchaki
+// buyurtmaga qaysi turdagi rekvizit (karta/Click/Payme/kripto) kerakligini
+// belgilaydi. Aniq raqam FAQAT buyurtma yaratilgach, keyingi qadamda
+// (server tanlagandan keyin) ko'rinadi — mustaqil "oldindan ko'rish" endi
+// mavjud emas.
+function PaymentMethodPicker({ value, onChange }: { value: PaymentMethod; onChange: (m: PaymentMethod) => void }) {
   const { t } = useLocale();
-  const detail: Record<PaymentMethod, { number: string; holder: string; label: string } | null> = {
-    click: paymentInfo?.clickNumber ? { number: paymentInfo.clickNumber, holder: paymentInfo.clickHolder, label: "Click" } : null,
-    payme: paymentInfo?.paymeNumber ? { number: paymentInfo.paymeNumber, holder: paymentInfo.paymeHolder, label: "Payme" } : null,
-    card: paymentInfo?.cardNumber ? { number: paymentInfo.cardNumber, holder: paymentInfo.cardHolder, label: t("tg.mCardShort") } : null,
-    crypto: paymentInfo?.cryptoWallet ? { number: paymentInfo.cryptoWallet, holder: "", label: t("tg.mCryptoShort") } : null,
-  };
   return (
     <div className="mb-3.5">
       <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.payMethod")}</label>
-      <div className="grid grid-cols-2 gap-2 mb-2.5">
+      <div className="grid grid-cols-2 gap-2">
         {PAYMENT_METHODS.map((m) => (
           <button
             key={m.id}
@@ -378,18 +391,63 @@ function PaymentMethodPicker({
           </button>
         ))}
       </div>
-      {detail[value] ? (
-        <LuxuryCard
-          typeLabel={detail[value]!.label}
-          number={detail[value]!.number}
-          holderName={detail[value]!.holder || null}
-          readOnly
-        />
-      ) : (
-        <div className="rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
-          {t("tg.noMethodInfo")}
-        </div>
-      )}
+    </div>
+  );
+}
+
+// W2.4: kod 1xbet'da kiritilgandan operator "1xbetdan yechib olish"ni
+// bosgunga qadar eskirishi mumkin. Payout shu sabab bilan muvaffaqiyatsiz
+// bo'lsa (payout_status 'none'ga qaytadi), mijozdan yangi kod so'raladi —
+// buyurtma bekor qilinmaydi, faqat kodni yangilaydi.
+function WithdrawCodeRefresh({
+  orderId,
+  getInitData,
+  onSubmitted,
+  inputCls,
+  buttonCls,
+}: {
+  orderId: string;
+  getInitData: () => string;
+  onSubmitted: () => void;
+  inputCls: string;
+  buttonCls: string;
+}) {
+  const { t } = useLocale();
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    setError("");
+    if (!code.trim()) { setError(t("wz.eCode")); return; }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/withdraw/refresh-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), orderId, code: code.trim() }),
+      });
+      if (!res.ok) {
+        setError(t("wz.eGeneric"));
+        return;
+      }
+      setCode("");
+      onSubmitted();
+    } catch {
+      setError(t("wz.eGeneric"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-2.5 rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 p-3">
+      <p className="text-[11.5px] text-[#F4C76A] mb-2">{t("tg.codeExpired")}</p>
+      <input className={`${inputCls} mb-2`} placeholder={t("wz.codePh")} value={code} onChange={(e) => setCode(e.target.value)} />
+      <button onClick={submit} disabled={busy} className={buttonCls}>
+        {busy ? <Loader2 size={15} className="animate-spin" /> : t("tg.submitCode")}
+      </button>
+      {error && <p className="text-[11px] text-[#FF6B85] mt-1.5">{error}</p>}
     </div>
   );
 }
@@ -410,11 +468,18 @@ function PlatformField({
     <>
       <div className="mb-3.5">
         <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.platform")}</label>
-        <select className={selectCls} value={platform} onChange={(e) => setPlatform(e.target.value)}>
+        <div className="grid grid-cols-2 gap-2">
           {PLATFORMS.map((p) => (
-            <option key={p} value={p}>{p === "Boshqa" ? t("tg.platformOther") : p}</option>
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPlatform(p)}
+              className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"}`}
+            >
+              {p === "Boshqa" ? t("tg.platformOther") : p}
+            </button>
           ))}
-        </select>
+        </div>
       </div>
       {platform === "Boshqa" && (
         <input
@@ -458,6 +523,7 @@ function dayLabel(t: (k: any, v?: any) => string, iso: string): string {
 
 export default function TelegramAppPage() {
   const { t, locale, setLocale } = useLocale();
+  const { confirm, confirmDialog } = useConfirm();
   const [screen, setScreen] = useState<Screen>("loading");
   // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
   // BackButton avval shuni yopadi, keyin ekrandan chiqadi.
@@ -502,19 +568,28 @@ export default function TelegramAppPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoPos, setLogoPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
-  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
-
   // Top-up form
   const [tuPlatform, setTuPlatform] = useState(PLATFORMS[0]);
   const [tuCustomPlatform, setTuCustomPlatform] = useState("");
   const [tuAccountId, setTuAccountId] = useState("");
   const [tuAmount, setTuAmount] = useState("");
   const [tuMethod, setTuMethod] = useState<PaymentMethod>("click");
+  // W1.1: buyurtma 2-qadam oxirida yaratiladi — tuOrderId/tuRequisite o'sha
+  // javobdan keladi va 3-qadamda (rekvizit ko'rsatish + chek yuklash) ishlatiladi.
+  const [tuOrderId, setTuOrderId] = useState<string | null>(null);
+  const [tuRequisite, setTuRequisite] = useState<TopupRequisite | null>(null);
+  const [tuCreatingOrder, setTuCreatingOrder] = useState(false);
+  // W1.4: full_name bo'sh mijozdan bir marta so'raladi (buyurtma
+  // yaratishga to'sqinlik qilgan bo'lsa).
+  const [tuNeedsFullName, setTuNeedsFullName] = useState(false);
+  const [tuFullNameInput, setTuFullNameInput] = useState("");
+  const [tuSavingFullName, setTuSavingFullName] = useState(false);
   const [tuReceiptBase64, setTuReceiptBase64] = useState("");
   const [tuReceiptMime, setTuReceiptMime] = useState("");
   const [tuReceiptFileName, setTuReceiptFileName] = useState("");
   const [tuStep, setTuStep] = useState(1); // T1: bosqichли to'ldirish
   const [tuVerifying, setTuVerifying] = useState(false);
+  const [tuIdConfirm, setTuIdConfirm] = useState(false);
 
   // Withdraw form
   const [wdPlatform, setWdPlatform] = useState(PLATFORMS[0]);
@@ -570,6 +645,15 @@ export default function TelegramAppPage() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportSending, setSupportSending] = useState(false);
+  // Yuqoriga scroll qilib eski tarixni yuklash (oxirgi 50 dan tashqarisi).
+  const [supportHasMore, setSupportHasMore] = useState(true);
+  const [supportLoadingMore, setSupportLoadingMore] = useState(false);
+  // __END_CONFIRM__ kartasi: qaysi xabar (id) hozir yuborilmoqda (tugmalarni
+  // vaqtincha o'chirish + spinner) va qaysilariga javob allaqachon berilgan
+  // (Ha/Yo'q qayta bosib bo'lmaydi — server bu holatni saqlamaydi, shuning
+  // uchun mahalliy Set 4s poll davomida ham saqlanib qoladi).
+  const [endConfirmSendingId, setEndConfirmSendingId] = useState<string | null>(null);
+  const [respondedEndConfirmIds, setRespondedEndConfirmIds] = useState<{ [id: string]: boolean }>({});
   // Support ekraniga xos xato (rasm/ovoz) — umumiy `error`dan ajratilgan,
   // shunda support ekranida ko'rsatiladi va boshqa ekranlarga sizmaydi.
   const [supportError, setSupportError] = useState("");
@@ -580,6 +664,11 @@ export default function TelegramAppPage() {
   const supportSigRef = useRef<string>("");
   // Support ekrani ochilgandagi birinchi scroll animatsiyasiz bo'lsin.
   const supportFirstScrollRef = useRef(true);
+  // Yangi xabar DOM'ga qo'shilishidan OLDINGI holatni saqlaydi — aks holda
+  // scrollHeight'dan masofani xabar qo'shilgandan KEYIN o'lchash yangi
+  // xabarning o'zi balandligicha xato beradi (pastda turgan bo'lsa ham
+  // "tepada" deb hisoblanib, avto-scroll bekor qilinardi).
+  const supportNearBottomRef = useRef(true);
   // F1: optimistik xabarларга noyob vaqtинча id berish uchun.
   const optimisticSeqRef = useRef(0);
   // F1b: sinxron dedup guard (bir xil xabar ikki marta ketmasin) va
@@ -659,8 +748,6 @@ export default function TelegramAppPage() {
       .then((r) => r.json())
       .then((data) => { setLogoUrl(data.logoUrl); if (data.logoPosition) setLogoPos(data.logoPosition); })
       .catch(() => {});
-    // payment-info endi himoyalangan (initData talab qiladi) — u faqat
-    // Telegram WebApp initData tayyor bo'lgach, script.onload ichida yuklanadi.
   }, []);
 
   // F2: keyboard ochilganda chat sakramasin/kichraymasin — ko'rinadigan
@@ -703,11 +790,8 @@ export default function TelegramAppPage() {
         setScreen("auth");
         return;
       }
-      // initData tayyor — endi himoyalangan payment-info'ni yuklaymiz.
-      fetch(`/api/telegram/miniapp/payment-info?initData=${encodeURIComponent(initData)}`)
-        .then((r) => r.json())
-        .then((data) => setPaymentInfo(data))
-        .catch(() => {});
+      // W1.1: payment-info endi mustaqil oldindan yuklanmaydi — rekvizit
+      // faqat buyurtma yaratilganda (POST /orders javobida) keladi.
       try {
         const res = await fetch("/api/telegram/miniapp/session", {
           method: "POST",
@@ -767,7 +851,7 @@ export default function TelegramAppPage() {
           linked_to_other_telegram: t("tg.eLinkedOther"),
           rate_limited: t("tg.errRate"),
         };
-        setError(messages[data.error] ?? "Xatolik yuz berdi.");
+        setError(messages[data.error] ?? t("tg.eGeneric2"));
         return;
       }
       setCustomer(data.customer);
@@ -826,7 +910,7 @@ export default function TelegramAppPage() {
           weak_password: t("tg.eWeakPass"),
           rate_limited: t("tg.errRate"),
         };
-        setFpError(messages[data.error] ?? "Xatolik yuz berdi.");
+        setFpError(messages[data.error] ?? t("tg.eGeneric2"));
         return;
       }
       setPhone(fpPhone.trim());
@@ -835,10 +919,10 @@ export default function TelegramAppPage() {
       setFpPhone(""); setFpCode(""); setFpNewPassword(""); setFpInfo(""); setFpError("");
       setMode("login");
       setError("");
-      setAuthInfo("Parol yangilandi — endi yangi parolingiz bilan kiring.");
+      setAuthInfo(t("tg.fpSuccess"));
       setScreen("auth");
     } catch {
-      setFpError("Ulanishda xatolik. Qayta urinib ko'ring.");
+      setFpError(t("tg.eConn"));
     } finally {
       setFpSubmitting(false);
     }
@@ -846,7 +930,8 @@ export default function TelegramAppPage() {
 
   const resetForms = () => {
     setTuAccountId(""); setTuAmount(""); setTuPlatform(PLATFORMS[0]); setTuCustomPlatform(""); setTuMethod("click");
-    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1);
+    setTuOrderId(null); setTuRequisite(null); setTuNeedsFullName(false); setTuFullNameInput("");
+    setTuReceiptBase64(""); setTuReceiptMime(""); setTuReceiptFileName(""); setTuStep(1); setTuIdConfirm(false);
     setWdAccountId(""); setWdAmount(""); setWdCode(""); setWdPlatform(PLATFORMS[0]); setWdCustomPlatform(""); setWdMethod("click"); setWdPayoutDetails(""); setWdRecipientName("");
   };
 
@@ -884,7 +969,11 @@ export default function TelegramAppPage() {
       });
       const d = await res.json();
       if (!res.ok || d.error) {
-        setError(d.error === "not_found" ? t("tg.eIdNotFound2") : d.error === "not_configured" ? t("tg.eCdOff") : t("tg.eVerify"));
+        if (d.error === "not_configured") {
+          setTuIdConfirm(true);
+          return;
+        }
+        setError(d.error === "not_found" ? t("tg.eIdNotFound2") : t("tg.eVerify"));
         return;
       }
       setTuStep(2);
@@ -893,13 +982,96 @@ export default function TelegramAppPage() {
     }
   };
 
+  // W1.1: buyurtma endi shu yerda — 2-qadom (summa+usul) tugagach —
+  // yaratiladi. Server rekvizitni o'zi tanlaydi va shu javobda qaytaradi;
+  // mustaqil "oldindan ko'rish" endi yo'q (faqat MAVJUD buyurtma uchun
+  // rekvizit bo'ladi).
+  const createTopupOrder = async () => {
+    setError("");
+    const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
+    if (!platform || !tuAccountId.trim() || !tuAmount || Number(tuAmount) <= 0) {
+      setError(t("tg.eAllFields"));
+      return;
+    }
+    setTuCreatingOrder(true);
+    try {
+      const res = await fetch("/api/telegram/miniapp/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: getInitData(), type: "topup", platform, accountId: tuAccountId.trim(),
+          amount: Number(tuAmount), paymentMethod: tuMethod,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (data.error === "player_not_found") {
+          setError(t("tg.eIdNotFound"));
+        } else if (data.error === "order_limit_exceeded") {
+          setError(t("tg.eOrderLimit", { limit: Number(data.limit).toLocaleString("ru-RU") }));
+        } else if (data.error === "daily_limit_exceeded") {
+          setError(t("tg.eDailyLimit", { limit: Number(data.limit).toLocaleString("ru-RU") }));
+        } else if (data.error === "too_many_pending_orders") {
+          setError(t("tg.ePendingOrders"));
+        } else if (data.error === "topup_disabled") {
+          setError(t("tg.eTopupOff"));
+        } else if (data.error === "no_payment_method_available") {
+          setError(t("tg.noMethodInfo"));
+        } else if (data.error === "temporarily_blocked") {
+          setError(t("tg.eBlocked"));
+        } else if (data.error === "full_name_required") {
+          setTuNeedsFullName(true);
+        } else if (data.error === "name_mismatch") {
+          setError(t("tg.eNameMismatch"));
+        } else {
+          setError(t("tg.eOrderSend"));
+        }
+        return;
+      }
+      setTuOrderId(data.order.id);
+      setTuRequisite(data.requisite ?? null);
+      setTuStep(3);
+    } catch {
+      setError(t("tg.eOrderSend"));
+    } finally {
+      setTuCreatingOrder(false);
+    }
+  };
+
+  // W1.4: bir martalik ism kiritish (full_name bo'sh mijoz uchun) —
+  // yuborilgach, buyurtma yaratish avtomatik qayta urinadi.
+  const submitFullNameAndRetry = async () => {
+    if (!tuFullNameInput.trim()) {
+      setError(t("tg.eNameRequired"));
+      return;
+    }
+    setTuSavingFullName(true);
+    setError("");
+    try {
+      const res = await fetch("/api/telegram/miniapp/set-full-name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), fullName: tuFullNameInput.trim() }),
+      });
+      if (!res.ok) {
+        setError(t("tg.eOrderSend"));
+        return;
+      }
+      setTuNeedsFullName(false);
+      await createTopupOrder();
+    } catch {
+      setError(t("tg.eOrderSend"));
+    } finally {
+      setTuSavingFullName(false);
+    }
+  };
+
   const submitTopup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccessWarning(null);
-    const platform = tuPlatform === "Boshqa" ? tuCustomPlatform.trim() : tuPlatform;
-    if (!platform || !tuAccountId.trim() || !tuAmount || Number(tuAmount) <= 0) {
-      setError(t("tg.eAllFields"));
+    if (!tuOrderId) {
+      setError(t("tg.eOrderSend"));
       return;
     }
     if (!tuReceiptBase64) {
@@ -908,48 +1080,11 @@ export default function TelegramAppPage() {
     }
     setSubmitting(true);
     try {
-      const methodDetails: Record<PaymentMethod, { number: string; holder: string; operatorId: string | null }> = {
-        card: { number: paymentInfo?.cardNumber ?? "", holder: paymentInfo?.cardHolder ?? "", operatorId: paymentInfo?.cardOperatorId ?? null },
-        click: { number: paymentInfo?.clickNumber ?? "", holder: paymentInfo?.clickHolder ?? "", operatorId: paymentInfo?.clickOperatorId ?? null },
-        payme: { number: paymentInfo?.paymeNumber ?? "", holder: paymentInfo?.paymeHolder ?? "", operatorId: paymentInfo?.paymeOperatorId ?? null },
-        crypto: { number: paymentInfo?.cryptoWallet ?? "", holder: "", operatorId: paymentInfo?.cryptoOperatorId ?? null },
-      };
-      const shown = methodDetails[tuMethod];
-      const res = await fetch("/api/telegram/miniapp/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          initData: getInitData(), type: "topup", platform, accountId: tuAccountId.trim(),
-          amount: Number(tuAmount), paymentMethod: tuMethod,
-          paymentOperatorId: shown.operatorId, receivedAccountNumber: shown.number, receivedHolderName: shown.holder,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data.error === "player_not_found") {
-          setError(t("tg.eIdNotFound"));
-        } else if (data.error === "order_limit_exceeded") {
-          setError(`Bitta buyurtma uchun maksimal summa: ${Number(data.limit).toLocaleString("ru-RU")} so'm.`);
-        } else if (data.error === "daily_limit_exceeded") {
-          setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
-        } else if (data.error === "too_many_pending_orders") {
-          setError(t("tg.ePendingOrders"));
-        } else if (data.error === "topup_disabled") {
-          setError(t("tg.eTopupOff"));
-        } else if (data.error === "withdraw_disabled") {
-          setError(t("tg.eWithdrawOff"));
-        } else {
-          setError(t("tg.eOrderSend"));
-        }
-        return;
-      }
-      const { order } = await res.json();
-
       const receiptRes = await fetch("/api/telegram/miniapp/orders/receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          initData: getInitData(), orderId: order.id, imageBase64: tuReceiptBase64, mimeType: tuReceiptMime,
+          initData: getInitData(), orderId: tuOrderId, imageBase64: tuReceiptBase64, mimeType: tuReceiptMime,
         }),
       });
       if (!receiptRes.ok) {
@@ -961,55 +1096,6 @@ export default function TelegramAppPage() {
       setScreen("order-success");
     } catch {
       setError(t("tg.eOrderSend"));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const submitWithdraw = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccessWarning(null);
-    const platform = wdPlatform === "Boshqa" ? wdCustomPlatform.trim() : wdPlatform;
-    if (!platform || !wdAccountId.trim() || !wdCode.trim() || !wdAmount || Number(wdAmount) <= 0 || !wdPayoutDetails.trim() || !wdRecipientName.trim()) {
-      setError("Barcha maydonlarni to'ldiring.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/telegram/miniapp/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          initData: getInitData(), type: "withdraw", platform, accountId: wdAccountId.trim(),
-          amount: Number(wdAmount), paymentMethod: wdMethod, withdrawCode: wdCode.trim(), payoutDetails: wdPayoutDetails.trim(),
-          recipientName: wdRecipientName.trim(),
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data.error === "player_not_found") {
-          setError("Bunday hisob ID topilmadi. Platforma va ID raqamini tekshiring.");
-        } else if (data.error === "order_limit_exceeded") {
-          setError(`Bitta buyurtma uchun maksimal summa: ${Number(data.limit).toLocaleString("ru-RU")} so'm.`);
-        } else if (data.error === "daily_limit_exceeded") {
-          setError(`Kunlik limitga yetdingiz (${Number(data.limit).toLocaleString("ru-RU")} so'm). Ertaga qayta urinib ko'ring yoki operator bilan bog'laning.`);
-        } else if (data.error === "too_many_pending_orders") {
-          setError("Sizda hozircha ko'rib chiqilayotgan buyurtmalar bor. Iltimos ular yakunlanishini kuting.");
-        } else if (data.error === "topup_disabled") {
-          setError("Hisob to'ldirish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
-        } else if (data.error === "withdraw_disabled") {
-          setError("Pul yechish hozircha vaqtincha to'xtatilgan. Birozdan keyin qayta urinib ko'ring.");
-        } else {
-          setError(t("tg.eOrderSend"));
-        }
-        return;
-      }
-      setSuccessLabel(t("tg.withdrawTitle"));
-      resetForms();
-      setScreen("order-success");
-    } catch {
-      setError("Buyurtma yuborishda xatolik. Qayta urinib ko'ring.");
     } finally {
       setSubmitting(false);
     }
@@ -1040,11 +1126,14 @@ export default function TelegramAppPage() {
   };
 
   // S1: real-time holat — buyurtмалар ekрани ochiq bo'lса jim yangilanadi.
+  // Faqat MUVAFFAQIYATLI va to'g'ri shakldagi javob kelganda almashtiramiz —
+  // aks holda (xato javob, kutilmagan shakl) eski ro'yxat ekranda qoladi va
+  // shartli render qilinadigan tugmalar bir lahzaga yo'qolib ketmaydi.
   const refreshOrders = async () => {
     try {
       const res = await fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`);
       const data = await res.json();
-      setOrders(data.orders ?? []);
+      if (res.ok && Array.isArray(data.orders)) setOrders(data.orders);
     } catch {
       /* jim */
     }
@@ -1061,6 +1150,7 @@ export default function TelegramAppPage() {
       const res = await fetch(`/api/telegram/miniapp/support?initData=${encodeURIComponent(getInitData())}`);
       const data = await res.json();
       const msgs: SupportMessage[] = data.messages ?? [];
+      setSupportHasMore(!!data.hasMore);
       // F1 merge-reconcile: hali serverда yo'q optimistik (sending/failed)
       // xabarlarni saqlab qolamiz, aks holda 4s poll ularni o'chirib yuboradi.
       // Server versiyasi (real id) paydo bo'lса, optimistik nusxa tushib qoladi
@@ -1070,15 +1160,27 @@ export default function TelegramAppPage() {
       setSupportMessages((prev) => {
         const serverIds = new Set(msgs.map((m) => m.id));
         const pending = prev.filter(
-          (m) => m.clientId && (m.status === "sending" || m.status === "failed") && !serverIds.has(m.id)
+          (m) =>
+            m.clientId &&
+            (m.status === "sending" || m.status === "failed") &&
+            !serverIds.has(m.id) &&
+            !msgs.some((s) => optimisticMatchesServer(m, s))
         );
+        // F3: endpoint endi FAQAT oxirgi 50 tani qaytaradi (chat darhol
+        // ochilishi uchun) — yuqoriga scroll qilib oldin yuklangan, shu
+        // javobda yo'q (eskiroq) xabarlarni saqlab qolamiz.
+        const earliestNewTs = msgs.length ? new Date(msgs[0].created_at).getTime() : Infinity;
+        const olderPreserved = prev.filter(
+          (m) => !m.clientId && !serverIds.has(m.id) && new Date(m.created_at).getTime() < earliestNewTs
+        );
+        const merged = [...olderPreserved, ...msgs];
         const last = msgs[msgs.length - 1];
-        const sig = `${msgs.length}:${last?.id ?? ""}:${last?.created_at ?? ""}|${pending
+        const sig = `${merged.length}:${last?.id ?? ""}:${last?.created_at ?? ""}|${pending
           .map((p) => `${p.clientId}:${p.status}`)
           .join(",")}`;
         if (sig === supportSigRef.current) return prev;
         supportSigRef.current = sig;
-        return pending.length ? [...msgs, ...pending] : msgs;
+        return pending.length ? [...merged, ...pending] : merged;
       });
     } catch {
       if (!silent) {
@@ -1090,6 +1192,37 @@ export default function TelegramAppPage() {
       }
     } finally {
       if (!silent) setSupportLoading(false);
+    }
+  };
+
+  // F3: chat tepasiga scroll qilinganda oldingi (50 tadan eski) xabarlarni
+  // yuklaydi. Kontent tepaga qo'shilgandagi vizual "sakrash"ni oldini olish
+  // uchun eski scrollHeight bilan yangisi orasidagi farqga scrollTop
+  // qo'lda moslashtiriladi.
+  const loadMoreSupport = async () => {
+    if (supportLoadingMore || !supportHasMore || supportMessages.length === 0) return;
+    const list = supportListRef.current;
+    const prevScrollHeight = list?.scrollHeight ?? 0;
+    setSupportLoadingMore(true);
+    try {
+      const oldest = supportMessages[0];
+      const res = await fetch(
+        `/api/telegram/miniapp/support?initData=${encodeURIComponent(getInitData())}&before=${encodeURIComponent(oldest.created_at)}`
+      );
+      const data = await res.json();
+      const older: SupportMessage[] = data.messages ?? [];
+      setSupportHasMore(!!data.hasMore);
+      if (older.length > 0) {
+        setSupportMessages((prev) => [...older, ...prev]);
+        requestAnimationFrame(() => {
+          const el = supportListRef.current;
+          if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
+        });
+      }
+    } catch {
+      /* jim */
+    } finally {
+      setSupportLoadingMore(false);
     }
   };
 
@@ -1106,12 +1239,14 @@ export default function TelegramAppPage() {
     // loadSupport xabarlarni qayta o'rnatib pastga surishini ta'minlaymiz.
     supportFirstScrollRef.current = true;
     supportSigRef.current = "";
-    // Buyurtma tanlash uchun mijozning buyurtmalarini yuklaymiz.
-    try {
-      const ordRes = await fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`);
-      const ordData = await ordRes.json();
-      setOrders(ordData.orders ?? []);
-    } catch {}
+    setSupportHasMore(true);
+    // Buyurtma tanlash uchun mijozning buyurtmalarini yuklaymiz — bu xabarlar
+    // ko'rinishini KUTIB TURMAYDI (parallel, fon rejimida), aks holda chat
+    // ekrani bitta qo'shimcha tarmoq safaridan keyin ochilardi.
+    fetch(`/api/telegram/miniapp/orders?initData=${encodeURIComponent(getInitData())}`)
+      .then((r) => r.json())
+      .then((ordData) => setOrders(ordData.orders ?? []))
+      .catch(() => {});
     // Mijoz 5 daqiqadan ko'p tashqarida bo'lgan bo'lsa — eski suhbatni tozalaymiz.
     try {
       const leftRaw = localStorage.getItem("supportLeftAt");
@@ -1131,6 +1266,16 @@ export default function TelegramAppPage() {
       .then((r) => r.json())
       .then((data) => { if (data.theme) setMyChatTheme(data.theme); })
       .catch(() => {});
+  };
+
+  // Pastki nav tabi. "Yordam" va "Buyurtma" oddiy setScreen bilan ochilsa,
+  // ochish mantiqi (buyurtmalarni yuklash, eski suhbatni tozalash, scroll
+  // imzosini tiklash) chetlab o'tiladi — shuning uchun o'z ochuvchilariga
+  // yo'naltiramiz. Yangi ekran/sahifa yaratilmaydi.
+  const navigateTab = (s: string) => {
+    if (s === "support") { void openSupport(null); return; }
+    if (s === "orders") { void openOrders(); return; }
+    setScreen(s as any);
   };
 
   useEffect(() => {
@@ -1154,8 +1299,10 @@ export default function TelegramAppPage() {
     }
     // Keyingi yangi xabarlarda: faqat foydalanuvchi allaqachon pastga yaqin
     // bo'lsa sur (tepada eski xabarlarni o'qiyotgan bo'lsa uzmaymiz).
-    const list = supportListRef.current;
-    if (list && list.scrollHeight - list.scrollTop - list.clientHeight >= 80) return;
+    // supportNearBottomRef — xabar qo'shilishidan OLDINGI holat (onScroll
+    // orqali yangilanadi), shuning uchun yangi xabarning o'z balandligi
+    // hisobga aralashib, noto'g'ri "tepada" degan xulosaga olib kelmaydi.
+    if (!supportNearBottomRef.current) return;
     bottom.scrollIntoView({ behavior: "smooth" });
   }, [supportMessages, screen]);
 
@@ -1175,15 +1322,20 @@ export default function TelegramAppPage() {
     };
   }, [screen]);
 
-  const confirmEnd = async (resolved: boolean) => {
+  const confirmEnd = async (messageId: string, resolved: boolean) => {
+    if (endConfirmSendingId) return; // sinxron dedup — ikkinchi bosishni e'tiborsiz qoldiradi
+    setEndConfirmSendingId(messageId);
     try {
       await fetch("/api/telegram/miniapp/support/end-confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initData: getInitData(), resolved }),
       });
+      setRespondedEndConfirmIds((prev) => ({ ...prev, [messageId]: resolved }));
       await loadSupport(true);
-    } catch {}
+    } catch {} finally {
+      setEndConfirmSendingId(null);
+    }
   };
 
   // F1: optimistik xabarning holatini clientId bo'yicha yangilaydi.
@@ -1384,14 +1536,15 @@ export default function TelegramAppPage() {
     setSupportMessages((prev) => prev.filter((m) => m.clientId !== clientId));
   };
 
-  const deleteSupportMessage = async (id: string) => {
-    if (!confirm("Xabarni o'chirishni tasdiqlaysizmi?")) return;
-    await fetch("/api/telegram/miniapp/support/delete-message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData: getInitData(), messageId: id }),
+  const deleteSupportMessage = (id: string) => {
+    confirm("Xabarni o'chirishni tasdiqlaysizmi?", async () => {
+      await fetch("/api/telegram/miniapp/support/delete-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: getInitData(), messageId: id }),
+      });
+      await loadSupport(true);
     });
-    await loadSupport(true);
   };
 
   const supportMessageById = (id: string | null) => (id ? supportMessages.find((m) => m.id === id) ?? null : null);
@@ -1533,7 +1686,7 @@ export default function TelegramAppPage() {
         upload_failed: t("tg.vUpload"),
         insert_failed: t("tg.vInsert"),
       };
-      setSupportError(map[err] ?? `Ovozli xabar yuborilmadi${err ? ` (${err})` : ""}. Qayta urinib ko'ring.`);
+      setSupportError(map[err] ?? "Ovozli xabar yuborilmadi. Qayta urinib ko'ring.");
     } catch {
       setSupportError("Tarmoq xatosi. Ovozli xabar yuborilmadi.");
     } finally {
@@ -1843,7 +1996,22 @@ export default function TelegramAppPage() {
             {[1, 2, 3].map((n) => <div key={n} className={`h-1.5 flex-1 rounded-full ${n <= tuStep ? "bg-accent" : "bg-white/10"}`} />)}
           </div>
 
-          {tuStep === 1 && (
+          {tuStep === 1 && tuIdConfirm && (
+            <div>
+              <div className="mb-4 rounded-xl bg-accent/10 border border-accent/25 px-4 py-4 text-center">
+                <div className="text-[26px] font-extrabold tracking-wide mb-2">{tuAccountId.trim()}</div>
+                <div className="text-[13px] text-[#93a5ba]">{t("tg.idConfirmMsg", { id: tuAccountId.trim() })}</div>
+              </div>
+              <button type="button" onClick={() => { setTuIdConfirm(false); setTuStep(2); }} className={buttonCls}>
+                {t("tg.continueBtn")}
+              </button>
+              <button type="button" onClick={() => setTuIdConfirm(false)} className="w-full mt-2 py-2.5 text-[13px] text-[#93a5ba]">
+                {t("tg.idChange")}
+              </button>
+            </div>
+          )}
+
+          {tuStep === 1 && !tuIdConfirm && (
             <div>
               <PlatformField platform={tuPlatform} setPlatform={setTuPlatform} customPlatform={tuCustomPlatform} setCustomPlatform={setTuCustomPlatform} />
               <div className="mb-3.5">
@@ -1857,23 +2025,54 @@ export default function TelegramAppPage() {
             </div>
           )}
 
-          {tuStep === 2 && (
+          {tuStep === 2 && tuNeedsFullName && (
+            <div>
+              <div className="mb-3.5">
+                <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.fullNamePrompt")}</label>
+                <input className={inputCls} placeholder={t("tg.fullNamePh")} value={tuFullNameInput} onChange={(e) => setTuFullNameInput(e.target.value)} />
+              </div>
+              {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+              <button type="button" onClick={submitFullNameAndRetry} disabled={tuSavingFullName} className={buttonCls}>
+                {tuSavingFullName ? <Loader2 size={16} className="animate-spin" /> : t("tg.submitName")}
+              </button>
+            </div>
+          )}
+
+          {tuStep === 2 && !tuNeedsFullName && (
             <div>
               <div className="mb-3.5">
                 <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.sum")}</label>
                 <input className={inputCls} type="number" min={1} placeholder={t("tg.phSum")} value={tuAmount} onChange={(e) => setTuAmount(e.target.value)} />
               </div>
-              <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} paymentInfo={paymentInfo} />
+              <PaymentMethodPicker value={tuMethod} onChange={setTuMethod} />
               {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
-              <button type="button" onClick={() => { if (!tuAmount || Number(tuAmount) <= 0) { setError(t("tg.eAmount")); return; } setError(""); setTuStep(3); }} className={buttonCls}>{t("tg.continueBtn")}</button>
+              <button type="button" onClick={createTopupOrder} disabled={tuCreatingOrder} className={buttonCls}>
+                {tuCreatingOrder ? <Loader2 size={16} className="animate-spin" /> : t("tg.continueBtn")}
+              </button>
             </div>
           )}
 
           {tuStep === 3 && (
             <form onSubmit={submitTopup}>
+              {tuRequisite && (
+                <div className="mb-4">
+                  <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.payMethod")}</label>
+                  <LuxuryCard
+                    typeLabel={
+                      tuRequisite.methodType === "click" ? "Click"
+                      : tuRequisite.methodType === "payme" ? "Payme"
+                      : tuRequisite.methodType === "card" ? t("tg.mCardShort")
+                      : t("tg.mCryptoShort")
+                    }
+                    number={tuRequisite.accountNumber}
+                    holderName={tuRequisite.holderName || null}
+                    readOnly
+                  />
+                </div>
+              )}
               <div className="mb-4">
                 <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.receipt")}</label>
-                <label className="flex items-center justify-center gap-2 w-full bg-[#0e2038] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer shadow-[inset_4px_4px_10px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(120,180,255,0.06)]">
+                <label className="flex items-center justify-center gap-2 w-full bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-xl py-3.5 px-4 text-[13px] text-[#7db8ff] cursor-pointer">
                   <Upload size={15} />
                   {tuReceiptFileName || t("tg.pickImage")}
                   <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleReceiptSelect} />
@@ -1921,7 +2120,7 @@ export default function TelegramAppPage() {
     ];
     const filteredOrders = ordersFilter === "all" ? orders : orders.filter((o) => o.status === ordersFilter);
     return (
-      <div className={`${bgCls} p-5 pb-24`}>
+      <div className={`${bgCls} p-5 m-screen-pb`}>
         <ScreenHeader title={t("tg.ordersTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <div className="flex gap-2 mb-4 overflow-x-auto">
           {ORDER_FILTERS.map((f) => (
@@ -1948,7 +2147,7 @@ export default function TelegramAppPage() {
               const s = STATUS_LABEL[o.status];
               const Icon = s.icon;
               return (
-                <div key={o.id} className="rounded-xl bg-gradient-to-b from-[#0e2038] to-[#0a1a30] p-4 shadow-[5px_5px_14px_rgba(0,0,0,0.4)]">
+                <div key={o.id} className="rounded-xl bg-gradient-to-b from-[var(--surf-2)] to-[var(--surf)] border border-[var(--border-subtle)] p-4">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[13px] font-bold">{o.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")}</span>
                     <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: s.color }}>
@@ -1962,6 +2161,12 @@ export default function TelegramAppPage() {
                   <MoneyRail order={o} />
 
                   {o.operator_note && <div className="text-[11px] text-[#93a5ba] mt-2.5 italic">{o.operator_note}</div>}
+
+                  {/* W2.4: kod eskirib payout muvaffaqiyatsiz bo'lgan bo'lsa — yangi kod so'raladi. */}
+                  {o.type === "withdraw" && o.status === "pending" && o.payout_status === "none" && (o.payout_attempt_count ?? 0) > 0 && (
+                    <WithdrawCodeRefresh orderId={o.id} getInitData={getInitData} onSubmitted={refreshOrders} inputCls={inputCls} buttonCls={buttonCls} />
+                  )}
+
                   <div className="text-[10px] text-[#5b7089] mt-2">{new Date(o.created_at).toLocaleString()}</div>
                   <button
                     onClick={() => openSupport(o.id)}
@@ -1974,7 +2179,7 @@ export default function TelegramAppPage() {
             })}
           </div>
         )}
-        <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
+        <BottomNav current={screen} onNavigate={navigateTab} />
       </div>
     );
   }
@@ -2000,7 +2205,7 @@ export default function TelegramAppPage() {
                 onChange={(e) => setImageCaption(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") confirmSendImage(); }}
                 placeholder={t("tg.phCaption")}
-                className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2.5 px-3 text-[13px] text-white outline-none placeholder:text-[#5b7089]"
+                className="flex-1 min-w-0 bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-lg py-2.5 px-3 text-[13px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-3)]"
               />
               <button onMouseDown={(e) => e.preventDefault()} onClick={confirmSendImage} className="shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center" aria-label={t("tg.send")}>
                 <Send size={18} />
@@ -2024,7 +2229,13 @@ export default function TelegramAppPage() {
         </div>
         <div
           ref={supportListRef}
-          onScroll={(e) => { const el = e.currentTarget; setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240); }}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240);
+            supportNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+            // Tepaga yaqinlashganda eski (oldingi 50 tadan tashqari) xabarlarni yuklaymiz.
+            if (el.scrollTop < 60) void loadMoreSupport();
+          }}
           className="flex-1 overflow-y-auto px-4 pt-2 space-y-2 min-h-0"
           style={{
             backgroundImage: "radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)",
@@ -2038,7 +2249,11 @@ export default function TelegramAppPage() {
           ) : supportMessages.length === 0 ? (
             <p className="text-[12px] text-[#93a5ba] text-center mt-8">{t("tg.chatEmpty")}</p>
           ) : (
-            supportMessages.map((m, i) => {
+            <>
+            {supportLoadingMore && (
+              <div className="flex justify-center py-2"><Loader2 size={16} className="animate-spin text-accent" /></div>
+            )}
+            {supportMessages.map((m, i) => {
               const prev = i > 0 ? supportMessages[i - 1] : null;
               const showDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString();
               const quoted = supportMessageById(m.reply_to_id);
@@ -2082,10 +2297,29 @@ export default function TelegramAppPage() {
                   ) : m.message?.startsWith("__END_CONFIRM__") ? (
                     <div>
                       <div className="mb-2">{m.message.replace("__END_CONFIRM__", "")}</div>
-                      <div className="flex gap-2">
-                        <button onClick={() => confirmEnd(true)} className="flex-1 text-[12px] py-1.5 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] text-white font-medium">{t("tg.endYes")}</button>
-                        <button onClick={() => confirmEnd(false)} className="flex-1 text-[12px] py-1.5 rounded-lg bg-white/10 text-white font-medium">{t("tg.endNo")}</button>
-                      </div>
+                      {respondedEndConfirmIds[m.id] !== undefined ? (
+                        <div className="flex items-center gap-1.5 text-[11px] text-[#7db8ff]">
+                          <CheckCircle2 size={13} />
+                          {respondedEndConfirmIds[m.id] ? t("tg.endAnsweredYes") : t("tg.endAnsweredNo")}
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => confirmEnd(m.id, true)}
+                            disabled={endConfirmSendingId === m.id}
+                            className="flex-1 flex items-center justify-center text-[12px] py-1.5 rounded-lg bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] text-white font-medium disabled:opacity-60"
+                          >
+                            {endConfirmSendingId === m.id ? <Loader2 size={14} className="animate-spin" /> : t("tg.endYes")}
+                          </button>
+                          <button
+                            onClick={() => confirmEnd(m.id, false)}
+                            disabled={endConfirmSendingId === m.id}
+                            className="flex-1 flex items-center justify-center text-[12px] py-1.5 rounded-lg bg-white/10 text-white font-medium disabled:opacity-60"
+                          >
+                            {endConfirmSendingId === m.id ? <Loader2 size={14} className="animate-spin" /> : t("tg.endNo")}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     m.message
@@ -2117,7 +2351,8 @@ export default function TelegramAppPage() {
               </div>
               </React.Fragment>
               );
-            })
+            })}
+            </>
           )}
           <div ref={supportBottomRef} />
         </div>
@@ -2126,7 +2361,7 @@ export default function TelegramAppPage() {
         {showScrollDown && (
           <button
             onClick={() => { supportBottomRef.current?.scrollIntoView({ behavior: "smooth" }); setShowScrollDown(false); }}
-            className="fixed right-3 bottom-20 z-[60] w-10 h-10 rounded-full bg-[#0e2038]/90 backdrop-blur border m-divider flex items-center justify-center shadow-lg active:scale-95"
+            className="fixed right-3 bottom-20 z-[60] w-10 h-10 rounded-full bg-[var(--surf-3)]/90 backdrop-blur border m-divider flex items-center justify-center shadow-lg active:scale-95"
             aria-label={t("tg.scrollDown")}
           >
             <ChevronDown size={20} className="text-white" />
@@ -2138,7 +2373,7 @@ export default function TelegramAppPage() {
         {msgMenuFor && msgMenuPos && (
           <div className="fixed inset-0 z-[85]" onClick={() => setMsgMenuFor(null)}>
             <div
-              className={`absolute w-40 select-none bg-[#0e2038]/95 backdrop-blur-xl rounded-2xl border m-divider shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
+              className={`absolute w-40 select-none bg-[var(--surf-3)]/95 backdrop-blur-xl rounded-2xl border m-divider shadow-[0_10px_34px_rgba(0,0,0,0.55)] p-1 ${menuArmed ? "" : "pointer-events-none opacity-95"}`}
               style={{
                 left: Math.max(8, Math.min(msgMenuPos.x - 80, (typeof window !== "undefined" ? window.innerWidth : 360) - 168)),
                 top: Math.max(8, msgMenuPos.y - 104),
@@ -2185,7 +2420,7 @@ export default function TelegramAppPage() {
           </div>
         )}
         {supportReplyTo && (
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-[#0e2038]">
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-[var(--surf-2)]">
             <Reply size={12} className="text-accent shrink-0" />
             <div className="flex-1 min-w-0 text-[11px] text-[#93a5ba] truncate">
               {supportReplyTo.message || (supportReplyTo.image_path ? t("tg.photo") : supportReplyTo.voice_path ? t("tg.voiceMsg") : "")}
@@ -2196,7 +2431,7 @@ export default function TelegramAppPage() {
           </div>
         )}
         {supportError && (
-          <p className="px-4 py-1.5 text-[11px] text-[#FF6B85] bg-[#0e2038]">{supportError}</p>
+          <p className="px-4 py-1.5 text-[11px] text-[var(--red)] bg-[var(--red)]/10">{supportError}</p>
         )}
         {/* Support chatda ovoz YO'Q — faqat rasm/fayl + matn. */}
         <div className="flex items-center gap-1.5 px-3 py-2.5">
@@ -2206,7 +2441,7 @@ export default function TelegramAppPage() {
           </label>
           <input
             ref={supportInputRef}
-            className="flex-1 min-w-0 bg-[#0e2038] rounded-lg py-2 px-3 text-[12.5px] text-white outline-none placeholder:text-[#5b7089]"
+            className="flex-1 min-w-0 bg-[var(--surf-2)] border border-[var(--border-subtle)] rounded-lg py-2 px-3 text-[12.5px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-3)]"
             placeholder={t("tg.phMessage")}
             value={supportText}
             onChange={(e) => { setSupportText(e.target.value); setSupportError(""); }}
@@ -2216,26 +2451,27 @@ export default function TelegramAppPage() {
             <Send size={14} />
           </button>
         </div>
+        {confirmDialog}
       </div>
     );
   }
 
   if (screen === "promo") {
     return (
-      <div className={`${bgCls} p-5 pb-24`}>
+      <div className={`${bgCls} p-5 m-screen-pb`}>
         <ScreenHeader title={t("tg.prizeTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
         <PrizeCard initData={getInitData()} />
-        <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
+        <BottomNav current={screen} onNavigate={navigateTab} />
       </div>
     );
   }
 
   // menu
   return (
-    <div className={`${bgCls} p-5 pb-24 relative`}>
+    <div className={`${bgCls} p-5 m-screen-pb relative`}>
       <FloatingAmbience />
       <div className="relative z-10">
-      <div className="m-card p-5 mb-5">
+      <div className="rounded-2xl bg-gradient-to-br from-[var(--surf-3)] to-[var(--surf)] border border-[var(--border-subtle)] p-5 mb-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] text-[#93a5ba] mb-1">{t("tg.welcome")}</p>
@@ -2300,10 +2536,10 @@ export default function TelegramAppPage() {
       {!partnerId && (
       <button
         onClick={() => { setError(""); setScreen("hamkorlik"); }}
-        className="group m-banner mt-3.5"
+        className="group relative w-full mt-3.5 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(120,180,255,0.1)] active:translate-y-[2px] transition-all"
         style={{ background: "linear-gradient(120deg,#F4C76A,#3D7FFF,#7c3aed,#F4C76A)", backgroundSize: "300% 100%", animation: "hkShimmer 6s linear infinite" }}
       >
-        <div className="m-banner-inner px-4 py-3.5 flex items-center gap-3.5">
+        <div className="relative rounded-2xl bg-gradient-to-br from-[var(--surf-2)] to-[var(--surf)] px-4 py-3.5 flex items-center gap-3.5">
           <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#F4C76A] to-[#c99a3e] flex items-center justify-center shadow-[3px_3px_10px_rgba(0,0,0,0.45)]" style={{ animation: "hkFloat 3.4s ease-in-out infinite" }}>
             <Handshake size={20} className="text-[#2a1e05]" />
           </div>
@@ -2320,10 +2556,10 @@ export default function TelegramAppPage() {
       {!partnerId && (
       <button
         onClick={() => { setError(""); setScreen("promo"); }}
-        className="group m-banner mt-3.5"
+        className="group relative w-full mt-3.5 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[7px_7px_18px_rgba(0,0,0,0.45),-4px_-4px_14px_rgba(28,224,195,0.12)] active:translate-y-[2px] transition-all"
         style={{ background: "linear-gradient(120deg,#1CE0C3,#F4C76A,#1CE0C3)", backgroundSize: "300% 100%", animation: "hkShimmer 6s linear infinite" }}
       >
-        <div className="m-banner-inner m-banner-inner--em px-4 py-3.5 flex items-center gap-3.5">
+        <div className="relative rounded-2xl bg-gradient-to-br from-[#04231F] to-[#0a2e28] px-4 py-3.5 flex items-center gap-3.5">
           <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#1CE0C3] to-[#0a8f7d] flex items-center justify-center shadow-[3px_3px_10px_rgba(0,0,0,0.45)]" style={{ animation: "hkFloat 3.4s ease-in-out infinite" }}>
             <Gift size={20} className="text-[#04231F]" />
           </div>
@@ -2340,7 +2576,7 @@ export default function TelegramAppPage() {
       {!partnerId && <PromoBanner />}
 
       </div>
-      <BottomNav current={screen} onNavigate={(s) => setScreen(s as any)} />
+      <BottomNav current={screen} onNavigate={navigateTab} />
     </div>
   );
 }

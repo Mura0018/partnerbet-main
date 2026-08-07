@@ -37,12 +37,19 @@ export class GenericPaymentProvider implements PaymentGatewayProvider {
           success_url: params.successUrl, cancel_url: params.cancelUrl,
         }),
       });
-      if (!res.ok) return { success: false, error: `Provider ${res.status} bilan javob berdi.` };
+      if (!res.ok) {
+        console.error("[donations] Generic provider checkout xatosi:", res.status);
+        return { success: false, error: "provider_error" };
+      }
       const data = await res.json();
-      if (!data?.checkout_url) return { success: false, error: "Provайder checkout URL qaytarmadi." };
+      if (!data?.checkout_url) {
+        console.error("[donations] Generic provider checkout_url qaytarmadi:", data);
+        return { success: false, error: "provider_error" };
+      }
       return { success: true, checkoutUrl: data.checkout_url, externalSessionId: data.session_id ?? params.donationId };
     } catch (err: any) {
-      return { success: false, error: err?.message ?? "Provайder bilan bog'lanishda xatolik." };
+      console.error("[donations] Generic provider bilan bog'lanishda xatolik:", err);
+      return { success: false, error: "provider_error" };
     }
   }
 

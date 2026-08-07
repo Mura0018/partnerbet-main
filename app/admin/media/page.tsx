@@ -5,6 +5,7 @@ import { Upload, Trash2, Copy, Check, Search, Loader2, ImageIcon } from "lucide-
 import { createClient } from "@/lib/supabase";
 import { uploadImage } from "@/lib/media/upload";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
 type MediaItem = {
   id: string;
@@ -33,6 +34,7 @@ export default function MediaLibraryPage() {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const { data } = await supabase
@@ -81,10 +83,11 @@ export default function MediaLibraryPage() {
     }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(t("med.confirmDelete"))) return;
-    await supabase.from("media").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    load();
+  const remove = (id: string) => {
+    confirm(t("med.confirmDelete"), async () => {
+      await supabase.from("media").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      load();
+    });
   };
 
   const filtered = items.filter((i) => i.file_name.toLowerCase().includes(search.toLowerCase()));
@@ -99,8 +102,8 @@ export default function MediaLibraryPage() {
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`rounded-xl border-2 border-dashed p-8 text-center mb-6 cursor-pointer transition ${
-          dragOver ? "border-accent bg-accent/5" : "border-white/15 hover:border-white/25"
+        className={`rounded-xl border-2 border-dashed p-8 text-center mb-6 cursor-pointer transition active:scale-[0.99] active:border-accent/60 ${
+          dragOver ? "border-accent bg-accent/5" : "border-subtle hover:border-subtle"
         }`}
       >
         {uploading ? (
@@ -126,7 +129,7 @@ export default function MediaLibraryPage() {
         <input
           value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder={t("med.phSearch")}
-          className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent"
+          className="w-full bg-white/5 border border-subtle rounded-lg py-2 pl-9 pr-3 text-[13px] outline-none focus:border-accent"
         />
       </div>
 
@@ -158,6 +161,7 @@ export default function MediaLibraryPage() {
           ))}
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

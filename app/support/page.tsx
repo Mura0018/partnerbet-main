@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Heart, Copy, Check, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Heart, Copy, Check, Loader2, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { PublicHeader } from "@/lib/ui/PublicHeader";
@@ -79,7 +80,7 @@ export default function SupportPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok || !json.checkoutUrl) { setError(json.error ?? t("donations.genericError")); setSubmitting(false); return; }
+      if (!res.ok || !json.checkoutUrl) { setError(t("donations.genericError")); setSubmitting(false); return; }
       window.location.href = json.checkoutUrl;
     } catch {
       setError(t("donations.genericError"));
@@ -120,6 +121,12 @@ export default function SupportPage() {
           </div>
           <h1 className="text-[28px] md:text-[36px] font-extrabold">{t("donations.title")}</h1>
           <p className="text-muted mt-2 text-[15px]">{t("donations.subtitle")}</p>
+          <Link
+            href="/support/supporters"
+            className="inline-flex items-center gap-1.5 mt-4 text-[13px] font-semibold text-[#7db8ff] hover:text-white transition-colors"
+          >
+            <Trophy size={14} /> {t("donations.topSupportersTitle")}
+          </Link>
         </div>
 
         <Card className="p-6 md:p-8">
@@ -127,7 +134,7 @@ export default function SupportPage() {
           <div className="grid grid-cols-5 gap-2 mb-3">
             {SUGGESTED_AMOUNTS.map((a) => (
               <button key={a} onClick={() => { setAmount(a); setCustomAmount(""); }}
-                className={`py-2.5 rounded-lg text-[13px] font-semibold border transition ${!customAmount && amount === a ? "bg-cta/10 text-[#5EE896] border-cta/40" : "border-white/10 text-muted hover:border-white/20"}`}>
+                className={`py-2.5 rounded-lg text-[13px] font-semibold border transition ${!customAmount && amount === a ? "bg-cta/10 text-[#5EE896] border-cta/40" : "border-subtle text-muted hover:border-subtle"}`}>
                 ${a}
               </button>
             ))}
@@ -135,14 +142,14 @@ export default function SupportPage() {
           <input
             type="number" min={1} placeholder={t("donations.customAmount")} value={customAmount}
             onChange={(e) => setCustomAmount(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-6"
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-6"
           />
 
           <label className="block text-[13px] font-semibold mb-2">{t("donations.choosePaymentMethod")}</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
             {methods.map((m) => (
               <button key={m.id} onClick={() => setSelectedMethod(m)}
-                className={`py-2.5 px-3 rounded-lg text-[13px] font-medium border transition text-left ${selectedMethod?.id === m.id ? "bg-accent/10 text-accent border-accent/40" : "border-white/10 text-muted hover:border-white/20"}`}>
+                className={`py-2.5 px-3 rounded-lg text-[13px] font-medium border transition text-left ${selectedMethod?.id === m.id ? "bg-accent/10 text-accent border-accent/40" : "border-subtle text-muted hover:border-subtle"}`}>
                 {m.name}
               </button>
             ))}
@@ -150,12 +157,12 @@ export default function SupportPage() {
           </div>
 
           {selectedMethod?.method_type === "crypto" && selectedMethod.wallet_address && (
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 mb-6 text-center">
+            <div className="rounded-xl border border-subtle bg-white/[0.02] p-5 mb-6 text-center">
               <p className="text-[12px] text-muted mb-3">{t("donations.cryptoInstructions")}</p>
               {qrDataUrl && <img src={qrDataUrl} alt="QR" className="mx-auto mb-3 rounded-lg" width={180} height={180} />}
               <div className="flex items-center gap-2 justify-center">
                 <code className="text-[12px] bg-black/30 px-3 py-2 rounded-lg break-all">{selectedMethod.wallet_address}</code>
-                <button onClick={copyAddress} className="p-2 rounded-lg border border-white/10 hover:bg-white/5 shrink-0" aria-label={t("donations.copyAddress")}>
+                <button onClick={copyAddress} className="p-2 rounded-lg border border-subtle hover:bg-white/5 shrink-0" aria-label={t("donations.copyAddress")}>
                   {copied ? <Check size={15} className="text-cta" /> : <Copy size={15} />}
                 </button>
               </div>
@@ -165,11 +172,11 @@ export default function SupportPage() {
 
           <label className="block text-[13px] font-semibold mb-2">{t("donations.donorName")}</label>
           <input value={donorName} onChange={(e) => setDonorName(e.target.value)} disabled={isAnonymous}
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-4 disabled:opacity-50" />
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-4 disabled:opacity-50" />
 
           <label className="block text-[13px] font-semibold mb-2">{t("donations.message")}</label>
           <textarea rows={2} value={message} onChange={(e) => setMessage(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-4" />
+            className="w-full bg-white/5 border border-subtle rounded-lg py-2.5 px-3.5 text-[14px] outline-none focus:border-accent mb-4" />
 
           <div className="flex flex-col gap-2 mb-6">
             <label className="flex items-center gap-2 text-[13px] text-muted">

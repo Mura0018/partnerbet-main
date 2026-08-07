@@ -26,6 +26,12 @@ const config: Config = {
         muted: "rgb(var(--color-muted) / <alpha-value>)",
         danger: "rgb(var(--color-danger) / <alpha-value>)",
       },
+      borderColor: {
+        subtle: "var(--border-subtle)",
+      },
+      divideColor: {
+        subtle: "var(--border-subtle)",
+      },
     },
   },
   plugins: [require("@tailwindcss/typography")],

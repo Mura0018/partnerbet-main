@@ -4,8 +4,9 @@ import React, { useEffect, useState } from "react";
 import { Send, Users, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useConfirm } from "@/lib/ui/useConfirm";
 
-const inputCls = "w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
+const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 
 export default function PushNotificationsPage() {
   const { t } = useLocale();
@@ -16,6 +17,7 @@ export default function PushNotificationsPage() {
   const [result, setResult] = useState<{ recipients: number; failures: number } | null>(null);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
     const [{ count }, { data: logData }] = await Promise.all([
@@ -32,25 +34,25 @@ export default function PushNotificationsPage() {
     setError("");
     setResult(null);
     if (!form.title.trim() || !form.body.trim()) { setError(t("cnt.pushEReq")); return; }
-    if (!confirm(t("cnt.pushConfirm", { n: subscriberCount ?? 0 }))) return;
-
-    setSending(true);
-    try {
-      const res = await fetch("/api/admin/push/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const json = await res.json();
-      if (!res.ok) { setError(json.error ?? t("cnt.pushEGeneric")); return; }
-      setResult(json);
-      setForm({ title: "", body: "", url: "" });
-      load();
-    } catch {
-      setError(t("cnt.pushEGeneric"));
-    } finally {
-      setSending(false);
-    }
+    confirm(t("cnt.pushConfirm", { n: subscriberCount ?? 0 }), async () => {
+      setSending(true);
+      try {
+        const res = await fetch("/api/admin/push/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        const json = await res.json();
+        if (!res.ok) { setError(json.error ?? t("cnt.pushEGeneric")); return; }
+        setResult(json);
+        setForm({ title: "", body: "", url: "" });
+        load();
+      } catch {
+        setError(t("cnt.pushEGeneric"));
+      } finally {
+        setSending(false);
+      }
+    });
   };
 
   return (
@@ -82,13 +84,14 @@ export default function PushNotificationsPage() {
       <h2 className="text-[15px] font-bold mb-3">{t("cnt.pushRecent")}</h2>
       <div className="space-y-2">
         {log.map((l) => (
-          <div key={l.id} className="rounded-lg border border-white/8 p-3">
+          <div key={l.id} className="rounded-lg border border-subtle p-3">
             <div className="text-[13px] font-medium">{l.title}</div>
             <div className="text-[11px] text-[#5b6f85] mt-1">{new Date(l.created_at).toLocaleString()} · {t("cnt.pushLog", { r: l.recipients_count, f: l.failures_count })}</div>
           </div>
         ))}
         {log.length === 0 && <p className="text-[12px] text-[#5b6f85]">{t("cnt.pushEmpty")}</p>}
       </div>
+      {confirmDialog}
     </div>
   );
 }

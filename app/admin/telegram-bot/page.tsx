@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Wallet, Users as UsersIcon, MessageCircle, CreditCard, Headset, X, ClipboardList } from "lucide-react";
 import { Can } from "@/lib/auth/permissions";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -20,16 +21,31 @@ const TABS: { id: Tab; labelKey: string; icon: any; permission?: string }[] = [
 ];
 
 export default function TelegramBotAdminPage() {
+  // useSearchParams() Next.js talabi bo'yicha Suspense ichida bo'lishi kerak.
+  return (
+    <Suspense fallback={null}>
+      <TelegramBotAdminPageInner />
+    </Suspense>
+  );
+}
+
+function TelegramBotAdminPageInner() {
   const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("orders");
-  const [chatOpen, setChatOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const chatParam = searchParams.get("chat");
+  const [chatOpen, setChatOpen] = useState(() => chatParam === "1");
 
-  // Menyudagi "Jamoa chati" havolasi (?chat=1) — kirilganda chat drawer'ini ochadi.
+  // Menyu/pastki nav/Cmd+K — barchasi shu SAHIFAGA (?chat=1 bilan) Link yoki
+  // router.push orqali o'tadi. Agar foydalanuvchi ALLAQACHON shu sahifada
+  // bo'lsa (masalan Orders'ni ko'rib turgan bo'lsa), Next.js komponentni
+  // qayta mount QILMAYDI — faqat URL o'zgaradi. useSearchParams() esa BU
+  // holatda ham reaktiv (mount shart emas), shuning uchun buni useEffect
+  // orqali kuzatamiz — aks holda tugma bosilganda hech narsa bo'lmay,
+  // faqat keyinchalik brauzer refresh qilinsa (haqiqiy remount) ishlardi.
   useEffect(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1") {
-      setChatOpen(true);
-    }
-  }, []);
+    if (chatParam === "1") setChatOpen(true);
+  }, [chatParam]);
 
   // Chat ochilganda "ko'rildi" belgisi — sidebar'dagi yangilik nuqtasi o'chadi.
   useEffect(() => {
@@ -77,12 +93,14 @@ export default function TelegramBotAdminPage() {
         })}
       </div>
 
-      <div key={tab} style={{ animation: "bcTabPop 0.25s ease" }}>
-        {tab === "orders" && <OrdersTab />}
-        {tab === "support" && <SupportTab />}
-        {tab === "operators" && <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
-        {tab === "my-payments" && <MyPaymentMethodsTab />}
-      </div>
+      {!chatOpen && (
+        <div key={tab} style={{ animation: "bcTabPop 0.25s ease" }}>
+          {tab === "orders" && <OrdersTab />}
+          {tab === "support" && <SupportTab />}
+          {tab === "operators" && <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
+          {tab === "my-payments" && <MyPaymentMethodsTab />}
+        </div>
+      )}
 
       {/* Suzuvchi Jamoa chati tugmasi (FAB) */}
       <Can permission="team_chat.use">
@@ -110,7 +128,7 @@ export default function TelegramBotAdminPage() {
               className="absolute inset-0 bg-bg flex flex-col shadow-2xl"
               style={{ animation: "bcDrawerIn 0.28s cubic-bezier(0.22,1,0.36,1)" }}
             >
-              <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/8 shrink-0">
+              <div className="flex items-center gap-2 px-4 py-3.5 border-b border-subtle shrink-0">
                 <MessageCircle size={18} className="text-accent" />
                 <h2 className="text-[15px] font-bold flex-1">{t("tgb.teamChat")}</h2>
                 <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10" aria-label={t("tgb.close")}>
