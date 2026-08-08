@@ -51,7 +51,7 @@ export function PromoBanner() {
         {b.image_url ? (
           <img src={b.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0" style={{ background: "linear-gradient(120deg,#123f77,#0e2038,#7c3aed)" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(120deg,var(--surf-3),var(--surf-2),#7c3aed)" }} />
         )}
         <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgba(4,10,24,0.82),rgba(4,10,24,0.35))" }} />
         {/* Shine */}
