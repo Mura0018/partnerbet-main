@@ -170,12 +170,12 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
         <div>
           <div className="mb-4 rounded-xl bg-accent/10 border border-accent/25 px-4 py-4 text-center">
             <div className="text-[26px] font-extrabold tracking-wide mb-2">{accountId.trim()}</div>
-            <div className="text-[13px] text-[#93a5ba]">{t("wz.idConfirmMsg", { id: accountId.trim() })}</div>
+            <div className="text-[13px] text-[var(--ink-2)]">{t("wz.idConfirmMsg", { id: accountId.trim() })}</div>
           </div>
           <button type="button" onClick={() => { setConfirmId(false); setPlayerName(""); setRecipient(""); setStep(2); }} className={buttonCls}>
             {t("wz.continueBtn")}
           </button>
-          <button type="button" onClick={() => setConfirmId(false)} className="w-full mt-2 py-2.5 text-[13px] text-[#93a5ba]">
+          <button type="button" onClick={() => setConfirmId(false)} className="w-full mt-2 py-2.5 text-[13px] text-[var(--ink-2)]">
             {t("wz.idChange")}
           </button>
         </div>
@@ -183,68 +183,72 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
 
       {step === 1 && !confirmId && (
         <div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.platform")}</label>
+          <label className="block text-[12px] text-[var(--ink-2)] mb-1.5">{t("wz.platform")}</label>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {PLATFORMS.map((p) => (
-              <button key={p} type="button" onClick={() => setPlatform(p)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"}`}>{p === "Boshqa" ? t("tg.platformOther") : p}</button>
+              <button key={p} type="button" onClick={() => setPlatform(p)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${platform === p ? "bg-accent/20 border-accent text-[var(--ink)]" : "bg-white/[0.03] m-divider text-[var(--ink-2)]"}`}>{p === "Boshqa" ? t("tg.platformOther") : p}</button>
             ))}
           </div>
           {platform === "Boshqa" && <input className={`${inputCls} mb-3`} placeholder={t("wz.platformPh")} value={customPlatform} onChange={(e) => setCustomPlatform(e.target.value)} />}
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.accId")}</label>
+          <label className="block text-[12px] text-[var(--ink-2)] mb-1.5">{t("wz.accId")}</label>
           <input className={`${inputCls} mb-2`} placeholder={t("wz.accIdPh")} value={accountId} onChange={(e) => setAccountId(e.target.value)} />
-          {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+          {error && <p className="text-[12px] text-[var(--red)] mb-2">{error}</p>}
           <button onClick={verifyId} disabled={busy} className={buttonCls}>{busy ? <Loader2 size={16} className="animate-spin" /> : (<><ShieldCheck size={16} /> {t("wz.verify")}</>)}</button>
         </div>
       )}
 
       {step === 2 && needsFullName && (
         <div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.fullNamePrompt")}</label>
+          <label className="block text-[12px] text-[var(--ink-2)] mb-1.5">{t("tg.fullNamePrompt")}</label>
           <input className={`${inputCls} mb-2`} placeholder={t("tg.fullNamePh")} value={fullNameInput} onChange={(e) => setFullNameInput(e.target.value)} />
-          {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+          {error && <p className="text-[12px] text-[var(--red)] mb-2">{error}</p>}
           <button onClick={submitFullNameAndRetry} disabled={savingFullName} className={buttonCls}>{savingFullName ? <Loader2 size={16} className="animate-spin" /> : t("tg.submitName")}</button>
         </div>
       )}
 
       {step === 2 && !needsFullName && (
         <div>
-          {playerName && <div className="flex items-center gap-2 mb-3 text-[13px] text-[#4ADE80]"><CheckCircle2 size={15} /> {t("wz.player")} <b>{playerName}</b></div>}
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("tg.sum")}</label>
+          {playerName && <div className="flex items-center gap-2 mb-3 text-[13px] text-[var(--em)]"><CheckCircle2 size={15} /> {t("wz.player")} <b>{playerName}</b></div>}
+          <label className="block text-[12px] text-[var(--ink-2)] mb-1.5">{t("tg.sum")}</label>
           <input className={`${inputCls} mb-2`} type="number" min={1} placeholder={t("tg.phSum")} value={amount} onChange={(e) => setAmount(e.target.value)} />
-          {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+          {error && <p className="text-[12px] text-[var(--red)] mb-2">{error}</p>}
           <button onClick={confirmAmount} className={buttonCls}>{t("wz.continueBtn")} <ChevronRight size={16} /></button>
         </div>
       )}
 
       {step === 3 && (
         <div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.receiveMethod")}</label>
+          <label className="block text-[12px] text-[var(--ink-2)] mb-1.5">{t("wz.receiveMethod")}</label>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {METHODS.map((m) => (
-              <button key={m.id} type="button" onClick={() => setMethod(m.id)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${method === m.id ? "bg-accent/20 border-accent text-white" : "bg-white/[0.03] m-divider text-[#93a5ba]"}`}>{m.label}</button>
+              <button key={m.id} type="button" onClick={() => setMethod(m.id)} className={`py-2.5 rounded-xl text-[13px] font-semibold border ${method === m.id ? "bg-accent/20 border-accent text-[var(--ink)]" : "bg-white/[0.03] m-divider text-[var(--ink-2)]"}`}>{m.label}</button>
             ))}
           </div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.recipient")}</label>
+          <label className="block text-[12px] text-[var(--ink-2)] mb-1.5">{t("wz.recipient")}</label>
           <input className={`${inputCls} mb-3`} value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder={t("wz.recipientPh")} />
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.recipientReq")}</label>
+          <label className="block text-[12px] text-[var(--ink-2)] mb-1.5">{t("wz.recipientReq")}</label>
           <input className={`${inputCls} mb-2`} value={details} onChange={(e) => setDetails(e.target.value)} placeholder={t("wz.recipientReqPh")} />
-          {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+          {error && <p className="text-[12px] text-[var(--red)] mb-2">{error}</p>}
           <button onClick={confirmRequisite} className={buttonCls}>{t("wz.continueBtn")} <ChevronRight size={16} /></button>
         </div>
       )}
 
       {step === 4 && (
         <div>
-          <div className="rounded-xl bg-white/[0.03] border m-divider px-3.5 py-2.5 mb-3 text-[12px] text-[#93a5ba]">
-            {t("wz.sumLabel")} <b className="text-white">{Number(amount).toLocaleString("ru-RU")} {t("wz.sumUnit")}</b> · {t("wz.methodLabel")} <b className="text-white">{METHODS.find((m) => m.id === method)?.label}</b>
+          <div className="rounded-xl bg-white/[0.03] border m-divider px-3.5 py-2.5 mb-3 text-[12px] text-[var(--ink-2)]">
+            {t("wz.sumLabel")} <b className="text-[var(--ink)]">{Number(amount).toLocaleString("ru-RU")} {t("wz.sumUnit")}</b> · {t("wz.methodLabel")} <b className="text-[var(--ink)]">{METHODS.find((m) => m.id === method)?.label}</b>
           </div>
+          {/* Diqqat: bu ikki rang ATAYLAB hex holida — Tailwind 3.4'da
+              CSS o'zgaruvchisi + shaffoflik modifikatori (bg-[var(--gold)]/10)
+              umuman generatsiya qilinmaydi, klass jimgina yo'qoladi.
+              Faqat shaffofliksiz joylarda var(--gold) ishlatilsin. */}
           <div className="rounded-xl bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 mb-3 flex items-start gap-2">
-            <AlertTriangle size={15} className="text-[#F4C76A] shrink-0 mt-0.5" />
-            <span className="text-[11.5px] text-[#F4C76A]">{t("wz.payoutWarn")}</span>
+            <AlertTriangle size={15} className="text-[var(--gold)] shrink-0 mt-0.5" />
+            <span className="text-[11.5px] text-[var(--gold)]">{t("wz.payoutWarn")}</span>
           </div>
-          <label className="block text-[12px] text-[#93a5ba] mb-1.5">{t("wz.code")}</label>
+          <label className="block text-[12px] text-[var(--ink-2)] mb-1.5">{t("wz.code")}</label>
           <input className={`${inputCls} mb-2`} placeholder={t("wz.codePh")} value={code} onChange={(e) => setCode(e.target.value)} />
-          {error && <p className="text-[12px] text-[#FF6B85] mb-2">{error}</p>}
+          {error && <p className="text-[12px] text-[var(--red)] mb-2">{error}</p>}
           <button onClick={submitOrder} disabled={busy} className={buttonCls}>{busy ? <Loader2 size={16} className="animate-spin" /> : (<>{t("wz.confirm")} <ChevronRight size={16} /></>)}</button>
         </div>
       )}
