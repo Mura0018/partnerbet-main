@@ -240,6 +240,11 @@ export const dictionaries = {
       emptyBanners: "Hozircha banner yo'q. \"Yangi\" bilan qo'shing.", active: "Aktiv", offShort: "O'chiq",
       editBanner: "Bannerni tahrirlash", newBanner: "Yangi banner", readyTemplates: "Tayyor shablonlar",
       fTitle: "Sarlavha", fSubtitle: "Matn (subtitle)", fImage: "Rasm URL (AI/Media'dan)", fLink: "Havola (bosilganda ochiladi)", fOrder: "Tartib (kichik = oldin)", fActive: "Aktiv",
+      fTitleHint: "Bannerdagi asosiy qalin matn — mijoz shuni ko'radi.", fSubtitleHint: "Sarlavha ostidagi kichik izoh.",
+      fImageHint: "Keng gorizontal, ~3:1, tavsiya 1200×400. Tik bannerlar mos emas — ular kesiladi.",
+      fLinkHint: "Bosilganda ochiladigan manzil (1xBet, Telegram va h.k.).", fOrderHint: "Kichik raqam yuqorida ko'rinadi.",
+      reqMark: "majburiy", optMark: "ixtiyoriy", previewTitle: "Oldindan ko'rish", previewSub: "Mijoz app'da shunday ko'rinadi",
+      titleReq: "Sarlavha majburiy", linkReq: "Havola majburiy — havolasiz banner bosilmaydi", noImgNote: "Rasm yo'q — gradient fon ishlatiladi",
       cancel: "Bekor", confirmDelete: "Banner o'chirilsinmi?", tSaved: "Saqlandi", tDeleted: "O'chirildi",
     },
     cus: {
@@ -943,6 +948,11 @@ export const dictionaries = {
       emptyBanners: "Пока баннеров нет. Добавьте через \"Новый\".", active: "Активен", offShort: "Выкл",
       editBanner: "Редактировать баннер", newBanner: "Новый баннер", readyTemplates: "Готовые шаблоны",
       fTitle: "Заголовок", fSubtitle: "Текст (subtitle)", fImage: "URL изображения (AI/Медиа)", fLink: "Ссылка (открывается при нажатии)", fOrder: "Порядок (меньше = раньше)", fActive: "Активен",
+      fTitleHint: "Основной жирный текст на баннере — его видит клиент.", fSubtitleHint: "Мелкая подпись под заголовком.",
+      fImageHint: "Широкое горизонтальное, ~3:1, рекомендуется 1200×400. Вертикальные баннеры не подходят — они обрезаются.",
+      fLinkHint: "Адрес, открываемый при нажатии (1xBet, Telegram и т.д.).", fOrderHint: "Меньшее число — выше.",
+      reqMark: "обязательно", optMark: "необязательно", previewTitle: "Предпросмотр", previewSub: "Так выглядит в приложении клиента",
+      titleReq: "Заголовок обязателен", linkReq: "Ссылка обязательна — без ссылки баннер не кликается", noImgNote: "Нет изображения — используется градиентный фон",
       cancel: "Отмена", confirmDelete: "Удалить баннер?", tSaved: "Сохранено", tDeleted: "Удалено",
     },
     cus: {

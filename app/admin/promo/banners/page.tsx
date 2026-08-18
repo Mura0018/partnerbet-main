@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Megaphone, Loader2, Plus, Trash2, Pencil, X, Check } from "lucide-react";
+import { Megaphone, Loader2, Plus, Trash2, Pencil, X, Check, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useConfirm } from "@/lib/ui/useConfirm";
@@ -10,21 +10,18 @@ type Banner = { id: string; title: string | null; subtitle: string | null; image
 
 const inp = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-accent";
 
-// 10 ta tayyor shablon — bosilganda formani to'ldiradi (havolani admin qo'yadi).
-const TEMPLATES: { title: string; subtitle: string }[] = [
-  { title: "1xBet — ro'yxatdan o'ting", subtitle: "Yangi hisob oching va o'ynang" },
-  { title: "Melbet bonus", subtitle: "Birinchi depozitga 100% bonus" },
-  { title: "100% xush kelibsiz bonusi", subtitle: "Depozitingiz ikki barobar" },
-  { title: "Bepul basketbol/futbol", subtitle: "Jonli o'yinlarga tiking" },
-  { title: "Kunlik keshbek", subtitle: "Har kuni pul qaytarib oling" },
-  { title: "Do'stni taklif qiling", subtitle: "Har taklif uchun bonus" },
-  { title: "VIP dastur", subtitle: "Ko'proq o'yna — ko'proq yut" },
-  { title: "Tezkor to'ldirish", subtitle: "BetCore Pay bilan bir zumda" },
-  { title: "Sovrinli aksiya", subtitle: "Faol bo'ling — katta sovrinlar" },
-  { title: "Mobil ilova", subtitle: "Istalgan joyda o'ynang" },
-];
-
 const empty: Partial<Banner> = { title: "", subtitle: "", image_url: "", link_url: "", is_active: true, sort: 0 };
+
+// Maydon sarlavhasi — nom + majburiy/ixtiyoriy belgi + izoh.
+function FieldHead({ label, required, hint, reqText, optText }: { label: string; required?: boolean; hint?: string; reqText: string; optText: string }) {
+  return (
+    <div className="mb-1">
+      <span className="text-[12px] text-white/75">{label}</span>
+      <span className={`ml-1.5 text-[10px] font-medium ${required ? "text-[#FF6B85]" : "text-white/30"}`}>· {required ? reqText : optText}</span>
+      {hint && <span className="block text-[10.5px] text-white/35 mt-0.5 leading-snug">{hint}</span>}
+    </div>
+  );
+}
 
 export default function PromoBannersPage() {
   const { t } = useLocale();
@@ -47,6 +44,7 @@ export default function PromoBannersPage() {
 
   const save = async () => {
     if (!form) return;
+    if (!form.title?.trim() || !form.link_url?.trim()) return; // Sarlavha + Havola majburiy
     setSaving(true);
     try {
       const res = await fetch("/api/admin/promo/banners", {
@@ -115,22 +113,63 @@ export default function PromoBannersPage() {
               <h2 className="text-white font-semibold">{form.id ? t("prm.editBanner") : t("prm.newBanner")}</h2>
               <button onClick={() => setForm(null)} className="p-1 rounded-lg hover:bg-white/10 text-white/50"><X size={18} /></button>
             </div>
-            <div className="p-5 space-y-3">
+            <div className="p-5 space-y-4">
+              {/* Oldindan ko'rish — mijoz app'da aynan shunday chiqadi */}
               <div>
-                <span className="block text-[11px] text-white/40 mb-1.5">{t("prm.readyTemplates")}</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {TEMPLATES.map((tpl, i) => (
-                    <button key={i} onClick={() => setForm((f) => ({ ...f, title: tpl.title, subtitle: tpl.subtitle }))} className="text-[10.5px] px-2 py-1 rounded-full bg-white/5 border border-subtle text-white/60 hover:text-white hover:border-accent/40">{tpl.title}</button>
-                  ))}
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[12px] text-white/75">{t("prm.previewTitle")}</span>
+                  <span className="text-[10.5px] text-white/35">{t("prm.previewSub")}</span>
                 </div>
+                <div className="relative w-full overflow-hidden rounded-2xl" style={{ minHeight: 96, boxShadow: "0 10px 26px rgba(0,0,0,0.45)" }}>
+                  {form.image_url?.trim() ? (
+                    <img src={form.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(120deg,#132033,#0E1826,#7c3aed)" }} />
+                  )}
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgba(4,10,24,0.82),rgba(4,10,24,0.35))" }} />
+                  <div className="relative px-4 py-3.5 flex items-center gap-3 min-h-[96px]">
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-[15px] font-extrabold truncate ${form.title?.trim() ? "text-white" : "text-white/40"}`}>{form.title?.trim() || t("prm.fTitle")}</div>
+                      {form.subtitle?.trim() && <div className="text-[11.5px] text-white/75 mt-0.5 truncate">{form.subtitle}</div>}
+                    </div>
+                    <ArrowRight size={18} className="shrink-0 text-white/80" />
+                  </div>
+                </div>
+                {!form.image_url?.trim() && <p className="text-[10.5px] text-white/35 mt-1.5">{t("prm.noImgNote")}</p>}
               </div>
-              <div><span className="block text-[11px] text-white/40 mb-1">{t("prm.fTitle")}</span><input className={inp} value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-              <div><span className="block text-[11px] text-white/40 mb-1">{t("prm.fSubtitle")}</span><input className={inp} value={form.subtitle ?? ""} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} /></div>
-              <div><span className="block text-[11px] text-white/40 mb-1">{t("prm.fImage")}</span><input className={inp} value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." /></div>
-              {form.image_url ? <img src={form.image_url} alt="" className="w-full h-28 object-cover rounded-lg" /> : null}
-              <div><span className="block text-[11px] text-white/40 mb-1">{t("prm.fLink")}</span><input className={inp} value={form.link_url ?? ""} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="https://1xbet... yoki t.me/..." /></div>
+
+              {/* Sarlavha — MAJBURIY */}
+              <div>
+                <FieldHead label={t("prm.fTitle")} required hint={t("prm.fTitleHint")} reqText={t("prm.reqMark")} optText={t("prm.optMark")} />
+                <input className={inp} value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="1xBet — ro'yxatdan o'ting" />
+                {!form.title?.trim() && <p className="flex items-center gap-1 text-[10.5px] text-[#FF6B85] mt-1"><AlertCircle size={11} /> {t("prm.titleReq")}</p>}
+              </div>
+
+              {/* Havola — MAJBURIY */}
+              <div>
+                <FieldHead label={t("prm.fLink")} required hint={t("prm.fLinkHint")} reqText={t("prm.reqMark")} optText={t("prm.optMark")} />
+                <input className={inp} value={form.link_url ?? ""} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="https://1xbet... yoki t.me/..." />
+                {!form.link_url?.trim() && <p className="flex items-center gap-1 text-[10.5px] text-[#FF6B85] mt-1"><AlertCircle size={11} /> {t("prm.linkReq")}</p>}
+              </div>
+
+              {/* Rasm URL — ixtiyoriy */}
+              <div>
+                <FieldHead label={t("prm.fImage")} hint={t("prm.fImageHint")} reqText={t("prm.reqMark")} optText={t("prm.optMark")} />
+                <input className={inp} value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
+              </div>
+
+              {/* Izoh — ixtiyoriy */}
+              <div>
+                <FieldHead label={t("prm.fSubtitle")} hint={t("prm.fSubtitleHint")} reqText={t("prm.reqMark")} optText={t("prm.optMark")} />
+                <input className={inp} value={form.subtitle ?? ""} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} />
+              </div>
+
+              {/* Tartib + Aktiv */}
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="block text-[11px] text-white/40 mb-1">{t("prm.fOrder")}</span><input type="number" className={inp} value={form.sort ?? 0} onChange={(e) => setForm({ ...form, sort: Number(e.target.value) })} /></div>
+                <div>
+                  <FieldHead label={t("prm.fOrder")} hint={t("prm.fOrderHint")} reqText={t("prm.reqMark")} optText={t("prm.optMark")} />
+                  <input type="number" className={inp} value={form.sort ?? 0} onChange={(e) => setForm({ ...form, sort: Number(e.target.value) })} />
+                </div>
                 <label className="flex items-end gap-2 text-sm text-white/70 pb-2 cursor-pointer">
                   <input type="checkbox" checked={form.is_active !== false} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="accent-[#1CE0C3]" /> {t("prm.fActive")}
                 </label>
@@ -138,7 +177,7 @@ export default function PromoBannersPage() {
             </div>
             <div className="flex justify-end gap-2 px-5 py-4 border-t border-subtle">
               <button onClick={() => setForm(null)} disabled={saving} className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5">{t("prm.cancel")}</button>
-              <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-[#F4C76A] text-[#2a1e05] disabled:opacity-50">
+              <button onClick={save} disabled={saving || !form.title?.trim() || !form.link_url?.trim()} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-[#F4C76A] text-[#2a1e05] disabled:opacity-40 disabled:cursor-not-allowed">
                 {saving ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} {t("prm.save")}
               </button>
             </div>
