@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Trophy, Loader2, CreditCard, Save, Crown, X } from "lucide-react";
+import { Trophy, Loader2, CreditCard, Save, Crown, X, Ticket } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 
@@ -32,6 +32,14 @@ export default function PromoManagePage() {
   const [mult, setMult] = useState("1.5");
   const [prizes, setPrizes] = useState("");
 
+  // MURAWIN promo kodi (site_settings 'promo_referral')
+  const [refEnabled, setRefEnabled] = useState(false);
+  const [refCode, setRefCode] = useState("");
+  const [refDesc, setRefDesc] = useState("");
+  const [refLink, setRefLink] = useState("");
+  const [refExpires, setRefExpires] = useState("");
+  const [refSaving, setRefSaving] = useState(false);
+
   const load = async () => {
     try {
       const res = await fetch("/api/admin/promo");
@@ -50,6 +58,43 @@ export default function PromoManagePage() {
     }
   };
   useEffect(() => { load(); }, []);
+
+  // Promo kodni alohida yuklaymiz (o'z API'si — mustaqil).
+  const loadReferral = async () => {
+    try {
+      const res = await fetch("/api/admin/promo/referral");
+      if (!res.ok) return;
+      const d = await res.json();
+      const r = d.referral ?? {};
+      setRefEnabled(!!r.enabled);
+      setRefCode(r.code ?? "");
+      setRefDesc(r.description ?? "");
+      setRefLink(r.link ?? "");
+      setRefExpires(toLocalInput(r.expires_at));
+    } catch {}
+  };
+  useEffect(() => { loadReferral(); }, []);
+
+  const saveReferral = async () => {
+    setRefSaving(true);
+    try {
+      const res = await fetch("/api/admin/promo/referral", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enabled: refEnabled,
+          code: refCode,
+          description: refDesc,
+          link: refLink,
+          expires_at: refExpires ? new Date(refExpires).toISOString() : null,
+        }),
+      });
+      if (!res.ok) { toast.error(t("prm.tSaveErr")); return; }
+      toast.success(t("prm.tSettingsSaved"));
+      loadReferral();
+    } finally {
+      setRefSaving(false);
+    }
+  };
 
   const saveSettings = async () => {
     setSaving(true);
@@ -180,6 +225,44 @@ export default function PromoManagePage() {
         </div>
         <button onClick={saveSettings} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium bg-accent/20 text-white hover:bg-accent/30 disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {t("prm.save")}
+        </button>
+      </div>
+
+      {/* MURAWIN promo kodi — mijoz app'da ko'rsatiladi */}
+      <div className="rounded-2xl glass-card p-4 mb-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-[14px] font-semibold text-white flex items-center gap-2"><Ticket size={15} className="text-[#1CE0C3]" /> {t("prm.refTitle")}</h2>
+          <button
+            onClick={() => setRefEnabled((v) => !v)}
+            className={`px-3 py-1.5 rounded-lg text-[12px] font-medium border ${refEnabled ? "bg-[#4ADE80]/15 border-[#4ADE80]/40 text-[#4ADE80]" : "bg-[#FF6B85]/10 border-[#FF6B85]/30 text-[#FF6B85]"}`}
+          >
+            {refEnabled ? t("prm.on") : t("prm.off")}
+          </button>
+        </div>
+        <p className="text-[11px] text-white/40 mb-3">{t("prm.refSub")}</p>
+        <div className="grid md:grid-cols-2 gap-3 mb-3">
+          <div>
+            <span className="block text-[11px] text-white/40 mb-1">{t("prm.refCode")}</span>
+            <input className={`${inp} font-mono tracking-wider`} value={refCode} onChange={(e) => setRefCode(e.target.value)} placeholder="MURAWIN" />
+          </div>
+          <div>
+            <span className="block text-[11px] text-white/40 mb-1">{t("prm.refLink")}</span>
+            <input className={inp} value={refLink} onChange={(e) => setRefLink(e.target.value)} placeholder="https://..." />
+          </div>
+          <div>
+            <span className="block text-[11px] text-white/40 mb-1">{t("prm.refDesc")}</span>
+            <input className={inp} value={refDesc} onChange={(e) => setRefDesc(e.target.value)} placeholder={t("prm.refDescPh")} />
+          </div>
+          <div>
+            <span className="block text-[11px] text-white/40 mb-1">{t("prm.refExpires")}</span>
+            <input type="datetime-local" className={inp} value={refExpires} onChange={(e) => setRefExpires(e.target.value)} />
+          </div>
+        </div>
+        {refEnabled && (!refCode.trim() || !refLink.trim()) && (
+          <p className="text-[11px] text-[#FF6B85] mb-3">{t("prm.refWarn")}</p>
+        )}
+        <button onClick={saveReferral} disabled={refSaving} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium bg-accent/20 text-white hover:bg-accent/30 disabled:opacity-50">
+          {refSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {t("prm.save")}
         </button>
       </div>
 
