@@ -245,6 +245,7 @@ export const dictionaries = {
       fLinkHint: "Bosilganda ochiladigan manzil (1xBet, Telegram va h.k.).", fOrderHint: "Kichik raqam yuqorida ko'rinadi.",
       reqMark: "majburiy", optMark: "ixtiyoriy", previewTitle: "Oldindan ko'rish", previewSub: "Mijoz app'da shunday ko'rinadi",
       titleReq: "Sarlavha majburiy", linkReq: "Havola majburiy — havolasiz banner bosilmaydi", noImgNote: "Rasm yo'q — gradient fon ishlatiladi",
+      refTitle: "Promo kod (MURAWIN)", refSub: "Mijoz app'da bosh ekran va Bonus bo'limida ko'rsatiladi.", refCode: "Kod", refLink: "Ro'yxatdan o'tish havolasi", refDesc: "Izoh (bir qator)", refDescPh: "Masalan: birinchi depozitga bonus", refExpires: "Amal qilish muddati (ixtiyoriy)", refWarn: "Aksiya yoqilgan — kod va havola to'ldirilishi shart.",
       cancel: "Bekor", confirmDelete: "Banner o'chirilsinmi?", tSaved: "Saqlandi", tDeleted: "O'chirildi",
     },
     cus: {
@@ -953,6 +954,7 @@ export const dictionaries = {
       fLinkHint: "Адрес, открываемый при нажатии (1xBet, Telegram и т.д.).", fOrderHint: "Меньшее число — выше.",
       reqMark: "обязательно", optMark: "необязательно", previewTitle: "Предпросмотр", previewSub: "Так выглядит в приложении клиента",
       titleReq: "Заголовок обязателен", linkReq: "Ссылка обязательна — без ссылки баннер не кликается", noImgNote: "Нет изображения — используется градиентный фон",
+      refTitle: "Промокод (MURAWIN)", refSub: "Показывается в приложении клиента — на главном экране и в разделе Бонус.", refCode: "Код", refLink: "Ссылка для регистрации", refDesc: "Описание (одна строка)", refDescPh: "Например: бонус на первый депозит", refExpires: "Срок действия (необязательно)", refWarn: "Акция включена — код и ссылка обязательны.",
       cancel: "Отмена", confirmDelete: "Удалить баннер?", tSaved: "Сохранено", tDeleted: "Удалено",
     },
     cus: {
