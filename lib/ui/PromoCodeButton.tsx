@@ -14,6 +14,7 @@ export function PromoCodeButton({
   track = true,
   big = false,
   className,
+  codeClassName,
   copyLabel,
   copiedLabel,
 }: {
@@ -23,6 +24,7 @@ export function PromoCodeButton({
   track?: boolean;
   big?: boolean;
   className?: string;
+  codeClassName?: string;
   copyLabel?: string;
   copiedLabel?: string;
 }) {
@@ -69,7 +71,7 @@ export function PromoCodeButton({
       }
     >
       <div className="min-w-0">
-        <div className={`font-mono font-bold ${big ? "text-[22px] tracking-[0.15em]" : "text-[14px]"} truncate`}>{code}</div>
+        <div className={`font-mono font-bold ${big ? "text-[22px] tracking-[0.15em]" : "text-[14px]"} truncate ${codeClassName ?? ""}`}>{code}</div>
         {description && <div className="text-[11px] text-muted mt-0.5 truncate">{description}</div>}
       </div>
       <span className="flex items-center gap-1.5 shrink-0">
