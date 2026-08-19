@@ -12,6 +12,7 @@ import { PrizeCard as HeroPrizeCard } from "./components/PrizeCard";
 import { MoneyRail } from "./components/MoneyRail";
 import { BottomNav } from "./components/BottomNav";
 import { PromoBanner } from "./PromoBanner";
+import { PromoCodeCard } from "./components/PromoCodeCard";
 import { WithdrawWizard } from "./WithdrawWizard";
 
 declare global {
@@ -2460,6 +2461,8 @@ export default function TelegramAppPage() {
     return (
       <div className={`${bgCls} p-5 m-screen-pb`}>
         <ScreenHeader title={t("tg.prizeTitle")} onBack={() => setScreen("menu")} onHome={() => setScreen("menu")} />
+        {/* MURAWIN promo kodi — Bonus ekranida eng tepada (faqat bizning app) */}
+        {!partnerId && <PromoCodeCard />}
         <PrizeCard initData={getInitData()} />
         <BottomNav current={screen} onNavigate={navigateTab} />
       </div>
@@ -2574,6 +2577,9 @@ export default function TelegramAppPage() {
 
       {/* Reklama banner (bizning app) */}
       {!partnerId && <PromoBanner />}
+
+      {/* MURAWIN promo kodi — banner ostida (faqat bizning app) */}
+      {!partnerId && <PromoCodeCard />}
 
       </div>
       <BottomNav current={screen} onNavigate={navigateTab} />
