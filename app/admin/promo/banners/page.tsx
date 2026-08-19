@@ -16,8 +16,10 @@ const empty: Partial<Banner> = { title: "", subtitle: "", image_url: "", link_ur
 function FieldHead({ label, required, hint, reqText, optText }: { label: string; required?: boolean; hint?: string; reqText: string; optText: string }) {
   return (
     <div className="mb-1">
-      <span className="text-[12px] text-white/75">{label}</span>
-      <span className={`ml-1.5 text-[10px] font-medium ${required ? "text-[#FF6B85]" : "text-white/30"}`}>· {required ? reqText : optText}</span>
+      <span className="flex items-baseline gap-1.5 min-w-0">
+        <span className="text-[12px] text-white/75 truncate">{label}</span>
+        <span className={`text-[10px] font-medium whitespace-nowrap shrink-0 ${required ? "text-[#FF6B85]" : "text-white/30"}`}>· {required ? reqText : optText}</span>
+      </span>
       {hint && <span className="block text-[10.5px] text-white/35 mt-0.5 leading-snug">{hint}</span>}
     </div>
   );
@@ -29,7 +31,12 @@ export default function PromoBannersPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<Partial<Banner> | null>(null);
   const [saving, setSaving] = useState(false);
+  const [touched, setTouched] = useState<{ title?: boolean; link?: boolean }>({});
   const { confirm, confirmDialog } = useConfirm();
+
+  // Formani ochish — har safar "tegildi" holatini tozalaymiz (xatolar
+  // faqat maydonga tegilgandan keyin chiqadi, oyna ochilganda emas).
+  const openForm = (f: Partial<Banner>) => { setTouched({}); setForm(f); };
 
   const load = async () => {
     try {
@@ -84,7 +91,7 @@ export default function PromoBannersPage() {
             <p className="text-xs text-white/40">{t("prm.bannersSub")}</p>
           </div>
         </div>
-        <button onClick={() => setForm({ ...empty })} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-[#F4C76A] text-[#2a1e05]"><Plus size={16} /> {t("prm.newBtn")}</button>
+        <button onClick={() => openForm({ ...empty })} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-[#F4C76A] text-[#2a1e05]"><Plus size={16} /> {t("prm.newBtn")}</button>
       </div>
 
       {rows.length === 0 ? (
@@ -99,7 +106,7 @@ export default function PromoBannersPage() {
                 <div className="text-white/40 text-[11px] truncate">{b.subtitle || b.link_url || ""}</div>
               </div>
               <button onClick={() => toggle(b)} className={`shrink-0 text-[10px] px-2 py-1 rounded-full border ${b.is_active ? "bg-[#4ADE80]/10 border-[#4ADE80]/30 text-[#4ADE80]" : "bg-white/5 border-subtle text-white/40"}`}>{b.is_active ? t("prm.active") : t("prm.offShort")}</button>
-              <button onClick={() => setForm(b)} className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 text-white/60"><Pencil size={15} /></button>
+              <button onClick={() => openForm(b)} className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 text-white/60"><Pencil size={15} /></button>
               <button onClick={() => remove(b.id)} className="shrink-0 p-1.5 rounded-lg hover:bg-[#FF6B85]/10 text-[#FF6B85]"><Trash2 size={15} /></button>
             </div>
           ))}
@@ -141,15 +148,15 @@ export default function PromoBannersPage() {
               {/* Sarlavha — MAJBURIY */}
               <div>
                 <FieldHead label={t("prm.fTitle")} required hint={t("prm.fTitleHint")} reqText={t("prm.reqMark")} optText={t("prm.optMark")} />
-                <input className={inp} value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="1xBet — ro'yxatdan o'ting" />
-                {!form.title?.trim() && <p className="flex items-center gap-1 text-[10.5px] text-[#FF6B85] mt-1"><AlertCircle size={11} /> {t("prm.titleReq")}</p>}
+                <input className={inp} value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} onBlur={() => setTouched((p) => ({ ...p, title: true }))} placeholder="1xBet — ro'yxatdan o'ting" />
+                {touched.title && !form.title?.trim() && <p className="flex items-center gap-1 text-[10.5px] text-[#FF6B85] mt-1"><AlertCircle size={11} /> {t("prm.titleReq")}</p>}
               </div>
 
               {/* Havola — MAJBURIY */}
               <div>
                 <FieldHead label={t("prm.fLink")} required hint={t("prm.fLinkHint")} reqText={t("prm.reqMark")} optText={t("prm.optMark")} />
-                <input className={inp} value={form.link_url ?? ""} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="https://1xbet... yoki t.me/..." />
-                {!form.link_url?.trim() && <p className="flex items-center gap-1 text-[10.5px] text-[#FF6B85] mt-1"><AlertCircle size={11} /> {t("prm.linkReq")}</p>}
+                <input className={inp} value={form.link_url ?? ""} onChange={(e) => setForm({ ...form, link_url: e.target.value })} onBlur={() => setTouched((p) => ({ ...p, link: true }))} placeholder="https://1xbet... yoki t.me/..." />
+                {touched.link && !form.link_url?.trim() && <p className="flex items-center gap-1 text-[10.5px] text-[#FF6B85] mt-1"><AlertCircle size={11} /> {t("prm.linkReq")}</p>}
               </div>
 
               {/* Rasm URL — ixtiyoriy */}
