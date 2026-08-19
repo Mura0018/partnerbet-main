@@ -50,6 +50,7 @@ export function PromoCodeCard() {
           code={promo.code}
           track={false}
           big
+          codeClassName="m-promocode-3d"
           copyLabel={t("tg.copy")}
           copiedLabel={t("tg.copied")}
           className="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl border border-[var(--border-subtle)] bg-white/[0.05] active:bg-white/[0.08] transition text-left"

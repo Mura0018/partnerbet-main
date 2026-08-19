@@ -70,7 +70,9 @@ export default function PromoManagePage() {
       setRefCode(r.code ?? "");
       setRefDesc(r.description ?? "");
       setRefLink(r.link ?? "");
-      setRefExpires(toLocalInput(r.expires_at));
+      // API endi site mintaqasidagi devor-soat matnini qaytaradi ("YYYY-MM-DDTHH:mm")
+      // — datetime-local'ga to'g'ridan-to'g'ri qo'yiladi (brauzer konversiyasi yo'q).
+      setRefExpires(r.expires_at ?? "");
     } catch {}
   };
   useEffect(() => { loadReferral(); }, []);
@@ -85,7 +87,8 @@ export default function PromoManagePage() {
           code: refCode,
           description: refDesc,
           link: refLink,
-          expires_at: refExpires ? new Date(refExpires).toISOString() : null,
+          // Devor-soat matnini xom yuboramiz — server site mintaqasida UTC'ga aylantiradi.
+          expires_at: refExpires || null,
         }),
       });
       if (!res.ok) { toast.error(t("prm.tSaveErr")); return; }

@@ -19,6 +19,10 @@
   --red: #FF5A6E;
   --border-subtle: rgba(255, 255, 255, 0.06);
   --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Kanal ko'rinishidagi tokenlar — rgb(var(--x) / 0.15) naqshi uchun
+     (Tailwind'da var + shaffoflik modifikatori ishlamaydi). */
+  --gold-rgb: 255 201 107; /* --gold #FFC96B */
+  --em-rgb: 18 217 160; /* --em #12D9A0 */
   position: relative;
   z-index: 0;
   /* Asosiy fon (--bg) shu yerda — aurora/grain (fixed, tepada) shundan
@@ -137,6 +141,40 @@
 }
 .m-comet-ring {
   animation: mRipple 1.4s ease-out infinite;
+}
+
+/* MURAWIN promo kodi — 3D metall/oltin gradient matn + sekin shimmer.
+   ZAXIRA: background-clip:text ishlamagan eski WebView'da matn oddiy
+   --gold rangda ko'rinadi (yo'qolib qolmaydi). Gradient/transparent faqat
+   @supports ichida — qo'llab-quvvatlansa. */
+.miniapp-root .m-promocode-3d {
+  color: var(--gold);
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .miniapp-root .m-promocode-3d {
+    background-image: linear-gradient(
+      100deg,
+      rgb(var(--gold-rgb)) 0%,
+      rgb(255 255 255 / 0.95) 18%,
+      rgb(var(--gold-rgb)) 40%,
+      rgb(var(--em-rgb)) 58%,
+      rgb(var(--gold-rgb)) 80%,
+      rgb(255 255 255 / 0.9) 100%
+    );
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    /* 3D chuqurlik — yumshoq soya (kontrastni pasaytirmaydi) */
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.45));
+    /* Sekin, bezovta qilmaydigan yorug'lik o'tishi */
+    animation: mPromoShimmer 6s linear infinite;
+  }
+}
+@keyframes mPromoShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 220% 50%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
