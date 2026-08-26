@@ -6,6 +6,16 @@ import { cashdeskDeposit, isCashdeskConfigured } from "@/lib/cashdesk/client";
 import { getCashdeskCredsById, type Creds } from "@/lib/cashdesk/store";
 import { enforceDebtLimit } from "@/lib/cashdesk/debt";
 import { applyRating } from "@/lib/cashdesk/oversight";
+import { recordDepositAttempt } from "@/lib/cashdesk/depositAttempts";
+import { getClientIp } from "@/lib/security/rateLimit";
+
+// BOSQICH D: depozit (Deposit) chaqiruvi uchun timeout — payout bilan bir
+// xil (8s). Timeout'da buyurtma deposit_status='pending'da qoladi, avtomatik
+// qayta urinilmaydi (ikki marta pul kirishidan himoya).
+const DEPOSIT_TIMEOUT_MS = 8000;
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | "timeout"> {
+  return Promise.race([p, new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms))]);
+}
 
 async function requireOrdersManage() {
   const supabase = await createServerSupabaseClient();
@@ -45,7 +55,7 @@ export async function POST(req: NextRequest) {
   // send to the cashdesk API before committing to "completed".
   const { data: pendingOrder } = await admin
     .from("telegram_orders")
-    .select("id, type, amount, account_id, withdraw_code, status")
+    .select("id, type, amount, account_id, withdraw_code, status, customer_id, deposit_status")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -100,20 +110,92 @@ export async function POST(req: NextRequest) {
         ? `${operatorNote} ("1xbetdan yechib olish" tugmasi orqali bajarilgan)`
         : "1xbetdan yechilgan, operator to'lovni tasdiqladi";
     } else {
-      // Topup (Deposit) — o'zgarishsiz, "Tasdiqlash" bosilganda shu yerda bajariladi.
-      const result = await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds, orderCashdeskId ?? undefined);
+      // Topup (Deposit) — BOSQICH D: idempotentlik. Payout (0092/0093 +
+      // payout/route.ts) naqshining ko'zgusi. Atomik lock ikki marta bosish /
+      // tarmoq qayta-yuborishidan himoya qiladi (aks holda ikki marta depozit).
+      const depStatus = (pendingOrder as any).deposit_status ?? "none";
+      const customerId = (pendingOrder as any).customer_id as string;
+      const playerId = String(pendingOrder.account_id);
+      const clientIp = getClientIp(req.headers);
 
-      if (!result.ok) {
-        // Pul harakati muvaffaqiyatsiz bo'lsa buyurtmani completed qilmaymiz.
-        return NextResponse.json({ error: "cashdesk_failed", detail: result.error }, { status: 502 });
+      if (depStatus === "success") {
+        // Idempotent no-op: depozit ALLAQACHON muvaffaqiyatli bajarilgan
+        // (masalan super_admin qo'lda hal qilgan) — qayta chaqirmaymiz,
+        // to'g'ridan-to'g'ri buyurtmani yakunlashga o'tamiz.
+        autoProcessed = true;
+      } else {
+        // ATOMIK: faqat 'none' bo'lsa 'pending'ga o'tkazamiz + urinish
+        // sanog'ini oshiramiz — IKKALASI bitta UPDATE ichida, xuddi shu
+        // WHERE deposit_status='none' bilan qo'riqlanadi. Qator yangilanmasa —
+        // boshqa urinish davom etyapti (yoki noaniq pending) — TO'XTA.
+        const { data: curRow } = await admin
+          .from("telegram_orders")
+          .select("deposit_attempt_count")
+          .eq("id", orderId)
+          .maybeSingle();
+        const nextAttempts = ((curRow as any)?.deposit_attempt_count ?? 0) + 1;
+
+        const { data: locked } = await admin
+          .from("telegram_orders")
+          .update({ deposit_status: "pending", deposit_attempt_count: nextAttempts })
+          .eq("id", orderId)
+          .eq("deposit_status", "none")
+          .select("id");
+
+        if (!locked || locked.length === 0) {
+          return NextResponse.json({ error: "deposit_in_progress", depositStatus: depStatus }, { status: 409 });
+        }
+
+        const outcome = await withTimeout(
+          cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds, orderCashdeskId ?? undefined),
+          DEPOSIT_TIMEOUT_MS
+        );
+        const nowIso = new Date().toISOString();
+
+        // 1) JAVOB KELMADI (timeout) — 'pending'da QOLDIRAMIZ, avtomatik
+        // qayta urinmaymiz. Buyurtma completed QILINMAYDI. Super_admin
+        // balansni tekshirib deposit-resolve-stuck orqali hal qiladi.
+        if (outcome === "timeout") {
+          await admin.from("telegram_orders").update({ deposit_response: { timeout: true }, deposit_at: nowIso }).eq("id", orderId);
+          return NextResponse.json({ error: "timeout_check_status", depositStatus: "pending" }, { status: 202 });
+        }
+
+        const result = outcome;
+
+        // 2) QURUQ REJIM yoqiq — real pul KO'CHMAGAN. Qulfni bo'shatib
+        // ('none'), aniq xabar bilan qaytaramiz (buyurtma completed emas).
+        if (result.ok && (result as any).dryRun) {
+          await admin.from("telegram_orders").update({ deposit_status: "none", deposit_response: { dryRun: true } }).eq("id", orderId);
+          return NextResponse.json({ error: "dry_run_active", detail: "cashdesk_dry_run yoqiq — real Deposit chaqirilmadi" }, { status: 409 });
+        }
+
+        // 3) MUVAFFAQIYAT — pul kirdi.
+        if (result.ok) {
+          await admin
+            .from("telegram_orders")
+            .update({ deposit_status: "success", deposit_at: nowIso, deposit_response: result.data as any })
+            .eq("id", orderId);
+          await recordDepositAttempt({ orderId, customerId, playerId, amount: Number(pendingOrder.amount), ok: true, error: null, ip: clientIp });
+          autoProcessed = true;
+        } else {
+          await recordDepositAttempt({ orderId, customerId, playerId, amount: Number(pendingOrder.amount), ok: false, error: result.error, ip: clientIp });
+
+          // Transport-darajasidagi ANIQ xato (imzo/so'rov rad etildi) —
+          // pul kirmagani aniq, lekin kalit/sozlama muammosi — 'failed',
+          // tez orada qayta urinish ma'nosiz.
+          const TRANSPORT_ERRORS = ["signature_error_401", "signature_error_403", "request_failed", "not_configured"];
+          if (TRANSPORT_ERRORS.includes(result.error)) {
+            await admin.from("telegram_orders").update({ deposit_status: "failed", deposit_at: nowIso, deposit_response: { error: result.error } }).eq("id", orderId);
+            return NextResponse.json({ error: "cashdesk_failed", detail: result.error, depositStatus: "failed" }, { status: 502 });
+          }
+
+          // API'ning o'zi "success:false" deb javob berdi — 'none'ga
+          // qaytaramiz (qayta urinsa bo'ladi), buyurtma completed emas.
+          await admin.from("telegram_orders").update({ deposit_status: "none", deposit_at: nowIso, deposit_response: { error: result.error } }).eq("id", orderId);
+          return NextResponse.json({ error: "cashdesk_failed", detail: result.error, depositStatus: "none" }, { status: 502 });
+        }
       }
-      // W3.5: QURUQ REJIM yoqiq — real pul KO'CHMAGAN, shuning uchun
-      // buyurtma HAQIQATAN "completed" deb belgilanmasin (aks holda
-      // mijoz to'lov olmagan holda "bajarildi" ko'rinardi).
-      if ((result as any).dryRun) {
-        return NextResponse.json({ error: "dry_run_active", detail: "cashdesk_dry_run yoqiq — real Deposit chaqirilmadi" }, { status: 409 });
-      }
-      autoProcessed = true;
+
       operatorNote = operatorNote
         ? `${operatorNote} (API orqali avtomatik bajarildi)`
         : "API orqali avtomatik bajarildi";
