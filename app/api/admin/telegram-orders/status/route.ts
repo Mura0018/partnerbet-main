@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   // send to the cashdesk API before committing to "completed".
   const { data: pendingOrder } = await admin
     .from("telegram_orders")
-    .select("id, type, amount, account_id, withdraw_code, status, customer_id, deposit_status")
+    .select("id, type, amount, account_id, withdraw_code, status, customer_id")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -73,21 +73,46 @@ export async function POST(req: NextRequest) {
   let orderCashdeskId: string | null = null;
   let handoffFrom: string | null = null; // 6-BOSQICH: takeover bo'lган bo'lsa asl owner
   let payoutStatus = "none"; // W2: withdraw uchun payout holat-mashinasi
+  // BOSQICH D: deposit_status ham HIMOYALANGAN (try/catch) o'qiladi —
+  // payout_status kabi. Migratsiya (0097) qo'yilmagan bo'lsa (ustun yo'q),
+  // so'rov xato beradi va "none"da qoladi (W2-tipidagi jim regressiyaning
+  // oldini olish — pastda ustun bo'lmasa eski oqimga tushamiz).
+  let depositStatus = "none";
+  let richReadOk = false;
   try {
-    const { data: cdRow } = await admin
+    const { data: cdRow, error: cdErr } = await admin
       .from("telegram_orders")
-      .select("cashdesk_id, handoff_from_operator_id, payout_status")
+      .select("cashdesk_id, handoff_from_operator_id, payout_status, deposit_status")
       .eq("id", orderId)
       .maybeSingle();
+    if (cdErr) throw cdErr;
+    richReadOk = true;
     orderCashdeskId = (cdRow as any)?.cashdesk_id ?? null;
     handoffFrom = (cdRow as any)?.handoff_from_operator_id ?? null;
     payoutStatus = (cdRow as any)?.payout_status ?? "none";
-    if (orderCashdeskId) {
-      const c = await getCashdeskCredsById(orderCashdeskId);
-      if (c) orderCreds = c;
-    }
+    depositStatus = (cdRow as any)?.deposit_status ?? "none";
   } catch {
-    /* default kassa / ustun yo'q */
+    /* payout_status/deposit_status ustuni yo'q (migratsiya kutilmoqda) */
+  }
+  // Yuqoridagi so'rov ustun yo'qligi sabab xato bergan bo'lsa — kassa
+  // kalitlarini ALOHIDA (faqat mavjud ustunlar bilan) o'qiymiz, aks holda
+  // default kassaga tushib qolardi (noto'g'ri kassadan depozit xavfi).
+  if (!richReadOk) {
+    try {
+      const { data: cdOnly } = await admin
+        .from("telegram_orders")
+        .select("cashdesk_id, handoff_from_operator_id")
+        .eq("id", orderId)
+        .maybeSingle();
+      orderCashdeskId = (cdOnly as any)?.cashdesk_id ?? null;
+      handoffFrom = (cdOnly as any)?.handoff_from_operator_id ?? null;
+    } catch {
+      /* cashdesk_id ustuni ham yo'q -> default kassa */
+    }
+  }
+  if (orderCashdeskId) {
+    const c = await getCashdeskCredsById(orderCashdeskId);
+    if (c) orderCreds = c;
   }
 
   // W2.2/W2.6: withdraw uchun "Mijozga pul yuborish" (shu endpoint,
@@ -113,12 +138,11 @@ export async function POST(req: NextRequest) {
       // Topup (Deposit) — BOSQICH D: idempotentlik. Payout (0092/0093 +
       // payout/route.ts) naqshining ko'zgusi. Atomik lock ikki marta bosish /
       // tarmoq qayta-yuborishidan himoya qiladi (aks holda ikki marta depozit).
-      const depStatus = (pendingOrder as any).deposit_status ?? "none";
       const customerId = (pendingOrder as any).customer_id as string;
       const playerId = String(pendingOrder.account_id);
       const clientIp = getClientIp(req.headers);
 
-      if (depStatus === "success") {
+      if (depositStatus === "success") {
         // Idempotent no-op: depozit ALLAQACHON muvaffaqiyatli bajarilgan
         // (masalan super_admin qo'lda hal qilgan) — qayta chaqirmaymiz,
         // to'g'ridan-to'g'ri buyurtmani yakunlashga o'tamiz.
@@ -135,17 +159,25 @@ export async function POST(req: NextRequest) {
           .maybeSingle();
         const nextAttempts = ((curRow as any)?.deposit_attempt_count ?? 0) + 1;
 
-        const { data: locked } = await admin
+        const { data: locked, error: lockErr } = await admin
           .from("telegram_orders")
           .update({ deposit_status: "pending", deposit_attempt_count: nextAttempts })
           .eq("id", orderId)
           .eq("deposit_status", "none")
           .select("id");
 
-        if (!locked || locked.length === 0) {
-          return NextResponse.json({ error: "deposit_in_progress", depositStatus: depStatus }, { status: 409 });
-        }
-
+        if (lockErr) {
+          // deposit_status ustuni hali YO'Q (migratsiya 0097 qo'yilmagan) —
+          // ESKI oqimga tushamiz: to'g'ridan-to'g'ri Deposit, holat
+          // mashinasiz (aynan D-dan oldingi xatti-harakat, jim regressiya
+          // yo'q). Migratsiyadan keyin bu shox hech qachon ishlamaydi.
+          const legacy = await cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds, orderCashdeskId ?? undefined);
+          if (!legacy.ok) return NextResponse.json({ error: "cashdesk_failed", detail: legacy.error }, { status: 502 });
+          if ((legacy as any).dryRun) return NextResponse.json({ error: "dry_run_active", detail: "cashdesk_dry_run yoqiq — real Deposit chaqirilmadi" }, { status: 409 });
+          autoProcessed = true;
+        } else if (!locked || locked.length === 0) {
+          return NextResponse.json({ error: "deposit_in_progress", depositStatus }, { status: 409 });
+        } else {
         const outcome = await withTimeout(
           cashdeskDeposit(pendingOrder.account_id, Number(pendingOrder.amount), orderCreds, orderCashdeskId ?? undefined),
           DEPOSIT_TIMEOUT_MS
@@ -194,6 +226,7 @@ export async function POST(req: NextRequest) {
           await admin.from("telegram_orders").update({ deposit_status: "none", deposit_at: nowIso, deposit_response: { error: result.error } }).eq("id", orderId);
           return NextResponse.json({ error: "cashdesk_failed", detail: result.error, depositStatus: "none" }, { status: 502 });
         }
+        } // deposit_status ustuni mavjud bo'lsa (lock muvaffaqiyatli) — holat mashinasi tugadi
       }
 
       operatorNote = operatorNote
