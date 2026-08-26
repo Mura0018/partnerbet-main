@@ -39,6 +39,7 @@ type Order = {
   auto_processed: boolean;
   payout_status: "none" | "pending" | "success" | "failed";
   payout_attempt_count: number;
+  deposit_status: "none" | "pending" | "success" | "failed";
   handoff_open: boolean;
   sla_deadline: string | null;
   created_at: string;
@@ -210,6 +211,16 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
   // qo'lda tasdiqlashni to'smaydi).
   const [blockedWarning, setBlockedWarning] = useState<{ reason?: string; until?: string } | null>(null);
 
+  // BOSQICH D: topup depozit holat-mashinasi (payout ko'zgusi). "Bajarildi"
+  // bosilганda status/route.ts atomik lock + Deposit qiladi; timeout bo'lsa
+  // depositState 'pending'da qoladi va super_admin uchun qo'lda hal qilish
+  // (deposit-resolve-stuck) ko'rinadi.
+  const [depositState, setDepositState] = useState(order.deposit_status ?? "none");
+  const [depStuckOutcome, setDepStuckOutcome] = useState<"success" | "failed" | null>(null);
+  const [depStuckReason, setDepStuckReason] = useState("");
+  const [depStuckBusy, setDepStuckBusy] = useState(false);
+  const [depStuckError, setDepStuckError] = useState("");
+
   // W2: rekvizit endi mas'ul operatorga (yoki super_adminga) DOIM ko'rinadi
   // — payout_status'ga bog'liq emas. Boshqa operator (mas'ul bo'lmagan)
   // uchun niqoblangan qoladi.
@@ -253,6 +264,30 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
       setStuckError(t("ord.genericError"));
     } finally {
       setStuckBusy(false);
+    }
+  };
+
+  // BOSQICH D: super_admin osilib qolgan (pending) topup depozitini qo'lda
+  // hal qiladi — payout resolveStuckPayout ko'zgusi.
+  const resolveStuckDeposit = async () => {
+    if (!depStuckOutcome || !depStuckReason.trim()) { setDepStuckError(t("ord.reasonRequired")); return; }
+    setDepStuckBusy(true);
+    setDepStuckError("");
+    try {
+      const res = await fetch("/api/admin/telegram-orders/deposit-resolve-stuck", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, outcome: depStuckOutcome, reason: depStuckReason.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setDepStuckError(data.error ?? t("ord.genericError")); return; }
+      setDepositState(data.depositStatus);
+      setDepStuckOutcome(null);
+      setDepStuckReason("");
+    } catch {
+      setDepStuckError(t("ord.genericError"));
+    } finally {
+      setDepStuckBusy(false);
     }
   };
 
@@ -310,6 +345,10 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        // BOSQICH D: topup depozit idempotentligi javoblari.
+        if (data.error === "timeout_check_status") { setApiError(t("ord.depositCheckStatus")); setDepositState("pending"); return; }
+        if (data.error === "deposit_in_progress") { setApiError(t("ord.depositInProgress")); if (data.depositStatus) setDepositState(data.depositStatus); return; }
+        if (data.error === "dry_run_active") { setApiError(t("ord.dryRunActive")); return; }
         if (data.error === "cashdesk_failed") {
           if (!CASHDESK_ERROR_LABELS[data.detail]) console.error("[orders] kassa xatosi:", data.detail);
           setApiError(CASHDESK_ERROR_LABELS[data.detail] ?? t("ord.cd_error"));
@@ -508,6 +547,51 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
                   </>
                 )}
               </div>
+            )}
+          </div>
+        )}
+        {/* BOSQICH D: topup depozit "osilib qolgan" (timeout) — FAQAT
+            super_admin, 1xbet/kassa balansini QO'LDA tekshirgandan keyin.
+            payout stuck-resolution ko'zgusi. */}
+        {order.type === "topup" && depositState === "pending" && isSuperAdmin && (
+          <div className="mb-3 rounded-lg bg-white/[0.04] border border-subtle p-3">
+            <div className="flex items-center gap-1.5 text-[11.5px] text-[#F4C76A] mb-2 font-semibold">
+              <AlertCircle size={13} className="shrink-0" /> {t("ord.stuckWarning")}
+            </div>
+            <div className="flex gap-1.5 mb-2">
+              <button
+                type="button"
+                onClick={() => setDepStuckOutcome("success")}
+                className={`flex-1 py-1.5 rounded-lg text-[12px] font-semibold border ${depStuckOutcome === "success" ? "bg-[#4ADE80]/20 border-[#4ADE80]/50 text-[#4ADE80]" : "bg-white/5 border-subtle text-muted"}`}
+              >
+                {t("ord.depStuckSuccess")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDepStuckOutcome("failed")}
+                className={`flex-1 py-1.5 rounded-lg text-[12px] font-semibold border ${depStuckOutcome === "failed" ? "bg-[#FF6B85]/20 border-[#FF6B85]/50 text-[#FF6B85]" : "bg-white/5 border-subtle text-muted"}`}
+              >
+                {t("ord.depStuckFailed")}
+              </button>
+            </div>
+            {depStuckOutcome && (
+              <>
+                <textarea
+                  rows={2}
+                  value={depStuckReason}
+                  onChange={(e) => setDepStuckReason(e.target.value)}
+                  placeholder={t("ord.stuckReasonPh")}
+                  className="w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[12px] outline-none focus:border-accent mb-2"
+                />
+                {depStuckError && <p className="text-[11px] text-[#FF6B85] mb-2">{depStuckError}</p>}
+                <button
+                  onClick={resolveStuckDeposit}
+                  disabled={depStuckBusy || !depStuckReason.trim()}
+                  className="w-full py-2 rounded-lg bg-white/10 border border-subtle text-white font-semibold text-[12px] disabled:opacity-50"
+                >
+                  {depStuckBusy ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("ord.stuckConfirm")}
+                </button>
+              </>
             )}
           </div>
         )}

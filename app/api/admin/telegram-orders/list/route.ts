@@ -10,7 +10,7 @@ const BASE_ORDER_COLUMNS =
 // qo'yilmagan bo'lishi mumkin. Shu ikkalasi bilan so'rov xato bersa,
 // pastda BASE_ORDER_COLUMNS (bularsiz) bilan qayta uriniladi — aks holda
 // butun ro'yxat (barcha buyurtma turlari) BO'SH ko'rinib qolardi.
-const ORDER_COLUMNS = `${BASE_ORDER_COLUMNS}, payout_status, payout_attempt_count`;
+const ORDER_COLUMNS = `${BASE_ORDER_COLUMNS}, payout_status, payout_attempt_count, deposit_status`;
 
 // Buyurtmalar ro'yxati — qidiruv/filtr server tomonda (#16). Ilgari
 // OrdersTab.tsx .limit(200) bilan olib, qidiruv/operator/bugun/olinmagan
@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
     ...o,
     payout_status: o.payout_status ?? "none",
     payout_attempt_count: o.payout_attempt_count ?? 0,
+    deposit_status: o.deposit_status ?? "none",
   }));
 
   return NextResponse.json({ orders, total: count ?? 0, page, pageSize: PAGE_SIZE });
