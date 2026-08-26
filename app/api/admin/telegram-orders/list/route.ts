@@ -10,7 +10,12 @@ const BASE_ORDER_COLUMNS =
 // qo'yilmagan bo'lishi mumkin. Shu ikkalasi bilan so'rov xato bersa,
 // pastda BASE_ORDER_COLUMNS (bularsiz) bilan qayta uriniladi — aks holda
 // butun ro'yxat (barcha buyurtma turlari) BO'SH ko'rinib qolardi.
-const ORDER_COLUMNS = `${BASE_ORDER_COLUMNS}, payout_status, payout_attempt_count`;
+// 3-bosqichli fallback (BOSQICH D): FULL (payout + deposit) -> PAYOUT (0097
+// hali yo'q, lekin 0092 bor) -> BASE (ikkalasi ham yo'q). O'rta bosqich
+// muhim: 0097 qo'yilmasdan deploy bo'lsa ham payout UI degradatsiyaga
+// uchramaydi (W2-tipidagi jim regressiyaning oldini olish).
+const ORDER_COLUMNS_FULL = `${BASE_ORDER_COLUMNS}, payout_status, payout_attempt_count, deposit_status`;
+const ORDER_COLUMNS_PAYOUT = `${BASE_ORDER_COLUMNS}, payout_status, payout_attempt_count`;
 
 // Buyurtmalar ro'yxati — qidiruv/filtr server tomonda (#16). Ilgari
 // OrdersTab.tsx .limit(200) bilan olib, qidiruv/operator/bugun/olinmagan
@@ -69,10 +74,14 @@ export async function GET(req: NextRequest) {
   const todayStart = onlyToday ? startOfDayInTimezone(new Date(), await getTimezone()) : null;
   const withToday = (q: ReturnType<typeof runQuery>) => (todayStart ? q.gte("created_at", todayStart.toISOString()) : q);
 
-  let { data, count, error } = await withToday(runQuery(ORDER_COLUMNS));
+  let { data, count, error } = await withToday(runQuery(ORDER_COLUMNS_FULL));
   if (error) {
-    // payout_status/payout_attempt_count ustunlari hali yo'q (migratsiya
-    // 0092 qo'yilmagan) — eski qisqa ustun ro'yxati bilan qayta so'raymiz.
+    // deposit_status (0097) hali yo'q — payout ustunlari bilan qayta
+    // so'raymiz (payout UI o'z holida qoladi).
+    ({ data, count, error } = await withToday(runQuery(ORDER_COLUMNS_PAYOUT)));
+  }
+  if (error) {
+    // payout_status ham yo'q (0092 qo'yilmagan) — eng qisqa ustun ro'yxati.
     ({ data, count, error } = await withToday(runQuery(BASE_ORDER_COLUMNS)));
   }
 
@@ -80,6 +89,7 @@ export async function GET(req: NextRequest) {
     ...o,
     payout_status: o.payout_status ?? "none",
     payout_attempt_count: o.payout_attempt_count ?? 0,
+    deposit_status: o.deposit_status ?? "none",
   }));
 
   return NextResponse.json({ orders, total: count ?? 0, page, pageSize: PAGE_SIZE });
