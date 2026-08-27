@@ -168,6 +168,10 @@ export const dictionaries = {
       activity: "Faollik (so'm)", orders: "Buyurtma", scanCount: "Skaner", recentOrders: "So'nggi buyurtmalar", noOrders: "Buyurtma yo'q.",
       cardBlank: "Biriktirilmagan karta — mijozga bog'lash mumkin", cardCancelled: "Bu karta bekor qilingan", cancelReason: "Sabab",
       accountsTitle: "1xBet ID lari", primary: "asosiy", unverified: "taxmin — tasdiqlang", noAccounts: "ID biriktirilmagan",
+      assignSearch: "Mijozni qidiring (telefon / 1xBet ID / ism)", assignSearchPh: "Kamida 3 belgi", assignMin: "Kamida 3 belgi kiriting", assignBtn: "Biriktirish",
+      assignedBy: "Biriktirdi", cancelCard: "Kartani bekor qilish", cancelWarn: "Bekor qilish qaytarilmaydi. Sabab majburiy.", cancelReasonPh: "Sabab (yo'qotdi / buzildi / boshqa)", cancelConfirm: "Bekor qilish", cancelledBy: "Bekor qildi", cancel: "Yopish",
+      replaceWarn: "Bu mijozda karta bor ({code}). Eskisi bekor qilinadi.", replaceReasonPh: "Sabab (nega almashtiryapsiz)", replaceConfirm: "Eskisini bekor qilib biriktirish",
+      aErrNotBlank: "Bu karta bo'sh emas.", aErrRetry: "Biriktirilmadi — boshqa bo'sh kartani sinang.", cReason: "Sababni kiriting.", cErrNotAssigned: "Bu karta biriktirilmagan.",
       errNotFound: "Bunday kod topilmadi. Kartani tekshiring.", errGeneric: "Tekshirib bo'lmadi. Qayta urining.", errCamera: "Kamera ochilmadi. Ruxsat bering yoki kodni qo'lda kiriting.", errConn: "Ulanmadi. Qayta urining.",
     },
     shl: {
@@ -893,6 +897,10 @@ export const dictionaries = {
       activity: "Активность (сум)", orders: "Заказы", scanCount: "Скан", recentOrders: "Последние заказы", noOrders: "Заказов нет.",
       cardBlank: "Непривязанная карта — можно привязать к клиенту", cardCancelled: "Эта карта отменена", cancelReason: "Причина",
       accountsTitle: "1xBet ID клиента", primary: "основной", unverified: "предположительно — подтвердите", noAccounts: "ID не привязаны",
+      assignSearch: "Найдите клиента (телефон / 1xBet ID / имя)", assignSearchPh: "Минимум 3 символа", assignMin: "Введите минимум 3 символа", assignBtn: "Привязать",
+      assignedBy: "Привязал", cancelCard: "Отменить карту", cancelWarn: "Отмена необратима. Причина обязательна.", cancelReasonPh: "Причина (потерял / повреждена / другое)", cancelConfirm: "Отменить", cancelledBy: "Отменил", cancel: "Закрыть",
+      replaceWarn: "У клиента уже есть карта ({code}). Старая будет отменена.", replaceReasonPh: "Причина (почему меняете)", replaceConfirm: "Отменить старую и привязать",
+      aErrNotBlank: "Эта карта не пустая.", aErrRetry: "Не привязано — попробуйте другую пустую карту.", cReason: "Укажите причину.", cErrNotAssigned: "Эта карта не привязана.",
       errNotFound: "Такой код не найден. Проверьте карту.", errGeneric: "Не удалось проверить. Попробуйте снова.", errCamera: "Камера не открылась. Дайте доступ или введите код вручную.", errConn: "Не подключено. Попробуйте снова.",
     },
     shl: {

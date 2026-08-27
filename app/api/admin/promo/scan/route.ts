@@ -3,6 +3,13 @@ import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { normalizeCardCode } from "@/lib/cards/generateCode";
 
+// Aktyor ismi (kim biriktirdi / bekor qildi) — profiles'dan.
+async function profileName(admin: ReturnType<typeof createAdminClient>, id: string | null): Promise<string | null> {
+  if (!id) return null;
+  const { data } = await admin.from("profiles").select("display_name, full_name").eq("id", id).maybeSingle();
+  return (data as any)?.display_name || (data as any)?.full_name || null;
+}
+
 // Operator QR karta kodini (yoki qo'lда) skanerlaydi -> holatga qarab:
 //  - blank      -> biriktirilmagan (mijozga bog'lash mumkin)
 //  - assigned   -> mijoz + uning 1xBet ID lari (tasdiqlanmaganlar belgilangan)
@@ -27,7 +34,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
   const { data: cardRow } = await admin
     .from("promo_cards")
-    .select("customer_id, card_code, status, claimed_at, assigned_at, cancelled_at, cancel_reason")
+    .select("customer_id, card_code, status, claimed_at, assigned_at, cancelled_at, cancel_reason, assigned_by, cancelled_by")
     .eq("card_code", code)
     .maybeSingle();
 
@@ -40,12 +47,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, cardState: "blank", card: { code } });
   }
 
-  // CANCELLED — bekor qilingan karta (+ sabab).
+  // CANCELLED — bekor qilingan karta (+ sabab + kim bekor qildi).
   if (status === "cancelled") {
+    const cancelledByName = await profileName(admin, (cardRow as any).cancelled_by ?? null);
     return NextResponse.json({
       ok: true,
       cardState: "cancelled",
-      card: { code, cancel_reason: (cardRow as any).cancel_reason ?? null, cancelled_at: (cardRow as any).cancelled_at ?? null },
+      card: {
+        code,
+        cancel_reason: (cardRow as any).cancel_reason ?? null,
+        cancelled_at: (cardRow as any).cancelled_at ?? null,
+        cancelled_by_name: cancelledByName,
+      },
     });
   }
 
@@ -80,6 +93,8 @@ export async function POST(req: NextRequest) {
   await admin.from("promo_scans").insert({ customer_id: customerId, card_code: code, scanned_by: user.id });
   const { count: scanCount } = await admin.from("promo_scans").select("id", { count: "exact", head: true }).eq("customer_id", customerId);
 
+  const assignedByName = await profileName(admin, (cardRow as any).assigned_by ?? null);
+
   return NextResponse.json({
     ok: true,
     cardState: "assigned",
@@ -95,7 +110,7 @@ export async function POST(req: NextRequest) {
       is_primary: !!a.is_primary,
       verified: !!a.verified,
     })),
-    card: { code, assigned_at: (cardRow as any).assigned_at ?? (cardRow as any).claimed_at ?? null },
+    card: { code, assigned_at: (cardRow as any).assigned_at ?? (cardRow as any).claimed_at ?? null, assigned_by_name: assignedByName },
     activity: { volume, orders_count: completed.length },
     orders: orders ?? [],
     scanCount: scanCount ?? 1,
