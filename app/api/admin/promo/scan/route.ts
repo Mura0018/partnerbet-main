@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { normalizeCardCode } from "@/lib/cards/generateCode";
 
 // Operator QR karta kodini (yoki qo'lда) skanerlaydi -> holatga qarab:
 //  - blank      -> biriktirilmagan (mijozga bog'lash mumkin)
@@ -17,7 +18,10 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
-  const code = String(body?.code ?? "").trim().toUpperCase();
+  // Normalizatsiya: chiziqcha/bo'shliqni tashlaydi, katta harf. Chop etilgan
+  // "CP-8F3K-2M9Q..." (guruhlangan) va eski prefiksiz kodlar — ikkalasi ham
+  // bazadagi ajratgichsiz kodga mos keladi.
+  const code = normalizeCardCode(body?.code ?? "");
   if (!code) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
   const admin = createAdminClient();
