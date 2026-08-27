@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { formatPhone } from "@/lib/format";
+import { formatPhone, formatAccountId } from "@/lib/format";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
@@ -294,7 +294,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
                     {linkedOrder.status === "completed" ? t("sup.stCompleted") : linkedOrder.status === "rejected" ? t("sup.stRejected") : t("sup.stPending")}
                   </span>
                 </div>
-                <div className="text-[11px] text-white/40">{linkedOrder.platform} · ID {linkedOrder.account_id}</div>
+                <div className="text-[11px] text-white/40">{linkedOrder.platform} · {formatAccountId(linkedOrder.account_id)}</div>
                 <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} {t("common.som")}</div>
                 <div className="text-[9px] text-white/30 mt-1">{t("sup.tapHint")}</div>
               </div>
