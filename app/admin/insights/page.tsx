@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDateTime } from "@/lib/format";
 import { Select } from "@/lib/ui/Select";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -27,6 +29,7 @@ const EMPTY: Omit<Insight, "id"> = {
 
 export default function InsightsManager() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [insights, setInsights] = useState<Insight[]>([]);
   const [form, setForm] = useState<Omit<Insight, "id">>(EMPTY);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -99,7 +102,7 @@ export default function InsightsManager() {
               </div>
             </div>
             <div className="font-semibold text-[14px]">{i.home_team} vs {i.away_team}</div>
-            <div className="text-[11px] text-[#5b6f85] mt-1">{new Date(i.match_time).toLocaleString()} · Conf. {i.confidence}%</div>
+            <div className="text-[11px] text-[#5b6f85] mt-1">{formatDateTime(i.match_time, { timeZone: tz })} · Conf. {i.confidence}%</div>
             <p className="text-[12px] text-muted mt-2 line-clamp-2">{i.analysis}</p>
           </div>
         ))}

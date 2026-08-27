@@ -1,6 +1,8 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDateTime } from "@/lib/format";
 import React, { useEffect, useState } from "react";
 import { Gauge, Loader2, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 
@@ -8,7 +10,6 @@ type Operator = { id: string; name: string; rating: number; is_online: boolean; 
 type Event = { id: string; operator_name: string; delta: number; reason: string | null; created_at: string };
 type Alert = { id: string; operator_name: string; level: number; reason: string | null; created_at: string };
 
-const fmtDt = (s: string) => new Date(s).toLocaleString("ru-RU");
 const ratingColor = (n: number) => (n > 0 ? "text-[#4ADE80]" : n < 0 ? "text-[#FF6B85]" : "text-white/60");
 const levelBadge = (l: number) =>
   l === 3 ? "bg-[#FF6B85]/15 text-[#FF6B85] border-[#FF6B85]/40" : l === 2 ? "bg-[#F4C76A]/15 text-[#F4C76A] border-[#F4C76A]/40" : "bg-white/5 text-white/50 border-subtle";
@@ -16,6 +17,8 @@ const levelBadge = (l: number) =>
 export default function OperatorRatingPage() {
   const [data, setData] = useState<{ operators: Operator[]; events: Event[]; alerts: Alert[] } | null>(null);
   const { t } = useLocale();
+  const tz = useSiteTimezone();
+  const fmtDt = (s: string) => formatDateTime(s, { timeZone: tz });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"events" | "alerts">("events");
 

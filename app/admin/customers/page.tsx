@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { formatPhone } from "@/lib/format";
+import { formatPhone, formatDate } from "@/lib/format";
 import { Users, Search, X, Loader2, ChevronLeft, ChevronRight, Gift, EyeOff, Eye, RotateCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { Select } from "@/lib/ui/Select";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -27,11 +28,12 @@ const STATUS: Record<string, { labelKey: string; cls: string }> = {
   completed: { labelKey: "cus.stCompleted", cls: "text-[#4ADE80]" },
   rejected: { labelKey: "cus.stRejected", cls: "text-[#FF6B85]" },
 };
-const fmtDate = (s: string) => new Date(s).toLocaleDateString("ru-RU");
 const fmtSum = (n: number) => Number(n || 0).toLocaleString("ru-RU");
 
 export default function CustomersManager() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
+  const fmtDate = (s: string) => formatDate(s, { timeZone: tz });
   const [rows, setRows] = useState<Row[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [total, setTotal] = useState(0);

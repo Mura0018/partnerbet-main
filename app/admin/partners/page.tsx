@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { formatPhone } from "@/lib/format";
+import { formatPhone, formatDateTime } from "@/lib/format";
 import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight, SlidersHorizontal, Bot, Palette, Users, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { GlobalChat } from "@/lib/chat/GlobalChat";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { Select } from "@/lib/ui/Select";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -473,6 +474,7 @@ type ModalState = { open: boolean; partner: Partner | null; prefill?: { name?: s
 
 export default function PartnersManager() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [view, setView] = useState<"partners" | "leads" | "chat">("partners");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [leads, setLeads] = useState<PartnerLead[]>([]);
@@ -618,7 +620,7 @@ export default function PartnersManager() {
                     <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{t(st.labelKey as any)}</span>
                   </div>
                   {l.message && <p className="text-[12.5px] text-white/85 bg-white/[0.03] rounded-lg px-3 py-2 my-2">{l.message}</p>}
-                  <div className="text-[10.5px] text-[#5b6f85] mb-2.5">{new Date(l.created_at).toLocaleString("ru-RU")}</div>
+                  <div className="text-[10.5px] text-[#5b6f85] mb-2.5">{formatDateTime(l.created_at, { timeZone: tz })}</div>
                   <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-subtle">
                     <button onClick={() => setModal({ open: true, partner: null, prefill: { name: l.company || l.name || "", company: l.company || "" }, leadId: l.id })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent/15 text-[#7db8ff] hover:bg-accent/25 text-[11.5px] font-medium">
                       <ArrowRight size={13} /> {t("prt.createPartner")}

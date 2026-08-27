@@ -10,6 +10,8 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatTime } from "@/lib/format";
 import { toast } from "@/lib/ui/toast";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -46,6 +48,7 @@ type ChatMessage = {
 
 export function ChatTab() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -437,7 +440,7 @@ export function ChatTab() {
               <div className={`min-w-0 max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                 <div className={`flex items-baseline gap-1.5 mb-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
                   <span className="text-[10px] font-bold" style={{ color }}>{isMe ? t("cht.you") : name}</span>
-                  <span className="text-[9px] text-[#5b6f85]">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  <span className="text-[9px] text-[#5b6f85]">{formatTime(m.created_at, { timeZone: tz })}</span>
                 </div>
                 <div
                   className={`rounded-xl px-3 py-2 text-[12.5px] leading-snug break-words ${isMe ? "text-white shadow-lg shadow-black/20" : "bg-white/10 backdrop-blur-md border border-subtle text-white/90"}`}

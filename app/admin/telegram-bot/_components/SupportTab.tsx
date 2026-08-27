@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { formatPhone, formatAccountId } from "@/lib/format";
+import { formatPhone, formatAccountId, formatTime } from "@/lib/format";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
@@ -76,6 +77,7 @@ function SupportVoice({ path }: { path: string }) {
 
 function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thread: SupportThread; currentUserId: string | null; onBack: () => void; onArchived: () => void }) {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [msgs, setMsgs] = useState<SupportMsg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -343,7 +345,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
               ) : (
                 (m.message ?? "").replace("__END_CONFIRM__", "")
               )}
-              <div className="text-[8px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+              <div className="text-[8px] text-white/40 mt-1">{formatTime(m.created_at, { timeZone: tz })}</div>
             </div>
             <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "operator" ? "flex-row-reverse" : ""}`}>
               <button onClick={() => setReplyTo(m)} className="text-[9px] text-[#5b6f85] hover:text-white flex items-center gap-0.5">

@@ -1,6 +1,8 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDate, formatDateTime } from "@/lib/format";
 import React, { useEffect, useState } from "react";
 import {
   Plus, Trash2, Pencil, X, Star, ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Tag, Route, Activity,
@@ -419,6 +421,7 @@ function PartnerModal({ partner, onClose, onSaved }: { partner: Partner | null; 
 
 function PromoCodesTab({ partnerId }: { partnerId: string }) {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [codes, setCodes] = useState<PromoCode[]>([]);
   const [form, setForm] = useState({ code: "", bonus_description: "", is_featured: false, expires_at: "" });
   const [error, setError] = useState("");
@@ -476,7 +479,7 @@ function PromoCodesTab({ partnerId }: { partnerId: string }) {
                 <span className="font-mono font-semibold text-[13px]">{c.code}</span>
                 {c.is_featured && <Star size={11} className="text-vip" fill="currentColor" />}
               </div>
-              <div className="text-[11px] text-[#5b6f85] mt-0.5">{c.bonus_description} · {c.usage_count} marta ishlatilgan{c.expires_at ? ` · muddat: ${new Date(c.expires_at).toLocaleDateString()}` : ""}</div>
+              <div className="text-[11px] text-[#5b6f85] mt-0.5">{c.bonus_description} · {c.usage_count} marta ishlatilgan{c.expires_at ? ` · muddat: ${formatDate(c.expires_at, { timeZone: tz })}` : ""}</div>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => toggleActive(c)} className={`text-[10px] px-2 py-1 rounded-full border ${c.is_active ? "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30" : "bg-white/5 text-[#5b6f85] border-subtle"}`}>{c.is_active ? "Faol" : "Faolsiz"}</button>
@@ -564,6 +567,7 @@ function RedirectRulesTab({ partnerId }: { partnerId: string }) {
 
 function LinkHealthTab({ partner, onChecked }: { partner: Partner; onChecked: (p: Partner) => void }) {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [checking, setChecking] = useState(false);
   const supabase = createClient();
 
@@ -599,7 +603,7 @@ function LinkHealthTab({ partner, onChecked }: { partner: Partner; onChecked: (p
     <div>
       <div className="flex items-center justify-between mb-4">
         <p className="text-[11px] text-[#5b6f85]">
-          {partner.link_health_checked_at ? `Oxirgi tekshiruv: ${new Date(partner.link_health_checked_at).toLocaleString()}` : "Hali tekshirilmagan."}
+          {partner.link_health_checked_at ? `Oxirgi tekshiruv: ${formatDateTime(partner.link_health_checked_at, { timeZone: tz })}` : "Hali tekshirilmagan."}
         </p>
         <button onClick={runCheck} disabled={checking} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-accent to-accent-dim text-[12px] font-semibold disabled:opacity-60">
           {checking ? <Loader2 size={13} className="animate-spin" /> : <Activity size={13} />} {checking ? "Tekshirilmoqda…" : "Havolalarni tekshirish"}

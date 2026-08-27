@@ -1,7 +1,8 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/LocaleProvider";
-import { formatPhone } from "@/lib/format";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatPhone, formatDateTime } from "@/lib/format";
 import React, { useEffect, useRef, useState } from "react";
 import { QrCode, Loader2, Camera, X, User, Search } from "lucide-react";
 
@@ -14,7 +15,6 @@ type Result = {
 };
 
 const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
-const fmtDt = (s: string | null) => (s ? new Date(s).toLocaleString("ru-RU") : "—");
 const STATUS: Record<string, { labelKey: string; cls: string }> = {
   pending: { labelKey: "ord.statusPending", cls: "text-[#F4C76A]" },
   completed: { labelKey: "ord.statusCompleted", cls: "text-[#4ADE80]" },
@@ -24,6 +24,8 @@ const STATUS: Record<string, { labelKey: string; cls: string }> = {
 export default function PromoScanPage() {
   const [code, setCode] = useState("");
   const { t } = useLocale();
+  const tz = useSiteTimezone();
+  const fmtDt = (s: string | null) => formatDateTime(s, { timeZone: tz });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);

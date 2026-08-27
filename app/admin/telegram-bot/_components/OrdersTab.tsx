@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { formatPhone, formatAccountId } from "@/lib/format";
+import { formatPhone, formatAccountId, formatDateTime } from "@/lib/format";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import Link from "next/link";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, ChevronRight, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -98,6 +99,7 @@ function ReceiptViewer({ path }: { path: string }) {
 function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorNames: Record<string, string> }) {
   const supabase = createClient();
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [rows, setRows] = useState<{ id: string; operator_id: string | null; confirmed: boolean; amount: number | null; note: string | null; created_at: string }[]>([]);
   const [amount, setAmount] = useState(String(order.amount));
   const [note, setNote] = useState("");
@@ -182,7 +184,7 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
               {" · "}
               {r.operator_id ? (operatorNames[r.operator_id] ?? t("ord.operator")) : t("ord.operator")}
               {" · "}
-              {new Date(r.created_at).toLocaleString("ru-RU")}
+              {formatDateTime(r.created_at, { timeZone: tz })}
               {r.note ? ` · ${r.note}` : ""}
             </div>
           ))}
