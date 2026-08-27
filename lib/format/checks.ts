@@ -37,6 +37,9 @@ export function runFormatChecks(): void {
   assert.equal(formatDate("2026-08-25T20:00:00Z", { timeZone: TZ }), "26.08.2026");
   assert.equal(formatDate(null), "—");
   assert.equal(formatDateTime("axlat"), "—");
+  // seconds opsiyasi (log/audit)
+  assert.equal(formatTime("2026-08-26T00:00:05Z", { timeZone: TZ, seconds: true }), "05:00:05");
+  assert.equal(formatDateTime("2026-08-26T00:00:05Z", { timeZone: TZ, seconds: true }), "26.08.2026 05:00:05");
 
   // ---- KUN YORLIG'I ----
   const now = "2026-08-26T10:00:00Z";

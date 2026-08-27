@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { SiteTimezoneProvider } from "@/lib/site/SiteTimezoneProvider";
 import { LocaleSwitcher } from "@/lib/i18n/LocaleSwitcher";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { BrandName } from "@/lib/ui/BrandName";
@@ -319,7 +320,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Suspense fallback={null}>
           <ForbiddenBanner />
         </Suspense>
-        {children}
+        {/* F2a: sana/vaqt ko'rsatish uchun jonli site mintaqasi (admin client
+            layout -> provider /api/site/timezone dan oladi). */}
+        <SiteTimezoneProvider>{children}</SiteTimezoneProvider>
       </main>
 
       {/* Mobil pastki tab-bar — operator kunlik 4 + "Yana" (faqat BetCore foydalanuvchi) */}

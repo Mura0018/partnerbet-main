@@ -48,20 +48,21 @@ export function formatDate(v: DateInput, opts: { timeZone?: string } = {}): stri
   }).format(d);
 }
 
-// "14:30" (24 soatlik)
-export function formatTime(v: DateInput, opts: { timeZone?: string } = {}): string {
+// "14:30" (24 soatlik). seconds:true -> "14:30:05" (log/audit joylari uchun).
+export function formatTime(v: DateInput, opts: { timeZone?: string; seconds?: boolean } = {}): string {
   const d = toDate(v);
   if (!d) return "—";
   return new Intl.DateTimeFormat("ru-RU", {
     timeZone: opts.timeZone ?? DEFAULT_TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
+    ...(opts.seconds ? { second: "2-digit" } : {}),
     hourCycle: "h23",
   }).format(d);
 }
 
-// "26.08.2026 14:30"
-export function formatDateTime(v: DateInput, opts: { timeZone?: string } = {}): string {
+// "26.08.2026 14:30" (seconds:true -> "26.08.2026 14:30:05")
+export function formatDateTime(v: DateInput, opts: { timeZone?: string; seconds?: boolean } = {}): string {
   const d = toDate(v);
   if (!d) return "—";
   return `${formatDate(d, opts)} ${formatTime(d, opts)}`;
