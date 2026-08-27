@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { formatPhone } from "@/lib/format";
 import { Trophy, Loader2, CreditCard, Save, Crown, X, Ticket } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -169,7 +170,7 @@ export default function PromoManagePage() {
               {rows.slice(0, 20).map((r, i) => (
                 <tr key={r.id} className="border-b border-subtle last:border-0">
                   <td className="px-3 py-2 text-white/50">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</td>
-                  <td className="px-3 py-2 text-white truncate max-w-[140px]">{r.full_name || r.phone}</td>
+                  <td className="px-3 py-2 text-white truncate max-w-[140px]">{r.full_name || formatPhone(r.phone)}</td>
                   <td className="px-3 py-2 text-right text-[#4ADE80] font-semibold">{fmt(r.volume)}</td>
                   {boost && <td className="px-3 py-2 text-right text-[#F4C76A]">{fmt(r.volume * multN)}</td>}
                   <td className="px-3 py-2">
@@ -277,7 +278,7 @@ export default function PromoManagePage() {
             {winners.map((w) => (
               <div key={w.id} className="flex items-center justify-between gap-2 text-[12.5px] bg-white/[0.03] rounded-lg px-3 py-2">
                 <span className="text-white">
-                  <span className="text-white/40">{w.segment === "cash" ? t("prm.cash") : t("prm.online")} · {t("prm.placeLabel", { place: w.place })}</span> {w.customers?.full_name || w.customers?.phone || "—"}
+                  <span className="text-white/40">{w.segment === "cash" ? t("prm.cash") : t("prm.online")} · {t("prm.placeLabel", { place: w.place })}</span> {w.customers?.full_name || formatPhone(w.customers?.phone)}
                 </span>
                 <button onClick={() => removeWinner(w.segment, w.place)} className="p-1 rounded hover:bg-white/10 text-white/40"><X size={14} /></button>
               </div>

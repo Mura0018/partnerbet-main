@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { formatPhone } from "@/lib/format";
 import Link from "next/link";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, ChevronRight, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -457,7 +458,7 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
 
         {/* Order details */}
         <div className="rounded-xl glass-card p-3.5 mb-4">
-          <Row label={t("ord.customer")} value={order.customers?.full_name || order.customers?.phone || "—"} />
+          <Row label={t("ord.customer")} value={order.customers?.full_name || formatPhone(order.customers?.phone)} />
           <Row label={t("ord.platform")} value={order.platform} />
           <Row label={t("ord.accountId")} value={order.account_id} />
           <Row label={t("ord.method")} value={order.payment_method} />
@@ -1211,7 +1212,7 @@ export function OrdersTab() {
                     )}
                   </div>
                   <div className="text-[11px] text-muted mt-0.5">
-                    {o.customers?.full_name || o.customers?.phone || "—"} · {o.player_name ? `${o.player_name} (ID: ${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
+                    {o.customers?.full_name || formatPhone(o.customers?.phone)} · {o.player_name ? `${o.player_name} (ID: ${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
                   </div>
                   {o.type === "topup" && o.payment_operator_id && (
                     <div className="text-[10px] text-[#F4C76A] mt-0.5">

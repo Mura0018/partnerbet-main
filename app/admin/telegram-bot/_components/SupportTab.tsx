@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { formatPhone } from "@/lib/format";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
@@ -250,7 +251,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           <ChevronLeft size={20} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-[15px] font-bold truncate">{thread.full_name || thread.phone}</h1>
+          <h1 className="text-[15px] font-bold truncate">{thread.full_name || formatPhone(thread.phone)}</h1>
         </div>
         <button
           onClick={endChat}
@@ -555,7 +556,7 @@ export function SupportTab() {
               className="w-full text-left p-3.5 rounded-xl bg-white/[0.03] backdrop-blur-md border border-subtle hover:border-accent/40 hover:bg-white/[0.05]"
             >
               <div className="flex items-center justify-between gap-2 mb-0.5">
-                <div className="text-[13px] font-semibold truncate">{th.full_name || th.phone}</div>
+                <div className="text-[13px] font-semibold truncate">{th.full_name || formatPhone(th.phone)}</div>
                 {th.claimed_by && (
                   <span className={`shrink-0 text-[9.5px] px-2 py-0.5 rounded-full border ${
                     th.claimed_by === currentUserId ? "bg-accent/15 border-accent/40 text-accent" : "bg-white/5 border-subtle text-muted"

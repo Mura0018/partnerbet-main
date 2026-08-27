@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { formatPhone } from "@/lib/format";
 import { ListOrdered } from "lucide-react";
 
 type Order = {
@@ -76,7 +77,7 @@ export default function PartnerOrdersPage() {
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold">{o.type === "topup" ? "Hisob to'ldirish" : "Pul yechish"} · {o.platform}</div>
                   <div className="text-[11px] text-muted mt-0.5 truncate">
-                    {o.customers?.full_name || o.customers?.phone || "—"} · {o.player_name ? `${o.player_name} (${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
+                    {o.customers?.full_name || formatPhone(o.customers?.phone)} · {o.player_name ? `${o.player_name} (${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
                   </div>
                   <div className="text-[10px] text-[#5b6f85] mt-0.5">{new Date(o.created_at).toLocaleString("ru-RU")}</div>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { formatPhone } from "@/lib/format";
 import { Building2, Plus, X, Loader2, Pencil, Trash2, Percent, CalendarClock, Inbox, Phone, Check, ArrowRight, SlidersHorizontal, Bot, Palette, Users, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { GlobalChat } from "@/lib/chat/GlobalChat";
@@ -611,7 +612,7 @@ export default function PartnersManager() {
                       <div className="text-[14px] font-bold truncate">{l.company || l.name || "—"}</div>
                       <div className="flex items-center gap-3 text-[11.5px] text-muted mt-0.5">
                         {l.name && <span>{l.name}</span>}
-                        {l.phone && <span className="flex items-center gap-1"><Phone size={11} /> {l.phone}</span>}
+                        {l.phone && <span className="flex items-center gap-1"><Phone size={11} /> {formatPhone(l.phone)}</span>}
                       </div>
                     </div>
                     <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10.5px] border ${st.cls}`}>{t(st.labelKey as any)}</span>

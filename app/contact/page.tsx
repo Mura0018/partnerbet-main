@@ -1,4 +1,5 @@
 import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
+import { formatPhone } from "@/lib/format";
 import { createPublicServerClient } from "@/lib/supabasePublic";
 import { PublicHeader } from "@/lib/ui/PublicHeader";
 import { PublicFooter } from "@/lib/ui/PublicFooter";
@@ -42,7 +43,7 @@ export default async function ContactPage() {
                   <Phone size={17} className="text-accent" />
                 </div>
                 <div className="text-[12px] text-muted mb-1">Telefon</div>
-                <a href={`tel:${contact.phone}`} className="text-[15px] font-semibold hover:text-accent transition-colors">{contact.phone}</a>
+                <a href={`tel:${contact.phone}`} className="text-[15px] font-semibold hover:text-accent transition-colors">{formatPhone(contact.phone)}</a>
               </Card>
             )}
             {contact.address && (

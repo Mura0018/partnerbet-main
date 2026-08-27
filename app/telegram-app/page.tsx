@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { formatPhone } from "@/lib/format";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import {
   Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
@@ -1948,7 +1949,7 @@ export default function TelegramAppPage() {
                 placeholder={t("tg.phAbout")}
                 className="w-full bg-white/5 border m-divider rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5 resize-none"
               />
-              <p className="text-[11px] text-[#93a5ba] mb-3">{t("tg.hkAuto")} <span className="text-white/80">{customer?.full_name || customer?.phone || "—"}</span></p>
+              <p className="text-[11px] text-[#93a5ba] mb-3">{t("tg.hkAuto")} <span className="text-white/80">{customer?.full_name || formatPhone(customer?.phone)}</span></p>
               {plError && <p className="text-[12px] text-[#FF6B85] mb-2.5">{plError}</p>}
               <button onClick={submitPartnerLead} disabled={plSubmitting} className={buttonCls} style={{ animation: "hkGlow 4s ease-in-out infinite" }}>
                 <span className="flex items-center justify-center gap-2">
@@ -2478,7 +2479,7 @@ export default function TelegramAppPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] text-[#93a5ba] mb-1">{t("tg.welcome")}</p>
-            <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
+            <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || formatPhone(customer?.phone)}</p>
             <span className="inline-flex items-center gap-1.5 mt-1.5 text-[10px] font-bold tracking-wide" style={{ color: "var(--em)" }}>
               <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--em)", boxShadow: "0 0 6px var(--em)" }} />
               {t("tg.onlineLabel")}
