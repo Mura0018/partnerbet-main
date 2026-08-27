@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getTimezone } from "@/lib/site/timezone";
+import { formatDate } from "@/lib/format";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Calendar, Eye } from "lucide-react";
@@ -38,6 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function FootballNewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const tz = await getTimezone();
   const { slug } = await params;
   const news = await getNews(slug);
   if (!news) notFound();
@@ -66,7 +69,7 @@ export default async function FootballNewsDetailPage({ params }: { params: Promi
         </div>
         <h1 className="text-[28px] md:text-[36px] font-extrabold mt-2 leading-tight">{news.title}</h1>
         <div className="flex items-center gap-4 mt-3 text-[12px] text-[#5b6f85]">
-          {news.published_at && <span className="flex items-center gap-1.5"><Calendar size={13} /> {new Date(news.published_at).toLocaleDateString()}</span>}
+          {news.published_at && <span className="flex items-center gap-1.5"><Calendar size={13} /> {formatDate(news.published_at, { timeZone: tz })}</span>}
           <span className="flex items-center gap-1.5"><Eye size={13} /> {news.view_count ?? 0}</span>
         </div>
 

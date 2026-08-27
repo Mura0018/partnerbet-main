@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getTimezone } from "@/lib/site/timezone";
+import { formatDate } from "@/lib/format";
 import { Users } from "lucide-react";
 import { getActiveFootballProvider } from "@/lib/football/registry";
 import { withFootballCache } from "@/lib/football/cache";
@@ -25,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function TeamPage({ params }: { params: Promise<{ id: string }> }) {
+  const tz = await getTimezone();
   const { id } = await params;
   const { configured, fixtures } = await getTeamData(id);
   const team = fixtures.length > 0 ? (fixtures[0].homeTeam.id === id ? fixtures[0].homeTeam : fixtures[0].awayTeam) : null;
@@ -51,7 +54,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           <div className="rounded-2xl border border-subtle overflow-hidden">
             {fixtures.map((f: any) => (
               <div key={f.id} className="flex items-center justify-between px-5 py-4 border-b border-subtle last:border-0">
-                <span className="text-[11px] text-muted w-24 shrink-0">{new Date(f.kickoff).toLocaleDateString()}</span>
+                <span className="text-[11px] text-muted w-24 shrink-0">{formatDate(f.kickoff, { timeZone: tz })}</span>
                 <div className="flex-1 flex items-center justify-center gap-3 font-semibold text-[13px]">
                   <span className="text-right flex-1 truncate">{f.homeTeam.name}</span>
                   <span className="px-2.5 py-1 rounded-md bg-white/5 font-mono text-[12px] shrink-0">{f.homeScore ?? "-"} : {f.awayScore ?? "-"}</span>

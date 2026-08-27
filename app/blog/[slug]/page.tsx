@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getTimezone } from "@/lib/site/timezone";
+import { formatDate } from "@/lib/format";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Calendar, Eye } from "lucide-react";
@@ -41,6 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const tz = await getTimezone();
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) notFound();
@@ -77,7 +80,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <h1 className="text-[28px] md:text-[36px] font-extrabold mt-2 leading-tight">{post.title}</h1>
         <div className="flex items-center gap-4 mt-3 text-[12px] text-[#5b6f85]">
           {post.published_at && (
-            <span className="flex items-center gap-1.5"><Calendar size={13} /> {new Date(post.published_at).toLocaleDateString()}</span>
+            <span className="flex items-center gap-1.5"><Calendar size={13} /> {formatDate(post.published_at, { timeZone: tz })}</span>
           )}
           <span className="flex items-center gap-1.5"><Eye size={13} /> {post.view_count ?? 0}</span>
         </div>
