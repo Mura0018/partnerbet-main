@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatTime } from "@/lib/format";
 import Link from "next/link";
 import { Radio, Trophy, Star, Newspaper, Video } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -31,12 +33,13 @@ function NotConfiguredState() {
 }
 
 function FixtureRow({ f, footballProvider }: { f: any; footballProvider: string | null }) {
+  const tz = useSiteTimezone();
   return (
     <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-subtle last:border-0">
       <span className="text-[11px] text-muted w-20 shrink-0">
         {f.status === "live" ? (
           <span className="text-[#FF6B85] font-semibold">{f.minute ? `${f.minute}'` : "LIVE"}</span>
-        ) : f.status === "finished" ? "FT" : new Date(f.kickoff).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        ) : f.status === "finished" ? "FT" : formatTime(f.kickoff, { timeZone: tz })}
       </span>
       <div className="flex-1 flex items-center justify-center gap-3 font-semibold text-[13px] min-w-0">
         <span className="text-right flex-1 truncate">{f.homeTeam?.name}</span>

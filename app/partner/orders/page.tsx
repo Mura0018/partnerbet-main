@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { formatPhone, formatAccountId } from "@/lib/format";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatPhone, formatAccountId, formatDateTime } from "@/lib/format";
 import { ListOrdered } from "lucide-react";
 
 type Order = {
@@ -30,6 +31,7 @@ const FILTERS: { id: string; label: string }[] = [
 ];
 
 export default function PartnerOrdersPage() {
+  const tz = useSiteTimezone();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("pending");
@@ -79,7 +81,7 @@ export default function PartnerOrdersPage() {
                   <div className="text-[11px] text-muted mt-0.5 truncate">
                     {o.customers?.full_name || formatPhone(o.customers?.phone)} · {o.player_name ? `${o.player_name} (${formatAccountId(o.account_id)})` : formatAccountId(o.account_id)} · {o.payment_method}
                   </div>
-                  <div className="text-[10px] text-[#5b6f85] mt-0.5">{new Date(o.created_at).toLocaleString("ru-RU")}</div>
+                  <div className="text-[10px] text-[#5b6f85] mt-0.5">{formatDateTime(o.created_at, { timeZone: tz })}</div>
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-[13px] font-bold">{Number(o.amount).toLocaleString("ru-RU")}</div>

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { formatPhone, formatAccountId } from "@/lib/format";
+import { formatPhone, formatAccountId, formatDateTime, formatTime, formatDayLabel } from "@/lib/format";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import {
   Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
   Handshake, Sparkles, ShieldCheck, Globe, Rocket, ArrowRight, Building2, Users, Wallet, Gift,
@@ -513,18 +514,14 @@ function supportSendErrorMessage(t: (k: any, v?: any) => string, error: unknown,
 }
 
 // Part I: kun ajratgichi yorlig'i (Telegram uslubi: Bugun / Kecha / sana).
-function dayLabel(t: (k: any, v?: any) => string, iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diffDays = Math.round((startOf(now) - startOf(d)) / 86400000);
-  if (diffDays === 0) return t("tg.today");
-  if (diffDays === 1) return t("tg.yesterday");
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
+function dayLabel(t: (k: any, v?: any) => string, iso: string, timeZone: string): string {
+  // F2b: site vaqt mintaqasida (brauzer TZ emas). Bugun/Kecha/sana.
+  return formatDayLabel(iso, { timeZone, todayLabel: t("tg.today"), yesterdayLabel: t("tg.yesterday") });
 }
 
 export default function TelegramAppPage() {
   const { t, locale, setLocale } = useLocale();
+  const tz = useSiteTimezone();
   const { confirm, confirmDialog } = useConfirm();
   const [screen, setScreen] = useState<Screen>("loading");
   // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
@@ -2169,7 +2166,7 @@ export default function TelegramAppPage() {
                     <WithdrawCodeRefresh orderId={o.id} getInitData={getInitData} onSubmitted={refreshOrders} inputCls={inputCls} buttonCls={buttonCls} />
                   )}
 
-                  <div className="text-[10px] text-[#5b7089] mt-2">{new Date(o.created_at).toLocaleString()}</div>
+                  <div className="text-[10px] text-[#5b7089] mt-2">{formatDateTime(o.created_at, { timeZone: tz })}</div>
                   <button
                     onClick={() => openSupport(o.id)}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold py-2 rounded-lg bg-white/[0.04] border m-divider text-[#93a5ba] active:bg-white/[0.08]"
@@ -2264,7 +2261,7 @@ export default function TelegramAppPage() {
               <React.Fragment key={m.id}>
                 {showDay && (
                   <div className="flex justify-center my-2">
-                    <span className="text-[10px] text-white/75 bg-black/30 px-2.5 py-0.5 rounded-full backdrop-blur-sm">{dayLabel(t, m.created_at)}</span>
+                    <span className="text-[10px] text-white/75 bg-black/30 px-2.5 py-0.5 rounded-full backdrop-blur-sm">{dayLabel(t, m.created_at, tz)}</span>
                   </div>
                 )}
               <div className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
@@ -2327,7 +2324,7 @@ export default function TelegramAppPage() {
                     m.message
                   )}
                   <div className="flex items-center justify-end gap-1 mt-1">
-                    <span className="text-[8px] text-white/50">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                    <span className="text-[8px] text-white/50">{formatTime(m.created_at, { timeZone: tz })}</span>
                     {m.sender === "customer" && m.status === "sending" && <Loader2 size={9} className="animate-spin text-white/60" aria-label={t("tg.sending")} />}
                     {m.sender === "customer" && m.status === "failed" && <span className="text-[9px] font-bold text-[#FF6B85]" aria-label={t("tg.failed")} title={t("tg.failed")}>!</span>}
                   </div>
