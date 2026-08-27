@@ -41,6 +41,14 @@ export const dictionaries = {
       openSite: "Saytga o'tish",
       disclaimer: "18+. Qimor o'yinlari qaramlik keltirishi mumkin — mas'uliyat bilan o'ynang. {partner} — mustaqil litsenziyalangan operator. {site} tikish qabul qilmaydi va operator xizmatlari uchun javobgar emas.",
     },
+    kas: {
+      title: "Kassa oynasi", subtitle: "Mijozni aniqlash — QR yoki 1xBet ID",
+      scan: "QR skanerlash", byCode: "Karta kodi", byId: "1xBet ID", phCode: "Karta kodi (CP-...)", phId: "1xBet ID", find: "Aniqlash",
+      errGeneric: "Amal bajarilmadi.", errConn: "Ulanish xatosi.",
+      unlinked: "Bog'lanmagan ID", noName: "Ism topilmadi (API javob bermadi)", unlinkedHint: "Mijozga bog'lash uchun kartani skanerlab, ID ni qo'shing.", notFound: "Topilmadi.", cardBlank: "Bo'sh karta — hali mijozga biriktirilmagan.", cardCancelled: "Bu karta bekor qilingan.",
+      makePrimary: "Asosiy qilish", verifyBtn: "Tasdiqlash", verifyFail: "Ism topilmadi — tasdiqlab bo'lmadi.",
+      addIdPh: "Yangi 1xBet ID", check: "Tekshirish", foundName: "Topildi", confirmQ: "shu odammi?", confirmSave: "Ha, saqlash (tasdiqlangan)", noNameSave: "Ism topilmadi. Tasdiqsiz saqlansinmi?", saveUnverified: "Tasdiqsiz saqlash", addIdHint: "Yangi ID: avval Tekshirish — ism tasdiqlangach saqlanadi.",
+    },
     crd: {
       title: "Karta partiyalari", subtitle: "Blank kod generatsiyasi + tipografiya eksporti",
       create: "Yangi partiya", label: "Nomi", labelPh: "Masalan: 2026-yanvar partiyasi",
@@ -51,7 +59,7 @@ export const dictionaries = {
     },
     nav: {
       g_main: "Asosiy", g_content: "Kontent", g_marketing: "Marketing", g_system: "Tizim",
-      g_pay: "BetCore Pay", g_team: "Jamoa", g_partner: "Hamkorlik", orders: "Buyurtmalar", teamChat: "Jamoa chati",
+      g_pay: "BetCore Pay", g_team: "Jamoa", g_partner: "Hamkorlik", cashier: "Kassa", orders: "Buyurtmalar", teamChat: "Jamoa chati",
       dashboard: "Boshqaruv paneli", reports: "Hisobotlar", betcore: "BetCore Pay", partners: "Hamkorlar",
       tariffs: "Tariflar", customers: "Mijozlar", cashdesks: "Kassalar", operatorRating: "Operator reytingi",
       staffMonitor: "Xodimlar nazorati", promo: "Sovrinli karta", promoScan: "QR Skaner", cards: "Kartalar", promoBanners: "Reklama banner",
@@ -770,6 +778,14 @@ export const dictionaries = {
       openSite: "Перейти на сайт",
       disclaimer: "18+. Азартные игры могут вызывать зависимость — играйте ответственно. {partner} — независимый лицензированный оператор. {site} не принимает ставки и не несёт ответственности за услуги оператора.",
     },
+    kas: {
+      title: "Окно кассы", subtitle: "Определение клиента — QR или 1xBet ID",
+      scan: "Сканировать QR", byCode: "Код карты", byId: "1xBet ID", phCode: "Код карты (CP-...)", phId: "1xBet ID", find: "Определить",
+      errGeneric: "Действие не выполнено.", errConn: "Ошибка соединения.",
+      unlinked: "Непривязанный ID", noName: "Имя не найдено (API не ответил)", unlinkedHint: "Чтобы привязать к клиенту — отсканируйте карту и добавьте ID.", notFound: "Не найдено.", cardBlank: "Пустая карта — ещё не привязана к клиенту.", cardCancelled: "Эта карта отменена.",
+      makePrimary: "Сделать основным", verifyBtn: "Подтвердить", verifyFail: "Имя не найдено — не удалось подтвердить.",
+      addIdPh: "Новый 1xBet ID", check: "Проверить", foundName: "Найдено", confirmQ: "это тот человек?", confirmSave: "Да, сохранить (подтверждено)", noNameSave: "Имя не найдено. Сохранить без подтверждения?", saveUnverified: "Сохранить без подтверждения", addIdHint: "Новый ID: сначала Проверить — сохранится после подтверждения имени.",
+    },
     crd: {
       title: "\u041f\u0430\u0440\u0442\u0438\u0438 \u043a\u0430\u0440\u0442", subtitle: "\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u043f\u0443\u0441\u0442\u044b\u0445 \u043a\u043e\u0434\u043e\u0432 + \u044d\u043a\u0441\u043f\u043e\u0440\u0442 \u0434\u043b\u044f \u0442\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0438\u0438",
       create: "\u041d\u043e\u0432\u0430\u044f \u043f\u0430\u0440\u0442\u0438\u044f", label: "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435", labelPh: "\u041d\u0430\u043f\u0440\u0438\u043c\u0435\u0440: \u043f\u0430\u0440\u0442\u0438\u044f \u044f\u043d\u0432\u0430\u0440\u044c-2026",
@@ -780,7 +796,7 @@ export const dictionaries = {
     },
     nav: {
       g_main: "Основное", g_content: "Контент", g_marketing: "Маркетинг", g_system: "Система",
-      g_pay: "BetCore Pay", g_team: "Команда", g_partner: "Партнёрство", orders: "Заказы", teamChat: "Командный чат",
+      g_pay: "BetCore Pay", g_team: "Команда", g_partner: "Партнёрство", cashier: "Касса", orders: "Заказы", teamChat: "Командный чат",
       dashboard: "Панель управления", reports: "Отчёты", betcore: "BetCore Pay", partners: "Партнёры",
       tariffs: "Тарифы", customers: "Клиенты", cashdesks: "Кассы", operatorRating: "Рейтинг операторов",
       staffMonitor: "Мониторинг сотрудников", promo: "Призовая карта", promoScan: "QR Сканер", cards: "Карты", promoBanners: "Рекламный баннер",
