@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDateTime } from "@/lib/format";
 import { NotificationBell } from "@/lib/push/NotificationBell";
 import { BrandName } from "@/lib/ui/BrandName";
 import { BannerSlot } from "@/lib/ui/BannerSlot";
@@ -78,6 +80,7 @@ const NAV_LIVE: { label: string; href: string }[] = [
 ];
 
 export default function Home() {
+  const tz = useSiteTimezone();
   const { t } = useLocale();
   const [insights, setInsights] = useState<Insight[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(true);
@@ -394,7 +397,7 @@ export default function Home() {
               <div key={m.id} className="rounded-xl border border-subtle bg-white/[0.02] p-5">
                 <div className="flex items-center justify-between mb-3">
                   <Badge tone={m.status === "LIVE" ? "live" : "blue"}>{m.league}</Badge>
-                  <span className="text-[11px] text-muted">{new Date(m.match_time).toLocaleString()}</span>
+                  <span className="text-[11px] text-muted">{formatDateTime(m.match_time, { timeZone: tz })}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <ConfidencePulse value={m.confidence ?? 50} />

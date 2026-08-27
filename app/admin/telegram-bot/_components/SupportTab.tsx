@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { formatPhone, formatAccountId, formatTime } from "@/lib/format";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Can } from "@/lib/auth/permissions";
@@ -75,6 +77,7 @@ function SupportVoice({ path }: { path: string }) {
 
 function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thread: SupportThread; currentUserId: string | null; onBack: () => void; onArchived: () => void }) {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [msgs, setMsgs] = useState<SupportMsg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -250,7 +253,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
           <ChevronLeft size={20} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-[15px] font-bold truncate">{thread.full_name || thread.phone}</h1>
+          <h1 className="text-[15px] font-bold truncate">{thread.full_name || formatPhone(thread.phone)}</h1>
         </div>
         <button
           onClick={endChat}
@@ -293,8 +296,8 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
                     {linkedOrder.status === "completed" ? t("sup.stCompleted") : linkedOrder.status === "rejected" ? t("sup.stRejected") : t("sup.stPending")}
                   </span>
                 </div>
-                <div className="text-[11px] text-white/40">{linkedOrder.platform} · ID {linkedOrder.account_id}</div>
-                <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} {t("sup.som")}</div>
+                <div className="text-[11px] text-white/40">{linkedOrder.platform} · {formatAccountId(linkedOrder.account_id)}</div>
+                <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} {t("common.som")}</div>
                 <div className="text-[9px] text-white/30 mt-1">{t("sup.tapHint")}</div>
               </div>
               <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }} className="rounded-xl border border-subtle bg-white/[0.06] backdrop-blur-md p-3 flex flex-col justify-center">
@@ -342,7 +345,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
               ) : (
                 (m.message ?? "").replace("__END_CONFIRM__", "")
               )}
-              <div className="text-[8px] text-white/40 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+              <div className="text-[8px] text-white/40 mt-1">{formatTime(m.created_at, { timeZone: tz })}</div>
             </div>
             <div className={`flex items-center gap-2.5 mt-0.5 px-1 ${m.sender === "operator" ? "flex-row-reverse" : ""}`}>
               <button onClick={() => setReplyTo(m)} className="text-[9px] text-[#5b6f85] hover:text-white flex items-center gap-0.5">
@@ -555,7 +558,7 @@ export function SupportTab() {
               className="w-full text-left p-3.5 rounded-xl bg-white/[0.03] backdrop-blur-md border border-subtle hover:border-accent/40 hover:bg-white/[0.05]"
             >
               <div className="flex items-center justify-between gap-2 mb-0.5">
-                <div className="text-[13px] font-semibold truncate">{th.full_name || th.phone}</div>
+                <div className="text-[13px] font-semibold truncate">{th.full_name || formatPhone(th.phone)}</div>
                 {th.claimed_by && (
                   <span className={`shrink-0 text-[9.5px] px-2 py-0.5 rounded-full border ${
                     th.claimed_by === currentUserId ? "bg-accent/15 border-accent/40 text-accent" : "bg-white/5 border-subtle text-muted"

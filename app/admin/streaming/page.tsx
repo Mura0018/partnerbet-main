@@ -1,6 +1,8 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDateTime } from "@/lib/format";
 import React, { useEffect, useState } from "react";
 import {
   Plus, Trash2, Pencil, X, Radio, Zap, CheckCircle2, XCircle, HelpCircle, Loader2, KeyRound, ListVideo,
@@ -65,6 +67,7 @@ function StatusBadge({ status }: { status: Provider["connection_status"] }) {
 
 function ProvidersTab() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -147,7 +150,7 @@ function ProvidersTab() {
                 </div>
                 <div className="text-[11px] text-muted mt-1">
                   {p.base_api_url} · priority {p.priority}
-                  {p.last_sync_at && ` · oxirgi tekshiruv: ${new Date(p.last_sync_at).toLocaleString()}`}
+                  {p.last_sync_at && ` · oxirgi tekshiruv: ${formatDateTime(p.last_sync_at, { timeZone: tz })}`}
                 </div>
                 {p.last_error && <div className="text-[11px] text-[#FF6B85] mt-1">Oxirgi xato: {p.last_error}</div>}
               </div>

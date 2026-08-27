@@ -1,6 +1,8 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDateTime } from "@/lib/format";
 import React, { useEffect, useState } from "react";
 import { ShieldCheck, Loader2, AlertTriangle } from "lucide-react";
 
@@ -13,11 +15,12 @@ type Op = {
 };
 
 const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
-const fmtDt = (s: string | null) => (s ? new Date(s).toLocaleString("ru-RU") : "—");
 
 export default function StaffMonitorPage() {
   const [ops, setOps] = useState<Op[]>([]);
   const { t } = useLocale();
+  const tz = useSiteTimezone();
+  const fmtDt = (s: string | null) => formatDateTime(s, { timeZone: tz, seconds: true });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

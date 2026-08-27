@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDate } from "@/lib/format";
 import { Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
@@ -9,6 +11,7 @@ type Invoice = { id: string; period: string; model: string; amount: number; curr
 function fmt(n: number, c: string) { return `${Math.round(n).toLocaleString("ru-RU")} ${c}`; }
 
 export default function PartnerBillingPage() {
+  const tz = useSiteTimezone();
   const supabase = createClient();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +57,7 @@ export default function PartnerBillingPage() {
             <div key={i.id} className="flex items-center justify-between gap-3 rounded-xl border border-subtle bg-white/[0.02] p-4">
               <div>
                 <div className="text-[13px] font-semibold">{i.period} · {i.model === "commission" ? "Komissiya" : "Obuna"}</div>
-                <div className="text-[11px] text-muted">{new Date(i.created_at).toLocaleDateString("ru-RU")}</div>
+                <div className="text-[11px] text-muted">{formatDate(i.created_at, { timeZone: tz })}</div>
               </div>
               <div className="text-right">
                 <div className="text-[14px] font-bold">{fmt(i.amount, i.currency)}</div>

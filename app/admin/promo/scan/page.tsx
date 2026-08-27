@@ -1,6 +1,8 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatPhone, formatDateTime } from "@/lib/format";
 import React, { useEffect, useRef, useState } from "react";
 import { QrCode, Loader2, Camera, X, User, Search } from "lucide-react";
 
@@ -13,7 +15,6 @@ type Result = {
 };
 
 const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
-const fmtDt = (s: string | null) => (s ? new Date(s).toLocaleString("ru-RU") : "—");
 const STATUS: Record<string, { labelKey: string; cls: string }> = {
   pending: { labelKey: "ord.statusPending", cls: "text-[#F4C76A]" },
   completed: { labelKey: "ord.statusCompleted", cls: "text-[#4ADE80]" },
@@ -23,6 +24,8 @@ const STATUS: Record<string, { labelKey: string; cls: string }> = {
 export default function PromoScanPage() {
   const [code, setCode] = useState("");
   const { t } = useLocale();
+  const tz = useSiteTimezone();
+  const fmtDt = (s: string | null) => formatDateTime(s, { timeZone: tz });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
@@ -151,8 +154,8 @@ export default function PromoScanPage() {
           <div className="p-4 border-b border-subtle flex items-center gap-3">
             <span className="w-11 h-11 rounded-full bg-[#1CE0C3]/10 flex items-center justify-center text-[#1CE0C3]"><User size={20} /></span>
             <div className="min-w-0">
-              <div className="text-white font-bold text-[15px]">{result.customer.full_name || result.customer.phone}</div>
-              <div className="text-[12px] text-white/40">{result.customer.phone} · Ro'yxatdan: {fmtDt(result.customer.created_at)}</div>
+              <div className="text-white font-bold text-[15px]">{result.customer.full_name || formatPhone(result.customer.phone)}</div>
+              <div className="text-[12px] text-white/40">{formatPhone(result.customer.phone)} · Ro'yxatdan: {fmtDt(result.customer.created_at)}</div>
             </div>
           </div>
           <div className="grid grid-cols-3 divide-x divide-subtle border-b border-subtle">

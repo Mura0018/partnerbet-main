@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getTimezone } from "@/lib/site/timezone";
+import { formatDate } from "@/lib/format";
 import { createPublicServerClient } from "@/lib/supabasePublic";
 import { PublicHeader } from "@/lib/ui/PublicHeader";
 import { PublicFooter } from "@/lib/ui/PublicFooter";
@@ -11,6 +13,7 @@ export default async function BlogListPage({
 }: {
   searchParams: Promise<{ category?: string; tag?: string }>;
 }) {
+  const tz = await getTimezone();
   const { category, tag } = await searchParams;
   const supabase = createPublicServerClient();
 
@@ -77,7 +80,7 @@ export default async function BlogListPage({
                   <div className="font-semibold text-[15px] mt-1 line-clamp-2">{p.title}</div>
                   {p.excerpt && <p className="text-[12px] text-muted mt-1.5 line-clamp-2">{p.excerpt}</p>}
                   <div className="flex items-center justify-between mt-3">
-                    {p.published_at && <p className="text-[11px] text-muted">{new Date(p.published_at).toLocaleDateString()}</p>}
+                    {p.published_at && <p className="text-[11px] text-muted">{formatDate(p.published_at, { timeZone: tz })}</p>}
                     <span className="text-[11px] font-semibold text-accent">Read News →</span>
                   </div>
                 </div>

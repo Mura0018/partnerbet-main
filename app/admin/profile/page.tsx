@@ -8,6 +8,8 @@ import { ThemePicker } from "@/lib/ui/ThemePicker";
 import type { ChatThemeKey } from "@/lib/ui/chatThemes";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDate } from "@/lib/format";
 import { checkPasswordStrength } from "@/lib/auth/password";
 import { PasswordStrengthMeter } from "@/lib/auth/PasswordStrengthMeter";
 import { useCurrentProfile } from "@/lib/auth/permissions";
@@ -397,6 +399,7 @@ function describeDeviceSimple(userAgent: string | null, t: (k: any, v?: any) => 
 
 function LoginHistorySection() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [history, setHistory] = useState<LoginHistoryRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -417,7 +420,7 @@ function LoginHistorySection() {
           <div key={i} className="flex items-center justify-between gap-2 text-[12px] py-1 border-b border-subtle last:border-0">
             <span className={h.success ? "text-[#4ADE80] shrink-0" : "text-[#FF6B85] shrink-0"}>{h.success ? "✅" : "❌"}</span>
             <span className="text-muted flex-1 min-w-0 truncate">{h.ip_address ?? "—"} · {describeDeviceSimple(h.user_agent, t)}</span>
-            <span className="text-muted shrink-0 text-[11px]">{new Date(h.created_at).toLocaleDateString()}</span>
+            <span className="text-muted shrink-0 text-[11px]">{formatDate(h.created_at, { timeZone: tz })}</span>
           </div>
         ))}
       </div>

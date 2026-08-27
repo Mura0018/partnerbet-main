@@ -144,7 +144,7 @@ function BetCorePayMetrics({ period }: { period: Period }) {
     { labelKey: "dash.cPending", value: m.pending.toLocaleString("ru-RU"), icon: Clock, color: "#F4C76A" },
     { labelKey: "dash.cCompleted", value: m.completed.toLocaleString("ru-RU"), icon: CheckCircle2, color: "#4ADE80" },
     { labelKey: "dash.cRejected", value: m.rejected.toLocaleString("ru-RU"), icon: XCircle, color: "#FF6B85" },
-    { labelKey: "dash.cVolume", value: fmtSom(m.volume, t("dash.som")), icon: Banknote, color: "#7db8ff" },
+    { labelKey: "dash.cVolume", value: fmtSom(m.volume, t("common.som")), icon: Banknote, color: "#7db8ff" },
     { labelKey: period === "all" ? "dash.cAllCustomers" : "dash.cNewCustomers", value: m.customers.toLocaleString("ru-RU"), icon: Users, color: "#7db8ff" },
     { labelKey: "dash.cOpenSupport", value: m.openSupport.toLocaleString("ru-RU"), icon: Headset, color: "#7db8ff" },
   ];
@@ -224,7 +224,7 @@ function StaffActivity({ period }: { period: Period }) {
               <tr key={r.id} className="border-t border-subtle">
                 <td className="px-4 py-3 font-medium">{r.name}</td>
                 <td className="px-4 py-3 text-right">{r.completed.toLocaleString("ru-RU")}</td>
-                <td className="px-4 py-3 text-right text-muted">{fmtSom(r.volume, t("dash.som"))}</td>
+                <td className="px-4 py-3 text-right text-muted">{fmtSom(r.volume, t("common.som"))}</td>
                 <td className="px-4 py-3 text-right">{r.replies.toLocaleString("ru-RU")}</td>
               </tr>
             ))}

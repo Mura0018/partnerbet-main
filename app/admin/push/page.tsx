@@ -4,12 +4,15 @@ import React, { useEffect, useState } from "react";
 import { Send, Users, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDateTime } from "@/lib/format";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
 const inputCls = "w-full bg-white/5 border border-subtle rounded-lg py-2 px-3 text-[13px] text-white outline-none focus:border-accent";
 
 export default function PushNotificationsPage() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
   const [log, setLog] = useState<any[]>([]);
   const [form, setForm] = useState({ title: "", body: "", url: "" });
@@ -86,7 +89,7 @@ export default function PushNotificationsPage() {
         {log.map((l) => (
           <div key={l.id} className="rounded-lg border border-subtle p-3">
             <div className="text-[13px] font-medium">{l.title}</div>
-            <div className="text-[11px] text-[#5b6f85] mt-1">{new Date(l.created_at).toLocaleString()} · {t("cnt.pushLog", { r: l.recipients_count, f: l.failures_count })}</div>
+            <div className="text-[11px] text-[#5b6f85] mt-1">{formatDateTime(l.created_at, { timeZone: tz })} · {t("cnt.pushLog", { r: l.recipients_count, f: l.failures_count })}</div>
           </div>
         ))}
         {log.length === 0 && <p className="text-[12px] text-[#5b6f85]">{t("cnt.pushEmpty")}</p>}

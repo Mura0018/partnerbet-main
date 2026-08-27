@@ -1,6 +1,8 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDateTime } from "@/lib/format";
 import { useEffect, useState } from "react";
 import { Loader2, Ban, Unlock } from "lucide-react";
 import { useConfirm } from "@/lib/ui/useConfirm";
@@ -27,6 +29,7 @@ const RISK_STYLE: Record<SecurityEvent["risk"], string> = {
 
 export default function SecurityLogPage() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [blocked, setBlocked] = useState<BlockedIp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +121,7 @@ export default function SecurityLogPage() {
                       <div>
                         <span className="font-mono font-semibold">{b.ip_address}</span>
                         <span className={`text-[10px] ml-2 px-1.5 py-0.5 rounded-full border ${b.expires_at ? "text-[#F4C76A] border-[#F4C76A]/30 bg-[#F4C76A]/10" : "text-[#FF6B85] border-[#FF6B85]/30 bg-[#FF6B85]/10"}`}>
-                          {b.expires_at ? t("sec.until", { date: new Date(b.expires_at).toLocaleString() }) : t("sec.permanent")}
+                          {b.expires_at ? t("sec.until", { date: formatDateTime(b.expires_at, { timeZone: tz, seconds: true }) }) : t("sec.permanent")}
                         </span>
                       </div>
                       {b.reason && <div className="text-[11px] text-muted mt-0.5">{b.reason}</div>}
@@ -169,7 +172,7 @@ export default function SecurityLogPage() {
                     <div className="min-w-0">
                       <div className="text-[13px]">{e.description}</div>
                       <div className="text-[11px] text-muted mt-1">
-                        {new Date(e.createdAt).toLocaleString()} · IP: {e.ip ?? t("sec.unknownIp")} · {e.device}
+                        {formatDateTime(e.createdAt, { timeZone: tz, seconds: true })} · IP: {e.ip ?? t("sec.unknownIp")} · {e.device}
                       </div>
                     </div>
                     {e.ip && !e.isBlocked && (e.risk === "high" || e.risk === "medium") && (

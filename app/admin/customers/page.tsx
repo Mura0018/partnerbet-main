@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { formatPhone, formatDate } from "@/lib/format";
 import { Users, Search, X, Loader2, ChevronLeft, ChevronRight, Gift, EyeOff, Eye, RotateCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { Select } from "@/lib/ui/Select";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -26,11 +28,12 @@ const STATUS: Record<string, { labelKey: string; cls: string }> = {
   completed: { labelKey: "cus.stCompleted", cls: "text-[#4ADE80]" },
   rejected: { labelKey: "cus.stRejected", cls: "text-[#FF6B85]" },
 };
-const fmtDate = (s: string) => new Date(s).toLocaleDateString("ru-RU");
 const fmtSum = (n: number) => Number(n || 0).toLocaleString("ru-RU");
 
 export default function CustomersManager() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
+  const fmtDate = (s: string) => formatDate(s, { timeZone: tz });
   const [rows, setRows] = useState<Row[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [total, setTotal] = useState(0);
@@ -218,7 +221,7 @@ export default function CustomersManager() {
                     )}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-muted">{c.phone}</td>
+                <td className="px-4 py-3 text-muted">{formatPhone(c.phone)}</td>
                 <td className="px-4 py-3">
                   {c.partnerName ? <span className="text-[#7db8ff]">{c.partnerName}</span> : <span className="text-muted">{t("cus.platformShort")}</span>}
                 </td>
@@ -257,7 +260,7 @@ export default function CustomersManager() {
               <>
                 <div className="rounded-xl glass-card p-4 mb-4">
                   <div className="text-[16px] font-bold">{detail.customer.full_name || "—"}</div>
-                  <div className="text-[13px] text-muted mt-0.5">{detail.customer.phone}</div>
+                  <div className="text-[13px] text-muted mt-0.5">{formatPhone(detail.customer.phone)}</div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[12px] text-muted">
                     <span>{t("cus.belongs")} <span className="text-white">{detail.customer.partnerName || t("cus.platformShort")}</span></span>
                     <span>{t("cus.owner")} <span className="text-white">{detail.customer.ownerName || t("cus.notAssigned")}</span></span>

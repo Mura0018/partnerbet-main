@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { formatPhone, formatAccountId, formatDateTime } from "@/lib/format";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import Link from "next/link";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, ChevronRight, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -97,6 +99,7 @@ function ReceiptViewer({ path }: { path: string }) {
 function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorNames: Record<string, string> }) {
   const supabase = createClient();
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const [rows, setRows] = useState<{ id: string; operator_id: string | null; confirmed: boolean; amount: number | null; note: string | null; created_at: string }[]>([]);
   const [amount, setAmount] = useState(String(order.amount));
   const [note, setNote] = useState("");
@@ -176,12 +179,12 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
           {rows.map((r) => (
             <div key={r.id} className="text-[11px] text-muted">
               <span className={r.confirmed ? "text-[#4ADE80]" : "text-[#FF6B85]"}>
-                {r.confirmed ? `✅ ${t("ord.yesShort")}${r.amount != null ? `, ${Number(r.amount).toLocaleString("ru-RU")} ${t("ord.sum")}` : ""}` : `❌ ${t("ord.noShort")}`}
+                {r.confirmed ? `✅ ${t("ord.yesShort")}${r.amount != null ? `, ${Number(r.amount).toLocaleString("ru-RU")} ${t("common.som")}` : ""}` : `❌ ${t("ord.noShort")}`}
               </span>
               {" · "}
               {r.operator_id ? (operatorNames[r.operator_id] ?? t("ord.operator")) : t("ord.operator")}
               {" · "}
-              {new Date(r.created_at).toLocaleString("ru-RU")}
+              {formatDateTime(r.created_at, { timeZone: tz })}
               {r.note ? ` · ${r.note}` : ""}
             </div>
           ))}
@@ -379,7 +382,7 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
           <h2 className="font-bold text-[16px]">{order.type === "topup" ? t("ord.topup") : t("ord.withdraw")}</h2>
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
         </div>
-        <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} {t("ord.sum")}</div>
+        <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} {t("common.som")}</div>
 
         {order.type === "withdraw" && payoutState === "success" && (
           <div className="rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/30 text-[#4ADE80] text-[12px] px-3 py-2.5 mb-4">
@@ -457,11 +460,11 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
 
         {/* Order details */}
         <div className="rounded-xl glass-card p-3.5 mb-4">
-          <Row label={t("ord.customer")} value={order.customers?.full_name || order.customers?.phone || "—"} />
+          <Row label={t("ord.customer")} value={order.customers?.full_name || formatPhone(order.customers?.phone)} />
           <Row label={t("ord.platform")} value={order.platform} />
           <Row label={t("ord.accountId")} value={order.account_id} />
           <Row label={t("ord.method")} value={order.payment_method} />
-          {order.withdraw_code && <Row label={t("ord.withdrawCode")} value={order.withdraw_code} highlight />}
+          {order.withdraw_code && <Row label={t("ord.withdrawCode")} value={<span className="font-mono">{order.withdraw_code}</span>} highlight />}
           {order.payout_details && (order.type !== "withdraw" || isResponsible) && (
             <Row label={t("ord.recipientNum")} value={order.payout_details} highlight />
           )}
@@ -882,7 +885,7 @@ function DebtsSection() {
             <div key={d.id} className="flex items-center justify-between gap-2 text-[11px] border-b border-subtle pb-1.5 last:border-0">
               <div className="min-w-0">
                 <span className={d.i_am_debtor ? "text-[#FF6B85]" : "text-[#4ADE80]"}>
-                  {`${d.i_am_debtor ? d.creditor_name : d.debtor_name}: ${fmt(d.amount)} ${t("ord.sum")}`}
+                  {`${d.i_am_debtor ? d.creditor_name : d.debtor_name}: ${fmt(d.amount)} ${t("common.som")}`}
                 </span>
                 <span className="text-muted"> · {statusLabel}</span>
               </div>
@@ -1211,7 +1214,7 @@ export function OrdersTab() {
                     )}
                   </div>
                   <div className="text-[11px] text-muted mt-0.5">
-                    {o.customers?.full_name || o.customers?.phone || "—"} · {o.player_name ? `${o.player_name} (ID: ${o.account_id})` : `ID: ${o.account_id}`} · {o.payment_method}
+                    {o.customers?.full_name || formatPhone(o.customers?.phone)} · {o.player_name ? `${o.player_name} (${formatAccountId(o.account_id)})` : formatAccountId(o.account_id)} · {o.payment_method}
                   </div>
                   {o.type === "topup" && o.payment_operator_id && (
                     <div className="text-[10px] text-[#F4C76A] mt-0.5">

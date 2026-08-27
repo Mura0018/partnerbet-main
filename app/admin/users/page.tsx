@@ -6,6 +6,8 @@ import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { createClient } from "@/lib/supabase";
 import { checkPasswordStrength } from "@/lib/auth/password";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
+import { formatDateTime } from "@/lib/format";
 import { useCurrentProfile } from "@/lib/auth/permissions";
 import { toast } from "@/lib/ui/toast";
 import { Select } from "@/lib/ui/Select";
@@ -163,6 +165,7 @@ function CreateUserModal({ roles, onClose, onCreated }: { roles: Role[]; onClose
 
 export default function UsersManager() {
   const { t } = useLocale();
+  const tz = useSiteTimezone();
   const { profile: myProfile } = useCurrentProfile();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -268,7 +271,7 @@ export default function UsersManager() {
                       {u.is_active ? t("usr.active") : t("usr.inactive")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-[#5b6f85]">{u.last_login_at ? new Date(u.last_login_at).toLocaleString() : "—"}</td>
+                  <td className="px-4 py-3 text-[#5b6f85]">{u.last_login_at ? formatDateTime(u.last_login_at, { timeZone: tz, seconds: true }) : "—"}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <button

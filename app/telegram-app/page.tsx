@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { formatPhone, formatAccountId, formatDateTime, formatTime, formatDayLabel } from "@/lib/format";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import {
   Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
   Handshake, Sparkles, ShieldCheck, Globe, Rocket, ArrowRight, Building2, Users, Wallet, Gift,
@@ -335,7 +337,7 @@ function AccountIdVerifyField({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[14px] font-bold truncate">{verifiedName}</div>
-              <div className="text-[10px] text-[#93a5ba]">ID: {accountId} — {t("tg.confirmed")}</div>
+              <div className="text-[10px] text-[#93a5ba]">{formatAccountId(accountId)} — {t("tg.confirmed")}</div>
             </div>
             <button type="button" onClick={() => { setFlipped(false); setVerifiedName(null); }} className="shrink-0 text-[11px] text-[#7db8ff]">
               {t("tg.change")}
@@ -512,18 +514,14 @@ function supportSendErrorMessage(t: (k: any, v?: any) => string, error: unknown,
 }
 
 // Part I: kun ajratgichi yorlig'i (Telegram uslubi: Bugun / Kecha / sana).
-function dayLabel(t: (k: any, v?: any) => string, iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diffDays = Math.round((startOf(now) - startOf(d)) / 86400000);
-  if (diffDays === 0) return t("tg.today");
-  if (diffDays === 1) return t("tg.yesterday");
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
+function dayLabel(t: (k: any, v?: any) => string, iso: string, timeZone: string): string {
+  // F2b: site vaqt mintaqasida (brauzer TZ emas). Bugun/Kecha/sana.
+  return formatDayLabel(iso, { timeZone, todayLabel: t("tg.today"), yesterdayLabel: t("tg.yesterday") });
 }
 
 export default function TelegramAppPage() {
   const { t, locale, setLocale } = useLocale();
+  const tz = useSiteTimezone();
   const { confirm, confirmDialog } = useConfirm();
   const [screen, setScreen] = useState<Screen>("loading");
   // F2b: ochiq overlay (to'liq rasm / rasm preview) ni yopish funksiyasi.
@@ -1948,7 +1946,7 @@ export default function TelegramAppPage() {
                 placeholder={t("tg.phAbout")}
                 className="w-full bg-white/5 border m-divider rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#3D7FFF] mb-2.5 resize-none"
               />
-              <p className="text-[11px] text-[#93a5ba] mb-3">{t("tg.hkAuto")} <span className="text-white/80">{customer?.full_name || customer?.phone || "—"}</span></p>
+              <p className="text-[11px] text-[#93a5ba] mb-3">{t("tg.hkAuto")} <span className="text-white/80">{customer?.full_name || formatPhone(customer?.phone)}</span></p>
               {plError && <p className="text-[12px] text-[#FF6B85] mb-2.5">{plError}</p>}
               <button onClick={submitPartnerLead} disabled={plSubmitting} className={buttonCls} style={{ animation: "hkGlow 4s ease-in-out infinite" }}>
                 <span className="flex items-center justify-center gap-2">
@@ -2155,8 +2153,8 @@ export default function TelegramAppPage() {
                       <Icon size={12} /> {t(s.labelKey as any)}
                     </span>
                   </div>
-                  <div className="text-[12px] text-[#93a5ba]">{o.platform} · ID: {o.account_id}</div>
-                  <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")}</div>
+                  <div className="text-[12px] text-[#93a5ba]">{o.platform} · {formatAccountId(o.account_id)}</div>
+                  <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} {t("common.som")}</div>
 
                   {/* Pul yo'li — 4 bekatli progress (MoneyRail) */}
                   <MoneyRail order={o} />
@@ -2168,7 +2166,7 @@ export default function TelegramAppPage() {
                     <WithdrawCodeRefresh orderId={o.id} getInitData={getInitData} onSubmitted={refreshOrders} inputCls={inputCls} buttonCls={buttonCls} />
                   )}
 
-                  <div className="text-[10px] text-[#5b7089] mt-2">{new Date(o.created_at).toLocaleString()}</div>
+                  <div className="text-[10px] text-[#5b7089] mt-2">{formatDateTime(o.created_at, { timeZone: tz })}</div>
                   <button
                     onClick={() => openSupport(o.id)}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold py-2 rounded-lg bg-white/[0.04] border m-divider text-[#93a5ba] active:bg-white/[0.08]"
@@ -2263,7 +2261,7 @@ export default function TelegramAppPage() {
               <React.Fragment key={m.id}>
                 {showDay && (
                   <div className="flex justify-center my-2">
-                    <span className="text-[10px] text-white/75 bg-black/30 px-2.5 py-0.5 rounded-full backdrop-blur-sm">{dayLabel(t, m.created_at)}</span>
+                    <span className="text-[10px] text-white/75 bg-black/30 px-2.5 py-0.5 rounded-full backdrop-blur-sm">{dayLabel(t, m.created_at, tz)}</span>
                   </div>
                 )}
               <div className={`flex flex-col ${m.sender === "customer" ? "items-end" : "items-start"}`}>
@@ -2284,7 +2282,7 @@ export default function TelegramAppPage() {
                     return o ? (
                       <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-black/25 px-2 py-1 text-[10px] text-[#cfe0f5]">
                         <ListOrdered size={11} className="text-[#7db8ff] shrink-0" />
-                        <span className="truncate">{o.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")} · {Number(o.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")} · ID {o.account_id}</span>
+                        <span className="truncate">{o.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")} · {Number(o.amount).toLocaleString("ru-RU")} {t("common.som")} · {formatAccountId(o.account_id)}</span>
                       </div>
                     ) : null;
                   })()}
@@ -2326,7 +2324,7 @@ export default function TelegramAppPage() {
                     m.message
                   )}
                   <div className="flex items-center justify-end gap-1 mt-1">
-                    <span className="text-[8px] text-white/50">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                    <span className="text-[8px] text-white/50">{formatTime(m.created_at, { timeZone: tz })}</span>
                     {m.sender === "customer" && m.status === "sending" && <Loader2 size={9} className="animate-spin text-white/60" aria-label={t("tg.sending")} />}
                     {m.sender === "customer" && m.status === "failed" && <span className="text-[9px] font-bold text-[#FF6B85]" aria-label={t("tg.failed")} title={t("tg.failed")}>!</span>}
                   </div>
@@ -2412,9 +2410,9 @@ export default function TelegramAppPage() {
               <ListOrdered size={15} className="text-[#7db8ff] shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-semibold text-white truncate">
-                  {selectedOrder.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")} · {Number(selectedOrder.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")}
+                  {selectedOrder.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")} · {Number(selectedOrder.amount).toLocaleString("ru-RU")} {t("common.som")}
                 </div>
-                <div className="text-[10px] text-[#93a5ba] truncate">{selectedOrder.platform} · ID {selectedOrder.account_id} · {t(STATUS_LABEL[selectedOrder.status].labelKey as any)}</div>
+                <div className="text-[10px] text-[#93a5ba] truncate">{selectedOrder.platform} · {formatAccountId(selectedOrder.account_id)} · {t(STATUS_LABEL[selectedOrder.status].labelKey as any)}</div>
               </div>
               <button onClick={() => setSelectedOrderId(null)} className="shrink-0 p-1 rounded active:bg-white/10 text-[#93a5ba]" aria-label={t("tg.removeOrder")}><XCircle size={14} /></button>
             </div>
@@ -2478,7 +2476,7 @@ export default function TelegramAppPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] text-[#93a5ba] mb-1">{t("tg.welcome")}</p>
-            <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || customer?.phone}</p>
+            <p className="text-[20px] font-extrabold" style={titleShadow}>{customer?.full_name || formatPhone(customer?.phone)}</p>
             <span className="inline-flex items-center gap-1.5 mt-1.5 text-[10px] font-bold tracking-wide" style={{ color: "var(--em)" }}>
               <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--em)", boxShadow: "0 0 6px var(--em)" }} />
               {t("tg.onlineLabel")}
