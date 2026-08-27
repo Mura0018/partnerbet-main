@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, Activity, MessageCircle, ChevronDown, Search,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, CreditCard, ScanLine, Activity, MessageCircle, ChevronDown, Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -26,10 +26,12 @@ const NAV_GROUPS = [
     { href: "/admin/reports", labelKey: "nav.reports", icon: BarChart3, permission: "reports.view" },
   ]},
   { id: "pay", color: "#12D9A0", labelKey: "nav.g_pay", items: [
+    { href: "/admin/cashier", labelKey: "nav.cashier", icon: ScanLine, permission: "telegram_orders.manage" },
     { href: "/admin/telegram-bot", labelKey: "nav.orders", icon: Wallet, permission: "telegram_orders.manage" },
     { href: "/admin/customers", labelKey: "nav.customers", icon: Contact, permission: "customers.manage" },
     { href: "/admin/cashdesks", labelKey: "nav.cashdesks", icon: Landmark, permission: "cashdesks.manage" },
     { href: "/admin/promo/scan", labelKey: "nav.promoScan", icon: QrCode, permission: "telegram_orders.manage" },
+    { href: "/admin/cards", labelKey: "nav.cards", icon: CreditCard, permission: "cards.manage" },
   ]},
   { id: "team", color: "#8B5CFF", labelKey: "nav.g_team", items: [
     { href: "/admin/operator-rating", labelKey: "nav.operatorRating", icon: Gauge, permission: "operators.oversight" },

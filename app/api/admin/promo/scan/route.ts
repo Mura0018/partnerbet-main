@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { normalizeCardCode } from "@/lib/cards/generateCode";
 
-// B7 (C): operator sovrin karta kodini (QR yoki qo'lда) skanerlaydi ->
-// mijozni topadi, faollik + so'nggi buyurtmalarни ko'rsatadi, SKANER qayd
-// etiladi. Faqat telegram_orders.manage (operator).
+// Aktyor ismi (kim biriktirdi / bekor qildi) — profiles'dan.
+async function profileName(admin: ReturnType<typeof createAdminClient>, id: string | null): Promise<string | null> {
+  if (!id) return null;
+  const { data } = await admin.from("profiles").select("display_name, full_name").eq("id", id).maybeSingle();
+  return (data as any)?.display_name || (data as any)?.full_name || null;
+}
+
+// Operator QR karta kodini (yoki qo'lда) skanerlaydi -> holatga qarab:
+//  - blank      -> biriktirilmagan (mijozga bog'lash mumkin)
+//  - assigned   -> mijoz + uning 1xBet ID lari (tasdiqlanmaganlar belgilangan)
+//  - cancelled  -> bekor qilingan (+ sabab)
+// MUHIM: mijozni ANIQLASH sovrin aksiyasiga BOG'LIQ EMAS — bu route
+// site_settings 'promo' ni umuman o'qimaydi. Aksiya o'chiq bo'lsa ham skaner
+// mijozni topadi. Faqat telegram_orders.manage (operator).
 export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -13,22 +25,61 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
-  const code = String(body?.code ?? "").trim().toUpperCase();
+  // Normalizatsiya: chiziqcha/bo'shliqni tashlaydi, katta harf. Chop etilgan
+  // "CP-8F3K-2M9Q..." (guruhlangan) va eski prefiksiz kodlar — ikkalasi ham
+  // bazadagi ajratgichsiz kodga mos keladi.
+  const code = normalizeCardCode(body?.code ?? "");
   if (!code) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
   const admin = createAdminClient();
-  const { data: cardRow } = await admin.from("promo_cards").select("customer_id, card_code, claimed_at").eq("card_code", code).maybeSingle();
+  const { data: cardRow } = await admin
+    .from("promo_cards")
+    .select("customer_id, card_code, status, claimed_at, assigned_at, cancelled_at, cancel_reason, assigned_by, cancelled_by")
+    .eq("card_code", code)
+    .maybeSingle();
+
   if (!cardRow) return NextResponse.json({ ok: false, error: "not_found" });
 
+  const status = (cardRow as any).status ?? "assigned";
+
+  // BLANK — biriktirilmagan karta.
+  if (status === "blank" || !(cardRow as any).customer_id) {
+    return NextResponse.json({ ok: true, cardState: "blank", card: { code } });
+  }
+
+  // CANCELLED — bekor qilingan karta (+ sabab + kim bekor qildi).
+  if (status === "cancelled") {
+    const cancelledByName = await profileName(admin, (cardRow as any).cancelled_by ?? null);
+    return NextResponse.json({
+      ok: true,
+      cardState: "cancelled",
+      card: {
+        code,
+        cancel_reason: (cardRow as any).cancel_reason ?? null,
+        cancelled_at: (cardRow as any).cancelled_at ?? null,
+        cancelled_by_name: cancelledByName,
+      },
+    });
+  }
+
+  // ASSIGNED — mijoz + ID ro'yxati + faollik.
   const customerId = (cardRow as any).customer_id as string;
 
   const { data: customer } = await admin
     .from("customers")
-    .select("id, full_name, phone, created_at, telegram_id")
+    .select("id, full_name, phone, created_at")
     .eq("id", customerId)
     .maybeSingle();
 
-  // Faollik + so'nggi buyurtmalar
+  // Mijozning 1xBet ID lari — asosiy birinchi, tasdiqlanmaganlar belgilangan.
+  const { data: accountsRaw } = await admin
+    .from("customer_bet_accounts")
+    .select("player_id, player_name, is_primary, verified, source")
+    .eq("customer_id", customerId)
+    .order("is_primary", { ascending: false })
+    .order("created_at", { ascending: true });
+
+  // Faollik + so'nggi buyurtmalar.
   const { data: orders } = await admin
     .from("telegram_orders")
     .select("id, type, amount, status, platform, created_at")
@@ -38,19 +89,28 @@ export async function POST(req: NextRequest) {
   const completed = (orders ?? []).filter((o: any) => o.status === "completed");
   const volume = completed.reduce((s: number, o: any) => s + Number(o.amount || 0), 0);
 
-  // Skanerni qayd qilamiz
+  // Skanerni qayd qilamiz (faqat biriktirilgan karta uchun — mijoz bor).
   await admin.from("promo_scans").insert({ customer_id: customerId, card_code: code, scanned_by: user.id });
   const { count: scanCount } = await admin.from("promo_scans").select("id", { count: "exact", head: true }).eq("customer_id", customerId);
 
+  const assignedByName = await profileName(admin, (cardRow as any).assigned_by ?? null);
+
   return NextResponse.json({
     ok: true,
+    cardState: "assigned",
     customer: {
       id: (customer as any)?.id,
       full_name: (customer as any)?.full_name ?? null,
       phone: (customer as any)?.phone ?? "—",
       created_at: (customer as any)?.created_at ?? null,
     },
-    card: { code, claimed_at: (cardRow as any).claimed_at },
+    accounts: (accountsRaw ?? []).map((a: any) => ({
+      player_id: a.player_id,
+      player_name: a.player_name ?? null,
+      is_primary: !!a.is_primary,
+      verified: !!a.verified,
+    })),
+    card: { code, assigned_at: (cardRow as any).assigned_at ?? (cardRow as any).claimed_at ?? null, assigned_by_name: assignedByName },
     activity: { volume, orders_count: completed.length },
     orders: orders ?? [],
     scanCount: scanCount ?? 1,

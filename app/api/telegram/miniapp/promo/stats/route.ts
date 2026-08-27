@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   let cardLast4: string | null = null;
   let hasCard = false;
   try {
-    const { data: card } = await admin.from("promo_cards").select("card_code").eq("customer_id", customerId).maybeSingle();
+    const { data: card } = await admin.from("promo_cards").select("card_code").eq("customer_id", customerId).eq("status", "assigned").maybeSingle();
     if ((card as any)?.card_code) {
       hasCard = true;
       const code = String((card as any).card_code);
