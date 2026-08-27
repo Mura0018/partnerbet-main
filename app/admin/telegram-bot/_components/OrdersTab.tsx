@@ -176,7 +176,7 @@ function PhoneConfirmSection({ order, operatorNames }: { order: Order; operatorN
           {rows.map((r) => (
             <div key={r.id} className="text-[11px] text-muted">
               <span className={r.confirmed ? "text-[#4ADE80]" : "text-[#FF6B85]"}>
-                {r.confirmed ? `✅ ${t("ord.yesShort")}${r.amount != null ? `, ${Number(r.amount).toLocaleString("ru-RU")} ${t("ord.sum")}` : ""}` : `❌ ${t("ord.noShort")}`}
+                {r.confirmed ? `✅ ${t("ord.yesShort")}${r.amount != null ? `, ${Number(r.amount).toLocaleString("ru-RU")} ${t("common.som")}` : ""}` : `❌ ${t("ord.noShort")}`}
               </span>
               {" · "}
               {r.operator_id ? (operatorNames[r.operator_id] ?? t("ord.operator")) : t("ord.operator")}
@@ -379,7 +379,7 @@ function ResolveModal({ order, operatorNames, isSuperAdmin, currentUserId, onClo
           <h2 className="font-bold text-[16px]">{order.type === "topup" ? t("ord.topup") : t("ord.withdraw")}</h2>
           <button onClick={onClose} aria-label="Yopish"><X size={18} /></button>
         </div>
-        <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} {t("ord.sum")}</div>
+        <div className="text-[22px] font-extrabold mb-4">{Number(order.amount).toLocaleString("ru-RU")} {t("common.som")}</div>
 
         {order.type === "withdraw" && payoutState === "success" && (
           <div className="rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/30 text-[#4ADE80] text-[12px] px-3 py-2.5 mb-4">
@@ -882,7 +882,7 @@ function DebtsSection() {
             <div key={d.id} className="flex items-center justify-between gap-2 text-[11px] border-b border-subtle pb-1.5 last:border-0">
               <div className="min-w-0">
                 <span className={d.i_am_debtor ? "text-[#FF6B85]" : "text-[#4ADE80]"}>
-                  {`${d.i_am_debtor ? d.creditor_name : d.debtor_name}: ${fmt(d.amount)} ${t("ord.sum")}`}
+                  {`${d.i_am_debtor ? d.creditor_name : d.debtor_name}: ${fmt(d.amount)} ${t("common.som")}`}
                 </span>
                 <span className="text-muted"> · {statusLabel}</span>
               </div>

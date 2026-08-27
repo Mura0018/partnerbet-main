@@ -2156,7 +2156,7 @@ export default function TelegramAppPage() {
                     </span>
                   </div>
                   <div className="text-[12px] text-[#93a5ba]">{o.platform} · ID: {o.account_id}</div>
-                  <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")}</div>
+                  <div className="text-[14px] font-bold mt-1">{Number(o.amount).toLocaleString("ru-RU")} {t("common.som")}</div>
 
                   {/* Pul yo'li — 4 bekatli progress (MoneyRail) */}
                   <MoneyRail order={o} />
@@ -2284,7 +2284,7 @@ export default function TelegramAppPage() {
                     return o ? (
                       <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-black/25 px-2 py-1 text-[10px] text-[#cfe0f5]">
                         <ListOrdered size={11} className="text-[#7db8ff] shrink-0" />
-                        <span className="truncate">{o.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")} · {Number(o.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")} · ID {o.account_id}</span>
+                        <span className="truncate">{o.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")} · {Number(o.amount).toLocaleString("ru-RU")} {t("common.som")} · ID {o.account_id}</span>
                       </div>
                     ) : null;
                   })()}
@@ -2412,7 +2412,7 @@ export default function TelegramAppPage() {
               <ListOrdered size={15} className="text-[#7db8ff] shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-semibold text-white truncate">
-                  {selectedOrder.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")} · {Number(selectedOrder.amount).toLocaleString("ru-RU")} {t("tg.sumUnit")}
+                  {selectedOrder.type === "topup" ? t("tg.topupTitle") : t("tg.withdrawTitle")} · {Number(selectedOrder.amount).toLocaleString("ru-RU")} {t("common.som")}
                 </div>
                 <div className="text-[10px] text-[#93a5ba] truncate">{selectedOrder.platform} · ID {selectedOrder.account_id} · {t(STATUS_LABEL[selectedOrder.status].labelKey as any)}</div>
               </div>

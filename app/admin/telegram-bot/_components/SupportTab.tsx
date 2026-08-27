@@ -294,7 +294,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
                   </span>
                 </div>
                 <div className="text-[11px] text-white/40">{linkedOrder.platform} · ID {linkedOrder.account_id}</div>
-                <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} {t("sup.som")}</div>
+                <div className="text-[14px] font-bold text-white mt-0.5">{Number(linkedOrder.amount).toLocaleString("ru-RU")} {t("common.som")}</div>
                 <div className="text-[9px] text-white/30 mt-1">{t("sup.tapHint")}</div>
               </div>
               <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }} className="rounded-xl border border-subtle bg-white/[0.06] backdrop-blur-md p-3 flex flex-col justify-center">

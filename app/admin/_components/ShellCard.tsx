@@ -138,7 +138,7 @@ export function ShellCard({ data, onRefresh }: { data: ShellData | null; onRefre
               </div>
               <div className="mt-1 font-mono font-semibold text-[22px] leading-none tabular-nums text-white" style={{ textShadow: "0 3px 12px rgba(0,0,0,.55)" }}>
                 {bal?.configured === false ? t("shl.notConfigured") : fmt(balance)}
-                {balance != null && <span className="text-[11px] text-[#96A5BD] font-sans ml-1">{t("shl.som")}</span>}
+                {balance != null && <span className="text-[11px] text-[#96A5BD] font-sans ml-1">{t("common.som")}</span>}
               </div>
               {c && (
                 <div className="mt-1 text-[10.5px] font-mono text-[#5A6982]">
