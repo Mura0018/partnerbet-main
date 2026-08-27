@@ -158,6 +158,8 @@ export const dictionaries = {
       enableCamera: "Kamerani yoqish", search: "Qidirish", scanPlaceholder: "Karta kodini kiriting (masalan A1B2C3D4E5)",
       cameraUnsupported: "Kamera skaneri bu qurilmada qo'llab-quvvatlanmaydi — kodni qo'lda kiriting.",
       activity: "Faollik (so'm)", orders: "Buyurtma", scanCount: "Skaner", recentOrders: "So'nggi buyurtmalar", noOrders: "Buyurtma yo'q.",
+      cardBlank: "Biriktirilmagan karta — mijozga bog'lash mumkin", cardCancelled: "Bu karta bekor qilingan", cancelReason: "Sabab",
+      accountsTitle: "1xBet ID lari", primary: "asosiy", unverified: "taxmin — tasdiqlang", noAccounts: "ID biriktirilmagan",
       errNotFound: "Bunday kod topilmadi. Kartani tekshiring.", errGeneric: "Tekshirib bo'lmadi. Qayta urining.", errCamera: "Kamera ochilmadi. Ruxsat bering yoki kodni qo'lda kiriting.", errConn: "Ulanmadi. Qayta urining.",
     },
     shl: {
@@ -873,6 +875,8 @@ export const dictionaries = {
       enableCamera: "Включить камеру", search: "Поиск", scanPlaceholder: "Введите код карты (например A1B2C3D4E5)",
       cameraUnsupported: "Сканер камеры не поддерживается на этом устройстве — введите код вручную.",
       activity: "Активность (сум)", orders: "Заказы", scanCount: "Скан", recentOrders: "Последние заказы", noOrders: "Заказов нет.",
+      cardBlank: "Непривязанная карта — можно привязать к клиенту", cardCancelled: "Эта карта отменена", cancelReason: "Причина",
+      accountsTitle: "1xBet ID клиента", primary: "основной", unverified: "предположительно — подтвердите", noAccounts: "ID не привязаны",
       errNotFound: "Такой код не найден. Проверьте карту.", errGeneric: "Не удалось проверить. Попробуйте снова.", errCamera: "Камера не открылась. Дайте доступ или введите код вручную.", errConn: "Не подключено. Попробуйте снова.",
     },
     shl: {

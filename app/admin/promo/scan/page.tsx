@@ -4,14 +4,17 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { formatPhone, formatDateTime } from "@/lib/format";
 import React, { useEffect, useRef, useState } from "react";
-import { QrCode, Loader2, Camera, X, User, Search } from "lucide-react";
+import { QrCode, Loader2, Camera, X, User, Search, Link2, Ban, CheckCircle2, AlertTriangle } from "lucide-react";
 
+type Account = { player_id: string; player_name: string | null; is_primary: boolean; verified: boolean };
 type Result = {
-  customer: { id: string; full_name: string | null; phone: string; created_at: string | null };
-  card: { code: string; claimed_at: string };
-  activity: { volume: number; orders_count: number };
-  orders: { id: string; type: string; amount: number; status: string; platform: string; created_at: string }[];
-  scanCount: number;
+  cardState: "blank" | "assigned" | "cancelled";
+  card: { code: string; cancel_reason?: string | null; cancelled_at?: string | null; assigned_at?: string | null };
+  customer?: { id: string; full_name: string | null; phone: string; created_at: string | null };
+  accounts?: Account[];
+  activity?: { volume: number; orders_count: number };
+  orders?: { id: string; type: string; amount: number; status: string; platform: string; created_at: string }[];
+  scanCount?: number;
 };
 
 const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
@@ -148,8 +151,31 @@ export default function PromoScanPage() {
       {!cameraSupported && <p className="text-[11px] text-white/30 mb-2">{t("mon.cameraUnsupported")}</p>}
       {error && <div className="rounded-lg bg-[#FF6B85]/10 border border-[#FF6B85]/30 text-[#FF6B85] text-[12.5px] px-3 py-2.5 mb-2">{error}</div>}
 
-      {/* Natija — mijoz kuzatuvi */}
-      {result && (
+      {/* BLANK — biriktirilmagan karta */}
+      {result?.cardState === "blank" && (
+        <div className="mt-4 rounded-2xl border border-[#2E8FFF]/30 bg-[#2E8FFF]/[0.06] p-4 flex items-start gap-3">
+          <span className="w-10 h-10 rounded-full bg-[#2E8FFF]/15 flex items-center justify-center text-[#2E8FFF] shrink-0"><Link2 size={18} /></span>
+          <div>
+            <div className="text-white font-semibold text-[14px]">{t("mon.cardBlank")}</div>
+            <div className="text-[12px] text-white/50 mt-0.5 font-mono">{result.card.code}</div>
+          </div>
+        </div>
+      )}
+
+      {/* CANCELLED — bekor qilingan karta */}
+      {result?.cardState === "cancelled" && (
+        <div className="mt-4 rounded-2xl border border-[#FF6B85]/30 bg-[#FF6B85]/[0.06] p-4 flex items-start gap-3">
+          <span className="w-10 h-10 rounded-full bg-[#FF6B85]/15 flex items-center justify-center text-[#FF6B85] shrink-0"><Ban size={18} /></span>
+          <div className="min-w-0">
+            <div className="text-[#FF6B85] font-semibold text-[14px]">{t("mon.cardCancelled")}</div>
+            <div className="text-[12px] text-white/50 mt-0.5 font-mono">{result.card.code}</div>
+            {result.card.cancel_reason && <div className="text-[12px] text-white/60 mt-1.5">{t("mon.cancelReason")}: {result.card.cancel_reason}</div>}
+          </div>
+        </div>
+      )}
+
+      {/* ASSIGNED — mijoz + ID ro'yxati + faollik */}
+      {result?.cardState === "assigned" && result.customer && (
         <div className="mt-4 rounded-2xl glass-card overflow-hidden">
           <div className="p-4 border-b border-subtle flex items-center gap-3">
             <span className="w-11 h-11 rounded-full bg-[#1CE0C3]/10 flex items-center justify-center text-[#1CE0C3]"><User size={20} /></span>
@@ -158,27 +184,55 @@ export default function PromoScanPage() {
               <div className="text-[12px] text-white/40">{formatPhone(result.customer.phone)} · Ro'yxatdan: {fmtDt(result.customer.created_at)}</div>
             </div>
           </div>
+
+          {/* 1xBet ID lari — tasdiqlanmaganlar belgilangan */}
+          <div className="p-3 border-b border-subtle">
+            <div className="text-[11px] text-white/40 mb-1.5">{t("mon.accountsTitle")}</div>
+            {(result.accounts ?? []).length === 0 ? (
+              <div className="text-[12px] text-white/30 py-1">{t("mon.noAccounts")}</div>
+            ) : (
+              <div className="space-y-1.5">
+                {(result.accounts ?? []).map((a) => (
+                  <div key={a.player_id} className="flex items-center justify-between gap-2 text-[12px]">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono text-white">{a.player_id}</span>
+                      {a.player_name && <span className="text-white/40 truncate">{a.player_name}</span>}
+                    </span>
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      {a.is_primary && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1CE0C3]/15 text-[#1CE0C3]">{t("mon.primary")}</span>}
+                      {a.verified ? (
+                        <CheckCircle2 size={13} className="text-[#4ADE80]" />
+                      ) : (
+                        <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#F4C76A]/15 text-[#F4C76A]"><AlertTriangle size={11} /> {t("mon.unverified")}</span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-3 divide-x divide-subtle border-b border-subtle">
             <div className="p-3 text-center">
               <div className="text-[10px] text-white/40">{t("mon.activity")}</div>
-              <div className="text-[15px] font-bold text-[#4ADE80]">{fmt(result.activity.volume)}</div>
+              <div className="text-[15px] font-bold text-[#4ADE80]">{fmt(result.activity?.volume ?? 0)}</div>
             </div>
             <div className="p-3 text-center">
               <div className="text-[10px] text-white/40">{t("mon.orders")}</div>
-              <div className="text-[15px] font-bold text-white">{result.activity.orders_count}</div>
+              <div className="text-[15px] font-bold text-white">{result.activity?.orders_count ?? 0}</div>
             </div>
             <div className="p-3 text-center">
               <div className="text-[10px] text-white/40">{t("mon.scanCount")}</div>
-              <div className="text-[15px] font-bold text-[#F4C76A]">{result.scanCount}</div>
+              <div className="text-[15px] font-bold text-[#F4C76A]">{result.scanCount ?? 0}</div>
             </div>
           </div>
           <div className="p-3">
             <div className="text-[11px] text-white/40 mb-1.5">{t("mon.recentOrders")}</div>
-            {result.orders.length === 0 ? (
+            {(result.orders ?? []).length === 0 ? (
               <div className="text-[12px] text-white/30 py-2">{t("mon.noOrders")}</div>
             ) : (
               <div className="space-y-1.5">
-                {result.orders.map((o) => (
+                {(result.orders ?? []).map((o) => (
                   <div key={o.id} className="flex items-center justify-between text-[12px]">
                     <span className="text-white/70">{o.type === "topup" ? t("ord.topup") : t("ord.withdraw")} · {o.platform}</span>
                     <span className="flex items-center gap-3">

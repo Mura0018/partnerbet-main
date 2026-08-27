@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
   const { data: pRow } = await admin.from("site_settings").select("value").eq("key", "promo").maybeSingle();
   const enabled = !!(pRow?.value as any)?.enabled;
-  const { data: card } = await admin.from("promo_cards").select("card_code, claimed_at").eq("customer_id", cc.customer.id).maybeSingle();
+  const { data: card } = await admin.from("promo_cards").select("card_code, claimed_at").eq("customer_id", cc.customer.id).eq("status", "assigned").maybeSingle();
 
   return NextResponse.json({ enabled, card: card ?? null });
 }
@@ -35,19 +35,19 @@ export async function POST(req: NextRequest) {
   if (!(pRow?.value as any)?.enabled) return NextResponse.json({ ok: false, error: "promo_disabled" });
 
   // Idempotent — allaqachon olgan bo'lsa o'shani qaytaramiz.
-  const { data: existing } = await admin.from("promo_cards").select("card_code, claimed_at").eq("customer_id", cc.customer.id).maybeSingle();
+  const { data: existing } = await admin.from("promo_cards").select("card_code, claimed_at").eq("customer_id", cc.customer.id).eq("status", "assigned").maybeSingle();
   if (existing) return NextResponse.json({ ok: true, card: existing, already: true });
 
   const code = crypto.randomBytes(5).toString("hex").toUpperCase();
   const { data: created, error } = await admin
     .from("promo_cards")
-    .insert({ customer_id: cc.customer.id, card_code: code })
+    .insert({ customer_id: cc.customer.id, card_code: code, assigned_at: new Date().toISOString() })
     .select("card_code, claimed_at")
     .maybeSingle();
 
   if (error) {
     // unique poyga (bir vaqtда 2 marta bosildi) -> qayta o'qiymiz
-    const { data: again } = await admin.from("promo_cards").select("card_code, claimed_at").eq("customer_id", cc.customer.id).maybeSingle();
+    const { data: again } = await admin.from("promo_cards").select("card_code, claimed_at").eq("customer_id", cc.customer.id).eq("status", "assigned").maybeSingle();
     if (again) return NextResponse.json({ ok: true, card: again, already: true });
     return NextResponse.json({ ok: false, error: "claim_failed" }, { status: 500 });
   }
