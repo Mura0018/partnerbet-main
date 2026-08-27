@@ -26,8 +26,6 @@ const PRESETS: { id: string; labelKey: string; days: number }[] = [
   { id: "month", labelKey: "rep.monthly", days: 30 },
   { id: "year", labelKey: "rep.yearly", days: 365 },
 ];
-const som = (n: number) => `${Math.round(n).toLocaleString("ru-RU")} so'm`;
-
 function Growth({ cur, prev }: { cur: number; prev: number }) {
   const { t } = useLocale();
   if (prev <= 0) return cur > 0 ? <span className="text-[11px] text-[#4ADE80]">{t("rep.new")}</span> : <span className="text-[11px] text-muted">—</span>;
@@ -42,6 +40,8 @@ function Growth({ cur, prev }: { cur: number; prev: number }) {
 
 export default function ReportsManager() {
   const { t } = useLocale();
+  // Pul birligi i18n orqali (F1) — ilgari hardkod "so'm" edi (ru'da ham).
+  const som = (n: number) => `${Math.round(n).toLocaleString("ru-RU")} ${t("common.som")}`;
   const [preset, setPreset] = useState("month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");

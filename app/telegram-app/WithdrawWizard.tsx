@@ -236,7 +236,7 @@ export function WithdrawWizard({ getInitData, onDone, inputCls, buttonCls }: { g
       {step === 4 && (
         <div>
           <div className="rounded-xl bg-white/[0.03] border m-divider px-3.5 py-2.5 mb-3 text-[12px] text-[var(--ink-2)]">
-            {t("wz.sumLabel")} <b className="text-[var(--ink)]">{Number(amount).toLocaleString("ru-RU")} {t("wz.sumUnit")}</b> · {t("wz.methodLabel")} <b className="text-[var(--ink)]">{METHODS.find((m) => m.id === method)?.label}</b>
+            {t("wz.sumLabel")} <b className="text-[var(--ink)]">{Number(amount).toLocaleString("ru-RU")} {t("common.som")}</b> · {t("wz.methodLabel")} <b className="text-[var(--ink)]">{METHODS.find((m) => m.id === method)?.label}</b>
           </div>
           {/* Diqqat: bu ikki rang ATAYLAB hex holida — Tailwind 3.4'da
               CSS o'zgaruvchisi + shaffoflik modifikatori (bg-[var(--gold)]/10)
