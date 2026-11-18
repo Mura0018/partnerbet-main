@@ -12,7 +12,7 @@ import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { formatDate } from "@/lib/format";
 import { checkPasswordStrength } from "@/lib/auth/password";
 import { PasswordStrengthMeter } from "@/lib/auth/PasswordStrengthMeter";
-import { useCurrentProfile } from "@/lib/auth/permissions";
+import { useCurrentProfile, usePermission } from "@/lib/auth/permissions";
 import { uploadImage } from "@/lib/media/upload";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -256,6 +256,10 @@ function NotificationPrefsSection() {
   const { t } = useLocale();
   const [notifyOrders, setNotifyOrders] = useState(true);
   const [notifySecurityPref, setNotifySecurityPref] = useState(true);
+  // 6b: faqat 'cashdesks.fill' ruxsatlilarga ko'rinadi. Ustun (0102) hali
+  // yo'q bo'lsa null qoladi va toggle chizilmaydi — eski ikki toggle buzilmaydi.
+  const canFill = usePermission("cashdesks.fill");
+  const [notifyCashdeskLow, setNotifyCashdeskLow] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -268,6 +272,8 @@ function NotificationPrefsSection() {
         setNotifyOrders(data.notify_orders ?? true);
         setNotifySecurityPref(data.notify_security ?? true);
       }
+      const { data: cd, error: cdErr } = await supabase.from("profiles").select("notify_cashdesk_low").eq("id", user.id).maybeSingle();
+      if (!cdErr && cd) setNotifyCashdeskLow((cd as any).notify_cashdesk_low ?? true);
       setLoading(false);
     });
   }, []);
@@ -279,6 +285,19 @@ function NotificationPrefsSection() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notifyOrders: orders, notifySecurity: security }),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveCashdeskLow = async (v: boolean) => {
+    setSaving(true);
+    try {
+      await fetch("/api/profile/notification-prefs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notifyCashdeskLow: v }),
       });
     } finally {
       setSaving(false);
@@ -307,6 +326,9 @@ function NotificationPrefsSection() {
       <div className="divide-y divide-subtle">
         <Toggle checked={notifyOrders} onChange={(v) => { setNotifyOrders(v); save(v, notifySecurityPref); }} label={t("prof.notifOrders")} />
         <Toggle checked={notifySecurityPref} onChange={(v) => { setNotifySecurityPref(v); save(notifyOrders, v); }} label={t("prof.notifSecurity")} />
+        {canFill && notifyCashdeskLow !== null && (
+          <Toggle checked={notifyCashdeskLow} onChange={(v) => { setNotifyCashdeskLow(v); saveCashdeskLow(v); }} label={t("prof.notifCashdeskLow")} />
+        )}
       </div>
     </div>
   );
