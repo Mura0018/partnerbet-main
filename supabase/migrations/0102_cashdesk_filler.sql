@@ -6,7 +6,10 @@
 --  - cashdesk_fillers — qaysi to'ldiruvchi qaysi kassaga mas'ul.
 --    Foydalanuvchining birorta qatori bo'lmasa -> BARCHA aktiv kassalar
 --    bo'yicha xabar oladi (ilova mantig'i, lib/telegram/notifyLowBalance.ts).
---  - cashdesk_balance_snapshots o'qish: cashdesks.manage YOKI cashdesks.fill
+--  - cashdesk_balance_snapshots o'qish policy'si TOR qoladi (faqat
+--    cashdesks.manage). To'ldiruvchi sahifasi snapshot'larni server (service
+--    role) orqali, faqat o'z kassalari va error/credit_limit'siz o'qiydi —
+--    keng policy PostgREST orqali barcha tarixni ochib qo'ygan bo'lardi.
 --
 --  Qayta ishga tushirishga chidamli: if not exists / on conflict /
 --  drop policy if exists.
@@ -47,7 +50,7 @@ drop policy if exists "cashdesk fillers manage all" on cashdesk_fillers;
 create policy "cashdesk fillers manage all" on cashdesk_fillers
   for all using (has_permission('cashdesks.manage')) with check (has_permission('cashdesks.manage'));
 
--- f) Snapshot o'qish: cashdesks.manage YOKI cashdesks.fill
+-- f) Snapshot o'qish: FAQAT cashdesks.manage (0101 bilan bir xil, qasddan tor)
 drop policy if exists "cashdesk balance snapshots read" on cashdesk_balance_snapshots;
 create policy "cashdesk balance snapshots read" on cashdesk_balance_snapshots
-  for select using (has_permission('cashdesks.manage') or has_permission('cashdesks.fill'));
+  for select using (has_permission('cashdesks.manage'));
