@@ -22,7 +22,7 @@ type Row = {
   balanceAt: string | null;
   isLow: boolean;
 };
-type Resp = { scope: "manager" | "all" | "assigned"; assignedCount: number; desks: Row[] };
+type Resp = { scope: "manager" | "all" | "assigned"; assignedCount: number; inactiveAssigned: number; desks: Row[] };
 
 export default function CashdeskBalancePage() {
   const { t } = useLocale();
@@ -72,10 +72,19 @@ export default function CashdeskBalancePage() {
         </div>
       )}
 
+      {data && data.inactiveAssigned > 0 && (
+        <div className="flex items-start gap-2 mb-4 px-3.5 py-2.5 rounded-xl border border-[#FFB020]/30 bg-[#FFB020]/10 text-[13px] text-[#FFB020]">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+          <span>{t("cbal.assignedInactive")}</span>
+        </div>
+      )}
+
       {loading && !data ? (
         <div className="flex items-center justify-center py-20 text-white/40"><Loader2 className="animate-spin" /></div>
       ) : !data || data.desks.length === 0 ? (
-        <div className="text-center py-16 text-white/40 text-sm border border-subtle rounded-2xl">{t("cbal.empty")}</div>
+        data && data.inactiveAssigned > 0 ? null : (
+          <div className="text-center py-16 text-white/40 text-sm border border-subtle rounded-2xl">{t("cbal.empty")}</div>
+        )
       ) : (
         <div className="overflow-x-auto border border-subtle rounded-2xl">
           <table className="w-full text-sm">
@@ -116,10 +125,11 @@ export default function CashdeskBalancePage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {d.balance == null ? (
+                    {d.threshold == null ? (
+                      // Chegara yo'q -> "past" nishoni HECH QACHON chiqmaydi.
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-white/5 text-white/40 whitespace-nowrap">{t("cbal.noThreshold")}</span>
+                    ) : d.balance == null ? (
                       <span className="text-white/30 text-xs">—</span>
-                    ) : d.threshold == null ? (
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-white/5 text-white/40">{t("cbal.noThreshold")}</span>
                     ) : d.isLow ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#FF6B85]/10 text-[#FF6B85]">
                         <AlertTriangle size={12} /> {t("cbal.low")}

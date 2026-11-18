@@ -242,9 +242,10 @@ export const dictionaries = {
     cbal: {
       title: "Kassa balansi", subtitle: "Soatlik avtomatik tekshiruv natijalari (faqat ko'rish).",
       hName: "Kassa", hRegion: "Mintaqa", hBalance: "Balans", hThreshold: "Chegara", hChecked: "Oxirgi tekshiruv", hStatus: "Holat",
-      low: "Past", okStatus: "Yetarli", noThreshold: "Chegara yo'q", noData: "Hali tekshirilmagan", checkFailed: "Oxirgi tekshiruv muvaffaqiyatsiz",
+      low: "Past", okStatus: "Yetarli", noThreshold: "Chegara belgilanmagan", noData: "Hali tekshirilmagan", checkFailed: "Oxirgi tekshiruv muvaffaqiyatsiz",
       lastGood: "oxirgi muvaffaqiyatli: {time}", scopeAll: "Kassa tanlanmagan — barcha kassalar bo'yicha xabar keladi", scopeSome: "Sizga biriktirilgan kassalar: {n}",
       empty: "Ko'rsatiladigan aktiv kassa yo'q.", loadErr: "Ro'yxat yuklanmadi. Qayta urining.", refresh: "Yangilash",
+      assignedInactive: "Biriktirilgan kassa hozir faol emas — administratorga murojaat qiling.",
     },
     prof: {
       title: "Profil", sub: "Hisob ma'lumotlari va xavfsizlik sozlamalari.",
@@ -994,9 +995,10 @@ export const dictionaries = {
     cbal: {
       title: "Баланс касс", subtitle: "Результаты ежечасной автоматической проверки (только просмотр).",
       hName: "Касса", hRegion: "Регион", hBalance: "Баланс", hThreshold: "Порог", hChecked: "Последняя проверка", hStatus: "Статус",
-      low: "Низкий", okStatus: "Достаточно", noThreshold: "Порога нет", noData: "Ещё не проверялась", checkFailed: "Последняя проверка не удалась",
+      low: "Низкий", okStatus: "Достаточно", noThreshold: "Порог не задан", noData: "Ещё не проверялась", checkFailed: "Последняя проверка не удалась",
       lastGood: "последняя успешная: {time}", scopeAll: "Касса не выбрана — уведомления по всем кассам", scopeSome: "Закреплённых за вами касс: {n}",
       empty: "Нет активных касс для отображения.", loadErr: "Список не загружен. Попробуйте снова.", refresh: "Обновить",
+      assignedInactive: "Закреплённая касса сейчас неактивна — обратитесь к администратору.",
     },
     prof: {
       title: "Профиль", sub: "Данные аккаунта и настройки безопасности.",

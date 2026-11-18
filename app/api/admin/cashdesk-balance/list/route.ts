@@ -97,8 +97,12 @@ export async function GET() {
     })
   );
 
+  // Biriktirilgan, lekin hozir nofaol kassalar soni (o'chirilganlari cascade
+  // bilan cashdesk_fillers'dan ketadi, demak qolgan farq = nofaol kassalar).
+  const inactiveAssigned = scope === "assigned" ? Math.max(0, assigned.length - rows.length) : 0;
+
   return NextResponse.json(
-    { scope, assignedCount: assigned.length, desks: rows },
+    { scope, assignedCount: assigned.length, inactiveAssigned, desks: rows },
     { headers: { "Cache-Control": "no-store" } }
   );
 }
