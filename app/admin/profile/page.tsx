@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, LogOut, Upload, Loader2, Pencil, Check, X, ShieldAlert, Mail, Bell, TrendingUp, MessageSquare } from "lucide-react";
+import { Lock, LogOut, Upload, Loader2, Pencil, Check, X, ShieldAlert, Mail, Bell, TrendingUp, MessageSquare, Send } from "lucide-react";
 import { PasswordInput } from "@/lib/ui/PasswordInput";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import type { ChatThemeKey } from "@/lib/ui/chatThemes";
@@ -15,6 +15,7 @@ import { PasswordStrengthMeter } from "@/lib/auth/PasswordStrengthMeter";
 import { useCurrentProfile, usePermission } from "@/lib/auth/permissions";
 import { uploadImage } from "@/lib/media/upload";
 import { useConfirm } from "@/lib/ui/useConfirm";
+import { toast } from "@/lib/ui/toast";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "#F4C76A",
@@ -251,6 +252,110 @@ function ChatThemeSection() {
   );
 }
 
+
+// 6c — Telegram'ni ulash (profil). OrdersTab'dagi TelegramLinkWidget bilan
+// AYNAN bir xil endpoint va oqim: POST -> bir martalik 6 belgili kod (10 daq),
+// foydalanuvchi botga "/link KOD" yuboradi, webhook tasdiqlab chat_id'ni
+// yozadi va kodni o'chiradi. GET -> faqat ulangan/ulanmagan (chat_id qaytmaydi),
+// DELETE -> uzish. Faqat telegram_orders.manage yoki cashdesks.fill
+// ruxsatlilarga ko'rinadi (endpoint ham shu ikkisiga kod beradi).
+function TelegramLinkSection() {
+  const { t } = useLocale();
+  const canOrders = usePermission("telegram_orders.manage");
+  const canFill = usePermission("cashdesks.fill");
+  const visible = canOrders === true || canFill === true;
+  const [linked, setLinked] = useState<boolean | null>(null);
+  const [statusError, setStatusError] = useState(false);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const checkStatus = React.useCallback(async () => {
+    setStatusError(false);
+    try {
+      const res = await fetch("/api/admin/telegram-link", { cache: "no-store" });
+      if (!res.ok) throw new Error("status");
+      const data = await res.json();
+      setLinked(!!data.linked);
+      if (data.linked) setCode("");
+    } catch {
+      setLinked(null);
+      setStatusError(true);
+    }
+  }, []);
+
+  React.useEffect(() => { if (visible) checkStatus(); }, [visible, checkStatus]);
+
+  const generate = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/telegram-link", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.code) setCode(data.code);
+      else toast.error(t("prof.tgErr"));
+    } catch {
+      toast.error(t("prof.tgErr"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const unlink = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/telegram-link", { method: "DELETE" });
+      if (!res.ok) toast.error(t("prof.tgErr"));
+      setCode("");
+      await checkStatus();
+    } catch {
+      toast.error(t("prof.tgErr"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div className="rounded-xl glass-card p-5 mb-6">
+      <div className="flex items-center justify-between gap-3 mb-1">
+        <h2 className="text-[15px] font-semibold flex items-center gap-2"><Send size={16} className="text-accent" /> {t("prof.tgTitle")}</h2>
+        {linked !== null && (
+          <span className={`text-[12px] px-2 py-0.5 rounded-full ${linked ? "bg-[#4ADE80]/10 text-[#4ADE80]" : "bg-[#F4C76A]/10 text-[#F4C76A]"}`}>
+            {linked ? t("prof.tgStatusLinked") : t("prof.tgStatusNotLinked")}
+          </span>
+        )}
+      </div>
+      <p className="text-[12px] text-muted mb-3">{t("prof.tgHint")}</p>
+
+      {statusError ? (
+        <div className="flex items-center justify-between gap-3 text-[12px] text-muted">
+          <span>{t("prof.tgCheckFailed")}</span>
+          <button onClick={checkStatus} className="shrink-0 text-[12px] px-3 py-1.5 rounded-lg border border-subtle hover:bg-white/5">{t("prof.tgRefresh")}</button>
+        </div>
+      ) : linked === null ? (
+        <div className="text-[12px] text-muted">{t("prof.tgChecking")}</div>
+      ) : linked ? (
+        <button onClick={unlink} disabled={busy}
+          className="text-[12px] px-3 py-1.5 rounded-lg border border-subtle text-muted hover:text-white disabled:opacity-60">
+          {busy ? "…" : t("prof.tgUnlink")}
+        </button>
+      ) : code ? (
+        <div className="space-y-2">
+          <div className="text-[13px]">
+            {t("prof.tgSendToBot")} <span className="font-mono font-bold select-all">/link {code}</span>
+          </div>
+          <div className="text-[11.5px] text-muted">{t("prof.tgCodeTtl")}</div>
+          <button onClick={checkStatus} className="text-[12px] px-3 py-1.5 rounded-lg border border-subtle hover:bg-white/5">{t("prof.tgRefresh")}</button>
+        </div>
+      ) : (
+        <button onClick={generate} disabled={busy}
+          className="text-[12px] px-3 py-1.5 rounded-lg bg-accent/15 border border-accent/30 font-semibold disabled:opacity-60">
+          {busy ? "…" : t("prof.tgGetCode")}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function NotificationPrefsSection() {
   const { t } = useLocale();
@@ -614,6 +719,7 @@ export default function ProfilePage() {
 
       <StatsSection />
       <ChatThemeSection />
+      <TelegramLinkSection />
       <NotificationPrefsSection />
       <EmailChangeSection />
 

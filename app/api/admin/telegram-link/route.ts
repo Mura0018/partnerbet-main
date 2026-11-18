@@ -16,7 +16,15 @@ export async function POST() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "forbidden" }, { status: 401 });
 
-  const { data: allowed } = await supabase.rpc("has_permission", { perm_key: "telegram_orders.manage" });
+  // 6c: operatorlar (telegram_orders.manage) YOKI kassa to'ldiruvchilar
+  // (cashdesks.fill). Boshqa ruxsat qo'shilmaydi. Oqim o'zgarmagan:
+  // bir martalik 6 belgili kod, 10 daqiqa, /link bilan bot orqali tasdiqlash.
+  const { data: canOrders } = await supabase.rpc("has_permission", { perm_key: "telegram_orders.manage" });
+  let allowed = !!canOrders;
+  if (!allowed) {
+    const { data: canFill } = await supabase.rpc("has_permission", { perm_key: "cashdesks.fill" });
+    allowed = !!canFill;
+  }
   if (!allowed) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const code = generateCode();
