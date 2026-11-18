@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { notifySuperAdminsLowBalance } from "@/lib/telegram/notifyLowBalance";
+import { notifyLowBalance } from "@/lib/telegram/notifyLowBalance";
 
 // =========================================================
 // Past balans alerti — ATOMIK throttling.
@@ -55,7 +55,7 @@ export async function handleLowBalanceAlert(
         .select("id");
       if (error) return "error";
       if (!data || data.length === 0) return "throttled";
-      await notifySuperAdminsLowBalance(input.name, input.balance, input.threshold as number);
+      await notifyLowBalance(input.id, input.name, input.balance, input.threshold as number);
       return "notified";
     }
 

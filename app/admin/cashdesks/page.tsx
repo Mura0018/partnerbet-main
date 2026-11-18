@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Landmark, Plus, Loader2, Pencil, Trash2, X, RefreshCw, DownloadCloud, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Landmark, Plus, Loader2, Pencil, Trash2, X, RefreshCw, DownloadCloud, AlertTriangle, ShieldCheck, Users } from "lucide-react";
 import { toast } from "@/lib/ui/toast";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useCurrentProfile } from "@/lib/auth/permissions";
@@ -21,6 +21,9 @@ type Cashdesk = {
   note: string | null;
   created_at: string;
 };
+// 6b — kassa to'ldiruvchilar (biriktirish).
+type FillerCandidate = { id: string; name: string; roleKey: string | null; hasTelegram: boolean; notifyOn: boolean };
+type FillerData = { candidates: FillerCandidate[]; assignments: { cashdesk_id: string; user_id: string }[] };
 type BalState = { loading: boolean; ok?: boolean; balance?: number | null; low?: boolean; error?: string };
 
 // W3.2/W3.3/W3.4 — "Imzo diagnostikasi" natijasi (bitta sinov = bitta qator).
@@ -78,6 +81,52 @@ export default function CashdesksManager() {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
+
+  // 6b — to'ldiruvchilar. Yuklanmasa (0102 yo'q / xato) bo'lim ko'rinmaydi.
+  const [fillers, setFillers] = useState<FillerData | null>(null);
+  const [fillerDeskId, setFillerDeskId] = useState<string | null>(null);
+  const [fillerBusy, setFillerBusy] = useState(false);
+
+  const loadFillers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/cashdesk-fillers", { cache: "no-store" });
+      if (!res.ok) { setFillers(null); return; }
+      setFillers((await res.json()) as FillerData);
+    } catch {
+      setFillers(null);
+    }
+  }, []);
+
+  useEffect(() => { loadFillers(); }, [loadFillers]);
+
+  const isAssigned = (deskId: string, userId: string) =>
+    !!fillers?.assignments.some((a) => a.cashdesk_id === deskId && a.user_id === userId);
+
+  const toggleFiller = async (deskId: string, userId: string) => {
+    if (!fillers) return;
+    const on = isAssigned(deskId, userId);
+    const prev = fillers;
+    setFillers({
+      ...fillers,
+      assignments: on
+        ? fillers.assignments.filter((a) => !(a.cashdesk_id === deskId && a.user_id === userId))
+        : [...fillers.assignments, { cashdesk_id: deskId, user_id: userId }],
+    });
+    setFillerBusy(true);
+    try {
+      const res = await fetch("/api/admin/cashdesk-fillers", {
+        method: on ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cashdeskId: deskId, userId }),
+      });
+      if (!res.ok) { setFillers(prev); toast.error(t("csh.tFillerSaveErr")); }
+    } catch {
+      setFillers(prev);
+      toast.error(t("csh.tFillerSaveErr"));
+    } finally {
+      setFillerBusy(false);
+    }
+  };
 
   // W3.2 — "Imzo diagnostikasi" (faqat super_admin, faqat Balance).
   const [diagCashdeskId, setDiagCashdeskId] = useState("");
@@ -336,6 +385,17 @@ export default function CashdesksManager() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        {fillers && (
+                          <button onClick={() => setFillerDeskId(c.id)} title={t("csh.fillers")}
+                            className="relative p-1.5 rounded-lg hover:bg-white/10 text-white/50">
+                            <Users size={15} />
+                            {fillers.assignments.some((a) => a.cashdesk_id === c.id) && (
+                              <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-[#1CE0C3] text-[#04231F] text-[9px] font-bold grid place-items-center">
+                                {fillers.assignments.filter((a) => a.cashdesk_id === c.id).length}
+                              </span>
+                            )}
+                          </button>
+                        )}
                         <button onClick={() => loadBalance(c.id)} title={t("csh.refreshBalance")}
                           className="p-1.5 rounded-lg hover:bg-white/10 text-white/50"><RefreshCw size={15} /></button>
                         <button onClick={() => openEdit(c)} title={t("csh.edit")}
@@ -351,6 +411,81 @@ export default function CashdesksManager() {
           </table>
         </div>
       )}
+
+      {fillers && fillers.candidates.length > 0 && (
+        <div className="mt-6 border border-subtle rounded-2xl p-4 md:p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Users size={17} className="text-[#1CE0C3]" />
+            <h2 className="text-white font-semibold text-sm">{t("csh.fillersSummary")}</h2>
+          </div>
+          <div className="divide-y divide-subtle">
+            {fillers.candidates.map((f) => {
+              const mine = rows.filter((r) => isAssigned(r.id, f.id));
+              return (
+                <div key={f.id} className="py-2.5 flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
+                  <div className="sm:w-56 shrink-0 min-w-0">
+                    <div className="text-sm text-white truncate">{f.name}</div>
+                    <div className="text-[11px] text-white/40">
+                      {f.roleKey ? t(`roles.${f.roleKey}`) : "—"}
+                      {!f.hasTelegram && <span className="text-[#FFB020]"> · {t("csh.fillersNoTelegram")}</span>}
+                      {f.hasTelegram && !f.notifyOn && <span className="text-[#FFB020]"> · {t("csh.fillersNotifyOff")}</span>}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 min-w-0">
+                    {mine.length === 0 ? (
+                      <span className="text-[12px] text-[#FFB020]">{t("csh.fillersScopeAll")}</span>
+                    ) : (
+                      mine.map((r) => (
+                        <span key={r.id} className="px-2 py-0.5 rounded-full text-[11.5px] bg-white/5 text-white/70">{r.name}</span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {fillers && fillerDeskId && (() => {
+        const desk = rows.find((r) => r.id === fillerDeskId);
+        if (!desk) return null;
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setFillerDeskId(null)}>
+            <div className="bg-[#0E1518] border border-subtle rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-subtle sticky top-0 bg-[#0E1518]">
+                <h2 className="text-white font-semibold truncate">{t("csh.fillersTitle", { name: desk.name })}</h2>
+                <button onClick={() => setFillerDeskId(null)} className="p-1 rounded-lg hover:bg-white/10 text-white/50"><X size={18} /></button>
+              </div>
+              <div className="p-5">
+                <p className="text-[12px] text-white/40 mb-3">{t("csh.fillersHint")}</p>
+                {fillers.candidates.length === 0 ? (
+                  <p className="text-[13px] text-white/50">{t("csh.fillersNoCandidates")}</p>
+                ) : (
+                  <div className="divide-y divide-subtle">
+                    {fillers.candidates.map((f) => (
+                      <label key={f.id} className="flex items-center justify-between gap-3 py-2.5 cursor-pointer">
+                        <span className="min-w-0">
+                          <span className="block text-sm text-white truncate">{f.name}</span>
+                          <span className="block text-[11px] text-white/40">
+                            {f.roleKey ? t(`roles.${f.roleKey}`) : "—"}
+                            {!f.hasTelegram && <span className="text-[#FFB020]"> · {t("csh.fillersNoTelegram")}</span>}
+                          </span>
+                        </span>
+                        <input type="checkbox" className="accent-[#1CE0C3] w-4 h-4 shrink-0" disabled={fillerBusy}
+                          checked={isAssigned(desk.id, f.id)} onChange={() => toggleFiller(desk.id, f.id)} />
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end px-5 py-4 border-t border-subtle">
+                <button onClick={() => setFillerDeskId(null)} className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5">{t("csh.close")}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {isSuperAdmin && (
         <div className="mt-6 border border-subtle rounded-2xl p-4 md:p-5">

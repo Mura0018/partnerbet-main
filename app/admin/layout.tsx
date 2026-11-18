@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, CreditCard, ScanLine, Activity, MessageCircle, ChevronDown, Search,
+  LayoutDashboard, Newspaper, FileText, Smartphone, Megaphone, LogOut, Zap, UserCircle, Users, AlertTriangle, Settings, Handshake, Trophy, FolderTree, Tag, Image as ImageIcon, BellRing, HelpCircle, Radio, Heart, Menu, X, Wallet, ShieldAlert, Building2, Receipt, KeyRound, Contact, BarChart3, Landmark, Gauge, SlidersHorizontal, QrCode, CreditCard, ScanLine, Activity, MessageCircle, ChevronDown, Search, Coins,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -30,6 +30,7 @@ const NAV_GROUPS = [
     { href: "/admin/telegram-bot", labelKey: "nav.orders", icon: Wallet, permission: "telegram_orders.manage" },
     { href: "/admin/customers", labelKey: "nav.customers", icon: Contact, permission: "customers.manage" },
     { href: "/admin/cashdesks", labelKey: "nav.cashdesks", icon: Landmark, permission: "cashdesks.manage" },
+    { href: "/admin/cashdesk-balance", labelKey: "nav.cashdeskBalance", icon: Coins, permission: "cashdesks.fill" },
     { href: "/admin/promo/scan", labelKey: "nav.promoScan", icon: QrCode, permission: "telegram_orders.manage" },
     { href: "/admin/cards", labelKey: "nav.cards", icon: CreditCard, permission: "cards.manage" },
   ]},

@@ -31,7 +31,7 @@ async function handleLinkCommand(chatId: number, text: string) {
 
   await sendTelegramMessage(
     chatId,
-    `🟦 BetCore Pay\n\nUlandi. Endi yangi buyurtmalar haqida shu yerga xabar keladi.`,
+    `🟦 BetCore Pay\n\nTelegram ulandi. Endi sizga tegishli bildirishnomalar shu yerga keladi.\n\nTelegram подключён. Теперь уведомления, относящиеся к вам, будут приходить сюда.`,
     undefined
   );
 }
