@@ -31,5 +31,6 @@ create index if not exists idx_cashdesk_balance_snapshots_desk_time
 
 alter table cashdesk_balance_snapshots enable row level security;
 
+drop policy if exists "cashdesk balance snapshots read" on cashdesk_balance_snapshots;
 create policy "cashdesk balance snapshots read" on cashdesk_balance_snapshots
   for select using (has_permission('cashdesks.manage'));
