@@ -41,7 +41,10 @@ async function loadCandidates(admin: SupabaseClient): Promise<CandidateRow[]> {
     .eq("is_active", true)
     .order("full_name", { ascending: true });
   if (error) throw error;
-  return (data ?? []) as unknown as CandidateRow[];
+  // super_admin ham cashdesks.fill'ga ega, lekin u har doim BARCHA xabarlarni
+  // oladi (notifyLowBalance 1-auditoriya) — biriktirish unga ta'sir qilmaydi,
+  // shuning uchun nomzodlar ro'yxatida ko'rsatilmaydi (POST ham rad etadi).
+  return ((data ?? []) as unknown as CandidateRow[]).filter((c) => c.roles?.key !== "super_admin");
 }
 
 export async function GET() {

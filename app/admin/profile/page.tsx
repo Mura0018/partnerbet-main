@@ -258,7 +258,11 @@ function NotificationPrefsSection() {
   const [notifySecurityPref, setNotifySecurityPref] = useState(true);
   // 6b: faqat 'cashdesks.fill' ruxsatlilarga ko'rinadi. Ustun (0102) hali
   // yo'q bo'lsa null qoladi va toggle chizilmaydi — eski ikki toggle buzilmaydi.
+  // super_admin uchun yashiriladi: u past balans xabarini har doim oladi
+  // (notifyLowBalance 1-auditoriya toggle'ga qaramaydi) — toggle soxta bo'lardi.
   const canFill = usePermission("cashdesks.fill");
+  const { profile: me } = useCurrentProfile();
+  const isSuperAdmin = me?.roles?.key === "super_admin";
   const [notifyCashdeskLow, setNotifyCashdeskLow] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -294,11 +298,14 @@ function NotificationPrefsSection() {
   const saveCashdeskLow = async (v: boolean) => {
     setSaving(true);
     try {
-      await fetch("/api/profile/notification-prefs", {
+      const res = await fetch("/api/profile/notification-prefs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notifyCashdeskLow: v }),
       });
+      if (!res.ok) setNotifyCashdeskLow(!v); // saqlanmadi -> holatni qaytarish
+    } catch {
+      setNotifyCashdeskLow(!v);
     } finally {
       setSaving(false);
     }
@@ -326,7 +333,7 @@ function NotificationPrefsSection() {
       <div className="divide-y divide-subtle">
         <Toggle checked={notifyOrders} onChange={(v) => { setNotifyOrders(v); save(v, notifySecurityPref); }} label={t("prof.notifOrders")} />
         <Toggle checked={notifySecurityPref} onChange={(v) => { setNotifySecurityPref(v); save(notifyOrders, v); }} label={t("prof.notifSecurity")} />
-        {canFill && notifyCashdeskLow !== null && (
+        {canFill && !isSuperAdmin && notifyCashdeskLow !== null && (
           <Toggle checked={notifyCashdeskLow} onChange={(v) => { setNotifyCashdeskLow(v); saveCashdeskLow(v); }} label={t("prof.notifCashdeskLow")} />
         )}
       </div>
