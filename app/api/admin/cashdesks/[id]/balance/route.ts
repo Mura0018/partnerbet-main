@@ -3,13 +3,13 @@ import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getCashdeskCredsById } from "@/lib/cashdesk/store";
 import { getCashdeskBalance } from "@/lib/cashdesk/client";
-import { notifySuperAdminsLowBalance } from "@/lib/telegram/notifyLowBalance";
+import { handleLowBalanceAlert, isLowBalance } from "@/lib/cashdesk/lowBalanceAlert";
 
 // Bitta kassa balansi (non-blocking — panel har qatorni alohida chaqiradi).
 // Xato bo'lsa { ok:false } -> panelda "balans olinmadi". Balans chegaradan
 // past bo'lsa: low=true (panelda qizil belgi) + super_admin Telegram
-// (6 soatda 1 marta — low_balance_notified_at bilan throttling, spamsiz).
-const NOTIFY_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+// (6 soatda 1 marta — ATOMIK throttling, lib/cashdesk/lowBalanceAlert.ts;
+// soatlik cron bilan bir vaqtda ishlasa ham bitta xabar ketadi).
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const admin = createAdminClient();
   const { data: row } = await admin
     .from("cashdesks")
-    .select("id, name, low_balance_threshold, low_balance_notified_at, is_active")
+    .select("id, name, low_balance_threshold, is_active")
     .eq("id", id)
     .maybeSingle();
   if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -35,23 +35,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const balance = result.data.Balance;
   const threshold = row.low_balance_threshold != null ? Number(row.low_balance_threshold) : null;
-  const low = threshold != null && balance != null && balance < threshold;
+  const low = isLowBalance(balance, threshold);
 
-  // Alert throttling (yon ta'sir) — javobni bloklamaydi.
-  try {
-    if (low) {
-      const last = row.low_balance_notified_at ? new Date(row.low_balance_notified_at).getTime() : 0;
-      if (Date.now() - last > NOTIFY_COOLDOWN_MS) {
-        await admin.from("cashdesks").update({ low_balance_notified_at: new Date().toISOString() }).eq("id", id);
-        await notifySuperAdminsLowBalance(row.name, balance, threshold as number);
-      }
-    } else if (row.low_balance_notified_at) {
-      // Balans tiklandi -> keyingi tushishda yana xabar berish uchun tozalanadi.
-      await admin.from("cashdesks").update({ low_balance_notified_at: null }).eq("id", id);
-    }
-  } catch {
-    /* alert best-effort */
-  }
+  // Alert (yon ta'sir, best-effort) — xato javobni buzmaydi.
+  await handleLowBalanceAlert(admin, { id, name: row.name, balance, threshold });
 
   return NextResponse.json({ ok: true, balance, limit: result.data.Limit, low });
 }
