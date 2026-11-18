@@ -92,7 +92,7 @@ export async function isCashdeskConfigured(): Promise<boolean> {
 // saqlangan (site_settings) sozlama ishlatiladi — bu real ishlatiladigan yo'l.
 export async function getCashdeskBalance(
   cd?: Creds,
-  override?: { variant?: SignatureVariant; dtOffsetHours?: number }
+  override?: { variant?: SignatureVariant; dtOffsetHours?: number; signal?: AbortSignal }
 ): Promise<CashdeskResult<{ Balance: number | null; Limit: number | null }>> {
   const creds = await resolveCreds(cd);
   if (!creds) return { ok: false, error: "not_configured" };
@@ -108,7 +108,9 @@ export async function getCashdeskBalance(
   const confirm = confirmFor(creds.cashdeskId, creds.hash);
 
   const url = `${BASE_URL}/Cashdesk/${creds.cashdeskId}/Balance?confirm=${confirm}&dt=${encodeURIComponent(dt)}`;
-  return call(url, sign, creds.login);
+  // signal ixtiyoriy (cron timeout'i uchun). Berilmasa init=undefined —
+  // boshqa chaqiruvchilar uchun xatti-harakat AYNAN oldingidek.
+  return call(url, sign, creds.login, override?.signal ? { signal: override.signal } : undefined);
 }
 
 export type BalanceDiagnosis = {
