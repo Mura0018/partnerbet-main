@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { resolveAdminHome } from "@/lib/auth/adminHome";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { AuthShell, FieldError, FieldSuccess, inputClass, submitButtonClass } from "@/lib/auth/AuthShell";
 import { PasswordInput } from "@/lib/ui/PasswordInput";
@@ -84,7 +85,7 @@ function LoginForm() {
       let dest = redirectTo;
       if (!dest) {
         if (isAdmin) {
-          dest = "/admin/dashboard";
+          dest = await resolveAdminHome(supabase);
         } else {
           const { data: partnerId } = await supabase.rpc("current_partner_id");
           dest = partnerId ? "/partner" : "/";
@@ -129,7 +130,7 @@ function LoginForm() {
       let dest = redirectTo;
       if (!dest) {
         if (isAdmin) {
-          dest = "/admin/dashboard";
+          dest = await resolveAdminHome(supabase);
         } else {
           const { data: partnerId } = await supabase.rpc("current_partner_id");
           dest = partnerId ? "/partner" : "/";
