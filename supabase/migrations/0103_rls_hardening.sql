@@ -88,3 +88,14 @@ create trigger trg_guard_profile_privileged_columns
 -- (lib/cashdesk/oversight.ts), shuning uchun boshqalardan olib qo'yiladi.
 revoke execute on function public.apply_operator_rating(uuid, int, uuid, text) from public, anon, authenticated;
 grant execute on function public.apply_operator_rating(uuid, int, uuid, text) to service_role;
+
+
+-- ---------------------------------------------------------------------
+-- 3) push_subscriptions — anonim/brauzer yozishi yopiladi.
+--    Audit: subscribe (upsert) va sendPush 404/410 tozalash allaqachon
+--    service role; unsubscribe ham service role'ga ko'chirildi (shu
+--    branch). Avval delete using (true) — har kim istalgan obunani
+--    o'chira olardi. Admin sanog'i (settings.manage SELECT) qoladi.
+-- ---------------------------------------------------------------------
+drop policy if exists "public insert subscription" on push_subscriptions;
+drop policy if exists "public delete own subscription" on push_subscriptions;
