@@ -40,9 +40,12 @@ export function GlobalChat() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id ?? null);
       const { data: pid } = await supabase.rpc("current_partner_id");
+      // userId partnerId bilan BIRGA o'rnatiladi: send() userId'siz ishlamaydi,
+      // shuning uchun partner yuklanmaguncha xabar partner_id=null bilan
+      // ketmaydi (0103 policy buni hamkor a'zosi uchun rad etadi).
       setPartnerId((pid as string) ?? null);
+      setUserId(user?.id ?? null);
       await load();
     })();
     const t = setInterval(() => load(true), 5000);
