@@ -669,6 +669,7 @@ function CashdeskBalanceBadge() {
   if (!state || !state.configured) return null;
 
   return (
+    <Appear>
     <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] flex items-center gap-4">
       <span className="text-muted">{t("ord.cdBalance")}</span>
       <span className="font-semibold">{state.balance != null ? Number(state.balance).toLocaleString("ru-RU") : "—"}</span>
@@ -679,6 +680,7 @@ function CashdeskBalanceBadge() {
         </>
       )}
     </div>
+    </Appear>
   );
 }
 
@@ -703,6 +705,7 @@ function LimitsEditor() {
   if (loading) return null;
 
   return (
+    <Appear>
     <div className="mb-4 rounded-lg glass-card px-3.5 py-3">
       <div className="text-[11px] text-muted mb-2">{t("wid.limitsTitle")}</div>
       <div className="flex flex-wrap items-end gap-4">
@@ -719,6 +722,7 @@ function LimitsEditor() {
         </Link>
       </div>
     </div>
+    </Appear>
   );
 }
 
@@ -858,6 +862,7 @@ function DebtsSection() {
   const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
 
   return (
+    <Appear>
     <div className="mb-4 rounded-lg glass-card px-3.5 py-3">
       <div className="flex items-center justify-between mb-2">
         <div className="text-[12px] font-semibold">💳 {t("wid.debts")}</div>
@@ -907,6 +912,7 @@ function DebtsSection() {
         })}
       </div>
     </div>
+    </Appear>
   );
 }
 
@@ -925,12 +931,14 @@ function MyRatingBadge() {
   }, []);
   if (rating === null) return null;
   return (
+    <Appear>
     <div className="mb-4 rounded-lg glass-card px-3.5 py-2 text-[12px] flex items-center gap-2">
       <span className="text-muted">{t("wid.trustRating")}</span>
       <span className={`font-semibold ${rating > 0 ? "text-[#4ADE80]" : rating < 0 ? "text-[#FF6B85]" : "text-white"}`}>
         {rating > 0 ? `+${rating}` : rating}
       </span>
     </div>
+    </Appear>
   );
 }
 
