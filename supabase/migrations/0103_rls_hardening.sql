@@ -99,3 +99,25 @@ grant execute on function public.apply_operator_rating(uuid, int, uuid, text) to
 -- ---------------------------------------------------------------------
 drop policy if exists "public insert subscription" on push_subscriptions;
 drop policy if exists "public delete own subscription" on push_subscriptions;
+
+
+-- ---------------------------------------------------------------------
+-- 4) global_chat_messages — is_system faqat server, partner_id esa
+--    yozuvchining o'z partneriga bog'langan.
+--    Audit: yagona yozuvchi lib/chat/GlobalChat.tsx (brauzer insert):
+--    message, sender_id = auth user, partner_id = current_partner_id()
+--    (platforma xodimida null), is_system yuborilmaydi (default false) —
+--    yangi shartdan o'tadi, kod o'zgarmaydi. Avval WITH CHECK faqat
+--    sender_id = auth.uid() edi: istalgan kirgan foydalanuvchi boshqa
+--    partner nomidan yoki is_system=true bilan yoza olardi.
+-- ---------------------------------------------------------------------
+drop policy if exists "write global chat" on global_chat_messages;
+create policy "write global chat" on global_chat_messages
+  for insert with check (
+    sender_id = auth.uid()
+    and is_system = false
+    and (
+      (partner_id is not null and partner_id = current_partner_id())
+      or (partner_id is null and has_permission('partners.manage'))
+    )
+  );
