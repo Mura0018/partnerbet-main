@@ -466,6 +466,14 @@ export const dictionaries = {
       eSave: "Saqlanmadi. Qayta urining.", eStatus: "Holat o'zgarmadi. Qayta urining.",
       confirmDelete: "O'chirishni tasdiqlaysizmi?", eDelete: "O'chirib bo'lmadi. Qayta urinib ko'ring.",
     },
+    spb: {
+      greetOwner: "Assalomu alaykum! Sizga tegishli operator hozir band bo'lishi mumkin. 🕒 Savolingizni yozib qoldiring — imkon qadar tez javob beramiz. 🙏",
+      greetGeneral: "Assalomu alaykum! DedPay qo'llab-quvvatlash xizmatiga xush kelibsiz! 👋 Savolingizni yozing — operatorlarimiz tez orada javob beradi. 🙏",
+      busy: "Operatoringiz hozir band 🔴 Tez orada javob beramiz yoki boshqa operator ulanadi. 🙏",
+      redirected: "So'rovingiz jamoamizga yo'naltirildi 🔄 Tez orada operator javob beradi.",
+      thanks: "Yordamimizdan foydalanganingiz uchun rahmat! 🙏 Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad! 🎉",
+      sure: "Albatta! Savolingizni yozing, yordam beramiz. 👍",
+    },
     sup: {
       imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…", imgFailed: "Rasm ochilmadi", imgRetry: "Qayta urinish", claimFailed: "Murojaatni o'z zimmangizga olib bo'lmadi. Qayta urining.",
       tpl1: "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
@@ -1219,6 +1227,14 @@ export const dictionaries = {
       cancel: "Отмена", save: "Сохранить", add: "Добавить", addNew: "Добавить новый реквизит",
       eSave: "Не сохранено. Попробуйте снова.", eStatus: "Статус не изменён. Попробуйте снова.",
       confirmDelete: "Подтвердите удаление?", eDelete: "Не удалось удалить. Попробуйте снова.",
+    },
+    spb: {
+      greetOwner: "Здравствуйте! Ваш оператор сейчас может быть занят. 🕒 Оставьте свой вопрос — ответим как можно скорее. 🙏",
+      greetGeneral: "Здравствуйте! Добро пожаловать в службу поддержки DedPay! 👋 Напишите свой вопрос — операторы скоро ответят. 🙏",
+      busy: "Ваш оператор сейчас занят 🔴 Скоро ответим, или подключится другой оператор. 🙏",
+      redirected: "Ваш запрос передан нашей команде 🔄 Оператор скоро ответит.",
+      thanks: "Спасибо, что воспользовались нашей поддержкой! 🙏 Если появятся вопросы — пишите в любое время. Удачи! 🎉",
+      sure: "Конечно! Напишите свой вопрос, мы поможем. 👍",
     },
     sup: {
       imgLoading: "Изображение загружается…", audioLoading: "Загрузка…", imgFailed: "Изображение не открылось", imgRetry: "Повторить", claimFailed: "Не удалось взять обращение. Попробуйте снова.",

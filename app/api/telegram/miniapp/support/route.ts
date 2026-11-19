@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { reassignStaleThread } from "@/lib/support/staleReassign";
 import { insertSupportSystemMessage, claimSupportBusyNotice } from "@/lib/support/messages";
+import { serverT, customerLocale, LOCALE_COOKIE } from "@/lib/i18n/server";
 
 async function resolveCustomerId(initData: string): Promise<string | null> {
   const verified = await resolveMiniApp(initData);
@@ -85,6 +86,8 @@ export async function POST(req: NextRequest) {
 
   const customerId = await resolveCustomerId(initData);
   if (!customerId) return NextResponse.json({ error: "not_registered" }, { status: 401 });
+  // Avto-xabarlar mijoz tilida (1.3): cookie -> initData language_code -> uz.
+  const loc = customerLocale(req.cookies.get(LOCALE_COOKIE)?.value, initData);
 
   const supabase = createAdminClient();
   const { data: inserted, error } = await supabase
@@ -155,9 +158,7 @@ export async function POST(req: NextRequest) {
   // Suhbat boshida bir marta avto-kirish xabari (operator nomidan).
   if (!existingThread?.auto_greeted) {
     threadPayload.auto_greeted = true;
-    const greeting = servedBy
-      ? "Assalomu alaykum! Sizga tegishli operator hozir band bo'lishi mumkin. \ud83d\udd52 Savolingizni yozib qoldiring — imkon qadar tez javob beramiz. \ud83d\ude4f \ud83d\ude4f"
-      : "Assalomu alaykum! DedPay qo'llab-quvvatlash xizmatiga xush kelibsiz! \ud83d\udc4b Savolingizni yozing — operatorlarimiz tez orada javob beradi. \ud83d\ude4a \ud83d\ude4f";
+    const greeting = servedBy ? serverT(loc, "spb.greetOwner") : serverT(loc, "spb.greetGeneral");
     // Tizim xabari (1.2): hech kimning nomidan emas. Avval operator_id'siz
     // insert constraint tufayli jimgina rad etilardi.
     await insertSupportSystemMessage(supabase, customerId, greeting);
@@ -189,7 +190,7 @@ export async function POST(req: NextRequest) {
       await insertSupportSystemMessage(
         supabase,
         customerId,
-        "Operatoringiz hozir band \ud83d\udd34 Tez orada javob beramiz yoki boshqa operator ulanadi. \ud83d\ude4f",
+        serverT(loc, "spb.busy"),
         freshThread.claimed_by
       );
     }
@@ -201,7 +202,7 @@ export async function POST(req: NextRequest) {
     await insertSupportSystemMessage(
       supabase,
       customerId,
-      "So'rovingiz jamoamizga yo'naltirildi \ud83d\udd04 Tez orada operator javob beradi."
+      serverT(loc, "spb.redirected")
     );
   }
 

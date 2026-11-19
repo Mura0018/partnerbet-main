@@ -3,6 +3,7 @@ import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { insertSupportSystemMessage, resetSupportNoticeFlags } from "@/lib/support/messages";
+import { serverT, customerLocale, LOCALE_COOKIE } from "@/lib/i18n/server";
 
 export async function POST(req: NextRequest) {
   const botToken = await getApiCredential("telegram_bot_token");
@@ -34,6 +35,8 @@ export async function POST(req: NextRequest) {
   const opId = thr?.claimed_by ?? null;
 
   const nowIso = new Date().toISOString();
+  // Avto-javoblar mijoz tilida (1.3).
+  const loc = customerLocale(req.cookies.get(LOCALE_COOKIE)?.value, initData);
 
   if (resolved) {
     // Tizim xabari (operator javobi hisoblanmaydi); 0104 yo'q bo'lsa eski
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
     await insertSupportSystemMessage(
       supabase,
       customerId,
-      "Yordamimizdan foydalanganingiz uchun rahmat! \ud83d\ude4f Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad! \ud83c\udf89",
+      serverT(loc, "spb.thanks"),
       opId
     );
     await supabase.from("telegram_support_threads").update({
@@ -59,7 +62,7 @@ export async function POST(req: NextRequest) {
     await insertSupportSystemMessage(
       supabase,
       customerId,
-      "Albatta! Savolingizni yozing, yordam beramiz. \ud83d\udc4d",
+      serverT(loc, "spb.sure"),
       opId
     );
     await supabase.from("telegram_support_threads").update({
