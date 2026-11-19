@@ -473,6 +473,7 @@ export const dictionaries = {
       redirected: "So'rovingiz jamoamizga yo'naltirildi 🔄 Tez orada operator javob beradi.",
       thanks: "Yordamimizdan foydalanganingiz uchun rahmat! 🙏 Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad! 🎉",
       sure: "Albatta! Savolingizni yozing, yordam beramiz. 👍",
+      staffTitle: "🟦 DedPay — yangi murojaat", staffCustomer: "Mijoz", staffOpen: "Javob berish", staffImage: "🖼 Rasm", staffVoice: "🎤 Ovozli xabar",
     },
     sup: {
       imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…", imgFailed: "Rasm ochilmadi", voiceFailed: "Ovozli xabar yuborilmadi (hajmi yoki davomiyligi chegaradan oshgan bo'lishi mumkin).", imgRetry: "Qayta urinish", claimFailed: "Murojaatni o'z zimmangizga olib bo'lmadi. Qayta urining.",
@@ -1235,6 +1236,7 @@ export const dictionaries = {
       redirected: "Ваш запрос передан нашей команде 🔄 Оператор скоро ответит.",
       thanks: "Спасибо, что воспользовались нашей поддержкой! 🙏 Если появятся вопросы — пишите в любое время. Удачи! 🎉",
       sure: "Конечно! Напишите свой вопрос, мы поможем. 👍",
+      staffTitle: "🟦 DedPay — новое обращение", staffCustomer: "Клиент", staffOpen: "Ответить", staffImage: "🖼 Изображение", staffVoice: "🎤 Голосовое сообщение",
     },
     sup: {
       imgLoading: "Изображение загружается…", audioLoading: "Загрузка…", imgFailed: "Изображение не открылось", voiceFailed: "Голосовое не отправлено (возможно, превышен размер или длительность).", imgRetry: "Повторить", claimFailed: "Не удалось взять обращение. Попробуйте снова.",

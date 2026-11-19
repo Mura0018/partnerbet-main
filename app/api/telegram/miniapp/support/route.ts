@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { notifyOperatorsSupportMessage } from "@/lib/telegram/notifyStaff";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { reassignStaleThread } from "@/lib/support/staleReassign";
 import { insertSupportSystemMessage, claimSupportBusyNotice } from "@/lib/support/messages";
@@ -210,6 +211,9 @@ export async function POST(req: NextRequest) {
       serverT(loc, "spb.redirected")
     );
   }
+
+  // 2.1: mas'ul operatorga Telegram (throttle bilan; egalik yakuniy holatda).
+  await notifyOperatorsSupportMessage(customerId, { kind: "text", text: String(message).trim() });
 
   return NextResponse.json({ message: inserted });
 }

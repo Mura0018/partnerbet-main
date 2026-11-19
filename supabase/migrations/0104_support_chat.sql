@@ -46,3 +46,12 @@ alter table telegram_support_messages
 -- ---------------------------------------------------------------------
 alter table telegram_support_threads
   add column if not exists busy_notified_at timestamptz;
+
+
+-- ---------------------------------------------------------------------
+-- 3) Operatorga Telegram bildirishnomasi throttle'i (2.1). Mijoz yozganda
+--    atomik shartli update (null yoki 10 daqiqadan eski -> now) — qisqa
+--    oraliqda bitta xabar. Operator javob berganda NULL (hisob qaytadan).
+-- ---------------------------------------------------------------------
+alter table telegram_support_threads
+  add column if not exists operator_notified_at timestamptz;

@@ -52,7 +52,10 @@ export async function claimSupportBusyNotice(admin: SupabaseClient, customerId: 
 // buzmaydi). Best-effort.
 export async function resetSupportNoticeFlags(admin: SupabaseClient, customerId: string): Promise<void> {
   try {
-    await admin.from("telegram_support_threads").update({ busy_notified_at: null }).eq("customer_id", customerId);
+    await admin
+      .from("telegram_support_threads")
+      .update({ busy_notified_at: null, operator_notified_at: null })
+      .eq("customer_id", customerId);
   } catch {
     /* best-effort */
   }

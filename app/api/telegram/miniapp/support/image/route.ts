@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { notifyOperatorsSupportMessage } from "@/lib/telegram/notifyStaff";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 
 const ALLOWED_MIME: Record<string, string> = {
@@ -75,9 +76,15 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !inserted) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+  // last_customer_message_at + status='open' — matn xabari bilan bir xil
+  // (avval faqat matn yangilardi: media-only mijoz "javobsiz" ko'rinmasdi,
+  // yakunlangan suhbatga media yuborilsa status 'ended' qolardi).
+  const threadNow = new Date().toISOString();
   await supabase.from("telegram_support_threads").upsert(
-    { customer_id: customer.id, is_archived: false, updated_at: new Date().toISOString() },
+    { customer_id: customer.id, is_archived: false, status: "open", updated_at: threadNow, last_customer_message_at: threadNow },
     { onConflict: "customer_id" }
   );
+  // 2.1: mas'ul operatorga Telegram (throttle bilan).
+  await notifyOperatorsSupportMessage(customer.id, { kind: "image" });
   return NextResponse.json({ message: inserted });
 }
