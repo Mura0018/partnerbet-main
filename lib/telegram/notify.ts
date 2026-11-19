@@ -1,4 +1,5 @@
 import { getApiCredential } from "@/lib/auth/apiCredentials";
+import { startTimeout } from "@/lib/net/timeout";
 import { env } from "@/lib/env";
 
 const MINIAPP_URL = `${env.siteUrl}/telegram-app`;
@@ -20,11 +21,13 @@ export async function sendTelegramMessage(
   const token = await getApiCredential("telegram_bot_token");
   if (!token) return;
 
+  const to = startTimeout(5000);
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text, reply_markup: replyMarkup }),
+      signal: to.signal,
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
@@ -36,6 +39,8 @@ export async function sendTelegramMessage(
     const e = err as { name?: string; message?: string; cause?: { code?: string } };
     console.error("[notify] fetch xatosi:", e?.name ?? "Error", e?.message ?? "", e?.cause?.code ?? "");
     // Swallow — notification delivery is best-effort.
+  } finally {
+    to.clear();
   }
 }
 

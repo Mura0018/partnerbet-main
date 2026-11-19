@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 import { encryptSecret } from "@/lib/security/encryption";
 import { isPartnerActive } from "@/lib/partner/status";
 import { env } from "@/lib/env";
+import { startTimeout } from "@/lib/net/timeout";
 
 // Hamkor o'z Telegram botini ulaydi. Faqat partner_admin.
 // Token Telegram getMe orqali tekshiriladi va MAXFIY saqlanadi
@@ -30,13 +31,16 @@ export async function POST(req: NextRequest) {
 
   // Tokenni Telegram orqali tekshirish
   let username = "";
+  const meTmo = startTimeout(8000);
   try {
-    const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const r = await fetch(`https://api.telegram.org/bot${token}/getMe`, { signal: meTmo.signal });
     const j = await r.json();
     if (!j.ok) return NextResponse.json({ error: "invalid_token" }, { status: 400 });
     username = j.result?.username ?? "";
   } catch {
     return NextResponse.json({ error: "telegram_unreachable" }, { status: 502 });
+  } finally {
+    meTmo.clear();
   }
 
   const admin = createAdminClient();
@@ -57,6 +61,7 @@ export async function POST(req: NextRequest) {
   // Mijoz botni ochib menyuni bosganda BetCore Pay mini-app ochiladi.
   // Best-effort: agar o'rnatilmasa ham bot ulangan holatда qoladi.
   let menuSet = false;
+  const menuTmo = startTimeout(8000);
   try {
     // Bizning o'z botimiz bilan bir xil, kafolatlangan (200) URL — req.url
     // origin (Host header) ga tayanmaymiz: proksi/www tufayli noto'g'ri (404)
@@ -66,10 +71,13 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ menu_button: { type: "web_app", text: "DedPay", web_app: { url: appUrl } } }),
+      signal: menuTmo.signal,
     });
     const j = await r.json();
     menuSet = !!j.ok;
-  } catch { /* best-effort */ }
+  } catch { /* best-effort */ } finally {
+    menuTmo.clear();
+  }
 
   return NextResponse.json({ ok: true, username, menuSet });
 }
