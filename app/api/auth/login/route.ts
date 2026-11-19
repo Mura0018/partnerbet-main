@@ -67,8 +67,14 @@ export async function POST(req: NextRequest) {
   await recordLoginAttempt(email, ip, userAgent, true);
 
   // Best-effort last_login_at update — never block a successful login on this.
+  // Service role orqali: 0103 dan keyin profiles'dagi last_login_at foydalanuvchi
+  // sessiyasidan yozilmaydi (trigger qulflaydi) — faqat server belgilaydi.
   if (data.user) {
-    await supabase.from("profiles").update({ last_login_at: new Date().toISOString() }).eq("id", data.user.id);
+    try {
+      await createAdminClient().from("profiles").update({ last_login_at: new Date().toISOString() }).eq("id", data.user.id);
+    } catch {
+      /* best-effort */
+    }
   }
 
   return NextResponse.json({ success: true });
