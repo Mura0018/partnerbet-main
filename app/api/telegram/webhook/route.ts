@@ -38,7 +38,6 @@ async function handleLinkCommand(chatId: number, text: string) {
 
 export async function POST(req: NextRequest) {
   const token = await getApiCredential("telegram_bot_token");
-  console.log("[webhook][DEBUG] token:", token ? `found (len=${token.length})` : "NOT FOUND");
   if (!token) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 200 });
 
   // Telegram sends back whatever secret_token was set on setWebhook — if
@@ -46,10 +45,8 @@ export async function POST(req: NextRequest) {
   // the only thing standing between this public URL and a spoofed update,
   // since Telegram webhooks have no other built-in verification.
   const configuredSecret = await getApiCredential("telegram_webhook_secret");
-  console.log("[webhook][DEBUG] configuredSecret:", configuredSecret ? `found (len=${configuredSecret.length})` : "NOT FOUND");
   if (configuredSecret) {
     const received = req.headers.get(SECRET_HEADER);
-    console.log("[webhook][DEBUG] secret match:", received === configuredSecret);
     if (received !== configuredSecret) {
       return NextResponse.json({ ok: false }, { status: 401 });
     }
@@ -68,9 +65,7 @@ export async function POST(req: NextRequest) {
   const chatId = message.chat.id;
   const text: string = message.text ?? "";
 
-  console.log("[webhook][DEBUG] text:", JSON.stringify(text));
   if (text === "/start") {
-    console.log("[webhook][DEBUG] /start shoxiga kirdi");
     await sendTelegramMessage(
       chatId,
       "🟦 DedPay\n\nAssalomu alaykum. DedPay botiga xush kelibsiz.\n\nHisob to'ldirish\nPul yechish\nOperator bilan aloqa\n\nBoshlash uchun quyidagi tugmani bosing:",
