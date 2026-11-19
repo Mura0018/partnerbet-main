@@ -25,6 +25,9 @@ type SupportThread = {
 };
 // Operator suhbat oynasida bir sahifadagi xabarlar soni (mijoz tomoni bilan bir xil).
 const THREAD_PAGE = 50;
+// Ro'yxat: faol suhbatlar (amalda kichik) va oxirgi arxivlanganlar.
+const ACTIVE_THREADS_LIMIT = 500;
+const ARCHIVED_THREADS_LIMIT = 200;
 // Shu daqiqadan uzoq javobsiz turgan suhbat ajralib turadi (staleReassign
 // bilan bir xil 15 daqiqa).
 const SUPPORT_WAIT_ALERT_MIN = 15;
@@ -578,8 +581,57 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
     supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
   }, []);
 
+  // 1b: ro'yxat THREAD jadvalidan (0105: last_message_at/preview/kind,
+  // first_unanswered_at — trigger to'ldiradi). Avval global 300 xabarlik
+  // oynadan qurilardi: faol mijozlar ko'payganda eski suhbatlar tushib qolardi.
+  // 0105 qo'yilmagan bo'lsa (ustun yo'q) false -> eski usul (loadThreadsLegacy).
+  const loadThreadsFromTable = async (): Promise<boolean> => {
+    const cols =
+      "customer_id, is_archived, claimed_by, last_message_at, last_message_preview, last_message_kind, first_unanswered_at, customers(phone, full_name), profiles!claimed_by(display_name, full_name)";
+    const [act, arc] = await Promise.all([
+      supabase
+        .from("telegram_support_threads")
+        .select(cols)
+        .eq("is_archived", false)
+        .not("last_message_at", "is", null)
+        .order("last_message_at", { ascending: false })
+        .limit(ACTIVE_THREADS_LIMIT),
+      supabase
+        .from("telegram_support_threads")
+        .select(cols)
+        .eq("is_archived", true)
+        .not("last_message_at", "is", null)
+        .order("last_message_at", { ascending: false })
+        .limit(ARCHIVED_THREADS_LIMIT),
+    ]);
+    if (act.error || arc.error) return false;
+    const toThread = (r: any): SupportThread => ({
+      customer_id: r.customer_id,
+      phone: r.customers?.phone ?? "—",
+      full_name: r.customers?.full_name ?? null,
+      last_message: r.last_message_preview ?? null,
+      last_image: r.last_message_kind === "image",
+      last_at: r.last_message_at,
+      claimed_by: r.claimed_by ?? null,
+      claimed_by_name: r.profiles?.display_name || r.profiles?.full_name || null,
+      unanswered_since: r.first_unanswered_at ?? null,
+    });
+    const activeRows = ((act.data as any[]) ?? []).map(toThread);
+    const archivedRows = ((arc.data as any[]) ?? []).map(toThread);
+    setThreads([...activeRows, ...archivedRows]);
+    setArchivedIds(new Set(archivedRows.map((r) => r.customer_id)));
+    return true;
+  };
+
   const loadThreads = async (isInitial = false) => {
     if (isInitial) setLoading(true);
+    const ok = await loadThreadsFromTable();
+    if (!ok) await loadThreadsLegacy();
+    if (isInitial) setLoading(false);
+  };
+
+  // Eski usul (0105 qo'yilgunga qadar zaxira): global 300 xabarlik oyna.
+  const loadThreadsLegacy = async () => {
     // sender + is_system (0104) — "javobsiz" hisobi uchun. is_system ustuni
     // hali yo'q bo'lsa (0104 qo'yilmagan) ustunsiz qayta so'raladi.
     const loadMsgs = (cols: string) =>
@@ -639,7 +691,6 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
     // ko'rinishda qo'llanadi (arxiv avvalgidek).
     setThreads(Array.from(grouped.values()));
     setArchivedIds(new Set((threadRows ?? []).filter((r: any) => r.is_archived).map((r: any) => r.customer_id)));
-    if (isInitial) setLoading(false);
   };
 
   useEffect(() => {
