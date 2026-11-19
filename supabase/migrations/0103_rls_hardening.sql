@@ -159,3 +159,18 @@ create policy "partner_admin delete own staff" on partner_members
     and partner_role = 'staff'
     and profile_id <> auth.uid()
   );
+
+
+-- ---------------------------------------------------------------------
+-- 7) partner_chat_messages — a'zo soxta tizim xabari yoza olmasin.
+--    Audit: jadvalni kodda hech kim o'qimaydi/yozmaydi (hamkor chati
+--    global_chat_messages'da). Imkoniyat saqlanadi, faqat is_system=true
+--    yozish yopiladi (tizim xabari kerak bo'lsa — service role).
+-- ---------------------------------------------------------------------
+drop policy if exists "members write own partner chat" on partner_chat_messages;
+create policy "members write own partner chat" on partner_chat_messages
+  for insert with check (
+    partner_id = current_partner_id()
+    and sender_id = auth.uid()
+    and is_system = false
+  );
