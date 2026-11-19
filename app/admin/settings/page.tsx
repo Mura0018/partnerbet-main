@@ -149,7 +149,7 @@ function GeneralTab({ settings, updateLocal, saveKey }: TabProps) {
   return (
     <div className="rounded-xl glass-card p-5">
       <Field label={t("set.gSiteName")}>
-        <input className={inputCls} value={identity.site_name ?? ""} onChange={(e) => updateLocal("site_identity", { site_name: e.target.value })} placeholder="BetCore" />
+        <input className={inputCls} value={identity.site_name ?? ""} onChange={(e) => updateLocal("site_identity", { site_name: e.target.value })} placeholder="DedPay" />
       </Field>
       <Field label={t("set.gTagline")}>
         <input className={inputCls} value={identity.tagline ?? ""} onChange={(e) => updateLocal("site_identity", { tagline: e.target.value })} />
@@ -334,7 +334,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
               ) : (
                 <div className="w-5 h-5 rounded bg-gradient-to-br from-accent to-accent-dim" />
               )}
-              <span className="text-[10px] font-bold">BetCore</span>
+              <span className="text-[10px] font-bold">DedPay</span>
             </div>
             <span className="text-[9px] text-muted">{t("set.bAdminPanel")}</span>
           </div>
@@ -345,7 +345,7 @@ function BrandingTab({ settings, updateLocal, saveKey }: TabProps) {
               ) : (
                 <div className="w-5 h-5 rounded bg-gradient-to-br from-accent to-accent-dim" />
               )}
-              <span className="text-[10px] font-bold">BetCore</span>
+              <span className="text-[10px] font-bold">DedPay</span>
             </div>
             <span className="text-[9px] text-muted">{t("set.bSite")}</span>
           </div>

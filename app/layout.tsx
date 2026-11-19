@@ -6,7 +6,7 @@ import { buildThemeCssVars } from "@/lib/theme";
 import { Toaster } from "@/lib/ui/toast";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://couponbet.org";
-const DEFAULT_SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "BetCore";
+const DEFAULT_SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "DedPay";
 // Zaxira meta-tavsif (sozlamalarda seo_defaults bo'lmasa). Sayt asosiy tili
 // o'zbek (DEFAULT_LOCALE) — tavsif ham shunday bo'lishi kerak.
 const DEFAULT_DESCRIPTION = `${DEFAULT_SITE_NAME} — futbol tahlillari, jonli natijalar va professional o'yin sharhlari.`;

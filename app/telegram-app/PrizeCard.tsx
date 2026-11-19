@@ -110,7 +110,7 @@ export function PrizeCard({ initData }: { initData: string }) {
           >
             <div style={{ position: "absolute", top: -60, right: -60, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle,rgba(18,217,160,0.18),transparent 70%)" }} />
             <div className="flex items-center justify-between">
-              <span style={{ fontWeight: 800, fontSize: 15, color: "var(--em)" }}>BetCore Pay</span>
+              <span style={{ fontWeight: 800, fontSize: 15, color: "var(--em)" }}>DedPay</span>
               <Sparkles size={16} className="text-[var(--gold)]" />
             </div>
             <div>

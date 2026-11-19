@@ -75,7 +75,7 @@ export default function CardsPage() {
       const codes: { code: string }[] = d.codes ?? [];
       // Tipografiya uchun IZOH — QR aynan xom kodni kodlashi kerak.
       const lines: string[] = [];
-      lines.push("# BetCore Pay — QR karta kodlari");
+      lines.push("# DedPay — QR karta kodlari");
       lines.push(`# Partiya: ${batch.label} (${codes.length} dona)`);
       lines.push("# MUHIM: QR kod AYNAN 'code' ustunidagi XOM kodni kodlashi kerak —");
       lines.push("#        AJRATGICHSIZ, o'zgartirishsiz, katta harflarda.");

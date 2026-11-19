@@ -49,7 +49,7 @@ export class PayPalProvider implements PaymentGatewayProvider {
             {
               custom_id: params.donationId,
               amount: { currency_code: params.currency, value: params.amount.toFixed(2) },
-              description: "Donation to BetCore",
+              description: "Donation to DedPay",
             },
           ],
           application_context: {
