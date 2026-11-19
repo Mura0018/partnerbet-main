@@ -235,11 +235,13 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
     setSending(true);
     try {
       const audioBase64 = await blobToBase64(recorded.blob);
-      await fetch("/api/admin/telegram-orders/support-reply-voice", {
+      const res = await fetch("/api/admin/telegram-orders/support-reply-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id, audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
       });
+      // Avval javob tekshirilmasdi — chegaradan oshgan ovoz jim yo'qolardi.
+      if (!res.ok) toast.error(t("sup.voiceFailed"));
       await loadThread();
     } finally {
       setSending(false);

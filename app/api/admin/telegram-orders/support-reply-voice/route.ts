@@ -10,7 +10,10 @@ const ALLOWED_MIME: Record<string, string> = {
   "audio/mp4": "m4a",
   "audio/mpeg": "mp3",
 };
-const MAX_BYTES = 8 * 1024 * 1024;
+// 1.5: mijoz bilan bir xil 3 MB (bucket 5 MB, so'rov tanasi chegarasi);
+// operator davomiyligi 300 s gacha (avval umuman tekshirilmasdi).
+const MAX_BYTES = 3 * 1024 * 1024;
+const MAX_DURATION_SECONDS = 300;
 
 function extFor(mimeType: string): string | null {
   const base = mimeType.split(";")[0].trim();
@@ -38,6 +41,15 @@ export async function POST(req: NextRequest) {
   }
   const ext = extFor(mimeType);
   if (!ext) return NextResponse.json({ error: "invalid_mime" }, { status: 400 });
+  const duration = Math.round(Number(durationSeconds));
+  if (!Number.isFinite(duration) || duration <= 0 || duration > MAX_DURATION_SECONDS) {
+    return NextResponse.json({ error: "invalid_duration" }, { status: 400 });
+  }
+  // Dekod qilishdan OLDIN base64 uzunligi tekshiriladi (katta tanani bekor
+  // xotiraga olmaslik uchun). Buffer.from base64'da xato tashlamaydi.
+  if (typeof audioBase64 !== "string" || audioBase64.length > Math.ceil((MAX_BYTES * 4) / 3) + 8) {
+    return NextResponse.json({ error: "invalid_audio_size" }, { status: 400 });
+  }
 
   const admin = createAdminClient();
   let buffer: Buffer;
@@ -52,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   const path = `${customerId}/operator-${Date.now()}.${ext}`;
   const { error: uploadError } = await admin.storage.from("support-attachments").upload(path, buffer, {
-    contentType: mimeType,
+    contentType: mimeType.split(";")[0].trim(),
     upsert: false,
   });
   if (uploadError) return NextResponse.json({ error: "upload_failed" }, { status: 500 });
@@ -64,7 +76,7 @@ export async function POST(req: NextRequest) {
       sender: "operator",
       operator_id: user.id,
       voice_path: path,
-      voice_duration_seconds: Number(durationSeconds) || null,
+      voice_duration_seconds: duration,
     })
     .select("id, created_at")
     .single();

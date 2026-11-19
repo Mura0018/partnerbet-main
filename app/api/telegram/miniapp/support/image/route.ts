@@ -9,7 +9,9 @@ const ALLOWED_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/webp": "webp",
 };
-const MAX_BYTES = 5 * 1024 * 1024;
+// 1.5: 3 MB — base64 (+33%) bilan so'rov tanasi hosting chegarasiga (Vercel
+// ~4.5 MB) sig'adi. Avval 5 MB edi: 3.4-5 MB rasmlar 413 bilan jim yiqilardi.
+const MAX_BYTES = 3 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   const botToken = await getApiCredential("telegram_bot_token");
@@ -41,6 +43,11 @@ export async function POST(req: NextRequest) {
   const { allowed: custAllowed } = await checkAndRecordRateLimit(`telegram-support-image-c:${customer.id}`, 60, 10);
   if (!custAllowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
+  // Dekod qilishdan OLDIN base64 uzunligi tekshiriladi (katta tanani bekor
+  // xotiraga olmaslik uchun). Buffer.from base64'da xato tashlamaydi.
+  if (typeof imageBase64 !== "string" || imageBase64.length > Math.ceil((MAX_BYTES * 4) / 3) + 8) {
+    return NextResponse.json({ error: "invalid_image_size" }, { status: 400 });
+  }
   let buffer: Buffer;
   try {
     buffer = Buffer.from(imageBase64, "base64");

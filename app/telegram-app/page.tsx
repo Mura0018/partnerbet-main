@@ -1565,11 +1565,12 @@ export default function TelegramAppPage() {
     setSupportError("");
     if (!file) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      setSupportError("Faqat rasm fayli (PNG/JPEG/WEBP) yuklash mumkin.");
+      setSupportError(t("tg.eImgOnly"));
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setSupportError("Rasm hajmi 5MB dan oshmasligi kerak.");
+    // 1.5: server bilan bir xil 3 MB (so'rov tanasi chegarasiga sig'adi).
+    if (file.size > 3 * 1024 * 1024) {
+      setSupportError(t("tg.eImg3MB"));
       return;
     }
     const reader = new FileReader();
@@ -1622,7 +1623,7 @@ export default function TelegramAppPage() {
     } catch {
       setMsgStatus(clientId, "failed");
       const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-      setSupportError(offline ? "Internet yo'q. Rasm yuborilmadi — ulanish tiklangach qayta urinib ko'ring." : "Rasm yuborilmadi. Qayta urinib ko'ring.");
+      setSupportError(offline ? t("tg.imgOffline") : t("tg.errImgSend"));
     } finally {
       clearTimeout(timer);
       inflightRef.current.delete(controller);
@@ -1661,8 +1662,8 @@ export default function TelegramAppPage() {
 
   const stopAndSendVoice = async () => {
     const recorded = await voiceRecorder.stop();
-    if (!recorded) { setSupportError("Ovoz yozib olinmadi. Mikrofonga ruxsat bering."); return; }
-    if (recorded.durationSeconds < 1) { setSupportError("Ovozli xabar juda qisqa."); return; }
+    if (!recorded) { setSupportError(t("tg.vNoRecord")); return; }
+    if (recorded.durationSeconds < 1) { setSupportError(t("tg.vTooShort")); return; }
     setSupportSending(true);
     setSupportError("");
     try {
@@ -1685,9 +1686,9 @@ export default function TelegramAppPage() {
         upload_failed: t("tg.vUpload"),
         insert_failed: t("tg.vInsert"),
       };
-      setSupportError(map[err] ?? "Ovozli xabar yuborilmadi. Qayta urinib ko'ring.");
+      setSupportError(map[err] ?? t("tg.vSendFailed"));
     } catch {
-      setSupportError("Tarmoq xatosi. Ovozli xabar yuborilmadi.");
+      setSupportError(t("tg.vNetwork"));
     } finally {
       setSupportSending(false);
     }
