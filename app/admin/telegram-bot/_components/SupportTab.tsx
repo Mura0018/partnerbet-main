@@ -197,7 +197,8 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
         setMsgs((prev) => [...older.filter((o) => !prev.some((p) => p.id === o.id)), ...prev]);
         // Scroll joyi saqlanadi (yuqoriga qo'shilgan balandlik qadar suriladi).
         requestAnimationFrame(() => {
-          if (list) list.scrollTop += list.scrollHeight - prevHeight;
+          const el = listRef.current;
+          if (el) el.scrollTop = el.scrollHeight - prevHeight;
         });
       }
     } finally {
@@ -280,6 +281,11 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       // Avval natija tekshirilmasdi — yozilgan matn jim yo'qolardi. Endi xato
       // bo'lsa matn joyida qoladi va aniq sabab ko'rsatiladi.
       if (!res.ok) {
+        if (data?.error === "not_owner") {
+          // Banner egani va "O'zimga olish" tugmasini ko'rsatsin (holat eskirgan bo'lishi mumkin).
+          setClaimedBy(data?.ownerId ?? null);
+          setClaimedByName(data?.ownerName ?? null);
+        }
         toast.error(
           data?.error === "not_owner"
             ? t("sup.notOwner", { name: data?.ownerName || t("sup.operator") })
@@ -298,11 +304,14 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
 
   const deleteMessage = (id: string) => {
     confirm(t("sup.confirmDeleteMsg"), async () => {
-      await fetch("/api/admin/telegram-orders/support-delete-message", {
+      const r = await fetch("/api/admin/telegram-orders/support-delete-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messageId: id }),
       });
+      // Polling birlashtirishi eski sahifalarni saqlaydi — o'chirilgan xabar
+      // ham ekranda qolmasligi uchun mahalliy holatdan olib tashlanadi.
+      if (r.ok) setMsgs((prev) => prev.filter((m) => m.id !== id));
       await loadThread();
     });
   };
@@ -330,6 +339,10 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       // Avval javob tekshirilmasdi — chegaradan oshgan ovoz jim yo'qolardi.
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (data?.error === "not_owner") {
+          setClaimedBy(data?.ownerId ?? null);
+          setClaimedByName(data?.ownerName ?? null);
+        }
         toast.error(
           data?.error === "not_owner"
             ? t("sup.notOwner", { name: data?.ownerName || t("sup.operator") })
@@ -610,7 +623,7 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
   const loadThreadsFromTable = async (): Promise<boolean> => {
     const cols =
       "customer_id, is_archived, claimed_by, last_message_at, last_message_preview, last_message_kind, first_unanswered_at, customers(phone, full_name), profiles!claimed_by(display_name, full_name)";
-    const [act, arc] = await Promise.all([
+    const [act, arc, waitingRes] = await Promise.all([
       supabase
         .from("telegram_support_threads")
         .select(cols)
@@ -625,8 +638,17 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
         .not("last_message_at", "is", null)
         .order("last_message_at", { ascending: false })
         .limit(ARCHIVED_THREADS_LIMIT),
+      // Javobsizlar alohida (eng eskisi birinchi) — oxirgi faollik chegarasidan
+      // tashqarida qolib ketmasin.
+      supabase
+        .from("telegram_support_threads")
+        .select(cols)
+        .eq("is_archived", false)
+        .not("first_unanswered_at", "is", null)
+        .order("first_unanswered_at", { ascending: true })
+        .limit(ACTIVE_THREADS_LIMIT),
     ]);
-    if (act.error || arc.error) return false;
+    if (act.error || arc.error || waitingRes.error) return false;
     const toThread = (r: any): SupportThread => ({
       customer_id: r.customer_id,
       phone: r.customers?.phone ?? "—",
@@ -638,7 +660,11 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
       claimed_by_name: r.profiles?.display_name || r.profiles?.full_name || null,
       unanswered_since: r.first_unanswered_at ?? null,
     });
-    const activeRows = ((act.data as any[]) ?? []).map(toThread);
+    const activeMap = new Map<string, SupportThread>();
+    for (const r of [...((act.data as any[]) ?? []), ...((waitingRes.data as any[]) ?? [])]) {
+      if (r?.last_message_at && !activeMap.has(r.customer_id)) activeMap.set(r.customer_id, toThread(r));
+    }
+    const activeRows = Array.from(activeMap.values()).sort((a, b) => Date.parse(b.last_at) - Date.parse(a.last_at));
     const archivedRows = ((arc.data as any[]) ?? []).map(toThread);
     setThreads([...activeRows, ...archivedRows]);
     setArchivedIds(new Set(archivedRows.map((r) => r.customer_id)));

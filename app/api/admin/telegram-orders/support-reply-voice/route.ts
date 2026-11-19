@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
   // 3-band: egalik fayl yuklanishidan OLDIN tekshiriladi (rad etilsa yetim fayl qolmasin).
   const own = await ensureReplyOwnership(admin, String(customerId), user.id, !!canOverride);
-  if (!own.ok) return NextResponse.json({ error: "not_owner", ownerName: own.ownerName }, { status: 409 });
+  if (!own.ok) return NextResponse.json({ error: "not_owner", ownerId: own.ownerId, ownerName: own.ownerName }, { status: 409 });
 
   let buffer: Buffer;
   try {

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   // 3-band: egalik — egasi bo'lsa o'zi, egasiz bo'lsa atomik olinadi,
   // boshqanikiga faqat rahbar. Rad etilsa aniq xato (UI xabar ko'rsatadi).
   const own = await ensureReplyOwnership(admin, String(customerId), check.userId, check.canOverride);
-  if (!own.ok) return NextResponse.json({ error: "not_owner", ownerName: own.ownerName }, { status: 409 });
+  if (!own.ok) return NextResponse.json({ error: "not_owner", ownerId: own.ownerId, ownerName: own.ownerName }, { status: 409 });
 
   const { data: inserted, error } = await admin
     .from("telegram_support_messages")

@@ -126,3 +126,46 @@ update telegram_support_threads t
 --    allaqachon yopiq, o'zgartirish kerak emas.
 -- ---------------------------------------------------------------------
 drop policy if exists "telegram_orders.manage reply as operator" on telegram_support_messages;
+
+
+-- ---------------------------------------------------------------------
+-- 3) Xabar O'CHIRILGANDA ro'yxat maydonlari qayta hisoblanadi (1-band
+--    to'ldiruvchisi). Mijoz/operator o'z xabarini o'chira oladi — aks holda
+--    ro'yxatda eskirgan matn va noto'g'ri "javobsiz" belgisi qolardi.
+--    Oxirgi xabar o'chsa last_message_at NULL -> suhbat ro'yxatdan chiqadi.
+-- ---------------------------------------------------------------------
+create or replace function public.support_thread_recalc_on_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_last_reply timestamptz;
+begin
+  select max(created_at) into v_last_reply
+    from telegram_support_messages
+   where customer_id = old.customer_id and sender = 'operator' and not coalesce(is_system, false);
+
+  update telegram_support_threads t set
+    last_message_at = (select max(created_at) from telegram_support_messages where customer_id = old.customer_id),
+    last_message_preview = (select left(coalesce(message, ''), 200) from telegram_support_messages
+                             where customer_id = old.customer_id and not coalesce(is_system, false)
+                             order by created_at desc limit 1),
+    last_message_kind = (select case when image_path is not null then 'image'
+                                     when voice_path is not null then 'voice' else 'text' end
+                           from telegram_support_messages
+                          where customer_id = old.customer_id and not coalesce(is_system, false)
+                          order by created_at desc limit 1),
+    first_unanswered_at = (select min(created_at) from telegram_support_messages
+                            where customer_id = old.customer_id and sender = 'customer'
+                              and (v_last_reply is null or created_at > v_last_reply))
+  where t.customer_id = old.customer_id;
+  return old;
+end;
+$$;
+
+drop trigger if exists trg_support_thread_recalc_on_delete on telegram_support_messages;
+create trigger trg_support_thread_recalc_on_delete
+  after delete on telegram_support_messages
+  for each row execute function public.support_thread_recalc_on_delete();
