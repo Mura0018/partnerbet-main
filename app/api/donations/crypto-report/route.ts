@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { DONATION_MAX_AMOUNT } from "@/lib/donations/constants";
+import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 
 // Crypto donations cannot be verified automatically (no blockchain
 // monitoring is implemented — see DONATION_SYSTEM.md for why that's out
@@ -17,6 +18,12 @@ function sanitizeText(value: string | undefined, maxLength: number): string | nu
 }
 
 export async function POST(req: NextRequest) {
+  // IP bo'yicha cheklov (mavjud rate_limit_events naqshi) — pastdagi
+  // to'lov-usuli bo'yicha umumiy cheklovni bitta manba tugatib, haqiqiy
+  // xayriyachilarni bloklay olmasin. 15 daqiqada 5 urinish.
+  const { allowed: ipAllowed } = await checkAndRecordRateLimit(`donation-crypto-report:${getClientIp(req.headers)}`, 15 * 60, 5);
+  if (!ipAllowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+
   let body: {
     paymentMethodId?: string; amount?: number; currency?: string;
     donorName?: string; message?: string; isAnonymous?: boolean; isPublic?: boolean;
