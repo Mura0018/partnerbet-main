@@ -10,8 +10,15 @@
 --  exists; funksiyalar create or replace; trigger drop if exists.
 --
 --  DEPLOY TARTIBI: avval KOD (fix/rls-hardening), keyin shu migratsiya.
---  Aksincha bo'lsa faqat murojaatni "o'z zimmasiga olish" (support claim)
---  vaqtincha jim ishlamay qoladi — 5-bo'limga qarang.
+--  Kod oldin chiqsa — hammasi ishlaydi (yangi kod service role ishlatadi,
+--  eski policy bilan ham). Migratsiya ESKI kod bilan qo'yilsa, kod
+--  chiqquncha uchta narsa JIM ishlamaydi (xato ko'rinmaydi):
+--   a) murojaatni "o'z zimmasiga olish" (5-bo'lim) — eski SupportTab
+--      brauzerdan upsert qiladi;
+--   b) profiles.last_login_at yangilanmaydi (2-bo'lim trigger'i eski
+--      login marshrutining foydalanuvchi-sessiya yozuvini qaytaradi);
+--   c) push obunani bekor qilish "muvaffaqiyatli" qaytadi, lekin qator
+--      o'chmaydi (3-bo'lim; eski marshrut anon orqali o'chiradi).
 -- =====================================================================
 
 
