@@ -138,3 +138,24 @@ drop policy if exists "telegram_orders.manage manage support threads" on telegra
 drop policy if exists "telegram_orders.manage read support threads" on telegram_support_threads;
 create policy "telegram_orders.manage read support threads" on telegram_support_threads
   for select using (has_permission('telegram_orders.manage'));
+
+
+-- ---------------------------------------------------------------------
+-- 6) partner_members — partner_admin faqat o'z partneridagi STAFF
+--    qatorini o'chira oladi (o'zini emas).
+--    Audit: brauzerdan yagona yozuv — app/partner/team/page.tsx (admin
+--    xodimni o'chiradi; UI tugmasi faqat staff qatorida). Qo'shish faqat
+--    service role (api/partner/create-staff, api/admin/partners/create-
+--    member). Avval FOR ALL: partner_admin istalgan profilni o'z partneriga
+--    qo'sha, rolini partner_admin'ga ko'tara, boshqa adminlarni o'chira olardi.
+--    "platform manage members" (partners.manage) va o'qish policy'si o'zgarmaydi.
+-- ---------------------------------------------------------------------
+drop policy if exists "partner_admin manage own members" on partner_members;
+drop policy if exists "partner_admin delete own staff" on partner_members;
+create policy "partner_admin delete own staff" on partner_members
+  for delete using (
+    partner_id = current_partner_id()
+    and is_partner_admin()
+    and partner_role = 'staff'
+    and profile_id <> auth.uid()
+  );
