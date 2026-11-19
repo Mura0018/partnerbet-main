@@ -492,8 +492,6 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
     () => { setActiveCustomer(null); }
   );
   const [loading, setLoading] = useState(true);
-  // Birinchi yuklash tez qaytsa "Yuklanmoqda…" chaqnab o'tmaydi.
-  const showInitialLoading = useDelayedFlag(loading);
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [onlyMine, setOnlyMine] = useState(false);
@@ -582,7 +580,28 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
     );
   }
 
-  if (loading) return showInitialLoading ? <p className="text-[13px] text-muted">{t("sup.loading")}</p> : null;
+  // Birinchi yuklash: maydon bo'sh qolmasin — yuklangan ko'rinishga yaqin
+  // balandlikdagi barqaror skelet (qidiruv + filtrlar + 4 qator).
+  if (loading) {
+    return (
+      <div aria-busy="true" aria-label={t("sup.loading")}>
+        <div className="w-full h-[38px] mb-3 rounded-lg bg-white/[0.04] border border-subtle animate-pulse" />
+        <div className="flex gap-2 mb-4">
+          {[64, 64, 92].map((w, i) => (
+            <div key={i} className="h-[30px] rounded-lg bg-white/[0.04] border border-subtle animate-pulse" style={{ width: w }} />
+          ))}
+        </div>
+        <div className="space-y-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="p-3.5 rounded-xl bg-white/[0.03] border border-subtle">
+              <div className="h-[13px] w-40 rounded bg-white/10 animate-pulse mb-2" />
+              <div className="h-[12px] w-3/4 rounded bg-white/[0.06] animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const visibleThreads = threads
     .filter((th) => archivedIds.has(th.customer_id) === showArchived)
