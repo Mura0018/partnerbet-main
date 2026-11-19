@@ -104,13 +104,15 @@ export async function GET() {
 
   // Ochiq qarzlar (mening ishtirokimdagi, to'lanmagan)
   try {
-    const { data: debts } = await admin
+    // Server tomonda filtr + faqat sanoq (operator-debts/announce bilan bir
+    // xil filtr). Ilgari barcha ochiq qarzlar yuklanib JS'da filtrlanardi —
+    // 1000+ qatorda PostgREST max_rows sababli sanoq noto'g'ri chiqardi.
+    const { count } = await admin
       .from("operator_debts")
-      .select("status, debtor_operator_id, creditor_operator_id")
-      .neq("status", "paid");
-    counts.openDebts = (debts ?? []).filter(
-      (d: any) => d.debtor_operator_id === user.id || d.creditor_operator_id === user.id,
-    ).length;
+      .select("id", { count: "exact", head: true })
+      .neq("status", "paid")
+      .or(`debtor_operator_id.eq.${user.id},creditor_operator_id.eq.${user.id}`);
+    counts.openDebts = count ?? 0;
   } catch {
     /* skip */
   }

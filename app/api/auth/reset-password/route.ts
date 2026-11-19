@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkPasswordStrength } from "@/lib/auth/password";
+import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 
 // Parol tiklash — recovery sessiyasi tokeni bilan. Parol kuchi SERVER
 // tomonда majburlanadi (client updateUser bypass'ini yopadi). accessToken
 // email havolаsидан kelган recovery sessiya tokeni.
 export async function POST(req: NextRequest) {
+  // IP bo'yicha soatiga 10 urinish (partner/set-password bilan bir xil naqsh).
+  const ip = getClientIp(req.headers);
+  const { allowed } = await checkAndRecordRateLimit(`auth-reset-password:${ip}`, 3600, 10);
+  if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+
   const body = await req.json().catch(() => null);
   const accessToken = body?.accessToken;
   const password = body?.password;

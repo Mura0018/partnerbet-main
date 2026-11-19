@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import type { PaymentGatewayProvider, CheckoutSessionResult, WebhookVerificationResult } from "@/lib/donations/types";
+import { startTimeout } from "@/lib/net/timeout";
 
 // Documented, generic REST + HMAC-webhook contract — NOT a real named
 // service's actual API, exactly like GenericRestStreamingProvider
@@ -28,6 +29,7 @@ export class GenericPaymentProvider implements PaymentGatewayProvider {
   async createCheckoutSession(params: {
     donationId: string; amount: number; currency: string; successUrl: string; cancelUrl: string;
   }): Promise<CheckoutSessionResult> {
+    const tmo = startTimeout(10000);
     try {
       const res = await fetch(`${this.baseApiUrl.replace(/\/$/, "")}/checkout`, {
         method: "POST",
@@ -36,6 +38,7 @@ export class GenericPaymentProvider implements PaymentGatewayProvider {
           amount: params.amount, currency: params.currency, donation_id: params.donationId,
           success_url: params.successUrl, cancel_url: params.cancelUrl,
         }),
+        signal: tmo.signal,
       });
       if (!res.ok) {
         console.error("[donations] Generic provider checkout xatosi:", res.status);
@@ -50,6 +53,8 @@ export class GenericPaymentProvider implements PaymentGatewayProvider {
     } catch (err: any) {
       console.error("[donations] Generic provider bilan bog'lanishda xatolik:", err);
       return { success: false, error: "provider_error" };
+    } finally {
+      tmo.clear();
     }
   }
 

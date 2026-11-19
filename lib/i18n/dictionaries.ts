@@ -723,6 +723,7 @@ export const dictionaries = {
       submitting: "Yangilanmoqda…",
       success: "Parol yangilandi",
       wrongCurrent: "Joriy parol noto'g'ri.",
+      rateLimited: "Juda ko'p urinish. Birozdan keyin qayta urining.",
     },
     passwordStrength: {
       tooShort: "Kamida 10 ta belgi",
@@ -1476,6 +1477,7 @@ export const dictionaries = {
       submitting: "Обновление…",
       success: "Пароль обновлён",
       wrongCurrent: "Текущий пароль неверен.",
+      rateLimited: "Слишком много попыток. Попробуйте позже.",
     },
     passwordStrength: {
       tooShort: "Минимум 10 символов",

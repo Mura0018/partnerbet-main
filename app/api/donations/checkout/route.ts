@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getPaymentGatewayProvider } from "@/lib/donations/registry";
 import { DONATION_MAX_AMOUNT } from "@/lib/donations/constants";
 import { env } from "@/lib/env";
+import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 
 const RATE_LIMIT_WINDOW_MINUTES = 15;
 const RATE_LIMIT_MAX_ATTEMPTS = 10;
@@ -14,6 +15,12 @@ function sanitizeText(value: string | undefined, maxLength: number): string | nu
 }
 
 export async function POST(req: NextRequest) {
+  // IP bo'yicha cheklov (mavjud rate_limit_events naqshi) — pastdagi
+  // to'lov-usuli bo'yicha umumiy cheklovni bitta manba tugatib, haqiqiy
+  // xayriyachilarni bloklay olmasin. 15 daqiqada 5 urinish.
+  const { allowed: ipAllowed } = await checkAndRecordRateLimit(`donation-checkout:${getClientIp(req.headers)}`, 15 * 60, 5);
+  if (!ipAllowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+
   let body: {
     paymentMethodId?: string; amount?: number; currency?: string;
     donorName?: string; message?: string; isAnonymous?: boolean; isPublic?: boolean;

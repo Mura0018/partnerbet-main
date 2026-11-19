@@ -38,16 +38,29 @@ export async function setApiCredential(key: string, value: string, updatedBy: st
   );
 }
 
+// "Sozlangan" nishoni: qator mavjudligi EMAS — kalit haqiqatan shifrdan
+// ochilishi va bo'sh bo'lmasligi shart (getApiCredential bilan bir xil
+// mezon). Ochilgan qiymat faqat shu funksiya ichida tekshiriladi va darhol
+// tashlab yuboriladi — javobga/log'ga faqat true/false chiqadi.
 export async function getApiCredentialStatuses(keys: string[]): Promise<Record<string, boolean>> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("api_credentials")
-    .select("key, is_active")
+    .select("key, value, is_active")
     .in("key", keys);
   const statuses: Record<string, boolean> = {};
   for (const k of keys) statuses[k] = false;
   for (const row of data ?? []) {
-    statuses[row.key] = !!row.is_active;
+    statuses[row.key] = !!row.is_active && isReadableSecret(row.value);
   }
   return statuses;
+}
+
+function isReadableSecret(stored: unknown): boolean {
+  if (typeof stored !== "string" || !stored) return false;
+  try {
+    return decryptSecret(stored).length > 0;
+  } catch {
+    return false;
+  }
 }

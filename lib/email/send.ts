@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { startTimeout } from "@/lib/net/timeout";
 
 // =========================================================
 // Provider-agnostik email yuboruvchi (Resend yoki Brevo — REST API orqali,
@@ -23,6 +24,7 @@ export async function sendEmail({ to, subject, html, text }: EmailInput): Promis
     return false;
   }
 
+  const tmo = startTimeout(10000);
   try {
     if (provider === "brevo") {
       const key = env.brevoApiKey;
@@ -38,6 +40,7 @@ export async function sendEmail({ to, subject, html, text }: EmailInput): Promis
           htmlContent: html,
           textContent: text ?? stripHtml(html),
         }),
+        signal: tmo.signal,
       });
       if (!res.ok) { console.warn("[email] Brevo xato:", res.status, await res.text().catch(() => "")); return false; }
       return true;
@@ -50,12 +53,15 @@ export async function sendEmail({ to, subject, html, text }: EmailInput): Promis
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from, to, subject, html, text: text ?? stripHtml(html) }),
+      signal: tmo.signal,
     });
     if (!res.ok) { console.warn("[email] Resend xato:", res.status, await res.text().catch(() => "")); return false; }
     return true;
   } catch (e) {
     console.warn("[email] yuborishда istisno:", e);
     return false;
+  } finally {
+    tmo.clear();
   }
 }
 

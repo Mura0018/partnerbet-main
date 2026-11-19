@@ -1,4 +1,5 @@
 import { getApiCredential } from "@/lib/auth/apiCredentials";
+import { startTimeout } from "@/lib/net/timeout";
 import { env } from "@/lib/env";
 
 const MINIAPP_URL = `${env.siteUrl}/telegram-app`;
@@ -18,24 +19,28 @@ export async function sendTelegramMessage(
   replyMarkup: unknown = OPEN_APP_KEYBOARD
 ): Promise<void> {
   const token = await getApiCredential("telegram_bot_token");
-  console.log("[notify][DEBUG] token:", token ? `found (len=${token.length})` : "NOT FOUND");
   if (!token) return;
 
+  const to = startTimeout(5000);
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text, reply_markup: replyMarkup }),
+      signal: to.signal,
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      console.error("[notify][DEBUG] Telegram sendMessage muvaffaqiyatsiz:", res.status, body);
-    } else {
-      console.log("[notify][DEBUG] Telegram sendMessage muvaffaqiyatli:", res.status);
+      console.error("[notify] Telegram sendMessage muvaffaqiyatsiz:", res.status, body);
     }
   } catch (err) {
-    console.error("[notify][DEBUG] fetch xatosi:", err);
+    // Faqat xato turi/kodi — so'rov URL'ida bot tokeni bor, xato obyekti
+    // butunligicha log'ga tushmasin.
+    const e = err as { name?: string; message?: string; cause?: { code?: string } };
+    console.error("[notify] fetch xatosi:", e?.name ?? "Error", e?.message ?? "", e?.cause?.code ?? "");
     // Swallow — notification delivery is best-effort.
+  } finally {
+    to.clear();
   }
 }
 

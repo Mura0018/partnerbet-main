@@ -66,6 +66,7 @@ export default function ResetPasswordPage() {
 
     if (!res.ok || !data.ok) {
       if (data.error === "weak_password" && data.failedRules?.[0]) setError(t(`passwordStrength.${data.failedRules[0]}`));
+      else if (data.error === "rate_limited") setError(t("changePassword.rateLimited"));
       else setError(t("login.genericError"));
       return;
     }

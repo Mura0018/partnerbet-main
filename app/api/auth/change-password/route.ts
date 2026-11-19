@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { checkPasswordStrength } from "@/lib/auth/password";
+import { checkAndRecordRateLimit } from "@/lib/security/rateLimit";
+
+// Joriy parolni taxmin qilishga qarshi: foydalanuvchiga 15 daqiqada 5 urinish
+// (mavjud rate_limit_events naqshi). Faqat haqiqiy qayta-tasdiqlash urinishlari
+// sanaladi — tekshiruv signInWithPassword oldidan.
+const CHANGE_PW_WINDOW_SEC = 15 * 60;
+const CHANGE_PW_MAX = 5;
 
 export async function POST(req: NextRequest) {
   let body: { currentPassword?: string; newPassword?: string };
@@ -29,6 +36,9 @@ export async function POST(req: NextRequest) {
   if (!strength.valid) {
     return NextResponse.json({ error: "weak_password", failedRules: strength.failedRules }, { status: 400 });
   }
+
+  const { allowed } = await checkAndRecordRateLimit(`auth-change-password:${user.id}`, CHANGE_PW_WINDOW_SEC, CHANGE_PW_MAX);
+  if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   // Confirm identity by re-authenticating with the CURRENT password before
   // allowing the change — an active session alone is not proof of knowing
