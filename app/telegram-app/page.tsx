@@ -5,7 +5,7 @@ import { formatPhone, formatAccountId, formatDateTime, formatTime, formatDayLabe
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import {
-  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
+  Download, ArrowUpFromLine, ListOrdered, Headset, Loader2, ChevronLeft, ChevronDown, Send, CheckCircle2, XCircle, Clock, Upload, Paperclip, Mic, Trash2, Check, CheckCheck, Home, LogOut, Reply, Palette, RotateCcw, Pencil, Copy,
   Handshake, Sparkles, ShieldCheck, Globe, Rocket, ArrowRight, Building2, Users, Wallet, Gift,
 } from "lucide-react";
 import { applyAppTheme } from "@/lib/telegram/appThemes";
@@ -65,6 +65,8 @@ type SupportMessage = {
   clientId?: string; status?: "sending" | "sent" | "failed";
   // F2e: xabar biriktirilgan buyurtma (karta xabar bilan ketadi).
   order_id?: string | null;
+  // 2.3 (0104): avto/tizim xabari — haqiqiy operator javobi hisoblanmaydi.
+  is_system?: boolean;
   // F1c/F2: xato bo'lganda "Qayta yuborish" / "Tahrirlash" uchun asl payload
   // (matn yoki rasm).
   _draft?:
@@ -2253,8 +2255,20 @@ export default function TelegramAppPage() {
             {supportLoadingMore && (
               <div className="flex justify-center py-2"><Loader2 size={16} className="animate-spin text-accent" /></div>
             )}
-            {supportMessages.map((m, i) => {
+            {(() => {
+              // 2.3: oxirgi HAQIQIY operator javobi vaqti (tizim xabarlari
+              // hisoblanmaydi). Undan oldingi mijoz xabarlari "o'qildi" (✓✓),
+              // keyingilari "yuborildi" (✓). Yangi mexanizm yo'q — mavjud
+              // xabarlardan hisoblanadi.
+              const lastRealReplyMs = supportMessages.reduce((acc, x) => {
+                if (x.sender !== "operator" || x.is_system) return acc;
+                const ms = Date.parse(x.created_at);
+                return Number.isFinite(ms) && ms > acc ? ms : acc;
+              }, 0);
+              return supportMessages.map((m, i) => {
               const prev = i > 0 ? supportMessages[i - 1] : null;
+              const deliveredOnServer = m.sender === "customer" && (!m.status || m.status === "sent");
+              const seenByOperator = deliveredOnServer && lastRealReplyMs > 0 && Date.parse(m.created_at) <= lastRealReplyMs;
               const showDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString();
               const quoted = supportMessageById(m.reply_to_id);
               const quotedLabel = quoted ? (quoted.sender === "customer" ? t("tg.you") : t("tg.operator")) : null;
@@ -2328,6 +2342,9 @@ export default function TelegramAppPage() {
                     <span className="text-[8px] text-white/50">{formatTime(m.created_at, { timeZone: tz })}</span>
                     {m.sender === "customer" && m.status === "sending" && <Loader2 size={9} className="animate-spin text-white/60" aria-label={t("tg.sending")} />}
                     {m.sender === "customer" && m.status === "failed" && <span className="text-[9px] font-bold text-[#FF6B85]" aria-label={t("tg.failed")} title={t("tg.failed")}>!</span>}
+                    {deliveredOnServer && (seenByOperator
+                      ? <CheckCheck size={11} className="text-[#7db8ff]" aria-label={t("tg.msgSeen")} />
+                      : <Check size={11} className="text-white/50" aria-label={t("tg.msgSent")} />)}
                   </div>
                 </div>
                 {/* Part I: oddiy xabar amallari long-press menyusида; bu yerda
@@ -2351,7 +2368,8 @@ export default function TelegramAppPage() {
               </div>
               </React.Fragment>
               );
-            })}
+              });
+            })()}
             </>
           )}
           <div ref={supportBottomRef} />
