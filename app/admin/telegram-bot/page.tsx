@@ -32,6 +32,14 @@ export default function TelegramBotAdminPage() {
 function TelegramBotAdminPageInner() {
   const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("orders");
+  // Bir marta ochilgan tablar MOUNT holatida qoladi (faol bo'lmagani `hidden`
+  // bilan yashiriladi) — qaytganda holat/ma'lumot joyida, so'rov qayta
+  // ketmaydi, ekran sakramaydi. Hali ochilmagan tab oldindan yuklanmaydi.
+  const [visited, setVisited] = useState<Set<Tab>>(() => new Set<Tab>(["orders"]));
+  const openTab = (id: Tab) => {
+    setTab(id);
+    setVisited((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  };
   const searchParams = useSearchParams();
   const chatParam = searchParams.get("chat");
   const [chatOpen, setChatOpen] = useState(() => chatParam === "1");
@@ -64,7 +72,6 @@ function TelegramBotAdminPageInner() {
         @keyframes bcFabPulse { 0%,100% { box-shadow: 0 8px 28px rgba(61,127,255,0.40), 0 0 0 0 rgba(61,127,255,0.45); } 50% { box-shadow: 0 8px 28px rgba(61,127,255,0.40), 0 0 0 12px rgba(61,127,255,0); } }
         @keyframes bcDrawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @keyframes bcFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes bcTabPop { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
       <div className="flex items-center gap-2 mb-1">
@@ -79,7 +86,7 @@ function TelegramBotAdminPageInner() {
           const btn = (
             <button
               key={tb.id}
-              onClick={() => setTab(tb.id)}
+              onClick={() => openTab(tb.id)}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium whitespace-nowrap transition-all duration-200 ${
                 tab === tb.id
                   ? "bg-accent/20 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
@@ -93,14 +100,22 @@ function TelegramBotAdminPageInner() {
         })}
       </div>
 
-      {!chatOpen && (
-        <div key={tab} style={{ animation: "bcTabPop 0.25s ease" }}>
-          {tab === "orders" && <OrdersTab />}
-          {tab === "support" && <SupportTab />}
-          {tab === "operators" && <Can permission="telegram_operators.manage"><OperatorsTab /></Can>}
-          {tab === "my-payments" && <MyPaymentMethodsTab />}
-        </div>
-      )}
+      {/* Chat (drawer) ochiq bo'lsa tablar ham faqat yashiriladi (avval
+          unmount bo'lib, chat yopilganda qaytadan yuklanardi). */}
+      <div hidden={chatOpen}>
+        {visited.has("orders") && <div hidden={tab !== "orders"}><OrdersTab /></div>}
+        {visited.has("support") && (
+          <div hidden={tab !== "support"}>
+            <SupportTab active={!chatOpen && tab === "support"} />
+          </div>
+        )}
+        {visited.has("operators") && (
+          <div hidden={tab !== "operators"}>
+            <Can permission="telegram_operators.manage"><OperatorsTab /></Can>
+          </div>
+        )}
+        {visited.has("my-payments") && <div hidden={tab !== "my-payments"}><MyPaymentMethodsTab /></div>}
+      </div>
 
       {/* Suzuvchi Jamoa chati tugmasi (FAB) */}
       <Can permission="team_chat.use">
