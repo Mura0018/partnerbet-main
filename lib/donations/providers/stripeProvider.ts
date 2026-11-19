@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import type { PaymentGatewayProvider, CheckoutSessionResult, WebhookVerificationResult } from "@/lib/donations/types";
+import { startTimeout } from "@/lib/net/timeout";
 
 // Real Stripe Checkout Sessions + webhook signature verification
 // (Stripe's REST API is stable and extremely well documented — unlike
@@ -16,6 +17,7 @@ export class StripeProvider implements PaymentGatewayProvider {
   async createCheckoutSession(params: {
     donationId: string; amount: number; currency: string; successUrl: string; cancelUrl: string;
   }): Promise<CheckoutSessionResult> {
+    const tmo = startTimeout(10000);
     try {
       const body = new URLSearchParams({
         mode: "payment",
@@ -35,6 +37,7 @@ export class StripeProvider implements PaymentGatewayProvider {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body,
+        signal: tmo.signal,
       });
 
       if (!res.ok) {
@@ -48,6 +51,8 @@ export class StripeProvider implements PaymentGatewayProvider {
     } catch (err: any) {
       console.error("[donations] Stripe bilan bog'lanishda xatolik:", err);
       return { success: false, error: "provider_error" };
+    } finally {
+      tmo.clear();
     }
   }
 

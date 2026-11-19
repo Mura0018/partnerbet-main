@@ -1,4 +1,5 @@
 import type { PaymentGatewayProvider, CheckoutSessionResult, WebhookVerificationResult } from "@/lib/donations/types";
+import { startTimeout } from "@/lib/net/timeout";
 
 // Real PayPal Orders v2 API + webhook signature verification via PayPal's
 // own verification endpoint (PayPal does not use a simple HMAC like
@@ -13,6 +14,7 @@ export class PayPalProvider implements PaymentGatewayProvider {
   constructor(private clientId: string, private clientSecret: string, private webhookId: string | null) {}
 
   private async getAccessToken(): Promise<string | null> {
+    const tmo = startTimeout(8000);
     try {
       const res = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
         method: "POST",
@@ -21,12 +23,15 @@ export class PayPalProvider implements PaymentGatewayProvider {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: "grant_type=client_credentials",
+        signal: tmo.signal,
       });
       if (!res.ok) return null;
       const data = await res.json();
       return data.access_token ?? null;
     } catch {
       return null;
+    } finally {
+      tmo.clear();
     }
   }
 
@@ -39,6 +44,7 @@ export class PayPalProvider implements PaymentGatewayProvider {
       return { success: false, error: "provider_error" };
     }
 
+    const orderTmo = startTimeout(10000);
     try {
       const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
         method: "POST",
@@ -58,6 +64,7 @@ export class PayPalProvider implements PaymentGatewayProvider {
             user_action: "PAY_NOW",
           },
         }),
+        signal: orderTmo.signal,
       });
 
       if (!res.ok) {
@@ -77,6 +84,8 @@ export class PayPalProvider implements PaymentGatewayProvider {
     } catch (err: any) {
       console.error("[donations] PayPal bilan bog'lanishda xatolik:", err);
       return { success: false, error: "provider_error" };
+    } finally {
+      orderTmo.clear();
     }
   }
 
