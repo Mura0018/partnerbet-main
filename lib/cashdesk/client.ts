@@ -3,6 +3,7 @@ import { getDefaultCashdeskCreds, type Creds } from "@/lib/cashdesk/store";
 import { computeSign, debugAB, type SignatureVariant } from "@/lib/cashdesk/signatureVariants";
 import { getCashdeskSignatureSettings } from "@/lib/cashdesk/signatureSettings";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { startTimeout } from "@/lib/net/timeout";
 
 // =========================================================
 // CashdeskBotAPI client (partners.servcul.com) — the real 1xBet-family
@@ -149,12 +150,16 @@ export async function diagnoseCashdeskBalance(
     variant
   );
 
+  // Faqat o'qish (Balance) — abort xavfsiz; mavjud networkError yo'liga tushadi.
+  const tmo = startTimeout(8000);
   try {
-    const res = await fetch(url, { headers: { sign, login: creds.login, "Content-Type": "application/json" } });
+    const res = await fetch(url, { headers: { sign, login: creds.login, "Content-Type": "application/json" }, signal: tmo.signal });
     const rawResponse = await res.json().catch(() => null);
     return { httpStatus: res.status, networkError: false, rawResponse, aMasked, bMasked, dt, maskedHash: maskedCreds.hash, maskedPass: maskedCreds.pass };
   } catch {
     return { httpStatus: null, networkError: true, rawResponse: null, aMasked, bMasked, dt, maskedHash: maskedCreds.hash, maskedPass: maskedCreds.pass };
+  } finally {
+    tmo.clear();
   }
 }
 

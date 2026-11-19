@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { createPublicServerClient } from "@/lib/supabasePublic";
+import { startTimeout } from "@/lib/net/timeout";
 
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
@@ -18,8 +19,9 @@ export default async function Icon() {
   const customUrl = await getCustomFaviconUrl();
 
   if (customUrl) {
+    const tmo = startTimeout(3000);
     try {
-      const res = await fetch(customUrl);
+      const res = await fetch(customUrl, { signal: tmo.signal });
       if (res.ok) {
         const bytes = await res.arrayBuffer();
         const mimeType = res.headers.get("content-type") ?? "image/png";
@@ -27,6 +29,8 @@ export default async function Icon() {
       }
     } catch {
       // Fall through to the generated default icon below.
+    } finally {
+      tmo.clear();
     }
   }
 

@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 import { getCashdeskCredsById } from "@/lib/cashdesk/store";
 import { getCashdeskBalance } from "@/lib/cashdesk/client";
 import { handleLowBalanceAlert, isLowBalance } from "@/lib/cashdesk/lowBalanceAlert";
+import { startTimeout } from "@/lib/net/timeout";
 
 // Bitta kassa balansi (non-blocking — panel har qatorni alohida chaqiradi).
 // Xato bo'lsa { ok:false } -> panelda "balans olinmadi". Balans chegaradan
@@ -30,7 +31,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const creds = await getCashdeskCredsById(id);
   if (!creds) return NextResponse.json({ ok: false, error: "not_configured" });
 
-  const result = await getCashdeskBalance(creds);
+  // 5s timeout (faqat o'qish) — osilgan API panel qatorini cheksiz kutdirmaydi;
+  // abort -> network_error -> panelda "balans olinmadi".
+  const tmo = startTimeout(5000);
+  let result: Awaited<ReturnType<typeof getCashdeskBalance>>;
+  try {
+    result = await getCashdeskBalance(creds, { signal: tmo.signal });
+  } finally {
+    tmo.clear();
+  }
   if (!result.ok) return NextResponse.json({ ok: false, error: result.error });
 
   const balance = result.data.Balance;
