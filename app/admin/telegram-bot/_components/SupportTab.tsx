@@ -23,6 +23,8 @@ type SupportThread = {
   // vaqti (null = javob berilgan / mijoz xabari yo'q).
   unanswered_since: string | null;
 };
+// Operator suhbat oynasida bir sahifadagi xabarlar soni (mijoz tomoni bilan bir xil).
+const THREAD_PAGE = 50;
 // Shu daqiqadan uzoq javobsiz turgan suhbat ajralib turadi (staleReassign
 // bilan bir xil 15 daqiqa).
 const SUPPORT_WAIT_ALERT_MIN = 15;
@@ -145,14 +147,59 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
   const supabase = createClient();
   const { confirm, confirmDialog } = useConfirm();
 
+  // Mijoz tomonidagi naqsh (miniapp/support GET): oxirgi THREAD_PAGE ta xabar
+  // (desc + reverse); tepaga scroll qilinganda eskilari `before` bilan.
+  // Avval eng ESKI 200 ta yuklanardi — uzun suhbatda yangi xabar ko'rinmasdi.
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const MSG_COLS = "id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at";
+
   const loadThread = async () => {
     const { data } = await supabase
       .from("telegram_support_messages")
-      .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at")
+      .select(MSG_COLS)
       .eq("customer_id", thread.customer_id)
-      .order("created_at", { ascending: true })
-      .limit(200);
-    setMsgs((data as any[]) ?? []);
+      .order("created_at", { ascending: false })
+      .limit(THREAD_PAGE);
+    const batch = ((data as any[]) ?? []).slice().reverse() as SupportMsg[];
+    setMsgs((prev) => {
+      // Birinchi yuklash: "yana bor"mi — sahifa to'liq bo'lsa.
+      if (prev.length === 0) {
+        setHasMoreOlder(batch.length === THREAD_PAGE);
+        return batch;
+      }
+      // Polling: oxirgi sahifa yangilanadi, ilgari yuklangan ESKI xabarlar saqlanadi.
+      const oldestNewMs = batch.length ? Date.parse(batch[0].created_at) : Infinity;
+      const older = prev.filter((m) => Date.parse(m.created_at) < oldestNewMs);
+      return [...older, ...batch];
+    });
+  };
+
+  const loadOlder = async () => {
+    if (loadingOlder || !hasMoreOlder || msgs.length === 0) return;
+    const list = listRef.current;
+    const prevHeight = list?.scrollHeight ?? 0;
+    setLoadingOlder(true);
+    try {
+      const { data } = await supabase
+        .from("telegram_support_messages")
+        .select(MSG_COLS)
+        .eq("customer_id", thread.customer_id)
+        .lt("created_at", msgs[0].created_at)
+        .order("created_at", { ascending: false })
+        .limit(THREAD_PAGE);
+      const older = ((data as any[]) ?? []).slice().reverse() as SupportMsg[];
+      setHasMoreOlder(older.length === THREAD_PAGE);
+      if (older.length) {
+        setMsgs((prev) => [...older.filter((o) => !prev.some((p) => p.id === o.id)), ...prev]);
+        // Scroll joyi saqlanadi (yuqoriga qo'shilgan balandlik qadar suriladi).
+        requestAnimationFrame(() => {
+          if (list) list.scrollTop += list.scrollHeight - prevHeight;
+        });
+      }
+    } finally {
+      setLoadingOlder(false);
+    }
   };
 
   // Tab yashirin (active=false) paytda polling to'xtaydi; qaytganda darhol
@@ -396,9 +443,11 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
 
       <div
         ref={listRef}
+        onScroll={(e) => { if (e.currentTarget.scrollTop < 60) void loadOlder(); }}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
       >
+        {loadingOlder && <div className="flex justify-center py-1"><Loader2 size={14} className="animate-spin text-muted" /></div>}
         {msgs.length === 0 && <p className="text-[12px] text-muted text-center mt-8">{t("sup.noMessages")}</p>}
         {msgs.map((m) => {
           const quoted = messageById(m.reply_to_id);
