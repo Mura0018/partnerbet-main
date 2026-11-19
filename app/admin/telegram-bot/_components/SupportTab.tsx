@@ -271,13 +271,25 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
     if (sending || !text.trim()) return;
     setSending(true);
     try {
-      await fetch("/api/admin/telegram-orders/support-reply", {
+      const res = await fetch("/api/admin/telegram-orders/support-reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id, message: text.trim(), replyToId: replyTo?.id ?? null }),
       });
+      const data = await res.json().catch(() => ({}));
+      // Avval natija tekshirilmasdi — yozilgan matn jim yo'qolardi. Endi xato
+      // bo'lsa matn joyida qoladi va aniq sabab ko'rsatiladi.
+      if (!res.ok) {
+        toast.error(
+          data?.error === "not_owner"
+            ? t("sup.notOwner", { name: data?.ownerName || t("sup.operator") })
+            : t("sup.replyFailed")
+        );
+        return;
+      }
       setText("");
       setReplyTo(null);
+      if (data?.claimedNow) setClaimedBy(currentUserId);
       await loadThread();
     } finally {
       setSending(false);
@@ -316,7 +328,17 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
         body: JSON.stringify({ customerId: thread.customer_id, audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
       });
       // Avval javob tekshirilmasdi — chegaradan oshgan ovoz jim yo'qolardi.
-      if (!res.ok) toast.error(t("sup.voiceFailed"));
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(
+          data?.error === "not_owner"
+            ? t("sup.notOwner", { name: data?.ownerName || t("sup.operator") })
+            : t("sup.voiceFailed")
+        );
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (data?.claimedNow) setClaimedBy(currentUserId);
+      }
       await loadThread();
     } finally {
       setSending(false);
