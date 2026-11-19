@@ -10,6 +10,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useDelayedFlag } from "@/lib/ui/appear";
 
 type OperatorRow = {
   id: string;
@@ -26,6 +27,9 @@ export function OperatorsTab() {
   const [operators, setOperators] = useState<OperatorRow[]>([]);
   const [regionDrafts, setRegionDrafts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  // Saqlashdan keyingi qayta yuklashda ro'yxat "Yuklanmoqda…"ga almashmaydi.
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  const showInitialLoading = useDelayedFlag(loading && !loadedOnce);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -38,6 +42,7 @@ export function OperatorsTab() {
       .order("full_name");
     setOperators((data as any[]) ?? []);
     setLoading(false);
+    setLoadedOnce(true);
   };
   useEffect(() => { load(); }, []);
 
@@ -74,8 +79,8 @@ export function OperatorsTab() {
         <p className="text-[12px] text-[#FF6B85] bg-[#FF6B85]/10 border border-[#FF6B85]/30 rounded-lg px-3 py-2 mb-3">{error}</p>
       )}
 
-      {loading ? (
-        <p className="text-[13px] text-muted">{t("tgb.loading")}</p>
+      {!loadedOnce ? (
+        showInitialLoading ? <p className="text-[13px] text-muted">{t("tgb.loading")}</p> : null
       ) : operators.length === 0 ? (
         <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
           {t("tgb.empty")}

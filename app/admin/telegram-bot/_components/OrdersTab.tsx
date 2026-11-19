@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
-import { Appear } from "@/lib/ui/appear";
+import { Appear, useDelayedFlag } from "@/lib/ui/appear";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
@@ -1035,6 +1035,11 @@ export function OrdersTab() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Birinchi natija kelganmi. Keyingi qayta yuklashlarda (filtr/qidiruv/
+  // sahifa/amal) eski ro'yxat o'rnida qoladi — "Yuklanmoqda…"ga almashib
+  // sahifa sakramaydi. Matn faqat birinchi yuklash cho'zilsa chiqadi.
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  const showInitialLoading = useDelayedFlag(loading && !loadedOnce);
   const [filter, setFilter] = useState<"pending" | "completed" | "rejected" | "all">("pending");
   const [selected, setSelected] = useState<Order | null>(null);
   const [operatorNames, setOperatorNames] = useState<Record<string, string>>({});
@@ -1070,6 +1075,7 @@ export function OrdersTab() {
       }
     } catch { /* ignore */ }
     setLoading(false);
+    setLoadedOnce(true);
   };
 
   // Qidiruv/filtr o'zgarganda 0-sahifadan qayta yuklaymiz (customers/page.tsx
@@ -1201,14 +1207,14 @@ export function OrdersTab() {
         </div>
       </div>
 
-      {loading ? (
-        <p className="text-[13px] text-muted">{t("common.loading")}</p>
+      {!loadedOnce ? (
+        showInitialLoading ? <p className="text-[13px] text-muted">{t("common.loading")}</p> : null
       ) : orders.length === 0 ? (
         <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
           {t("ord.noOrders")}
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className={`space-y-2.5 transition-opacity ${loading ? "opacity-60" : ""}`}>
           {orders.map((o) => {
             const owner = o.status === "pending" ? o.claimed_by : o.operator_id;
             const ownerName = owner ? operatorNames[owner] : null;
@@ -1265,7 +1271,7 @@ export function OrdersTab() {
         </div>
       )}
 
-      {!loading && total > ORDERS_PAGE_SIZE && (
+      {loadedOnce && total > ORDERS_PAGE_SIZE && (
         <div className="flex items-center justify-between mt-3 text-[12px]">
           <span className="text-muted">{page * ORDERS_PAGE_SIZE + 1}–{Math.min((page + 1) * ORDERS_PAGE_SIZE, total)} / {total}</span>
           <div className="flex gap-1.5">

@@ -12,6 +12,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useDelayedFlag } from "@/lib/ui/appear";
 import { toast } from "@/lib/ui/toast";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -434,6 +435,8 @@ export function SupportTab() {
     () => { setActiveCustomer(null); }
   );
   const [loading, setLoading] = useState(true);
+  // Birinchi yuklash tez qaytsa "Yuklanmoqda…" chaqnab o'tmaydi.
+  const showInitialLoading = useDelayedFlag(loading);
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [onlyMine, setOnlyMine] = useState(false);
@@ -507,7 +510,7 @@ export function SupportTab() {
     );
   }
 
-  if (loading) return <p className="text-[13px] text-muted">{t("sup.loading")}</p>;
+  if (loading) return showInitialLoading ? <p className="text-[13px] text-muted">{t("sup.loading")}</p> : null;
 
   const visibleThreads = threads
     .filter((th) => archivedIds.has(th.customer_id) === showArchived)
