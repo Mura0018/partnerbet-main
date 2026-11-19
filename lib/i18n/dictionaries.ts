@@ -130,7 +130,7 @@ export const dictionaries = {
       closed: "✅ Yopilgan", debtorConfirmed: "Qarzdor tasdiqladi", creditorConfirmed: "Haqdor tasdiqladi", open: "Ochiq", iPaid: "To'ladim", iReceived: "Oldim",
       trustRating: "Ishonch reytingi:",
       tgLinked: "✓ Telegram ulangan — yangi buyurtmalar haqida xabar kelib turadi.", unlink: "Uzish",
-      tgCheckFailed: "Telegram ulanish holatini tekshirib bo'lmadi.", tgNotLinked: "Telegram ulanmagan — yangi buyurtmalar haqida xabar olmaysiz.", getCode: "Kod olish",
+      tgCheckFailed: "Telegram ulanish holatini tekshirib bo'lmadi.", tgNotLinked: "Telegram ulanmagan — yangi buyurtmalar haqida xabar olmaysiz.", getCode: "Kod olish", sendToBot: "Botga yuboring:", codeTtl: "(10 daqiqa amal qiladi)",
       takeoverTaken: "Boshqa operator ulgurdi yoki buyurtma allaqachon hal qilingan.",
     },
     ctl: {
@@ -883,7 +883,7 @@ export const dictionaries = {
       closed: "✅ Закрыт", debtorConfirmed: "Должник подтвердил", creditorConfirmed: "Кредитор подтвердил", open: "Открыт", iPaid: "Оплатил", iReceived: "Получил",
       trustRating: "Рейтинг доверия:",
       tgLinked: "✓ Telegram подключён — уведомления о новых заказах приходят.", unlink: "Отключить",
-      tgCheckFailed: "Не удалось проверить статус Telegram.", tgNotLinked: "Telegram не подключён — уведомления о новых заказах не приходят.", getCode: "Получить код",
+      tgCheckFailed: "Не удалось проверить статус Telegram.", tgNotLinked: "Telegram не подключён — уведомления о новых заказах не приходят.", getCode: "Получить код", sendToBot: "Отправьте боту:", codeTtl: "(действует 10 минут)",
       takeoverTaken: "Другой оператор успел, или заказ уже обработан.",
     },
     ctl: {

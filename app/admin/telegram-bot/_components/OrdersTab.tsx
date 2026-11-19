@@ -1017,7 +1017,7 @@ function TelegramLinkWidget() {
       <div className="mb-2">{t("wid.tgNotLinked")}</div>
       {code ? (
         <div className="text-white/90">
-          Botga yuboring: <span className="font-mono font-bold">/link {code}</span> (10 daqiqa amal qiladi)
+          {t("wid.sendToBot")} <span className="font-mono font-bold">/link {code}</span> {t("wid.codeTtl")}
         </div>
       ) : (
         <button onClick={generate} disabled={generating} className="px-3 py-1.5 rounded-lg bg-[#F4C76A]/20 border border-[#F4C76A]/40 text-[11px] font-semibold">
