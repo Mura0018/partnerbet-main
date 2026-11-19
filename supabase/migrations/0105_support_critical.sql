@@ -112,3 +112,17 @@ update telegram_support_threads t
            and (r.last_reply is null or m.created_at > r.last_reply)
          group by m.customer_id) x
  where x.customer_id = t.customer_id;
+
+
+-- ---------------------------------------------------------------------
+-- 2) telegram_support_messages — brauzerdan YOZISH yopiladi (2-band).
+--    Audit: foydalanuvchi sessiyasi bilan bu jadvalga yozadigan joy YO'Q —
+--    SupportTab faqat o'qiydi; barcha yozuvlar (mijoz mini app, operator
+--    javobi/ovozi, yakunlash, o'chirish, tizim xabarlari) service role
+--    marshrutlari orqali. 0036 dagi insert policy'si 0103 da yopilmay qolgan
+--    edi: tizimga kirgan xodim konsoldan operator nomidan xabar qo'sha olardi.
+--    O'qish policy'si ("telegram_orders.manage read support messages") qoladi.
+--    telegram_support_threads: 0103 dan keyin faqat SELECT policy — yozish
+--    allaqachon yopiq, o'zgartirish kerak emas.
+-- ---------------------------------------------------------------------
+drop policy if exists "telegram_orders.manage reply as operator" on telegram_support_messages;
