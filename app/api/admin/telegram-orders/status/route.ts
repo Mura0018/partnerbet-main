@@ -132,8 +132,8 @@ export async function POST(req: NextRequest) {
       // shuning uchun cashdeskPayout bu yerda QAYTA CHAQIRILMAYDI (ikki
       // marta pul chiqmasin). Operator faqat mijozga to'lovni tasdiqladi.
       operatorNote = operatorNote
-        ? `${operatorNote} ("1xbetdan yechib olish" tugmasi orqali bajarilgan)`
-        : "1xbetdan yechilgan, operator to'lovni tasdiqladi";
+        ? `${operatorNote} ("Platformadan yechib olish" tugmasi orqali bajarilgan)`
+        : "Platformadan yechilgan, operator to'lovni tasdiqladi";
     } else {
       // Topup (Deposit) — BOSQICH D: idempotentlik. Payout (0092/0093 +
       // payout/route.ts) naqshining ko'zgusi. Atomik lock ikki marta bosish /

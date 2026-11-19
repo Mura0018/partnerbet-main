@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     : "barqaror";
 
   const text =
-    `📊 BetCore Pay — kunlik holat\n\n` +
+    `📊 DedPay — kunlik holat\n\n` +
     `Sana: ${dateStr}\n` +
     `Oxirgi sutka: ${total} ta buyurtma (${completed} bajarilgan, ${rejected} rad etilgan, ${pending} kutilmoqda)\n` +
     `Faol operatorlar: ${operators.length} ta (${busyCount} band)\n` +
