@@ -637,6 +637,7 @@ export default function ProfilePage() {
 
       if (!res.ok) {
         if (json.error === "wrong_current_password") setError(t("changePassword.wrongCurrent"));
+        else if (json.error === "rate_limited") setError(t("changePassword.rateLimited"));
         else if (json.error === "weak_password") setError(t(`passwordStrength.${json.failedRules?.[0] ?? "tooShort"}`));
         else setError(t("login.genericError"));
         return;
