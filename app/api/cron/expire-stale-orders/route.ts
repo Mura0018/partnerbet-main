@@ -42,7 +42,12 @@ export async function GET(req: NextRequest) {
     .from("telegram_orders")
     .select("id, customer_id, type, amount")
     .eq("status", "pending")
-    .lt("created_at", cutoff);
+    .lt("created_at", cutoff)
+    // Ish navbati: qayta ishlangan buyurtma 'pending'dan chiqadi, qolgani
+    // keyingi chaqiruvda olinadi. Cron uzilib qolgandan keyin minglab qator
+    // bitta chaqiruvni timeout'ga olib kelmasligi uchun partiya cheklangan.
+    .order("created_at", { ascending: true })
+    .limit(500);
 
   let expiredCount = 0;
   let blockedCount = 0;
