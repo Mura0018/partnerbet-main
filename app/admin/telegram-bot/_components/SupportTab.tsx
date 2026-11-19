@@ -247,6 +247,13 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
 
   const messageById = (id: string | null) => (id ? msgs.find((m) => m.id === id) ?? null : null);
 
+  // Server chegarasi (300 s) bilan bir xil — oshib ketgan yozuv rad etilib
+  // yo'qolmasligi uchun 300 s da avtomatik to'xtab yuboriladi.
+  useEffect(() => {
+    if (voiceRecorder.recording && voiceRecorder.durationSeconds >= 300) void stopAndSendVoice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceRecorder.recording, voiceRecorder.durationSeconds]);
+
   const stopAndSendVoice = async () => {
     const recorded = await voiceRecorder.stop();
     if (!recorded || recorded.durationSeconds < 1) return;
@@ -545,9 +552,17 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
     // HAQIQIY operator javobigacha uchragan eng eski mijoz xabari =
     // "javobsiz qachondan". Tizim xabarlari (is_system) javob hisoblanmaydi.
     const answered = new Set<string>();
+    // Ro'yxat ko'rinishi oxirgi HAQIQIY (tizim bo'lmagan) xabarni ko'rsatadi —
+    // salomlashuv kabi avto-xabar mijoz matnini yashirmasin.
+    const previewed = new Set<string>();
     for (const row of (data as any[]) ?? []) {
       const existing = grouped.get(row.customer_id);
       if (existing) {
+        if (!previewed.has(row.customer_id) && !row.is_system) {
+          existing.last_message = row.message;
+          existing.last_image = !!row.image_path;
+          previewed.add(row.customer_id);
+        }
         if (!answered.has(row.customer_id)) {
           if (row.sender === "customer") existing.unanswered_since = row.created_at;
           else if (row.sender === "operator" && !row.is_system) answered.add(row.customer_id);
@@ -555,6 +570,7 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
         continue;
       }
       if (row.sender === "operator" && !row.is_system) answered.add(row.customer_id);
+      if (!row.is_system) previewed.add(row.customer_id);
       {
         const info = threadInfo.get(row.customer_id);
         grouped.set(row.customer_id, {
@@ -570,13 +586,9 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
         });
       }
     }
-    // Eng uzoq javobsiz turgan suhbat tepada; qolganlari oxirgi xabar bo'yicha.
-    const list = Array.from(grouped.values());
-    const waiting = list
-      .filter((x) => x.unanswered_since)
-      .sort((a, b) => new Date(a.unanswered_since!).getTime() - new Date(b.unanswered_since!).getTime());
-    const rest = list.filter((x) => !x.unanswered_since);
-    setThreads([...waiting, ...rest]);
+    // Oxirgi xabar bo'yicha (yangi -> eski); "javobsiz" tartibi faqat faol
+    // ko'rinishda qo'llanadi (arxiv avvalgidek).
+    setThreads(Array.from(grouped.values()));
     setArchivedIds(new Set((threadRows ?? []).filter((r: any) => r.is_archived).map((r: any) => r.customer_id)));
     if (isInitial) setLoading(false);
   };
@@ -650,9 +662,18 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
     );
   }
 
-  const visibleThreads = threads
+  const baseThreads = threads
     .filter((th) => archivedIds.has(th.customer_id) === showArchived)
     .filter((th) => !onlyMine || th.claimed_by === currentUserId);
+  // 2.2: faol ko'rinishda eng uzoq javobsiz turgan suhbat tepada.
+  const visibleThreads = showArchived
+    ? baseThreads
+    : [
+        ...baseThreads
+          .filter((th) => th.unanswered_since)
+          .sort((a, b) => new Date(a.unanswered_since!).getTime() - new Date(b.unanswered_since!).getTime()),
+        ...baseThreads.filter((th) => !th.unanswered_since),
+      ];
   const filteredThreads = search.trim()
     ? visibleThreads.filter((th) => `${th.full_name ?? ""} ${th.phone}`.toLowerCase().includes(search.trim().toLowerCase()))
     : visibleThreads;

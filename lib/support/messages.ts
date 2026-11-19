@@ -33,8 +33,8 @@ export async function insertSupportSystemMessage(
 // Bir martalik "band / jamoaga yo'naltirildi" ogohlantirishi (1.1).
 // Atomik: busy_notified_at NULL bo'lsagina now() yoziladi va faqat qator
 // QAYTARGAN chaqiruv true oladi — parallel xabarlarda ham bitta ogohlantirish.
-// 0104 yo'q bo'lsa (ustun yo'q) -> false: ogohlantirish yuborilmaydi
-// (spam'dan ko'ra jimlik xavfsizroq).
+// 0104 yo'q bo'lsa (ustun yo'q) -> true: OLDINGI xulq saqlanadi (bir martalik
+// cheklov migratsiyadan keyin ishlaydi). Boshqa DB xatosida -> false.
 // =========================================================
 export async function claimSupportBusyNotice(admin: SupabaseClient, customerId: string): Promise<boolean> {
   const { data, error } = await admin
@@ -43,7 +43,11 @@ export async function claimSupportBusyNotice(admin: SupabaseClient, customerId: 
     .eq("customer_id", customerId)
     .is("busy_notified_at", null)
     .select("customer_id");
-  return !error && (data?.length ?? 0) > 0;
+  if (error) {
+    const missingColumn = error.code === "42703" || error.code === "PGRST204" || /busy_notified_at/.test(error.message ?? "");
+    return missingColumn;
+  }
+  return (data?.length ?? 0) > 0;
 }
 
 // Operator javob berganda / suhbat yakunlanganda belgilar tozalanadi —

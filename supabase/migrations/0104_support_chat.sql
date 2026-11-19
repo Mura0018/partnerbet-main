@@ -55,3 +55,19 @@ alter table telegram_support_threads
 -- ---------------------------------------------------------------------
 alter table telegram_support_threads
   add column if not exists operator_notified_at timestamptz;
+
+
+-- ---------------------------------------------------------------------
+-- 4) Eski avto-xabarlarni tizim xabari deb belgilash (backfill). 0104 dan
+--    oldin "band" va "jamoaga yo'naltirildi" xabarlari operator nomidan
+--    yozilgan — ular haqiqiy javob hisoblanib, "javobsiz" belgisi va mijozdagi
+--    ✓✓ ni chalg'itmasin. Qayta ishga tushirsa ham xavfsiz.
+-- ---------------------------------------------------------------------
+update telegram_support_messages
+   set is_system = true
+ where sender = 'operator'
+   and is_system = false
+   and (message like 'Operatoringiz hozir band%'
+        or message like 'So''rovingiz jamoamizga yo''naltirildi%'
+        or message like 'Yordamimizdan foydalanganingiz uchun rahmat!%'
+        or message like 'Albatta! Savolingizni yozing, yordam beramiz.%');

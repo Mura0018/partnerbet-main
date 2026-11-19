@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 import { notifyOperatorsSupportMessage } from "@/lib/telegram/notifyStaff";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { reassignStaleThread } from "@/lib/support/staleReassign";
-import { insertSupportSystemMessage, claimSupportBusyNotice } from "@/lib/support/messages";
+import { insertSupportSystemMessage, claimSupportBusyNotice, resetSupportNoticeFlags } from "@/lib/support/messages";
 import { serverT, customerLocale, LOCALE_COOKIE } from "@/lib/i18n/server";
 
 async function resolveCustomerId(initData: string): Promise<string | null> {
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
 
   const { data: existingThread } = await supabase
     .from("telegram_support_threads")
-    .select("claimed_by, auto_greeted, status")
+    .select("claimed_by, auto_greeted, status, is_archived")
     .eq("customer_id", customerId)
     .maybeSingle();
 
@@ -168,6 +168,13 @@ export async function POST(req: NextRequest) {
     // Tizim xabari (1.2): hech kimning nomidan emas. Avval operator_id'siz
     // insert constraint tufayli jimgina rad etilardi.
     await insertSupportSystemMessage(supabase, customerId, greeting);
+  }
+
+  // Arxivlangan/yakunlangan thread qayta ochilmoqda = YANGI suhbat: oldingi
+  // suhbatning bir martalik ogohlantirish/bildirishnoma belgilari tozalanadi
+  // (arxivlash va "tozalash" ularni tozalamaydi).
+  if (existingThread && ((existingThread as any).is_archived || existingThread.status === "ended")) {
+    await resetSupportNoticeFlags(supabase, customerId);
   }
 
   await supabase.from("telegram_support_threads").upsert(

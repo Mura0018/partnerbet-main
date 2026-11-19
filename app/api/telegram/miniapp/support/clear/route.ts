@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { resetSupportNoticeFlags } from "@/lib/support/messages";
 
 // Mijoz chatdan chiqqanda: joriy suhbatni MIJOZ ko'rinishidan yashiramiz
 // (thread.ended_at = now). Operator paneli to'liq tarixni saqlaydi (u ended_at
@@ -31,6 +32,8 @@ export async function POST(req: NextRequest) {
     .from("telegram_support_threads")
     .update({ ended_at: new Date().toISOString() })
     .eq("customer_id", customer.id);
+  // Keyingi kirish = yangi suhbat: bir martalik ogohlantirish belgilari tozalanadi.
+  await resetSupportNoticeFlags(supabase, customer.id);
 
   return NextResponse.json({ ok: true });
 }
