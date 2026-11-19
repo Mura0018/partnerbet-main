@@ -10,6 +10,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useDelayedFlag } from "@/lib/ui/appear";
 import { Select } from "@/lib/ui/Select";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -34,6 +35,10 @@ export function MyPaymentMethodsTab() {
   const { t } = useLocale();
   const [methods, setMethods] = useState<OperatorPaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  // Qo'shish/tahrir/o'chirishdan keyingi qayta yuklashda butun tab
+  // "Yuklanmoqda…"ga almashmaydi; matn faqat birinchi yuklash cho'zilsa.
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  const showInitialLoading = useDelayedFlag(loading && !loadedOnce);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<{ method_type: OperatorPaymentMethod["method_type"]; account_number: string; holder_name: string; usage_limit: string }>({
@@ -47,7 +52,7 @@ export function MyPaymentMethodsTab() {
   const load = async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    if (!user) { setLoading(false); setLoadedOnce(true); return; }
     const { data } = await supabase
       .from("telegram_operator_payment_methods")
       .select("id, method_type, account_number, holder_name, is_active, usage_count, usage_limit")
@@ -55,6 +60,7 @@ export function MyPaymentMethodsTab() {
       .order("method_type");
     setMethods((data as OperatorPaymentMethod[]) ?? []);
     setLoading(false);
+    setLoadedOnce(true);
   };
   useEffect(() => { load(); }, []);
 
@@ -127,7 +133,7 @@ export function MyPaymentMethodsTab() {
     });
   };
 
-  if (loading) return <p className="text-[13px] text-muted">{t("pay.loading")}</p>;
+  if (!loadedOnce) return showInitialLoading ? <p className="text-[13px] text-muted">{t("pay.loading")}</p> : null;
 
   return (
     <div className="max-w-lg">

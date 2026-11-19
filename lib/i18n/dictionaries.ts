@@ -130,7 +130,7 @@ export const dictionaries = {
       closed: "✅ Yopilgan", debtorConfirmed: "Qarzdor tasdiqladi", creditorConfirmed: "Haqdor tasdiqladi", open: "Ochiq", iPaid: "To'ladim", iReceived: "Oldim",
       trustRating: "Ishonch reytingi:",
       tgLinked: "✓ Telegram ulangan — yangi buyurtmalar haqida xabar kelib turadi.", unlink: "Uzish",
-      tgCheckFailed: "Telegram ulanish holatini tekshirib bo'lmadi.", tgNotLinked: "Telegram ulanmagan — yangi buyurtmalar haqida xabar olmaysiz.", getCode: "Kod olish",
+      tgCheckFailed: "Telegram ulanish holatini tekshirib bo'lmadi.", tgNotLinked: "Telegram ulanmagan — yangi buyurtmalar haqida xabar olmaysiz.", getCode: "Kod olish", sendToBot: "Botga yuboring:", codeTtl: "(10 daqiqa amal qiladi)",
       takeoverTaken: "Boshqa operator ulgurdi yoki buyurtma allaqachon hal qilingan.",
     },
     ctl: {
@@ -467,7 +467,7 @@ export const dictionaries = {
       confirmDelete: "O'chirishni tasdiqlaysizmi?", eDelete: "O'chirib bo'lmadi. Qayta urinib ko'ring.",
     },
     sup: {
-      imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…",
+      imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…", imgFailed: "Rasm ochilmadi", imgRetry: "Qayta urinish",
       tpl1: "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
       tpl2: "So'rovingiz ko'rib chiqilmoqda, biroz kuting.",
       tpl3: "Iltimos, to'lov chekining aniqroq skrinshotini yuboring.",
@@ -883,7 +883,7 @@ export const dictionaries = {
       closed: "✅ Закрыт", debtorConfirmed: "Должник подтвердил", creditorConfirmed: "Кредитор подтвердил", open: "Открыт", iPaid: "Оплатил", iReceived: "Получил",
       trustRating: "Рейтинг доверия:",
       tgLinked: "✓ Telegram подключён — уведомления о новых заказах приходят.", unlink: "Отключить",
-      tgCheckFailed: "Не удалось проверить статус Telegram.", tgNotLinked: "Telegram не подключён — уведомления о новых заказах не приходят.", getCode: "Получить код",
+      tgCheckFailed: "Не удалось проверить статус Telegram.", tgNotLinked: "Telegram не подключён — уведомления о новых заказах не приходят.", getCode: "Получить код", sendToBot: "Отправьте боту:", codeTtl: "(действует 10 минут)",
       takeoverTaken: "Другой оператор успел, или заказ уже обработан.",
     },
     ctl: {
@@ -1220,7 +1220,7 @@ export const dictionaries = {
       confirmDelete: "Подтвердите удаление?", eDelete: "Не удалось удалить. Попробуйте снова.",
     },
     sup: {
-      imgLoading: "Изображение загружается…", audioLoading: "Загрузка…",
+      imgLoading: "Изображение загружается…", audioLoading: "Загрузка…", imgFailed: "Изображение не открылось", imgRetry: "Повторить",
       tpl1: "Здравствуйте! Чем можем помочь?",
       tpl2: "Ваш запрос рассматривается, немного подождите.",
       tpl3: "Пожалуйста, отправьте более чёткий скриншот чека об оплате.",

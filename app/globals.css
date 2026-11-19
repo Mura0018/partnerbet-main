@@ -161,6 +161,26 @@ html {
   animation: pulse-dot 1.6s ease-in-out infinite;
 }
 
+/* <Appear> (lib/ui/appear.tsx): kech keladigan blok balandligi 0 dan yumshoq
+   ochiladi — pastdagi kontent keskin sakramaydi. Ichki div overflow:hidden
+   (BFC) bo'lgani uchun bolaning margin'i ham animatsiya ichida qoladi. */
+@keyframes ui-appear {
+  from { grid-template-rows: 0fr; opacity: 0; }
+  to { grid-template-rows: 1fr; opacity: 1; }
+}
+.ui-appear {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: ui-appear 0.22s ease-out both;
+}
+.ui-appear-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-appear { animation: none; }
+}
+
 /* Stagger helper: apply with inline style `animationDelay` for list reveals */
 .stagger-item {
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;

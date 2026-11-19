@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
+import { Appear, useDelayedFlag } from "@/lib/ui/appear";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
@@ -68,8 +69,9 @@ function ReceiptViewer({ path }: { path: string }) {
       .catch(() => setUrl(null))
       .finally(() => setLoading(false));
   }, [path]);
+  const showLoading = useDelayedFlag(loading);
 
-  if (loading) return <p className="text-[12px] text-muted">{t("ord.receiptLoading")}</p>;
+  if (loading) return showLoading ? <p className="text-[12px] text-muted">{t("ord.receiptLoading")}</p> : null;
   if (!url) return <p className="text-[12px] text-[#FF6B85]">{t("ord.receiptFailed")}</p>;
 
   return (
@@ -668,6 +670,7 @@ function CashdeskBalanceBadge() {
   if (!state || !state.configured) return null;
 
   return (
+    <Appear>
     <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] flex items-center gap-4">
       <span className="text-muted">{t("ord.cdBalance")}</span>
       <span className="font-semibold">{state.balance != null ? Number(state.balance).toLocaleString("ru-RU") : "—"}</span>
@@ -678,6 +681,7 @@ function CashdeskBalanceBadge() {
         </>
       )}
     </div>
+    </Appear>
   );
 }
 
@@ -702,6 +706,7 @@ function LimitsEditor() {
   if (loading) return null;
 
   return (
+    <Appear>
     <div className="mb-4 rounded-lg glass-card px-3.5 py-3">
       <div className="text-[11px] text-muted mb-2">{t("wid.limitsTitle")}</div>
       <div className="flex flex-wrap items-end gap-4">
@@ -718,6 +723,7 @@ function LimitsEditor() {
         </Link>
       </div>
     </div>
+    </Appear>
   );
 }
 
@@ -857,6 +863,7 @@ function DebtsSection() {
   const fmt = (n: number) => Number(n || 0).toLocaleString("ru-RU");
 
   return (
+    <Appear>
     <div className="mb-4 rounded-lg glass-card px-3.5 py-3">
       <div className="flex items-center justify-between mb-2">
         <div className="text-[12px] font-semibold">💳 {t("wid.debts")}</div>
@@ -906,6 +913,7 @@ function DebtsSection() {
         })}
       </div>
     </div>
+    </Appear>
   );
 }
 
@@ -924,12 +932,14 @@ function MyRatingBadge() {
   }, []);
   if (rating === null) return null;
   return (
+    <Appear>
     <div className="mb-4 rounded-lg glass-card px-3.5 py-2 text-[12px] flex items-center gap-2">
       <span className="text-muted">{t("wid.trustRating")}</span>
       <span className={`font-semibold ${rating > 0 ? "text-[#4ADE80]" : rating < 0 ? "text-[#FF6B85]" : "text-white"}`}>
         {rating > 0 ? `+${rating}` : rating}
       </span>
     </div>
+    </Appear>
   );
 }
 
@@ -973,39 +983,41 @@ function TelegramLinkWidget() {
     }
   };
 
+  // Holat noma'lum (so'rov hali qaytmagan) — hech narsa chizilmaydi: tez
+  // qaytgan so'rovda "tekshirilmoqda…" bloki chaqnab o'tib sahifani
+  // silkitardi. Natija kelgach blok <Appear> bilan yumshoq ochiladi.
+  if (linked === null && !statusError) return null;
+
   if (linked === true) {
     return (
-      <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80] flex items-center justify-between gap-3">
-        <span>{t("wid.tgLinked")}</span>
-        <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white">
-          {unlinking ? "…" : t("wid.unlink")}
-        </button>
-      </div>
+      <Appear>
+        <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80] flex items-center justify-between gap-3">
+          <span>{t("wid.tgLinked")}</span>
+          <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white">
+            {unlinking ? "…" : t("wid.unlink")}
+          </button>
+        </div>
+      </Appear>
     );
   }
 
   if (statusError) {
     return (
-      <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] text-muted">
-        {t("wid.tgCheckFailed")}
-      </div>
-    );
-  }
-
-  if (linked === null) {
-    return (
-      <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] text-muted">
-        Telegram ulanish holati tekshirilmoqda…
-      </div>
+      <Appear>
+        <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] text-muted">
+          {t("wid.tgCheckFailed")}
+        </div>
+      </Appear>
     );
   }
 
   return (
+    <Appear>
     <div className="mb-4 rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
       <div className="mb-2">{t("wid.tgNotLinked")}</div>
       {code ? (
         <div className="text-white/90">
-          Botga yuboring: <span className="font-mono font-bold">/link {code}</span> (10 daqiqa amal qiladi)
+          {t("wid.sendToBot")} <span className="font-mono font-bold">/link {code}</span> {t("wid.codeTtl")}
         </div>
       ) : (
         <button onClick={generate} disabled={generating} className="px-3 py-1.5 rounded-lg bg-[#F4C76A]/20 border border-[#F4C76A]/40 text-[11px] font-semibold">
@@ -1013,6 +1025,7 @@ function TelegramLinkWidget() {
         </button>
       )}
     </div>
+    </Appear>
   );
 }
 
@@ -1023,6 +1036,11 @@ export function OrdersTab() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Birinchi natija kelganmi. Keyingi qayta yuklashlarda (filtr/qidiruv/
+  // sahifa/amal) eski ro'yxat o'rnida qoladi — "Yuklanmoqda…"ga almashib
+  // sahifa sakramaydi. Matn faqat birinchi yuklash cho'zilsa chiqadi.
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  const showInitialLoading = useDelayedFlag(loading && !loadedOnce);
   const [filter, setFilter] = useState<"pending" | "completed" | "rejected" | "all">("pending");
   const [selected, setSelected] = useState<Order | null>(null);
   const [operatorNames, setOperatorNames] = useState<Record<string, string>>({});
@@ -1058,6 +1076,7 @@ export function OrdersTab() {
       }
     } catch { /* ignore */ }
     setLoading(false);
+    setLoadedOnce(true);
   };
 
   // Qidiruv/filtr o'zgarganda 0-sahifadan qayta yuklaymiz (customers/page.tsx
@@ -1189,14 +1208,14 @@ export function OrdersTab() {
         </div>
       </div>
 
-      {loading ? (
-        <p className="text-[13px] text-muted">{t("common.loading")}</p>
+      {!loadedOnce ? (
+        showInitialLoading ? <p className="text-[13px] text-muted">{t("common.loading")}</p> : null
       ) : orders.length === 0 ? (
         <div className="rounded-xl glass-card p-8 text-center text-[13px] text-muted">
           {t("ord.noOrders")}
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className={`space-y-2.5 transition-opacity ${loading ? "opacity-60" : ""}`}>
           {orders.map((o) => {
             const owner = o.status === "pending" ? o.claimed_by : o.operator_id;
             const ownerName = owner ? operatorNames[owner] : null;
@@ -1253,7 +1272,7 @@ export function OrdersTab() {
         </div>
       )}
 
-      {!loading && total > ORDERS_PAGE_SIZE && (
+      {loadedOnce && total > ORDERS_PAGE_SIZE && (
         <div className="flex items-center justify-between mt-3 text-[12px]">
           <span className="text-muted">{page * ORDERS_PAGE_SIZE + 1}–{Math.min((page + 1) * ORDERS_PAGE_SIZE, total)} / {total}</span>
           <div className="flex gap-1.5">

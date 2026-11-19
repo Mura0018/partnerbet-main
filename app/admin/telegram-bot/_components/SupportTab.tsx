@@ -12,6 +12,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { useDelayedFlag } from "@/lib/ui/appear";
 import { toast } from "@/lib/ui/toast";
 import { useConfirm } from "@/lib/ui/useConfirm";
 
@@ -36,16 +37,38 @@ const REPLY_TEMPLATE_KEYS = [
 function SupportImage({ path }: { path: string }) {
   const { t } = useLocale();
   const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
+  // Xato (HTTP xato, url yo'q yoki tarmoq) -> "Rasm ochilmadi" + qayta urinish.
+  // Ilgari url null bo'lib qolar va "yuklanmoqda" matni abadiy turardi.
   useEffect(() => {
+    let cancelled = false;
+    setFailed(false);
     fetch(`/api/admin/telegram-orders/support-image-url?path=${encodeURIComponent(path)}`)
-      .then((r) => r.json())
-      .then((data) => setUrl(data.url ?? null))
-      .catch(() => setUrl(null));
-  }, [path]);
+      .then(async (r) => {
+        const data = await r.json().catch(() => null);
+        if (cancelled) return;
+        if (r.ok && data?.url) setUrl(data.url);
+        else setFailed(true);
+      })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, [path, attempt]);
+  const showLoading = useDelayedFlag(!url && !failed);
 
-  if (!url) return <p className="text-[11px] text-muted">{t("sup.imgLoading")}</p>;
+  if (!url && failed) {
+    return (
+      <p className="text-[11px] text-[#FF6B85]">
+        {t("sup.imgFailed")}{" "}
+        <button type="button" onClick={() => setAttempt((a) => a + 1)} className="underline text-muted hover:text-white">
+          {t("sup.imgRetry")}
+        </button>
+      </p>
+    );
+  }
+  if (!url) return showLoading ? <p className="text-[11px] text-muted">{t("sup.imgLoading")}</p> : null;
 
   return (
     <>
@@ -70,8 +93,17 @@ function SupportVoice({ path }: { path: string }) {
       .then((data) => setUrl(data.url ?? null))
       .catch(() => setUrl(null));
   }, [path]);
+  const showLoading = useDelayedFlag(!url);
 
-  if (!url) return <p className="text-[11px] text-muted">{t("sup.audioLoading")}</p>;
+  // Pleyer balandligi (h-9) oldindan band qilinadi — url kelganda xabar
+  // pufagi sakramaydi; matn faqat cho'zilsa chiqadi.
+  if (!url) {
+    return (
+      <div className="h-9 flex items-center">
+        {showLoading ? <p className="text-[11px] text-muted">{t("sup.audioLoading")}</p> : null}
+      </div>
+    );
+  }
   return <audio controls src={url} className="max-w-[220px] h-9" />;
 }
 
@@ -434,6 +466,8 @@ export function SupportTab() {
     () => { setActiveCustomer(null); }
   );
   const [loading, setLoading] = useState(true);
+  // Birinchi yuklash tez qaytsa "Yuklanmoqda…" chaqnab o'tmaydi.
+  const showInitialLoading = useDelayedFlag(loading);
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [onlyMine, setOnlyMine] = useState(false);
@@ -507,7 +541,7 @@ export function SupportTab() {
     );
   }
 
-  if (loading) return <p className="text-[13px] text-muted">{t("sup.loading")}</p>;
+  if (loading) return showInitialLoading ? <p className="text-[13px] text-muted">{t("sup.loading")}</p> : null;
 
   const visibleThreads = threads
     .filter((th) => archivedIds.has(th.customer_id) === showArchived)
