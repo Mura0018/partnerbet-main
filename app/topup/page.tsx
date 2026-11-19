@@ -2,12 +2,12 @@ import { Wallet, ShieldCheck, CheckCircle2, ArrowRight } from "lucide-react";
 import { PublicHeader } from "@/lib/ui/PublicHeader";
 import { PublicFooter } from "@/lib/ui/PublicFooter";
 import { Container } from "@/lib/ui/primitives";
+import { PLATFORM_BOT_LINK } from "@/lib/site/bot";
 
 export const metadata = { title: "Top-Up Center — hisobingizni to'ldiring" };
 
 // Real bot username
-const BOT_USERNAME = "BetCorePay_bot";
-const BOT_LINK = `https://t.me/${BOT_USERNAME}`;
+const BOT_LINK = PLATFORM_BOT_LINK;
 
 const STEPS = [
   { n: 1, title: "Platformani tanlang", desc: "1xBet, Melbet, Betwinner va boshqalar" },
