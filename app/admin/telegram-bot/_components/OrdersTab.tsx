@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase";
 import { Can, useCurrentProfile } from "@/lib/auth/permissions";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
+import { Appear } from "@/lib/ui/appear";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
@@ -973,34 +974,36 @@ function TelegramLinkWidget() {
     }
   };
 
+  // Holat noma'lum (so'rov hali qaytmagan) — hech narsa chizilmaydi: tez
+  // qaytgan so'rovda "tekshirilmoqda…" bloki chaqnab o'tib sahifani
+  // silkitardi. Natija kelgach blok <Appear> bilan yumshoq ochiladi.
+  if (linked === null && !statusError) return null;
+
   if (linked === true) {
     return (
-      <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80] flex items-center justify-between gap-3">
-        <span>{t("wid.tgLinked")}</span>
-        <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white">
-          {unlinking ? "…" : t("wid.unlink")}
-        </button>
-      </div>
+      <Appear>
+        <div className="mb-4 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/25 px-3.5 py-2.5 text-[12px] text-[#4ADE80] flex items-center justify-between gap-3">
+          <span>{t("wid.tgLinked")}</span>
+          <button onClick={unlink} disabled={unlinking} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-subtle text-muted hover:text-white">
+            {unlinking ? "…" : t("wid.unlink")}
+          </button>
+        </div>
+      </Appear>
     );
   }
 
   if (statusError) {
     return (
-      <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] text-muted">
-        {t("wid.tgCheckFailed")}
-      </div>
-    );
-  }
-
-  if (linked === null) {
-    return (
-      <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] text-muted">
-        Telegram ulanish holati tekshirilmoqda…
-      </div>
+      <Appear>
+        <div className="mb-4 rounded-lg glass-card px-3.5 py-2.5 text-[12px] text-muted">
+          {t("wid.tgCheckFailed")}
+        </div>
+      </Appear>
     );
   }
 
   return (
+    <Appear>
     <div className="mb-4 rounded-lg bg-[#F4C76A]/10 border border-[#F4C76A]/25 px-3.5 py-2.5 text-[12px] text-[#F4C76A]">
       <div className="mb-2">{t("wid.tgNotLinked")}</div>
       {code ? (
@@ -1013,6 +1016,7 @@ function TelegramLinkWidget() {
         </button>
       )}
     </div>
+    </Appear>
   );
 }
 
