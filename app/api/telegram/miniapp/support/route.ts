@@ -4,6 +4,7 @@ import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { reassignStaleThread } from "@/lib/support/staleReassign";
+import { insertSupportSystemMessage } from "@/lib/support/messages";
 
 async function resolveCustomerId(initData: string): Promise<string | null> {
   const verified = await resolveMiniApp(initData);
@@ -45,20 +46,25 @@ export async function GET(req: NextRequest) {
     .eq("customer_id", customerId)
     .maybeSingle();
 
-  let query = supabase
-    .from("telegram_support_messages")
-    .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at, order_id")
-    .eq("customer_id", customerId);
-  if (thread?.ended_at) {
-    query = query.gt("created_at", thread.ended_at);
-  }
-  if (before) {
-    query = query.lt("created_at", before);
-  }
-  // Oxiridan PAGE_SIZE tasini olamiz (desc), keyin ekranda ko'rinadigan
-  // tartibga (asc) qaytaramiz.
-  const { data: page } = await query.order("created_at", { ascending: false }).limit(PAGE_SIZE);
-  const messages = (page ?? []).slice().reverse();
+  // is_system (0104) — tizim xabarini haqiqiy operator javobidan ajratadi
+  // ("javob berildi" belgisi uchun). Ustun hali yo'q bo'lsa (0104 qo'yilmagan)
+  // so'rov xato beradi -> ustunsiz qayta so'raladi (guarded fallback).
+  const BASE_COLS = "id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at, order_id";
+  const runQuery = async (cols: string) => {
+    let query = supabase.from("telegram_support_messages").select(cols).eq("customer_id", customerId);
+    if (thread?.ended_at) {
+      query = query.gt("created_at", thread.ended_at);
+    }
+    if (before) {
+      query = query.lt("created_at", before);
+    }
+    // Oxiridan PAGE_SIZE tasini olamiz (desc), keyin ekranda ko'rinadigan
+    // tartibga (asc) qaytaramiz.
+    return query.order("created_at", { ascending: false }).limit(PAGE_SIZE);
+  };
+  let { data: page, error: pageErr } = await runQuery(`${BASE_COLS}, is_system`);
+  if (pageErr) ({ data: page } = await runQuery(BASE_COLS));
+  const messages = ((page ?? []) as any[]).slice().reverse();
 
   return NextResponse.json({ messages, hasMore: messages.length === PAGE_SIZE });
 }
@@ -152,9 +158,9 @@ export async function POST(req: NextRequest) {
     const greeting = servedBy
       ? "Assalomu alaykum! Sizga tegishli operator hozir band bo'lishi mumkin. \ud83d\udd52 Savolingizni yozib qoldiring — imkon qadar tez javob beramiz. \ud83d\ude4f \ud83d\ude4f"
       : "Assalomu alaykum! DedPay qo'llab-quvvatlash xizmatiga xush kelibsiz! \ud83d\udc4b Savolingizni yozing — operatorlarimiz tez orada javob beradi. \ud83d\ude4a \ud83d\ude4f";
-    await supabase
-      .from("telegram_support_messages")
-      .insert({ customer_id: customerId, sender: "operator", message: greeting });
+    // Tizim xabari (1.2): hech kimning nomidan emas. Avval operator_id'siz
+    // insert constraint tufayli jimgina rad etilardi.
+    await insertSupportSystemMessage(supabase, customerId, greeting);
   }
 
   await supabase.from("telegram_support_threads").upsert(
@@ -178,31 +184,22 @@ export async function POST(req: NextRequest) {
       .eq("id", freshThread.claimed_by)
       .maybeSingle();
     if (op && !op.is_online) {
-      await supabase.from("telegram_support_messages").insert({
-        customer_id: customerId,
-        sender: "operator",
-        operator_id: freshThread.claimed_by,
-        message: "Operatoringiz hozir band \ud83d\udd34 Tez orada javob beramiz yoki boshqa operator ulanadi. \ud83d\ude4f",
-      });
+      // Tizim xabari; 0104 yo'q bo'lsa eski usulda (o'sha operator nomidan).
+      await insertSupportSystemMessage(
+        supabase,
+        customerId,
+        "Operatoringiz hozir band \ud83d\udd34 Tez orada javob beramiz yoki boshqa operator ulanadi. \ud83d\ude4f",
+        freshThread.claimed_by
+      );
     }
   } else if (wasReassigned) {
-    // Jamoaga o'tkazildi — mijozga xabar (operator_id yo'q, shuning uchun
-    // customer emas, lekin constraint operator uchun id talab qiladi.
-    // Buning uchun jamoadagi birinchi super_admin id sini olamiz.)
-    const { data: anyAdmin } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-    if (anyAdmin) {
-      await supabase.from("telegram_support_messages").insert({
-        customer_id: customerId,
-        sender: "operator",
-        operator_id: anyAdmin.id,
-        message: "So'rovingiz jamoamizga yo'naltirildi \ud83d\udd04 Tez orada operator javob beradi.",
-      });
-    }
+    // Jamoaga o'tkazildi — TIZIM xabari, ism biriktirilmaydi (1.2). Avval
+    // birinchi faol profil (tasodifiy xodim) nomidan yozilardi.
+    await insertSupportSystemMessage(
+      supabase,
+      customerId,
+      "So'rovingiz jamoamizga yo'naltirildi \ud83d\udd04 Tez orada operator javob beradi."
+    );
   }
 
   return NextResponse.json({ message: inserted });

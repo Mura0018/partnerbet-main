@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { insertSupportSystemMessage } from "@/lib/support/messages";
 
 export async function POST(req: NextRequest) {
   const botToken = await getApiCredential("telegram_bot_token");
@@ -35,14 +36,14 @@ export async function POST(req: NextRequest) {
   const nowIso = new Date().toISOString();
 
   if (resolved) {
-    if (opId) {
-      await supabase.from("telegram_support_messages").insert({
-        customer_id: customerId,
-        sender: "operator",
-        operator_id: opId,
-        message: "Yordamimizdan foydalanganingiz uchun rahmat! \ud83d\ude4f Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad! \ud83c\udf89",
-      });
-    }
+    // Tizim xabari (operator javobi hisoblanmaydi); 0104 yo'q bo'lsa eski
+    // usulda — faqat thread olingan bo'lsa, o'sha operator nomidan.
+    await insertSupportSystemMessage(
+      supabase,
+      customerId,
+      "Yordamimizdan foydalanganingiz uchun rahmat! \ud83d\ude4f Yana savolingiz bo'lsa, istalgan vaqtda yozing. Sizga omad! \ud83c\udf89",
+      opId
+    );
     await supabase.from("telegram_support_threads").update({
       status: "ended",
       is_archived: true,
@@ -53,14 +54,12 @@ export async function POST(req: NextRequest) {
     }).eq("customer_id", customerId);
   } else {
     // Mijoz "Yo'q, savolim bor" bosdi — suhbat davom etadi, tasdiq xabari.
-    if (opId) {
-      await supabase.from("telegram_support_messages").insert({
-        customer_id: customerId,
-        sender: "operator",
-        operator_id: opId,
-        message: "Albatta! Savolingizni yozing, yordam beramiz. \ud83d\udc4d",
-      });
-    }
+    await insertSupportSystemMessage(
+      supabase,
+      customerId,
+      "Albatta! Savolingizni yozing, yordam beramiz. \ud83d\udc4d",
+      opId
+    );
     await supabase.from("telegram_support_threads").update({
       status: "open",
       updated_at: nowIso,
