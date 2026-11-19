@@ -467,7 +467,7 @@ export const dictionaries = {
       confirmDelete: "O'chirishni tasdiqlaysizmi?", eDelete: "O'chirib bo'lmadi. Qayta urinib ko'ring.",
     },
     sup: {
-      imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…",
+      imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…", imgFailed: "Rasm ochilmadi", imgRetry: "Qayta urinish",
       tpl1: "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
       tpl2: "So'rovingiz ko'rib chiqilmoqda, biroz kuting.",
       tpl3: "Iltimos, to'lov chekining aniqroq skrinshotini yuboring.",
@@ -1220,7 +1220,7 @@ export const dictionaries = {
       confirmDelete: "Подтвердите удаление?", eDelete: "Не удалось удалить. Попробуйте снова.",
     },
     sup: {
-      imgLoading: "Изображение загружается…", audioLoading: "Загрузка…",
+      imgLoading: "Изображение загружается…", audioLoading: "Загрузка…", imgFailed: "Изображение не открылось", imgRetry: "Повторить",
       tpl1: "Здравствуйте! Чем можем помочь?",
       tpl2: "Ваш запрос рассматривается, немного подождите.",
       tpl3: "Пожалуйста, отправьте более чёткий скриншот чека об оплате.",

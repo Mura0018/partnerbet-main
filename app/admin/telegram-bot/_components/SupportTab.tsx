@@ -37,16 +37,37 @@ const REPLY_TEMPLATE_KEYS = [
 function SupportImage({ path }: { path: string }) {
   const { t } = useLocale();
   const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
+  // Xato (HTTP xato, url yo'q yoki tarmoq) -> "Rasm ochilmadi" + qayta urinish.
+  // Ilgari url null bo'lib qolar va "yuklanmoqda" matni abadiy turardi.
   useEffect(() => {
+    let cancelled = false;
+    setFailed(false);
     fetch(`/api/admin/telegram-orders/support-image-url?path=${encodeURIComponent(path)}`)
-      .then((r) => r.json())
-      .then((data) => setUrl(data.url ?? null))
-      .catch(() => setUrl(null));
-  }, [path]);
-  const showLoading = useDelayedFlag(!url);
+      .then(async (r) => {
+        const data = await r.json().catch(() => null);
+        if (cancelled) return;
+        if (r.ok && data?.url) setUrl(data.url);
+        else setFailed(true);
+      })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, [path, attempt]);
+  const showLoading = useDelayedFlag(!url && !failed);
 
+  if (!url && failed) {
+    return (
+      <p className="text-[11px] text-[#FF6B85]">
+        {t("sup.imgFailed")}{" "}
+        <button type="button" onClick={() => setAttempt((a) => a + 1)} className="underline text-muted hover:text-white">
+          {t("sup.imgRetry")}
+        </button>
+      </p>
+    );
+  }
   if (!url) return showLoading ? <p className="text-[11px] text-muted">{t("sup.imgLoading")}</p> : null;
 
   return (
