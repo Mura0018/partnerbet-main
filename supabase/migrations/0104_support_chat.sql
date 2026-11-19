@@ -35,3 +35,14 @@ alter table telegram_support_messages add constraint chk_operator_id_shape check
 -- qo'lda qo'shilgan bo'lsa — bu qator hech narsa qilmaydi.
 alter table telegram_support_messages
   add column if not exists order_id uuid references telegram_orders(id) on delete set null;
+
+
+-- ---------------------------------------------------------------------
+-- 2) Bir martalik "operator band / jamoaga yo'naltirildi" ogohlantirishi
+--    (1.1). Avval mijozning HAR xabarida yangi ogohlantirish qo'shilardi.
+--    Atomik shartli update (busy_notified_at is null -> now) — faqat
+--    yozuvi muvaffaqiyatli bo'lgan so'rov xabar yuboradi. Operator javob
+--    berganda yoki suhbat yakunlanganda NULL ga qaytariladi.
+-- ---------------------------------------------------------------------
+alter table telegram_support_threads
+  add column if not exists busy_notified_at timestamptz;

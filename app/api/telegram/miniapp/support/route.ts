@@ -4,7 +4,7 @@ import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { reassignStaleThread } from "@/lib/support/staleReassign";
-import { insertSupportSystemMessage } from "@/lib/support/messages";
+import { insertSupportSystemMessage, claimSupportBusyNotice } from "@/lib/support/messages";
 
 async function resolveCustomerId(initData: string): Promise<string | null> {
   const verified = await resolveMiniApp(initData);
@@ -183,7 +183,8 @@ export async function POST(req: NextRequest) {
       .select("is_online")
       .eq("id", freshThread.claimed_by)
       .maybeSingle();
-    if (op && !op.is_online) {
+    // Bitta suhbat davomida BIR MARTA (1.1): atomik busy_notified_at belgisi.
+    if (op && !op.is_online && (await claimSupportBusyNotice(supabase, customerId))) {
       // Tizim xabari; 0104 yo'q bo'lsa eski usulda (o'sha operator nomidan).
       await insertSupportSystemMessage(
         supabase,
@@ -192,7 +193,9 @@ export async function POST(req: NextRequest) {
         freshThread.claimed_by
       );
     }
-  } else if (wasReassigned) {
+  } else if (wasReassigned && (await claimSupportBusyNotice(supabase, customerId))) {
+    // Bir marta (1.1) — avval operator offline bo'lsa mijozning HAR xabarida
+    // qayta yuborilardi (egalik har safar qayta tiklanib, yana olinardi).
     // Jamoaga o'tkazildi — TIZIM xabari, ism biriktirilmaydi (1.2). Avval
     // birinchi faol profil (tasodifiy xodim) nomidan yozilardi.
     await insertSupportSystemMessage(

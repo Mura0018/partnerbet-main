@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { resetSupportNoticeFlags } from "@/lib/support/messages";
 import { sendTelegramMessage } from "@/lib/telegram/notify";
 
 const ALLOWED_MIME: Record<string, string> = {
@@ -68,6 +69,10 @@ export async function POST(req: NextRequest) {
     .select("id, created_at")
     .single();
   if (error || !inserted) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+
+  // Operator javob berdi — mijozga "band" ogohlantirishi keyingi uzilishda
+  // yana bir marta ketishi uchun belgi tozalanadi (1.1).
+  await resetSupportNoticeFlags(admin, customerId);
 
   const { data: customer } = await admin.from("customers").select("telegram_id").eq("id", customerId).maybeSingle();
   if (customer?.telegram_id) {

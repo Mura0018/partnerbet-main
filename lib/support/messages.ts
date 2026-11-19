@@ -28,3 +28,32 @@ export async function insertSupportSystemMessage(
   }
   return false;
 }
+
+// =========================================================
+// Bir martalik "band / jamoaga yo'naltirildi" ogohlantirishi (1.1).
+// Atomik: busy_notified_at NULL bo'lsagina now() yoziladi va faqat qator
+// QAYTARGAN chaqiruv true oladi — parallel xabarlarda ham bitta ogohlantirish.
+// 0104 yo'q bo'lsa (ustun yo'q) -> false: ogohlantirish yuborilmaydi
+// (spam'dan ko'ra jimlik xavfsizroq).
+// =========================================================
+export async function claimSupportBusyNotice(admin: SupabaseClient, customerId: string): Promise<boolean> {
+  const { data, error } = await admin
+    .from("telegram_support_threads")
+    .update({ busy_notified_at: new Date().toISOString() })
+    .eq("customer_id", customerId)
+    .is("busy_notified_at", null)
+    .select("customer_id");
+  return !error && (data?.length ?? 0) > 0;
+}
+
+// Operator javob berganda / suhbat yakunlanganda belgilar tozalanadi —
+// keyingi uzilishda mijoz yana bir marta xabardor qilinadi. Alohida
+// so'rov: 0104 yo'q bo'lsa xato faqat shu yerda qoladi (asosiy update'ni
+// buzmaydi). Best-effort.
+export async function resetSupportNoticeFlags(admin: SupabaseClient, customerId: string): Promise<void> {
+  try {
+    await admin.from("telegram_support_threads").update({ busy_notified_at: null }).eq("customer_id", customerId);
+  } catch {
+    /* best-effort */
+  }
+}

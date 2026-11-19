@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
-import { insertSupportSystemMessage } from "@/lib/support/messages";
+import { insertSupportSystemMessage, resetSupportNoticeFlags } from "@/lib/support/messages";
 
 export async function POST(req: NextRequest) {
   const botToken = await getApiCredential("telegram_bot_token");
@@ -52,6 +52,8 @@ export async function POST(req: NextRequest) {
       claimed_at: null,
       updated_at: nowIso,
     }).eq("customer_id", customerId);
+    // Suhbat yakunlandi — bir martalik ogohlantirish belgisi tozalanadi.
+    await resetSupportNoticeFlags(supabase, customerId);
   } else {
     // Mijoz "Yo'q, savolim bor" bosdi — suhbat davom etadi, tasdiq xabari.
     await insertSupportSystemMessage(
