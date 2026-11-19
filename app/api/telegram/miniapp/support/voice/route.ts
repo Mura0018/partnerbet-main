@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
   if (!botToken) return NextResponse.json({ error: "not_configured" }, { status: 500 });
 
   const ip = getClientIp(req.headers);
-  const { allowed } = await checkAndRecordRateLimit(`telegram-support-voice:${ip}`, 60, 10);
+  // 1.4: IP chegarasi keng (NAT), asosiysi mijoz bo'yicha — pastda.
+  const { allowed } = await checkAndRecordRateLimit(`telegram-support-voice:${ip}`, 60, 60);
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
@@ -48,6 +49,8 @@ export async function POST(req: NextRequest) {
     .eq("telegram_id", verified.telegramId)
     .maybeSingle();
   if (!customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
+  const { allowed: custAllowed } = await checkAndRecordRateLimit(`telegram-support-voice-c:${customer.id}`, 60, 10);
+  if (!custAllowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   let buffer: Buffer;
   try {

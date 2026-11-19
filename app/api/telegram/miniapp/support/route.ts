@@ -74,8 +74,11 @@ export async function POST(req: NextRequest) {
   const botToken = await getApiCredential("telegram_bot_token");
   if (!botToken) return NextResponse.json({ error: "not_configured" }, { status: 500 });
 
+  // 1.4: asosiy cheklov MIJOZ bo'yicha (pastda, autentifikatsiyadan keyin).
+  // IP chegarasi qo'shimcha va keng — mobil NAT ortidagi ko'p mijoz bir-birini
+  // bloklamasin (avval 20/60s faqat IP bo'yicha edi).
   const ip = getClientIp(req.headers);
-  const { allowed } = await checkAndRecordRateLimit(`telegram-support-send:${ip}`, 60, 20);
+  const { allowed } = await checkAndRecordRateLimit(`telegram-support-send:${ip}`, 60, 120);
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
@@ -86,6 +89,8 @@ export async function POST(req: NextRequest) {
 
   const customerId = await resolveCustomerId(initData);
   if (!customerId) return NextResponse.json({ error: "not_registered" }, { status: 401 });
+  const { allowed: custAllowed } = await checkAndRecordRateLimit(`telegram-support-send-c:${customerId}`, 60, 20);
+  if (!custAllowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   // Avto-xabarlar mijoz tilida (1.3): cookie -> initData language_code -> uz.
   const loc = customerLocale(req.cookies.get(LOCALE_COOKIE)?.value, initData);
 
