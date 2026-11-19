@@ -107,7 +107,7 @@ function SupportVoice({ path }: { path: string }) {
   return <audio controls src={url} className="max-w-[220px] h-9" />;
 }
 
-function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thread: SupportThread; currentUserId: string | null; onBack: () => void; onArchived: () => void }) {
+function SupportThreadView({ thread, currentUserId, onBack, onArchived, active = true }: { thread: SupportThread; currentUserId: string | null; onBack: () => void; onArchived: () => void; active?: boolean }) {
   const { t } = useLocale();
   const tz = useSiteTimezone();
   const [msgs, setMsgs] = useState<SupportMsg[]>([]);
@@ -137,11 +137,19 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
     setMsgs((data as any[]) ?? []);
   };
 
+  // Tab yashirin (active=false) paytda polling to'xtaydi; qaytganda darhol
+  // bir marta yangilanadi va davom etadi.
   useEffect(() => {
     loadThread();
+  }, [thread.customer_id]);
+  const threadPollStartedRef = useRef(false);
+  useEffect(() => {
+    if (!active) return;
+    if (threadPollStartedRef.current) loadThread();
+    threadPollStartedRef.current = true;
     const interval = setInterval(loadThread, 4000);
     return () => clearInterval(interval);
-  }, [thread.customer_id]);
+  }, [thread.customer_id, active]);
 
   // Biriktirilgan buyurtmani (thread.linked_order_id) olamiz — operator ham
   // buyurtма kartаsини ko'radi (bosса 3D aylanib holat/izoh chiqadi).
@@ -154,9 +162,15 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   };
   useEffect(() => {
     loadLinkedOrder();
+  }, [thread.customer_id]);
+  const orderPollStartedRef = useRef(false);
+  useEffect(() => {
+    if (!active) return;
+    if (orderPollStartedRef.current) loadLinkedOrder();
+    orderPollStartedRef.current = true;
     const iv = setInterval(loadLinkedOrder, 5000);
     return () => clearInterval(iv);
-  }, [thread.customer_id]);
+  }, [thread.customer_id, active]);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -464,7 +478,9 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   );
 }
 
-export function SupportTab() {
+// active=false — tab yashirin (boshqa tab yoki jamoa chati ochiq): mount
+// holatida qoladi, lekin fonda so'rov yubormaydi.
+export function SupportTab({ active = true }: { active?: boolean } = {}) {
   const { t } = useLocale();
   const [threads, setThreads] = useState<SupportThread[]>([]);
   const [archivedIds, setArchivedIds] = useState<Set<string>>(new Set());
@@ -522,9 +538,16 @@ export function SupportTab() {
 
   useEffect(() => {
     loadThreads(true);
+  }, []);
+  // Ro'yxat polling'i faqat tab faol paytda; qaytganda darhol jim yangilanadi.
+  const listPollStartedRef = useRef(false);
+  useEffect(() => {
+    if (!active) return;
+    if (listPollStartedRef.current) loadThreads(false);
+    listPollStartedRef.current = true;
     const interval = setInterval(() => loadThreads(false), 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [active]);
 
   const openThread = async (t: SupportThread) => {
     setActiveCustomer(t);
@@ -554,6 +577,7 @@ export function SupportTab() {
         currentUserId={currentUserId}
         onBack={() => { setActiveCustomer(null); loadThreads(false); }}
         onArchived={() => { setActiveCustomer(null); loadThreads(false); }}
+        active={active}
       />
     );
   }
