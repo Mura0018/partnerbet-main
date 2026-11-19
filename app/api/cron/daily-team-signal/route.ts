@@ -21,9 +21,11 @@ async function alertStuckPayments(admin: ReturnType<typeof createAdminClient>): 
     const hours = Number.isFinite(rawHours) && rawHours > 0 ? rawHours : STUCK_DEFAULT_HOURS;
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
 
-    const { data: rows, error } = await admin
+    // count: "exact" — ro'yxat 50 ta bilan cheklangan, lekin umumiy son to'liq
+    // hisoblanadi (xabar va javobda haqiqiy navbat ko'rinsin).
+    const { data: rows, error, count } = await admin
       .from("telegram_orders")
-      .select("id, type, amount, payout_status, deposit_status, updated_at")
+      .select("id, type, amount, payout_status, deposit_status, updated_at", { count: "exact" })
       .or("payout_status.eq.pending,deposit_status.eq.pending")
       .lt("updated_at", cutoff)
       .order("updated_at", { ascending: true })
@@ -31,9 +33,10 @@ async function alertStuckPayments(admin: ReturnType<typeof createAdminClient>): 
     if (error) return 0;
     const stuck = (rows ?? []) as { id: string; type: string; amount: number; payout_status: string; deposit_status: string; updated_at: string }[];
     if (stuck.length === 0) return 0;
+    const stuckTotal = count ?? stuck.length;
 
     const { data: role } = await admin.from("roles").select("id").eq("key", "super_admin").maybeSingle();
-    if (!role) return stuck.length;
+    if (!role) return stuckTotal;
     const { data: supers } = await admin
       .from("profiles")
       .select("telegram_chat_id")
@@ -41,7 +44,7 @@ async function alertStuckPayments(admin: ReturnType<typeof createAdminClient>): 
       .eq("is_active", true)
       .not("telegram_chat_id", "is", null);
     const chats = [...new Set(((supers ?? []) as { telegram_chat_id: number | null }[]).map((p) => Number(p.telegram_chat_id)).filter((c) => Number.isFinite(c)))];
-    if (chats.length === 0) return stuck.length;
+    if (chats.length === 0) return stuckTotal;
 
     const now = Date.now();
     const lines = stuck.slice(0, STUCK_LIST_MAX).map((o) => {
@@ -49,14 +52,14 @@ async function alertStuckPayments(admin: ReturnType<typeof createAdminClient>): 
       const age = Math.floor((now - new Date(o.updated_at).getTime()) / 3600000);
       return `• ${shortOrderRef(o.id)} — ${kind}, ${Number(o.amount || 0).toLocaleString("ru-RU")} so'm, ~${age} soat`;
     });
-    const more = stuck.length > STUCK_LIST_MAX ? `\n…va yana ${stuck.length - STUCK_LIST_MAX} ta` : "";
+    const more = stuckTotal > STUCK_LIST_MAX ? `\n…va yana ${stuckTotal - STUCK_LIST_MAX} ta` : "";
     const text =
       `🟥 DedPay — qotib qolgan to'lovlar\n\n` +
-      `${stuck.length} ta buyurtma ${hours} soatdan ortiq javobsiz (pending) turibdi:\n` +
+      `${stuckTotal} ta buyurtma ${hours} soatdan ortiq javobsiz (pending) turibdi:\n` +
       `${lines.join("\n")}${more}\n\n` +
       `Kassa/platformada holatni qo'lda tekshiring va buyurtmada natijani belgilang.`;
     await Promise.allSettled(chats.map((c) => sendTelegramMessage(c, text, undefined)));
-    return stuck.length;
+    return stuckTotal;
   } catch {
     return 0;
   }
