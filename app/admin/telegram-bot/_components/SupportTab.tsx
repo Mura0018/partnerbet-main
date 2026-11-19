@@ -45,8 +45,9 @@ function SupportImage({ path }: { path: string }) {
       .then((data) => setUrl(data.url ?? null))
       .catch(() => setUrl(null));
   }, [path]);
+  const showLoading = useDelayedFlag(!url);
 
-  if (!url) return <p className="text-[11px] text-muted">{t("sup.imgLoading")}</p>;
+  if (!url) return showLoading ? <p className="text-[11px] text-muted">{t("sup.imgLoading")}</p> : null;
 
   return (
     <>
@@ -71,8 +72,17 @@ function SupportVoice({ path }: { path: string }) {
       .then((data) => setUrl(data.url ?? null))
       .catch(() => setUrl(null));
   }, [path]);
+  const showLoading = useDelayedFlag(!url);
 
-  if (!url) return <p className="text-[11px] text-muted">{t("sup.audioLoading")}</p>;
+  // Pleyer balandligi (h-9) oldindan band qilinadi — url kelganda xabar
+  // pufagi sakramaydi; matn faqat cho'zilsa chiqadi.
+  if (!url) {
+    return (
+      <div className="h-9 flex items-center">
+        {showLoading ? <p className="text-[11px] text-muted">{t("sup.audioLoading")}</p> : null}
+      </div>
+    );
+  }
   return <audio controls src={url} className="max-w-[220px] h-9" />;
 }
 

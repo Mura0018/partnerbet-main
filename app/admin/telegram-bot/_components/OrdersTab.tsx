@@ -69,8 +69,9 @@ function ReceiptViewer({ path }: { path: string }) {
       .catch(() => setUrl(null))
       .finally(() => setLoading(false));
   }, [path]);
+  const showLoading = useDelayedFlag(loading);
 
-  if (loading) return <p className="text-[12px] text-muted">{t("ord.receiptLoading")}</p>;
+  if (loading) return showLoading ? <p className="text-[12px] text-muted">{t("ord.receiptLoading")}</p> : null;
   if (!url) return <p className="text-[12px] text-[#FF6B85]">{t("ord.receiptFailed")}</p>;
 
   return (
