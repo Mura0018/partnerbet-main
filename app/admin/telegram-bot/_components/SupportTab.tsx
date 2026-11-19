@@ -19,7 +19,25 @@ import { useConfirm } from "@/lib/ui/useConfirm";
 type SupportThread = {
   customer_id: string; phone: string; full_name: string | null; last_message: string | null; last_image: boolean; last_at: string;
   claimed_by: string | null; claimed_by_name: string | null;
+  // 2.2: oxirgi HAQIQIY operator javobidan keyingi eng eski mijoz xabari
+  // vaqti (null = javob berilgan / mijoz xabari yo'q).
+  unanswered_since: string | null;
 };
+// Shu daqiqadan uzoq javobsiz turgan suhbat ajralib turadi (staleReassign
+// bilan bir xil 15 daqiqa).
+const SUPPORT_WAIT_ALERT_MIN = 15;
+
+// "12 daq" / "2 soat 5 daq" / "3 kun" — lug'at kalitlari orqali.
+function formatWait(t: (k: any, v?: any) => string, sinceIso: string, nowMs: number): string {
+  const mins = Math.max(0, Math.floor((nowMs - new Date(sinceIso).getTime()) / 60000));
+  if (mins < 60) return t("sup.waitMin", { n: mins });
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) {
+    const rest = mins % 60;
+    return rest ? `${t("sup.waitHour", { n: hours })} ${t("sup.waitMin", { n: rest })}` : t("sup.waitHour", { n: hours });
+  }
+  return t("sup.waitDay", { n: Math.floor(hours / 24) });
+}
 type SupportMsg = {
   id: string; sender: "customer" | "operator"; message: string | null; image_path: string | null;
   file_name: string | null; voice_path: string | null; voice_duration_seconds: number | null; reply_to_id: string | null; created_at: string;
@@ -506,18 +524,38 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
 
   const loadThreads = async (isInitial = false) => {
     if (isInitial) setLoading(true);
-    const [{ data }, { data: threadRows }] = await Promise.all([
+    // sender + is_system (0104) — "javobsiz" hisobi uchun. is_system ustuni
+    // hali yo'q bo'lsa (0104 qo'yilmagan) ustunsiz qayta so'raladi.
+    const loadMsgs = (cols: string) =>
       supabase
         .from("telegram_support_messages")
-        .select("customer_id, message, image_path, created_at, customers(phone, full_name)")
+        .select(cols)
         .order("created_at", { ascending: false })
-        .limit(300),
+        .limit(300);
+    const MSG_COLS = "customer_id, sender, message, image_path, created_at, customers(phone, full_name)";
+    const [msgRes, { data: threadRows }] = await Promise.all([
+      loadMsgs(`${MSG_COLS}, is_system`),
       supabase.from("telegram_support_threads").select("customer_id, is_archived, claimed_by, profiles!claimed_by(display_name, full_name)"),
     ]);
+    let data: any[] | null = msgRes.data as any[] | null;
+    if (msgRes.error) data = ((await loadMsgs(MSG_COLS)).data as any[] | null) ?? null;
     const threadInfo = new Map((threadRows ?? []).map((r: any) => [r.customer_id, r]));
     const grouped = new Map<string, SupportThread>();
+    // 2.2: har mijoz uchun xabarlar yangidan eskiga ko'riladi; birinchi
+    // HAQIQIY operator javobigacha uchragan eng eski mijoz xabari =
+    // "javobsiz qachondan". Tizim xabarlari (is_system) javob hisoblanmaydi.
+    const answered = new Set<string>();
     for (const row of (data as any[]) ?? []) {
-      if (!grouped.has(row.customer_id)) {
+      const existing = grouped.get(row.customer_id);
+      if (existing) {
+        if (!answered.has(row.customer_id)) {
+          if (row.sender === "customer") existing.unanswered_since = row.created_at;
+          else if (row.sender === "operator" && !row.is_system) answered.add(row.customer_id);
+        }
+        continue;
+      }
+      if (row.sender === "operator" && !row.is_system) answered.add(row.customer_id);
+      {
         const info = threadInfo.get(row.customer_id);
         grouped.set(row.customer_id, {
           customer_id: row.customer_id,
@@ -528,10 +566,17 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
           last_at: row.created_at,
           claimed_by: info?.claimed_by ?? null,
           claimed_by_name: info?.profiles?.display_name || info?.profiles?.full_name || null,
+          unanswered_since: row.sender === "customer" ? row.created_at : null,
         });
       }
     }
-    setThreads(Array.from(grouped.values()));
+    // Eng uzoq javobsiz turgan suhbat tepada; qolganlari oxirgi xabar bo'yicha.
+    const list = Array.from(grouped.values());
+    const waiting = list
+      .filter((x) => x.unanswered_since)
+      .sort((a, b) => new Date(a.unanswered_since!).getTime() - new Date(b.unanswered_since!).getTime());
+    const rest = list.filter((x) => !x.unanswered_since);
+    setThreads([...waiting, ...rest]);
     setArchivedIds(new Set((threadRows ?? []).filter((r: any) => r.is_archived).map((r: any) => r.customer_id)));
     if (isInitial) setLoading(false);
   };
@@ -647,11 +692,17 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredThreads.map((th) => (
+          {filteredThreads.map((th) => {
+            const waitingSince = !showArchived ? th.unanswered_since : null;
+            const waitMs = waitingSince ? Date.now() - new Date(waitingSince).getTime() : 0;
+            const overdue = waitingSince ? waitMs > SUPPORT_WAIT_ALERT_MIN * 60000 : false;
+            return (
             <button
               key={th.customer_id}
               onClick={() => openThread(th)}
-              className="w-full text-left p-3.5 rounded-xl bg-white/[0.03] backdrop-blur-md border border-subtle hover:border-accent/40 hover:bg-white/[0.05]"
+              className={`w-full text-left p-3.5 rounded-xl bg-white/[0.03] backdrop-blur-md border hover:bg-white/[0.05] ${
+                overdue ? "border-[#FF6B85]/50 hover:border-[#FF6B85]/70" : "border-subtle hover:border-accent/40"
+              }`}
             >
               <div className="flex items-center justify-between gap-2 mb-0.5">
                 <div className="text-[13px] font-semibold truncate">{th.full_name || formatPhone(th.phone)}</div>
@@ -664,8 +715,16 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
                 )}
               </div>
               <div className="text-[12px] text-muted truncate mt-0.5">{th.last_image ? t("sup.image") : th.last_message}</div>
+              {waitingSince && (
+                <div className={`mt-1.5 inline-flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-full ${
+                  overdue ? "bg-[#FF6B85]/15 text-[#FF6B85]" : "bg-[#F4C76A]/10 text-[#F4C76A]"
+                }`}>
+                  ⏱ {t("sup.waitingFor", { t: formatWait(t, waitingSince, Date.now()) })}
+                </div>
+              )}
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
