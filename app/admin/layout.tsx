@@ -124,7 +124,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
       return next;
     });
-  const siteName: string = settings.site_identity?.site_name?.trim() || "BetCore";
+  const siteName: string = settings.site_identity?.site_name?.trim() || "DedPay";
   const logoUrl: string | null = settings.branding?.logo_media_id_url ?? null;
   const logoPos: { x: number; y: number } = settings.branding?.logo_media_id_position ?? { x: 50, y: 50 };
 

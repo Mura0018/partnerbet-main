@@ -84,7 +84,7 @@ export default function PartnerBotPage() {
 
       {username && (
         <div className="rounded-xl border border-subtle bg-white/[0.02] p-4 mb-5 text-[12.5px] text-muted">
-          Mijozlaringiz botingizni ochib, pastdagi <span className="text-white font-medium">menyu (☰)</span> tugmasi orqali BetCore Pay app'ini ochadi.
+          Mijozlaringiz botingizni ochib, pastdagi <span className="text-white font-medium">menyu (☰)</span> tugmasi orqali DedPay app'ini ochadi.
           <div className="text-[11px] text-[#5b6f85] mt-1.5">Eslatma: app'ning hamkor ko'rinishi (tema/to'lov) keyingi bosqichda to'liq ulanadi.</div>
         </div>
       )}

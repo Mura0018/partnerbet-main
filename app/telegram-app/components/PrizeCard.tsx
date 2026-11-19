@@ -82,7 +82,7 @@ export function PrizeCard({ initData }: { initData: string }) {
         <div className="m-prizecard-content" style={{ position: "relative", zIndex: 3, height: "100%", padding: 18, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           {/* tepa */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontWeight: 800, fontSize: 14, color: "var(--em)", letterSpacing: 0.3 }}>BetCore</span>
+            <span style={{ fontWeight: 800, fontSize: 14, color: "var(--em)", letterSpacing: 0.3 }}>DedPay</span>
             <span style={{ fontSize: 9.5, letterSpacing: 2, color: "var(--ink-3)", fontWeight: 700 }}>{t("tg.heroLabel")}</span>
           </div>
 

@@ -7,7 +7,7 @@ export const aboutContent: Record<Locale, LegalPageContent> = {
   uz: {
     title: "Biz haqimizda",
     intro:
-      "BetCore — futbol tahlillari, jonli natijalar va litsenziyalangan hamkorlar haqidagi ma'lumotlarni bir joyga jamlagan mustaqil media va affiliate platforma.",
+      "DedPay — futbol tahlillari, jonli natijalar va litsenziyalangan hamkorlar haqidagi ma'lumotlarni bir joyga jamlagan mustaqil media va affiliate platforma.",
     sections: [
       {
         heading: "Nima qilamiz",
@@ -17,7 +17,7 @@ export const aboutContent: Record<Locale, LegalPageContent> = {
       {
         heading: "Biz kim emasmiz",
         body:
-          "BetCore o'zi bahs qabul qilmaydi, foydalanuvchi mablag'larini saqlamaydi va o'yin operatori sifatida faoliyat yuritmaydi. Har qanday moliyaviy tranzaksiya to'g'ridan-to'g'ri tegishli litsenziyalangan hamkor kompaniya bilan amalga oshiriladi — biz faqat ma'lumot va yo'naltiruvchi havolalar taqdim etamiz.",
+          "DedPay o'zi bahs qabul qilmaydi, foydalanuvchi mablag'larini saqlamaydi va o'yin operatori sifatida faoliyat yuritmaydi. Har qanday moliyaviy tranzaksiya to'g'ridan-to'g'ri tegishli litsenziyalangan hamkor kompaniya bilan amalga oshiriladi — biz faqat ma'lumot va yo'naltiruvchi havolalar taqdim etamiz.",
       },
       {
         heading: "Qadriyatlarimiz",
@@ -34,7 +34,7 @@ export const aboutContent: Record<Locale, LegalPageContent> = {
   ru: {
     title: "О нас",
     intro:
-      "BetCore — независимая медиа- и партнёрская платформа, объединяющая футбольную аналитику, live-результаты и информацию о лицензированных партнёрах.",
+      "DedPay — независимая медиа- и партнёрская платформа, объединяющая футбольную аналитику, live-результаты и информацию о лицензированных партнёрах.",
     sections: [
       {
         heading: "Чем мы занимаемся",
@@ -44,7 +44,7 @@ export const aboutContent: Record<Locale, LegalPageContent> = {
       {
         heading: "Кем мы не являемся",
         body:
-          "BetCore сам не принимает ставки, не хранит средства пользователей и не выступает в роли игорного оператора. Любая финансовая операция происходит напрямую с соответствующей лицензированной компанией-партнёром — мы предоставляем только информацию и переходные ссылки.",
+          "DedPay сам не принимает ставки, не хранит средства пользователей и не выступает в роли игорного оператора. Любая финансовая операция происходит напрямую с соответствующей лицензированной компанией-партнёром — мы предоставляем только информацию и переходные ссылки.",
       },
       {
         heading: "Наши ценности",
@@ -60,7 +60,7 @@ export const aboutContent: Record<Locale, LegalPageContent> = {
   en: {
     title: "About Us",
     intro:
-      "BetCore is an independent media and affiliate platform bringing together football analytics, live results, and information about licensed betting partners.",
+      "DedPay is an independent media and affiliate platform bringing together football analytics, live results, and information about licensed betting partners.",
     sections: [
       {
         heading: "What we do",
@@ -70,7 +70,7 @@ export const aboutContent: Record<Locale, LegalPageContent> = {
       {
         heading: "What we are not",
         body:
-          "BetCore does not itself accept wagers, does not hold user funds, and does not operate as a gambling operator. Any financial transaction happens directly with the relevant licensed partner company — we only provide information and referral links.",
+          "DedPay does not itself accept wagers, does not hold user funds, and does not operate as a gambling operator. Any financial transaction happens directly with the relevant licensed partner company — we only provide information and referral links.",
       },
       {
         heading: "Our values",

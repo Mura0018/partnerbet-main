@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
     threadPayload.auto_greeted = true;
     const greeting = servedBy
       ? "Assalomu alaykum! Sizga tegishli operator hozir band bo'lishi mumkin. \ud83d\udd52 Savolingizni yozib qoldiring — imkon qadar tez javob beramiz. \ud83d\ude4f \ud83d\ude4f"
-      : "Assalomu alaykum! BetCore Pay qo'llab-quvvatlash xizmatiga xush kelibsiz! \ud83d\udc4b Savolingizni yozing — operatorlarimiz tez orada javob beradi. \ud83d\ude4a \ud83d\ude4f";
+      : "Assalomu alaykum! DedPay qo'llab-quvvatlash xizmatiga xush kelibsiz! \ud83d\udc4b Savolingizni yozing — operatorlarimiz tez orada javob beradi. \ud83d\ude4a \ud83d\ude4f";
     await supabase
       .from("telegram_support_messages")
       .insert({ customer_id: customerId, sender: "operator", message: greeting });

@@ -256,10 +256,10 @@ function FloatingAmbience() {
         .mini-chip { animation: miniFloat 15s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) { .mini-chip { animation: none; } }
       `}</style>
-      <span className="mini-chip absolute top-[8%] left-[6%] text-[13px] font-bold" style={{ color: "rgba(200,220,255,0.16)", animationDelay: "0s" }}>1xBet</span>
-      <span className="mini-chip absolute top-[16%] right-[8%] text-[11px] font-bold" style={{ color: "rgba(200,220,255,0.13)", animationDelay: "2s" }}>1xBet</span>
-      <span className="mini-chip absolute bottom-[22%] left-[5%] text-[12px] font-bold" style={{ color: "rgba(200,220,255,0.14)", animationDelay: "4s" }}>1xBet</span>
-      <span className="mini-chip absolute bottom-[14%] right-[6%] text-[11px] font-bold" style={{ color: "rgba(200,220,255,0.12)", animationDelay: "1s" }}>1xBet</span>
+      <span className="mini-chip absolute top-[8%] left-[6%] text-[13px] font-bold" style={{ color: "rgba(200,220,255,0.16)", animationDelay: "0s" }}>DedPay</span>
+      <span className="mini-chip absolute top-[16%] right-[8%] text-[11px] font-bold" style={{ color: "rgba(200,220,255,0.13)", animationDelay: "2s" }}>DedPay</span>
+      <span className="mini-chip absolute bottom-[22%] left-[5%] text-[12px] font-bold" style={{ color: "rgba(200,220,255,0.14)", animationDelay: "4s" }}>DedPay</span>
+      <span className="mini-chip absolute bottom-[14%] right-[6%] text-[11px] font-bold" style={{ color: "rgba(200,220,255,0.12)", animationDelay: "1s" }}>DedPay</span>
     </div>
   );
 }
@@ -1740,7 +1740,7 @@ export default function TelegramAppPage() {
         <div className="max-w-sm mx-auto w-full relative z-10">
           <div className="flex justify-center mb-2">
             {logoUrl ? (
-              <img src={logoUrl} alt="BetCore Pay" className="w-40 h-40 object-contain drop-shadow-[0_8px_20px_rgba(61,127,255,0.4)]" style={{ objectPosition: `${logoPos.x}% ${logoPos.y}%` }} />
+              <img src={logoUrl} alt="DedPay" className="w-40 h-40 object-contain drop-shadow-[0_8px_20px_rgba(61,127,255,0.4)]" style={{ objectPosition: `${logoPos.x}% ${logoPos.y}%` }} />
             ) : (
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3D7FFF] to-[#7c3aed] flex items-center justify-center text-[28px] shadow-[7px_7px_18px_rgba(0,0,0,0.5),-4px_-4px_14px_rgba(120,180,255,0.2)]">
                 ⬡
@@ -1750,7 +1750,7 @@ export default function TelegramAppPage() {
 
           {!logoUrl && (
             <h1 className="text-[30px] font-black text-center mb-1 bg-gradient-to-r from-[#7db8ff] via-white to-[#F4C76A] bg-clip-text text-transparent" style={titleShadow}>
-              BetCore Pay
+              DedPay
             </h1>
           )}
           <p className="text-[13px] text-[#93a5ba] text-center mb-7">

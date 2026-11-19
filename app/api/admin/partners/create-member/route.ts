@@ -61,10 +61,10 @@ export async function POST(req: NextRequest) {
   if (inviteUrl) {
     await sendEmail({
       to: email,
-      subject: "BetCore Pay — hisobingizni faollashtiring",
+      subject: "DedPay — hisobingizni faollashtiring",
       html: renderActionEmail({
         heading: "Xush kelibsiz",
-        body: "Sizga BetCore Pay hamkor paneli uchun hisob yaratildi. Parolingizni o'rnatish uchun quyidagi tugmani bosing.",
+        body: "Sizga DedPay hamkor paneli uchun hisob yaratildi. Parolingizni o'rnatish uchun quyidagi tugmani bosing.",
         buttonLabel: "Parol o'rnatish",
         url: inviteUrl,
         note: "Havola 1 soat amal qiladi. Agar bu siz bo'lmasangiz, xabarni e'tiborsiz qoldiring.",

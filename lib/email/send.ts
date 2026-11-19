@@ -61,8 +61,8 @@ export async function sendEmail({ to, subject, html, text }: EmailInput): Promis
 
 function parseFrom(from: string): { name: string; email: string } {
   const m = from.match(/^\s*(.*?)\s*<\s*(.+?)\s*>\s*$/);
-  if (m) return { name: m[1] || "BetCore Pay", email: m[2] };
-  return { name: "BetCore Pay", email: from.trim() };
+  if (m) return { name: m[1] || "DedPay", email: m[2] };
+  return { name: "DedPay", email: from.trim() };
 }
 
 function stripHtml(html: string): string {
@@ -76,7 +76,7 @@ export function renderActionEmail(opts: { heading: string; body: string; buttonL
   return `<!doctype html><html><body style="margin:0;background:#0a1224;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:480px;margin:0 auto;padding:32px 24px;">
     <div style="text-align:center;margin-bottom:20px;">
-      <span style="font-size:20px;font-weight:800;color:#1CE0C3;">BetCore Pay</span>
+      <span style="font-size:20px;font-weight:800;color:#1CE0C3;">DedPay</span>
     </div>
     <div style="background:#111a2e;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px 24px;color:#e6ecf5;">
       <h1 style="font-size:18px;margin:0 0 12px;color:#ffffff;">${heading}</h1>
@@ -87,6 +87,6 @@ export function renderActionEmail(opts: { heading: string; body: string; buttonL
       <p style="font-size:11px;line-height:1.5;color:#7b89a0;margin:0;word-break:break-all;">Agar tugma ishlamasa, ushbu havolani brauzerга nusxalang:<br/>${url}</p>
       ${note ? `<p style="font-size:11px;color:#7b89a0;margin:14px 0 0;">${note}</p>` : ""}
     </div>
-    <p style="text-align:center;font-size:10px;color:#5b6f85;margin:16px 0 0;">© BetCore Pay · couponbet.org</p>
+    <p style="text-align:center;font-size:10px;color:#5b6f85;margin:16px 0 0;">© DedPay · couponbet.org</p>
   </div></body></html>`;
 }

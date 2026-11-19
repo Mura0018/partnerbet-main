@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
     if ((cust as any)?.telegram_id) {
       await sendTelegramMessage(
         (cust as any).telegram_id,
-        "⚠️ Yechish kodi eskirgan yoki noto'g'ri. Iltimos, 1xbet'dan yangi kod oling va ilovada qayta kiriting."
+        "⚠️ Yechish kodi eskirgan yoki noto'g'ri. Iltimos, platformadan yangi kod oling va ilovada qayta kiriting."
       );
     }
   } catch {

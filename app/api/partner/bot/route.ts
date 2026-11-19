@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     const r = await fetch(`https://api.telegram.org/bot${token}/setChatMenuButton`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ menu_button: { type: "web_app", text: "BetCore Pay", web_app: { url: appUrl } } }),
+      body: JSON.stringify({ menu_button: { type: "web_app", text: "DedPay", web_app: { url: appUrl } } }),
     });
     const j = await r.json();
     menuSet = !!j.ok;

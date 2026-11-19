@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       if (memberEmail) {
         await sendEmail({
           to: memberEmail,
-          subject: "BetCore Pay — parolni tiklash",
+          subject: "DedPay — parolni tiklash",
           html: renderActionEmail({
             heading: "Parolni tiklash",
             body: "Parolingizni qayta o'rnatish uchun quyidagi tugmani bosing.",

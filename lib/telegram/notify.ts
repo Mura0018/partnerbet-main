@@ -50,7 +50,7 @@ function formatAmount(amount: number): string {
 
 export function buildOrderCreatedMessage(type: "topup" | "withdraw", amount: number): string {
   return (
-    `🟦 BetCore Pay\n\n` +
+    `🟦 DedPay\n\n` +
     `${TYPE_LABEL[type]} buyurtmangiz qabul qilindi. Holat: kutilmoqda.\n` +
     `Summa: ${formatAmount(amount)}\n\n` +
     `Operator tez orada ko'rib chiqadi — natijani shu yerda va ilovada "Buyurtmalarim" bo'limida ko'rasiz.`
@@ -65,7 +65,7 @@ export function buildOrderResolvedMessage(
 ): string {
   const isCompleted = status === "completed";
   return (
-    `🟦 BetCore Pay\n\n` +
+    `🟦 DedPay\n\n` +
     `${TYPE_LABEL[type]} buyurtmangiz ${isCompleted ? "bajarildi" : "rad etildi"}.\n` +
     `Summa: ${formatAmount(amount)}\n` +
     (note
@@ -77,5 +77,5 @@ export function buildOrderResolvedMessage(
 }
 
 export function buildSupportReplyMessage(text: string): string {
-  return `🟦 BetCore Pay\n\n💬 Operator javobi:\n\n${text}`;
+  return `🟦 DedPay\n\n💬 Operator javobi:\n\n${text}`;
 }

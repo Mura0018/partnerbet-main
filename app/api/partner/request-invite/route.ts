@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       if (actionLink) {
         await sendEmail({
           to: email.trim(),
-          subject: "BetCore Pay — parolni tiklash",
+          subject: "DedPay — parolni tiklash",
           html: renderActionEmail({
             heading: "Parolni tiklash",
             body: "Hamkor paneliga kirish parolingizni tiklash uchun quyidagi tugmani bosing.",

@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
         sender_id: user.id,
         is_system: true,
         event_type: "alert",
-        message: `🔑 Tizim: ${name} mijoz (${customerId}) asosiy 1xBet ID sini ${oldPid ? `${oldPid} -> ` : ""}${playerId} ga o'zgartirdi. (Asosiy ID depozit uchun standart tanlov.)`,
+        message: `🔑 Tizim: ${name} mijoz (${customerId}) asosiy Hisob ID sini ${oldPid ? `${oldPid} -> ` : ""}${playerId} ga o'zgartirdi. (Asosiy ID depozit uchun standart tanlov.)`,
       });
     } catch {
       /* qayd best-effort */
