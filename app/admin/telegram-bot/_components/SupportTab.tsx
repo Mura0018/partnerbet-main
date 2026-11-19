@@ -269,10 +269,20 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived }: { thre
   };
 
   const takeOver = async () => {
-    await supabase.from("telegram_support_threads").upsert(
-      { customer_id: thread.customer_id, claimed_by: currentUserId, claimed_at: new Date().toISOString() },
-      { onConflict: "customer_id" }
-    );
+    // Server marshruti orqali (0103: brauzer bu jadvalga yoza olmaydi).
+    // Muvaffaqiyatsiz bo'lsa holat o'zgarmaydi — ilgari xato jim o'tib,
+    // UI noto'g'ri "siz javob beryapsiz" deb ko'rsatardi.
+    try {
+      const res = await fetch("/api/admin/telegram-orders/support-claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: thread.customer_id, takeOver: true }),
+      });
+      if (!res.ok) { toast.error(t("sup.claimFailed")); return; }
+    } catch {
+      toast.error(t("sup.claimFailed"));
+      return;
+    }
     const { data } = await supabase.from("profiles").select("display_name, full_name").eq("id", currentUserId).maybeSingle();
     setClaimedBy(currentUserId);
     setClaimedByName(data?.display_name || data?.full_name || null);
@@ -522,10 +532,17 @@ export function SupportTab() {
     // same pattern as order claiming — so it's immediately clear who's
     // handling this customer, without requiring an extra tap.
     if (!t.claimed_by) {
-      await supabase.from("telegram_support_threads").upsert(
-        { customer_id: t.customer_id, claimed_by: currentUserId, claimed_at: new Date().toISOString() },
-        { onConflict: "customer_id" }
-      );
+      // Server marshruti orqali; band bo'lsa server olmaydi (oldingi xulq).
+      // Avto-olish best-effort — xato bo'lsa ro'yxat yangilanadi, xolos.
+      try {
+        await fetch("/api/admin/telegram-orders/support-claim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customerId: t.customer_id }),
+        });
+      } catch {
+        /* best-effort */
+      }
       loadThreads(false);
     }
   };

@@ -121,3 +121,20 @@ create policy "write global chat" on global_chat_messages
       or (partner_id is null and has_permission('partners.manage'))
     )
   );
+
+
+-- ---------------------------------------------------------------------
+-- 5) telegram_support_threads — brauzerdan faqat o'qish.
+--    Audit: brauzer faqat "o'z zimmasiga olish"da yozardi (SupportTab:
+--    thread ochilganda avto-olish va "O'zimga olish" tugmasi; claimed_by
+--    mijozdan kelardi, FOR ALL policy har qanday ustunni ochiq qoldirardi).
+--    Shu branch'da ikkalasi /api/admin/telegram-orders/support-claim
+--    (service role, claimed_by = server user.id) ga ko'chirildi. Arxiv,
+--    yakunlash, mini app va cron allaqachon service role.
+--    DIQQAT: bu bo'lim KOD deploy qilingandan KEYIN qo'yilsin — eski kod
+--    bilan "o'z zimmasiga olish" jim ishlamay qoladi.
+-- ---------------------------------------------------------------------
+drop policy if exists "telegram_orders.manage manage support threads" on telegram_support_threads;
+drop policy if exists "telegram_orders.manage read support threads" on telegram_support_threads;
+create policy "telegram_orders.manage read support threads" on telegram_support_threads
+  for select using (has_permission('telegram_orders.manage'));
