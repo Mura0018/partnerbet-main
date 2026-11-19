@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { resetSupportNoticeFlags } from "@/lib/support/messages";
 import { sendTelegramMessage, buildSupportReplyMessage } from "@/lib/telegram/notify";
 
 async function requireOrdersManage() {
@@ -39,6 +40,23 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !inserted) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+
+  // Operator javob berdi:
+  //  - last_operator_reply_at (0057 dan bor, lekin hech qayerda YOZILMASDI —
+  //    shu sababli cron operator javob bergan suhbatni ham 15 daq'da olib
+  //    qo'yardi; endi "javobsiz" hisobi va stale tekshiruvi to'g'ri);
+  //  - "band" ogohlantirishi va operator bildirishnomasi belgilari tozalanadi
+  //    (1.1 / 2.1) — keyingi uzilishda yana bir marta, hisob qaytadan.
+  try {
+    const replyNow = new Date().toISOString();
+    await admin
+      .from("telegram_support_threads")
+      .update({ last_operator_reply_at: replyNow, updated_at: replyNow })
+      .eq("customer_id", customerId);
+  } catch {
+    /* best-effort */
+  }
+  await resetSupportNoticeFlags(admin, customerId);
 
   const { data: customer } = await admin.from("customers").select("telegram_id").eq("id", customerId).maybeSingle();
   if (customer?.telegram_id) {

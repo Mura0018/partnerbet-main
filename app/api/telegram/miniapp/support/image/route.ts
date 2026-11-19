@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { notifyOperatorsSupportMessage } from "@/lib/telegram/notifyStaff";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 
 const ALLOWED_MIME: Record<string, string> = {
@@ -9,14 +10,17 @@ const ALLOWED_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/webp": "webp",
 };
-const MAX_BYTES = 5 * 1024 * 1024;
+// 1.5: 3 MB — base64 (+33%) bilan so'rov tanasi hosting chegarasiga (Vercel
+// ~4.5 MB) sig'adi. Avval 5 MB edi: 3.4-5 MB rasmlar 413 bilan jim yiqilardi.
+const MAX_BYTES = 3 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   const botToken = await getApiCredential("telegram_bot_token");
   if (!botToken) return NextResponse.json({ error: "not_configured" }, { status: 500 });
 
   const ip = getClientIp(req.headers);
-  const { allowed } = await checkAndRecordRateLimit(`telegram-support-image:${ip}`, 60, 10);
+  // 1.4: IP chegarasi keng (NAT), asosiysi mijoz bo'yicha — pastda.
+  const { allowed } = await checkAndRecordRateLimit(`telegram-support-image:${ip}`, 60, 60);
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
@@ -37,7 +41,14 @@ export async function POST(req: NextRequest) {
     .eq("telegram_id", verified.telegramId)
     .maybeSingle();
   if (!customer) return NextResponse.json({ error: "not_registered" }, { status: 401 });
+  const { allowed: custAllowed } = await checkAndRecordRateLimit(`telegram-support-image-c:${customer.id}`, 60, 10);
+  if (!custAllowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
+  // Dekod qilishdan OLDIN base64 uzunligi tekshiriladi (katta tanani bekor
+  // xotiraga olmaslik uchun). Buffer.from base64'da xato tashlamaydi.
+  if (typeof imageBase64 !== "string" || imageBase64.length > Math.ceil((MAX_BYTES * 4) / 3) + 8) {
+    return NextResponse.json({ error: "invalid_image_size" }, { status: 400 });
+  }
   let buffer: Buffer;
   try {
     buffer = Buffer.from(imageBase64, "base64");
@@ -65,9 +76,15 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !inserted) return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+  // last_customer_message_at + status='open' — matn xabari bilan bir xil
+  // (avval faqat matn yangilardi: media-only mijoz "javobsiz" ko'rinmasdi,
+  // yakunlangan suhbatga media yuborilsa status 'ended' qolardi).
+  const threadNow = new Date().toISOString();
   await supabase.from("telegram_support_threads").upsert(
-    { customer_id: customer.id, is_archived: false, updated_at: new Date().toISOString() },
+    { customer_id: customer.id, is_archived: false, status: "open", updated_at: threadNow, last_customer_message_at: threadNow },
     { onConflict: "customer_id" }
   );
+  // 2.1: mas'ul operatorga Telegram (throttle bilan).
+  await notifyOperatorsSupportMessage(customer.id, { kind: "image" });
   return NextResponse.json({ message: inserted });
 }

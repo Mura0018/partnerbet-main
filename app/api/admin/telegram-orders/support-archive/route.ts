@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { resetSupportNoticeFlags } from "@/lib/support/messages";
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -29,6 +30,8 @@ export async function POST(req: NextRequest) {
     },
     { onConflict: "customer_id" }
   );
+  // Arxivlangan suhbat yopildi — keyingi suhbatda ogohlantirish yana bir marta.
+  if (archived) await resetSupportNoticeFlags(admin, customerId);
 
   return NextResponse.json({ success: true });
 }
