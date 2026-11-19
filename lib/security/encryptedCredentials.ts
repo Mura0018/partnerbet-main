@@ -53,8 +53,22 @@ export async function getEncryptedCredentialStatuses(
 ): Promise<Record<string, boolean>> {
   const supabase = createAdminClient();
   const keys = fields.map((f) => buildKey(namespace, entityId, f));
-  const { data } = await supabase.from("api_credentials").select("key").in("key", keys).eq("is_active", true);
-  const present = new Set((data ?? []).map((r) => r.key));
+  // Faqat haqiqatan shifrdan ochiladigan, bo'sh bo'lmagan qiymat "sozlangan"
+  // hisoblanadi. Ochilgan qiymat shu yerda tashlab yuboriladi — tashqariga
+  // faqat true/false chiqadi.
+  const { data } = await supabase.from("api_credentials").select("key, value").in("key", keys).eq("is_active", true);
+  const present = new Set(
+    (data ?? [])
+      .filter((r) => {
+        if (typeof r.value !== "string" || !r.value) return false;
+        try {
+          return decryptSecret(r.value).length > 0;
+        } catch {
+          return false;
+        }
+      })
+      .map((r) => r.key)
+  );
   const statuses: Record<string, boolean> = {};
   for (const field of fields) statuses[field] = present.has(buildKey(namespace, entityId, field));
   return statuses;
