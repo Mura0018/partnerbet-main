@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { isEffectivelyOnline, withPresenceFallback } from "@/lib/presence";
 import { getCashdeskBalance } from "@/lib/cashdesk/client";
 import { listCashdesks, getCashdeskCredsById, getDefaultCashdeskCreds } from "@/lib/cashdesk/store";
 
@@ -24,6 +25,22 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const admin = createAdminClient();
+
+  // HEARTBEAT (0106): last_seen_at FAQAT shu yerda, service role orqali
+  // yoziladi (brauzerdan emas — 0103/0106 trigger qulflaydi). 30 s polling,
+  // lekin ko'pi bilan daqiqada bir marta yoziladi (shartli update).
+  // Ustun yo'q bo'lsa (0106 qo'yilmagan) xato e'tiborsiz.
+  try {
+    const nowIso = new Date().toISOString();
+    const throttleIso = new Date(Date.now() - 60_000).toISOString();
+    await admin
+      .from("profiles")
+      .update({ last_seen_at: nowIso })
+      .eq("id", user.id)
+      .or(`last_seen_at.is.null,last_seen_at.lt.${throttleIso}`);
+  } catch {
+    /* best-effort */
+  }
 
   // Ruxsatlar
   const [{ data: canManageOrders }, { data: canOversight }] = await Promise.all([
@@ -119,13 +136,14 @@ export async function GET() {
 
   // Operatorlar: onlayn / jami
   try {
-    const { data: ops } = await admin
-      .from("profiles")
-      .select("is_online, roles!inner(key)")
-      .eq("roles.key", "operator");
+    const ops = await withPresenceFallback<any[]>(
+      () => admin.from("profiles").select("is_online, last_seen_at, roles!inner(key)").eq("roles.key", "operator"),
+      () => admin.from("profiles").select("is_online, roles!inner(key)").eq("roles.key", "operator")
+    );
     const list = (ops ?? []) as any[];
+    const nowMs = Date.now();
     counts.totalOperators = list.length;
-    counts.onlineOperators = list.filter((o) => o.is_online).length;
+    counts.onlineOperators = list.filter((o) => isEffectivelyOnline(o, nowMs)).length;
   } catch {
     /* skip */
   }

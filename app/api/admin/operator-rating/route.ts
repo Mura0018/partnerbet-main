@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { isEffectivelyOnline, withPresenceFallback } from "@/lib/presence";
 
 // 7-BOSQICH: super_admin — operatorlar reytingi (tartiblangan) + reyting
 // hodisalari + alertlar tarixi.
@@ -13,11 +14,20 @@ export async function GET() {
 
   const admin = createAdminClient();
 
-  const { data: operators } = await admin
-    .from("profiles")
-    .select("id, display_name, full_name, rating, is_online, is_busy")
-    .eq("is_active", true)
-    .order("rating", { ascending: true }); // eng past (muammoli) yuqorида
+  const operators = await withPresenceFallback<any[]>(
+    () =>
+      admin
+        .from("profiles")
+        .select("id, display_name, full_name, rating, is_online, last_seen_at, is_busy")
+        .eq("is_active", true)
+        .order("rating", { ascending: true }), // eng past (muammoli) yuqorida
+    () =>
+      admin
+        .from("profiles")
+        .select("id, display_name, full_name, rating, is_online, is_busy")
+        .eq("is_active", true)
+        .order("rating", { ascending: true })
+  );
   const nameById: Record<string, string> = {};
   for (const o of (operators ?? []) as any[]) nameById[o.id] = o.display_name || o.full_name || "Operator";
 
@@ -41,7 +51,7 @@ export async function GET() {
       id: o.id,
       name: nameById[o.id],
       rating: o.rating ?? 0,
-      is_online: o.is_online,
+      is_online: isEffectivelyOnline(o),
       is_busy: o.is_busy,
     })),
     events: withName(events),

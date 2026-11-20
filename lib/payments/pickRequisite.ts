@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { isEffectivelyOnline, withPresenceFallback } from "@/lib/presence";
 
 // =========================================================
 // W1.1/W1.6 — REKVIZIT TANLASH (poydevor).
@@ -79,17 +80,24 @@ export async function pickRequisiteForOrder(
   }
 
   // Platforma mijozi — payment-info/route.ts'dan ko'chirilgan mantiq AYNAN.
-  const [{ data: methodsData }, { data: pendingData }, { data: onlineData }] = await Promise.all([
+  const [{ data: methodsData }, { data: pendingData }, onlineData] = await Promise.all([
     admin
       .from("telegram_operator_payment_methods")
       .select("id, operator_id, account_number, holder_name, usage_count")
       .eq("is_active", true)
       .eq("method_type", methodType),
     admin.from("telegram_orders").select("claimed_by").eq("status", "pending").not("claimed_by", "is", null),
-    admin.from("profiles").select("id, is_online"),
+    // Haqiqiy onlayn (is_online + heartbeat, 0106); 0106 yo'q bo'lsa eski is_online.
+    withPresenceFallback<any[]>(
+      () => admin.from("profiles").select("id, is_online, last_seen_at"),
+      () => admin.from("profiles").select("id, is_online")
+    ),
   ]);
 
-  const onlineIds = new Set((onlineData ?? []).filter((p: any) => p.is_online).map((p: any) => p.id));
+  const nowMs = Date.now();
+  // Zaxira yo'li O'ZGARMAGAN: onlayn egali karta bo'lmasa (hech kim onlayn
+  // emas) — barcha faol kartalar orasidan tanlanadi (pastda hasOnlineCandidate).
+  const onlineIds = new Set((onlineData ?? []).filter((p: any) => isEffectivelyOnline(p, nowMs)).map((p: any) => p.id));
   let rows = ((methodsData as any[]) ?? []).map((r) => ({
     id: r.id,
     number_or_account: r.account_number,

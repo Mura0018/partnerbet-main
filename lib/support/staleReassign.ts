@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { isEffectivelyOnline, withPresenceFallback } from "@/lib/presence";
 
 const STALE_MINUTES = 15;
 
@@ -13,11 +14,11 @@ export async function reassignStaleThread(customerId: string): Promise<boolean> 
   if (!thread || thread.is_archived || thread.status === "ended") return false;
   if (!thread.claimed_by) return false;
 
-  const { data: op } = await supabase
-    .from("profiles")
-    .select("is_online")
-    .eq("id", thread.claimed_by)
-    .maybeSingle();
+  // Haqiqiy onlayn (is_online + heartbeat, 0106) — lib/presence.ts.
+  const op = await withPresenceFallback<{ is_online: boolean | null; last_seen_at?: string | null }>(
+    () => supabase.from("profiles").select("is_online, last_seen_at").eq("id", thread.claimed_by).maybeSingle(),
+    () => supabase.from("profiles").select("is_online").eq("id", thread.claimed_by).maybeSingle()
+  );
 
   const now = Date.now();
   const lastReply = thread.last_operator_reply_at ? new Date(thread.last_operator_reply_at).getTime() : 0;
@@ -25,7 +26,7 @@ export async function reassignStaleThread(customerId: string): Promise<boolean> 
 
   const waitedMs = now - Math.max(lastCustomer, lastReply);
   const isStale = lastCustomer > lastReply && waitedMs > STALE_MINUTES * 60 * 1000;
-  const operatorOffline = op ? !op.is_online : true;
+  const operatorOffline = op ? !isEffectivelyOnline(op, now) : true;
 
   if (operatorOffline || isStale) {
     await supabase.from("telegram_support_threads").update({
