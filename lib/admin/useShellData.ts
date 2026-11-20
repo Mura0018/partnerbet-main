@@ -45,8 +45,19 @@ export function useShellData(intervalMs = 30000) {
 
   useEffect(() => {
     load();
+    // Yashirin tab ham kamida daqiqada bir marta so'raydi: bu so'rov operator
+    // heartbeat'i (last_seen_at, 0106). Aks holda boshqa tabda ishlayotgan
+    // operator 4 daqiqadan keyin "offline" bo'lib, cron suhbatlarini olardi.
+    let lastHiddenPing = Date.now();
     timer.current = setInterval(() => {
-      if (!document.hidden) load();
+      if (!document.hidden) {
+        load();
+        return;
+      }
+      if (Date.now() - lastHiddenPing >= 60_000) {
+        lastHiddenPing = Date.now();
+        load();
+      }
     }, intervalMs);
     const onVis = () => {
       if (!document.hidden) load();

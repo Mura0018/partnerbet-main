@@ -107,8 +107,12 @@ export async function pickRequisiteForOrder(
   })) as Row[];
   if (rows.length === 0) return null;
 
-  const hasOnlineCandidate = rows.some((r) => onlineIds.has(r.owner_id));
-  if (hasOnlineCandidate) rows = rows.filter((r) => onlineIds.has(r.owner_id));
+  // Bosqichli zaxira: 1) haqiqiy onlayn (heartbeat) egalar; 2) bo'lmasa —
+  // qo'lda "onlayn" (is_online) egalar (heartbeat uzilgan, lekin o'zini
+  // offline qilmaganlar); 3) bo'lmasa — barcha faol kartalar (avvalgidek).
+  const manualOnlineIds = new Set((onlineData ?? []).filter((p: any) => p.is_online).map((p: any) => p.id));
+  if (rows.some((r) => onlineIds.has(r.owner_id))) rows = rows.filter((r) => onlineIds.has(r.owner_id));
+  else if (rows.some((r) => manualOnlineIds.has(r.owner_id))) rows = rows.filter((r) => manualOnlineIds.has(r.owner_id));
 
   const busyScore: Record<string, number> = {};
   for (const row of pendingData ?? []) {

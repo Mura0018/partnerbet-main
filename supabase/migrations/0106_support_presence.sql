@@ -55,7 +55,7 @@ $$;
 create or replace function public.is_effectively_online(p_is_online boolean, p_last_seen timestamptz, p_minutes int default 4)
 returns boolean
 language sql
-immutable
+stable
 as $$
   select coalesce(p_is_online, false)
      and p_last_seen is not null

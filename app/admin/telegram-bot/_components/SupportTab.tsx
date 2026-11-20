@@ -167,6 +167,22 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       .order("created_at", { ascending: false })
       .limit(THREAD_PAGE);
     const batch = ((data as any[]) ?? []).slice().reverse() as SupportMsg[];
+    // Egalik ham yangilanib tursin (boshqa operator/cron/rahbar o'zgartirgan
+    // bo'lishi mumkin) — banner va "O'zimga olish" holati eskirmasin.
+    try {
+      const { data: own } = await supabase
+        .from("telegram_support_threads")
+        .select("claimed_by, profiles!claimed_by(display_name, full_name)")
+        .eq("customer_id", thread.customer_id)
+        .maybeSingle();
+      if (own) {
+        const o = own as any;
+        setClaimedBy(o.claimed_by ?? null);
+        setClaimedByName(o.profiles?.display_name || o.profiles?.full_name || null);
+      }
+    } catch {
+      /* best-effort */
+    }
     setMsgs((prev) => {
       // Birinchi yuklash: "yana bor"mi — sahifa to'liq bo'lsa.
       if (prev.length === 0) {
@@ -316,7 +332,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       if (r.ok) setMsgs((prev) => prev.filter((m) => m.id !== id));
       else {
         const d = await r.json().catch(() => ({}));
-        toast.error(d?.error === "not_owner" ? t("sup.notOwnerAction", { name: d?.ownerName || t("sup.operator") }) : t("sup.errPrefix"));
+        toast.error(d?.error === "not_owner" ? t("sup.notOwnerAction", { name: d?.ownerName || t("sup.operator") }) : t("sup.deleteFailed"));
       }
       await loadThread();
     });
@@ -374,7 +390,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        toast.error(d?.error === "not_owner" ? t("sup.notOwnerAction", { name: d?.ownerName || t("sup.operator") }) : t("sup.errPrefix"));
+        toast.error(d?.error === "not_owner" ? t("sup.notOwnerAction", { name: d?.ownerName || t("sup.operator") }) : t("sup.archiveFailed"));
         return;
       }
       onArchived();

@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { isEffectivelyOnline, withPresenceFallback } from "@/lib/presence";
 
+const REASSIGN_OFFLINE_GRACE_MINUTES = 10;
+
 const STALE_MINUTES = 15;
 
 export async function reassignStaleThread(customerId: string): Promise<boolean> {
@@ -26,7 +28,9 @@ export async function reassignStaleThread(customerId: string): Promise<boolean> 
 
   const waitedMs = now - Math.max(lastCustomer, lastReply);
   const isStale = lastCustomer > lastReply && waitedMs > STALE_MINUTES * 60 * 1000;
-  const operatorOffline = op ? !isEffectivelyOnline(op, now) : true;
+  // Egalikni olib qo'yish uchun kengroq muhlat (10 daq): telefon qulflanishi /
+  // ilova almashishida JS to'xtaydi — qisqa uzilish suhbatni olib qo'ymasin.
+  const operatorOffline = op ? !isEffectivelyOnline(op, now, REASSIGN_OFFLINE_GRACE_MINUTES) : true;
 
   if (operatorOffline || isStale) {
     await supabase.from("telegram_support_threads").update({
