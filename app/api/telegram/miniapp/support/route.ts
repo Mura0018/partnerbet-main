@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiCredential } from "@/lib/auth/apiCredentials";
 import { resolveMiniApp } from "@/lib/telegram/resolveMiniApp";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { isEffectivelyOnline, withPresenceFallback } from "@/lib/presence";
 import { notifyOperatorsSupportMessage } from "@/lib/telegram/notifyStaff";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { reassignStaleThread } from "@/lib/support/staleReassign";
@@ -198,13 +199,14 @@ export async function POST(req: NextRequest) {
     .eq("customer_id", customerId)
     .maybeSingle();
   if (freshThread?.claimed_by) {
-    const { data: op } = await supabase
-      .from("profiles")
-      .select("is_online")
-      .eq("id", freshThread.claimed_by)
-      .maybeSingle();
+    const ownerId = freshThread.claimed_by;
+    const op = await withPresenceFallback<{ is_online: boolean | null; last_seen_at?: string | null }>(
+      () => supabase.from("profiles").select("is_online, last_seen_at").eq("id", ownerId).maybeSingle(),
+      () => supabase.from("profiles").select("is_online").eq("id", ownerId).maybeSingle()
+    );
     // Bitta suhbat davomida BIR MARTA (1.1): atomik busy_notified_at belgisi.
-    if (op && !op.is_online && (await claimSupportBusyNotice(supabase, customerId))) {
+    // Onlayn = is_online + heartbeat (lib/presence.ts).
+    if (op && !isEffectivelyOnline(op) && (await claimSupportBusyNotice(supabase, customerId))) {
       // Tizim xabari; 0104 yo'q bo'lsa eski usulda (o'sha operator nomidan).
       await insertSupportSystemMessage(
         supabase,

@@ -5,7 +5,7 @@ import { formatPhone, formatAccountId, formatTime } from "@/lib/format";
 import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { Wallet, Users as UsersIcon, MapPin, MessageCircle, Send, CreditCard, Check, Loader2, X, Headset, CheckCircle2, AlertCircle, UserCheck, Search, Paperclip, ChevronLeft, Mic, Trash2, Reply, Palette, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase";
-import { Can } from "@/lib/auth/permissions";
+import { Can, usePermission } from "@/lib/auth/permissions";
 import { useHistoryNav } from "@/lib/nav/useHistoryNav";
 import { useVoiceRecorder, blobToBase64, formatDuration } from "@/lib/audio/useVoiceRecorder";
 import { LuxuryCard } from "@/lib/ui/LuxuryCard";
@@ -140,6 +140,8 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
   const [claimedBy, setClaimedBy] = useState(thread.claimed_by);
   const [claimedByName, setClaimedByName] = useState(thread.claimed_by_name);
   const [linkedOrder, setLinkedOrder] = useState<any>(null);
+  // Egasi bor suhbatni olish faqat rahbarga (telegram_operators.manage).
+  const canTakeOver = usePermission("telegram_operators.manage") === true;
   const [orderFlipped, setOrderFlipped] = useState(false);
   const [replyTo, setReplyTo] = useState<SupportMsg | null>(null);
   const [myTheme, setMyTheme] = useState<string>("blue");
@@ -165,6 +167,22 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       .order("created_at", { ascending: false })
       .limit(THREAD_PAGE);
     const batch = ((data as any[]) ?? []).slice().reverse() as SupportMsg[];
+    // Egalik ham yangilanib tursin (boshqa operator/cron/rahbar o'zgartirgan
+    // bo'lishi mumkin) — banner va "O'zimga olish" holati eskirmasin.
+    try {
+      const { data: own } = await supabase
+        .from("telegram_support_threads")
+        .select("claimed_by, profiles!claimed_by(display_name, full_name)")
+        .eq("customer_id", thread.customer_id)
+        .maybeSingle();
+      if (own) {
+        const o = own as any;
+        setClaimedBy(o.claimed_by ?? null);
+        setClaimedByName(o.profiles?.display_name || o.profiles?.full_name || null);
+      }
+    } catch {
+      /* best-effort */
+    }
     setMsgs((prev) => {
       // Birinchi yuklash: "yana bor"mi — sahifa to'liq bo'lsa.
       if (prev.length === 0) {
@@ -312,6 +330,10 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       // Polling birlashtirishi eski sahifalarni saqlaydi — o'chirilgan xabar
       // ham ekranda qolmasligi uchun mahalliy holatdan olib tashlanadi.
       if (r.ok) setMsgs((prev) => prev.filter((m) => m.id !== id));
+      else {
+        const d = await r.json().catch(() => ({}));
+        toast.error(d?.error === "not_owner" ? t("sup.notOwnerAction", { name: d?.ownerName || t("sup.operator") }) : t("sup.deleteFailed"));
+      }
       await loadThread();
     });
   };
@@ -361,11 +383,16 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
   const archive = async () => {
     setArchiving(true);
     try {
-      await fetch("/api/admin/telegram-orders/support-archive", {
+      const res = await fetch("/api/admin/telegram-orders/support-archive", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id, archived: true }),
       });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        toast.error(d?.error === "not_owner" ? t("sup.notOwnerAction", { name: d?.ownerName || t("sup.operator") }) : t("sup.archiveFailed"));
+        return;
+      }
       onArchived();
     } finally {
       setArchiving(false);
@@ -383,8 +410,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          console.error("[support] yakunlanmadi:", data.error);
-          toast.error(t("sup.errPrefix"));
+          toast.error(data?.error === "not_owner" ? t("sup.notOwnerAction", { name: data?.ownerName || t("sup.operator") }) : t("sup.errPrefix"));
         } else {
           toast.success(t("sup.endSent"));
         }
@@ -404,7 +430,11 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id, takeOver: true }),
       });
-      if (!res.ok) { toast.error(t("sup.claimFailed")); return; }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        toast.error(d?.error === "takeover_forbidden" ? t("sup.takeOverManagerOnly") : t("sup.claimFailed"));
+        return;
+      }
     } catch {
       toast.error(t("sup.claimFailed"));
       return;
@@ -442,7 +472,13 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       {claimedBy && claimedBy !== currentUserId ? (
         <div className="flex items-center justify-between gap-2 px-5 py-2 bg-[#F4C76A]/10 backdrop-blur-md border-b border-[#F4C76A]/15 shrink-0">
           <span className="text-[11px] text-[#F4C76A]">🔵 {claimedByName || t("sup.otherOp")} {t("sup.answering")}</span>
-          <button onClick={takeOver} className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white">{t("sup.takeOver")}</button>
+          {/* 2-band: egasi bor suhbatni faqat rahbar oladi — oddiy operatorga
+              tugma o'rniga sabab yoziladi. */}
+          {canTakeOver ? (
+            <button onClick={takeOver} className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white">{t("sup.takeOver")}</button>
+          ) : (
+            <span className="shrink-0 text-[10px] text-[#F4C76A]/80 text-right max-w-[55%]">{t("sup.takeOverManagerOnly")}</span>
+          )}
         </div>
       ) : claimedBy === currentUserId ? (
         <div className="px-5 py-1.5 bg-accent/10 backdrop-blur-md border-b border-accent/10 shrink-0">

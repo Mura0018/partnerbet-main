@@ -10,6 +10,7 @@ import { LuxuryCard } from "@/lib/ui/LuxuryCard";
 import { chatThemeGradient } from "@/lib/ui/chatThemes";
 import { ThemePicker } from "@/lib/ui/ThemePicker";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { isEffectivelyOnline, presenceCutoffIso, withPresenceFallback } from "@/lib/presence";
 import { useSiteTimezone } from "@/lib/site/SiteTimezoneProvider";
 import { formatTime } from "@/lib/format";
 import { toast } from "@/lib/ui/toast";
@@ -42,7 +43,7 @@ type ChatMessage = {
   reply_to_id: string | null;
   is_system: boolean;
   event_type: string | null;
-  profiles: { full_name: string | null; display_name: string | null; avatar_url: string | null; is_online: boolean | null; roles: { key: string } | null } | null;
+  profiles: { last_seen_at?: string | null; full_name: string | null; display_name: string | null; avatar_url: string | null; is_online: boolean | null; roles: { key: string } | null } | null;
 };
 
 
@@ -80,11 +81,14 @@ export function ChatTab() {
   const { confirm, confirmDialog } = useConfirm();
 
   const load = async () => {
-    const { data } = await supabase
-      .from("team_chat_messages")
-      .select("id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, is_system, event_type, profiles!sender_id(full_name, display_name, avatar_url, is_online, roles(key))")
-      .order("created_at", { ascending: true })
-      .limit(100);
+    // last_seen_at (0106) — onlayn nuqta haqiqiy holatni ko'rsatsin; ustun
+    // yo'q bo'lsa eski so'rov.
+    const msgCols = (extra: string) =>
+      `id, message, image_path, file_name, voice_path, voice_duration_seconds, created_at, sender_id, reply_to_id, is_system, event_type, profiles!sender_id(full_name, display_name, avatar_url, is_online${extra}, roles(key))`;
+    const data = await withPresenceFallback<any[]>(
+      () => supabase.from("team_chat_messages").select(msgCols(", last_seen_at")).order("created_at", { ascending: true }).limit(100),
+      () => supabase.from("team_chat_messages").select(msgCols("")).order("created_at", { ascending: true }).limit(100)
+    );
     setMessages((data as any[]) ?? []);
     await markSeenAndClearSystemMessages((data as any[]) ?? []);
   };
@@ -144,12 +148,23 @@ export function ChatTab() {
       .then((r) => r.json())
       .then((d) => { if (typeof d.text === "string") setRules(d.text); })
       .catch(() => {});
-    supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true)
-      .eq("is_online", true)
-      .then(({ count }) => setOnlineCount(count ?? 0));
+    // Haqiqiy onlayn soni: is_online + so'nggi N daqiqada heartbeat (0106).
+    // Ustun yo'q bo'lsa (xato) eski hisob.
+    (async () => {
+      const withCol = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true)
+        .eq("is_online", true)
+        .gt("last_seen_at", presenceCutoffIso());
+      if (!withCol.error) { setOnlineCount(withCol.count ?? 0); return; }
+      const legacy = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true)
+        .eq("is_online", true);
+      setOnlineCount(legacy.count ?? 0);
+    })();
   }, []);
 
   const saveRules = async () => {
@@ -433,8 +448,8 @@ export function ChatTab() {
                   </div>
                 )}
                 <span
-                  className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#0a1224] ${m.profiles?.is_online ? "bg-[#4ADE80]" : "bg-[#5b6f85]"}`}
-                  title={m.profiles?.is_online ? t("cht.opActive") : t("cht.opBusy")}
+                  className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#0a1224] ${isEffectivelyOnline(m.profiles) ? "bg-[#4ADE80]" : "bg-[#5b6f85]"}`}
+                  title={isEffectivelyOnline(m.profiles) ? t("cht.opActive") : t("cht.opBusy")}
                 />
               </div>
               <div className={`min-w-0 max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>

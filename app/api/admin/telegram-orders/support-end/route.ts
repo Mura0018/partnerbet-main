@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { checkThreadOwnership, SUPPORT_OVERRIDE_PERMISSION } from "@/lib/support/ownership";
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -19,6 +20,10 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createAdminClient();
+  // 3-band: faqat suhbat egasi, egasiz suhbat yoki rahbar (telegram_operators.manage).
+  const { data: canOverride } = await supabase.rpc("has_permission", { perm_key: SUPPORT_OVERRIDE_PERMISSION });
+  const own = await checkThreadOwnership(admin, String(customerId), user.id, !!canOverride);
+  if (!own.ok) return NextResponse.json({ error: "not_owner", ownerId: own.ownerId, ownerName: own.ownerName }, { status: 409 });
 
   // Mijozga "hal bo'ldimi?" so'rovi (maxsus xabar). Frontend __END_CONFIRM__
   // belgisini tanib, Ha/Yo'q tugmalarini ko'rsatadi.
