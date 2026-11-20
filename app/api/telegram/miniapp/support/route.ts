@@ -156,10 +156,9 @@ export async function POST(req: NextRequest) {
     last_customer_message_at: nowIso,
   };
   if (linkedOrderId) threadPayload.linked_order_id = linkedOrderId;
-  if (servedBy && !existingThread?.claimed_by) {
-    threadPayload.claimed_by = servedBy;
-    threadPayload.claimed_at = nowIso;
-  }
+  // Egalik bu yerda payload orqali EMAS — upsert'dan keyin ATOMIK (pastda):
+  // aks holda "tekshir, keyin yoz" oralig'ida operator olgan egalik ustidan
+  // yozilib, uning keyingi javobi rad etilishi mumkin edi.
 
   // Suhbat boshida bir marta avto-kirish xabari (operator nomidan).
   if (!existingThread?.auto_greeted) {
@@ -181,6 +180,13 @@ export async function POST(req: NextRequest) {
     threadPayload,
     { onConflict: "customer_id" }
   );
+  if (servedBy) {
+    await supabase
+      .from("telegram_support_threads")
+      .update({ claimed_by: servedBy, claimed_at: nowIso })
+      .eq("customer_id", customerId)
+      .is("claimed_by", null);
+  }
 
   // 15 daqiqa javobsizlik yoki operator band bo'lsa — jamoaga qaytarish.
   const wasReassigned = await reassignStaleThread(customerId);

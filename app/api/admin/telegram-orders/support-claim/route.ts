@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { claimThreadIfUnclaimed } from "@/lib/support/ownership";
 
 // Murojaatni o'z zimmasiga olish (support-archive naqshi). Ilgari brauzer
 // telegram_support_threads'ga to'g'ridan-to'g'ri upsert qilardi (claimed_by
@@ -29,15 +30,11 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
+  // 3-band: avto-olish ATOMIK (shartli UPDATE, `claimed_by is null`) — avval
+  // "tekshir, keyin yoz" edi va ikki operator bir vaqtda olishi mumkin edi.
   if (!takeOver) {
-    const { data: existing } = await admin
-      .from("telegram_support_threads")
-      .select("claimed_by")
-      .eq("customer_id", customerId)
-      .maybeSingle();
-    if (existing?.claimed_by) {
-      return NextResponse.json({ ok: true, claimed: false });
-    }
+    const claimed = await claimThreadIfUnclaimed(admin, customerId, user.id);
+    return NextResponse.json({ ok: true, claimed });
   }
 
   const { error } = await admin

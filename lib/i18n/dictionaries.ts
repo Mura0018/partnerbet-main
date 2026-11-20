@@ -476,7 +476,7 @@ export const dictionaries = {
       staffTitle: "🟦 DedPay — yangi murojaat", staffCustomer: "Mijoz", staffOpen: "Javob berish", staffImage: "🖼 Rasm", staffVoice: "🎤 Ovozli xabar",
     },
     sup: {
-      imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…", imgFailed: "Rasm ochilmadi", voiceFailed: "Ovozli xabar yuborilmadi (hajmi yoki davomiyligi chegaradan oshgan bo'lishi mumkin).", waitingFor: "{t} javobsiz", waitMin: "{n} daq", waitHour: "{n} soat", waitDay: "{n} kun", imgRetry: "Qayta urinish", claimFailed: "Murojaatni o'z zimmangizga olib bo'lmadi. Qayta urining.",
+      imgLoading: "Rasm yuklanmoqda…", audioLoading: "Yuklanmoqda…", imgFailed: "Rasm ochilmadi", voiceFailed: "Ovozli xabar yuborilmadi (hajmi yoki davomiyligi chegaradan oshgan bo'lishi mumkin).", waitingFor: "{t} javobsiz", notOwner: "Bu suhbat {name} operatorga biriktirilgan. Javob berish uchun avval \"O'zimga olish\" tugmasini bosing.", replyFailed: "Xabar yuborilmadi. Qayta urining.", waitMin: "{n} daq", waitHour: "{n} soat", waitDay: "{n} kun", imgRetry: "Qayta urinish", claimFailed: "Murojaatni o'z zimmangizga olib bo'lmadi. Qayta urining.",
       tpl1: "Assalomu alaykum! Sizga qanday yordam bera olamiz?",
       tpl2: "So'rovingiz ko'rib chiqilmoqda, biroz kuting.",
       tpl3: "Iltimos, to'lov chekining aniqroq skrinshotini yuboring.",
@@ -1239,7 +1239,7 @@ export const dictionaries = {
       staffTitle: "🟦 DedPay — новое обращение", staffCustomer: "Клиент", staffOpen: "Ответить", staffImage: "🖼 Изображение", staffVoice: "🎤 Голосовое сообщение",
     },
     sup: {
-      imgLoading: "Изображение загружается…", audioLoading: "Загрузка…", imgFailed: "Изображение не открылось", voiceFailed: "Голосовое не отправлено (возможно, превышен размер или длительность).", waitingFor: "без ответа {t}", waitMin: "{n} мин", waitHour: "{n} ч", waitDay: "{n} д", imgRetry: "Повторить", claimFailed: "Не удалось взять обращение. Попробуйте снова.",
+      imgLoading: "Изображение загружается…", audioLoading: "Загрузка…", imgFailed: "Изображение не открылось", voiceFailed: "Голосовое не отправлено (возможно, превышен размер или длительность).", waitingFor: "без ответа {t}", notOwner: "Этот диалог закреплён за оператором {name}. Чтобы ответить, сначала нажмите «Взять себе».", replyFailed: "Сообщение не отправлено. Попробуйте снова.", waitMin: "{n} мин", waitHour: "{n} ч", waitDay: "{n} д", imgRetry: "Повторить", claimFailed: "Не удалось взять обращение. Попробуйте снова.",
       tpl1: "Здравствуйте! Чем можем помочь?",
       tpl2: "Ваш запрос рассматривается, немного подождите.",
       tpl3: "Пожалуйста, отправьте более чёткий скриншот чека об оплате.",

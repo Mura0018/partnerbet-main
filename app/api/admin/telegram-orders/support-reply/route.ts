@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { ensureReplyOwnership, SUPPORT_OVERRIDE_PERMISSION } from "@/lib/support/ownership";
 import { resetSupportNoticeFlags } from "@/lib/support/messages";
 import { sendTelegramMessage, buildSupportReplyMessage } from "@/lib/telegram/notify";
 
@@ -13,8 +14,10 @@ async function requireOrdersManage() {
 
   const { data: allowed } = await supabase.rpc("has_permission", { perm_key: "telegram_orders.manage" });
   if (!allowed) return { ok: false as const, status: 403 };
+  // Rahbar (telegram_operators.manage) boshqa operator suhbatiga ham javob bera oladi.
+  const { data: canOverride } = await supabase.rpc("has_permission", { perm_key: SUPPORT_OVERRIDE_PERMISSION });
 
-  return { ok: true as const, userId: user.id };
+  return { ok: true as const, userId: user.id, canOverride: !!canOverride };
 }
 
 // Routed through here (not a direct client insert) so a reply always also
@@ -32,6 +35,11 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
   const text = String(message).trim().slice(0, 2000);
+
+  // 3-band: egalik — egasi bo'lsa o'zi, egasiz bo'lsa atomik olinadi,
+  // boshqanikiga faqat rahbar. Rad etilsa aniq xato (UI xabar ko'rsatadi).
+  const own = await ensureReplyOwnership(admin, String(customerId), check.userId, check.canOverride);
+  if (!own.ok) return NextResponse.json({ error: "not_owner", ownerId: own.ownerId, ownerName: own.ownerName }, { status: 409 });
 
   const { data: inserted, error } = await admin
     .from("telegram_support_messages")
@@ -63,5 +71,5 @@ export async function POST(req: NextRequest) {
     await sendTelegramMessage(customer.telegram_id, buildSupportReplyMessage(text));
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, claimedNow: own.claimedNow });
 }

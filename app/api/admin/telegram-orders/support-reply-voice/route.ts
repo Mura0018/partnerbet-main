@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { createAdminClient } from "@/lib/supabaseAdmin";
+import { ensureReplyOwnership, SUPPORT_OVERRIDE_PERMISSION } from "@/lib/support/ownership";
 import { resetSupportNoticeFlags } from "@/lib/support/messages";
 import { sendTelegramMessage } from "@/lib/telegram/notify";
 
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
 
   const { data: allowed } = await supabase.rpc("has_permission", { perm_key: "telegram_orders.manage" });
   if (!allowed) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const { data: canOverride } = await supabase.rpc("has_permission", { perm_key: SUPPORT_OVERRIDE_PERMISSION });
 
   const body = await req.json().catch(() => null);
   const { customerId, audioBase64, mimeType, durationSeconds } = body ?? {};
@@ -52,6 +54,10 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createAdminClient();
+  // 3-band: egalik fayl yuklanishidan OLDIN tekshiriladi (rad etilsa yetim fayl qolmasin).
+  const own = await ensureReplyOwnership(admin, String(customerId), user.id, !!canOverride);
+  if (!own.ok) return NextResponse.json({ error: "not_owner", ownerId: own.ownerId, ownerName: own.ownerName }, { status: 409 });
+
   let buffer: Buffer;
   try {
     buffer = Buffer.from(audioBase64, "base64");
@@ -104,5 +110,5 @@ export async function POST(req: NextRequest) {
     await sendTelegramMessage(customer.telegram_id, "🟦 DedPay\n\n🎤 Operatordan ovozli xabar keldi. Ilovada tinglang.");
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, claimedNow: own.claimedNow });
 }

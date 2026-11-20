@@ -23,6 +23,11 @@ type SupportThread = {
   // vaqti (null = javob berilgan / mijoz xabari yo'q).
   unanswered_since: string | null;
 };
+// Operator suhbat oynasida bir sahifadagi xabarlar soni (mijoz tomoni bilan bir xil).
+const THREAD_PAGE = 50;
+// Ro'yxat: faol suhbatlar (amalda kichik) va oxirgi arxivlanganlar.
+const ACTIVE_THREADS_LIMIT = 500;
+const ARCHIVED_THREADS_LIMIT = 200;
 // Shu daqiqadan uzoq javobsiz turgan suhbat ajralib turadi (staleReassign
 // bilan bir xil 15 daqiqa).
 const SUPPORT_WAIT_ALERT_MIN = 15;
@@ -145,14 +150,60 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
   const supabase = createClient();
   const { confirm, confirmDialog } = useConfirm();
 
+  // Mijoz tomonidagi naqsh (miniapp/support GET): oxirgi THREAD_PAGE ta xabar
+  // (desc + reverse); tepaga scroll qilinganda eskilari `before` bilan.
+  // Avval eng ESKI 200 ta yuklanardi — uzun suhbatda yangi xabar ko'rinmasdi.
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const MSG_COLS = "id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at";
+
   const loadThread = async () => {
     const { data } = await supabase
       .from("telegram_support_messages")
-      .select("id, sender, message, image_path, file_name, voice_path, voice_duration_seconds, reply_to_id, created_at")
+      .select(MSG_COLS)
       .eq("customer_id", thread.customer_id)
-      .order("created_at", { ascending: true })
-      .limit(200);
-    setMsgs((data as any[]) ?? []);
+      .order("created_at", { ascending: false })
+      .limit(THREAD_PAGE);
+    const batch = ((data as any[]) ?? []).slice().reverse() as SupportMsg[];
+    setMsgs((prev) => {
+      // Birinchi yuklash: "yana bor"mi — sahifa to'liq bo'lsa.
+      if (prev.length === 0) {
+        setHasMoreOlder(batch.length === THREAD_PAGE);
+        return batch;
+      }
+      // Polling: oxirgi sahifa yangilanadi, ilgari yuklangan ESKI xabarlar saqlanadi.
+      const oldestNewMs = batch.length ? Date.parse(batch[0].created_at) : Infinity;
+      const older = prev.filter((m) => Date.parse(m.created_at) < oldestNewMs);
+      return [...older, ...batch];
+    });
+  };
+
+  const loadOlder = async () => {
+    if (loadingOlder || !hasMoreOlder || msgs.length === 0) return;
+    const list = listRef.current;
+    const prevHeight = list?.scrollHeight ?? 0;
+    setLoadingOlder(true);
+    try {
+      const { data } = await supabase
+        .from("telegram_support_messages")
+        .select(MSG_COLS)
+        .eq("customer_id", thread.customer_id)
+        .lt("created_at", msgs[0].created_at)
+        .order("created_at", { ascending: false })
+        .limit(THREAD_PAGE);
+      const older = ((data as any[]) ?? []).slice().reverse() as SupportMsg[];
+      setHasMoreOlder(older.length === THREAD_PAGE);
+      if (older.length) {
+        setMsgs((prev) => [...older.filter((o) => !prev.some((p) => p.id === o.id)), ...prev]);
+        // Scroll joyi saqlanadi (yuqoriga qo'shilgan balandlik qadar suriladi).
+        requestAnimationFrame(() => {
+          const el = listRef.current;
+          if (el) el.scrollTop = el.scrollHeight - prevHeight;
+        });
+      }
+    } finally {
+      setLoadingOlder(false);
+    }
   };
 
   // Tab yashirin (active=false) paytda polling to'xtaydi; qaytganda darhol
@@ -221,13 +272,30 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
     if (sending || !text.trim()) return;
     setSending(true);
     try {
-      await fetch("/api/admin/telegram-orders/support-reply", {
+      const res = await fetch("/api/admin/telegram-orders/support-reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id, message: text.trim(), replyToId: replyTo?.id ?? null }),
       });
+      const data = await res.json().catch(() => ({}));
+      // Avval natija tekshirilmasdi — yozilgan matn jim yo'qolardi. Endi xato
+      // bo'lsa matn joyida qoladi va aniq sabab ko'rsatiladi.
+      if (!res.ok) {
+        if (data?.error === "not_owner") {
+          // Banner egani va "O'zimga olish" tugmasini ko'rsatsin (holat eskirgan bo'lishi mumkin).
+          setClaimedBy(data?.ownerId ?? null);
+          setClaimedByName(data?.ownerName ?? null);
+        }
+        toast.error(
+          data?.error === "not_owner"
+            ? t("sup.notOwner", { name: data?.ownerName || t("sup.operator") })
+            : t("sup.replyFailed")
+        );
+        return;
+      }
       setText("");
       setReplyTo(null);
+      if (data?.claimedNow) setClaimedBy(currentUserId);
       await loadThread();
     } finally {
       setSending(false);
@@ -236,11 +304,14 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
 
   const deleteMessage = (id: string) => {
     confirm(t("sup.confirmDeleteMsg"), async () => {
-      await fetch("/api/admin/telegram-orders/support-delete-message", {
+      const r = await fetch("/api/admin/telegram-orders/support-delete-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messageId: id }),
       });
+      // Polling birlashtirishi eski sahifalarni saqlaydi — o'chirilgan xabar
+      // ham ekranda qolmasligi uchun mahalliy holatdan olib tashlanadi.
+      if (r.ok) setMsgs((prev) => prev.filter((m) => m.id !== id));
       await loadThread();
     });
   };
@@ -266,7 +337,21 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
         body: JSON.stringify({ customerId: thread.customer_id, audioBase64, mimeType: recorded.mimeType, durationSeconds: recorded.durationSeconds }),
       });
       // Avval javob tekshirilmasdi — chegaradan oshgan ovoz jim yo'qolardi.
-      if (!res.ok) toast.error(t("sup.voiceFailed"));
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.error === "not_owner") {
+          setClaimedBy(data?.ownerId ?? null);
+          setClaimedByName(data?.ownerName ?? null);
+        }
+        toast.error(
+          data?.error === "not_owner"
+            ? t("sup.notOwner", { name: data?.ownerName || t("sup.operator") })
+            : t("sup.voiceFailed")
+        );
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (data?.claimedNow) setClaimedBy(currentUserId);
+      }
       await loadThread();
     } finally {
       setSending(false);
@@ -396,9 +481,11 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
 
       <div
         ref={listRef}
+        onScroll={(e) => { if (e.currentTarget.scrollTop < 60) void loadOlder(); }}
         className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "18px 18px" }}
       >
+        {loadingOlder && <div className="flex justify-center py-1"><Loader2 size={14} className="animate-spin text-muted" /></div>}
         {msgs.length === 0 && <p className="text-[12px] text-muted text-center mt-8">{t("sup.noMessages")}</p>}
         {msgs.map((m) => {
           const quoted = messageById(m.reply_to_id);
@@ -529,8 +616,70 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
     supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
   }, []);
 
+  // 1b: ro'yxat THREAD jadvalidan (0105: last_message_at/preview/kind,
+  // first_unanswered_at — trigger to'ldiradi). Avval global 300 xabarlik
+  // oynadan qurilardi: faol mijozlar ko'payganda eski suhbatlar tushib qolardi.
+  // 0105 qo'yilmagan bo'lsa (ustun yo'q) false -> eski usul (loadThreadsLegacy).
+  const loadThreadsFromTable = async (): Promise<boolean> => {
+    const cols =
+      "customer_id, is_archived, claimed_by, last_message_at, last_message_preview, last_message_kind, first_unanswered_at, customers(phone, full_name), profiles!claimed_by(display_name, full_name)";
+    const [act, arc, waitingRes] = await Promise.all([
+      supabase
+        .from("telegram_support_threads")
+        .select(cols)
+        .eq("is_archived", false)
+        .not("last_message_at", "is", null)
+        .order("last_message_at", { ascending: false })
+        .limit(ACTIVE_THREADS_LIMIT),
+      supabase
+        .from("telegram_support_threads")
+        .select(cols)
+        .eq("is_archived", true)
+        .not("last_message_at", "is", null)
+        .order("last_message_at", { ascending: false })
+        .limit(ARCHIVED_THREADS_LIMIT),
+      // Javobsizlar alohida (eng eskisi birinchi) — oxirgi faollik chegarasidan
+      // tashqarida qolib ketmasin.
+      supabase
+        .from("telegram_support_threads")
+        .select(cols)
+        .eq("is_archived", false)
+        .not("first_unanswered_at", "is", null)
+        .order("first_unanswered_at", { ascending: true })
+        .limit(ACTIVE_THREADS_LIMIT),
+    ]);
+    if (act.error || arc.error || waitingRes.error) return false;
+    const toThread = (r: any): SupportThread => ({
+      customer_id: r.customer_id,
+      phone: r.customers?.phone ?? "—",
+      full_name: r.customers?.full_name ?? null,
+      last_message: r.last_message_preview ?? null,
+      last_image: r.last_message_kind === "image",
+      last_at: r.last_message_at,
+      claimed_by: r.claimed_by ?? null,
+      claimed_by_name: r.profiles?.display_name || r.profiles?.full_name || null,
+      unanswered_since: r.first_unanswered_at ?? null,
+    });
+    const activeMap = new Map<string, SupportThread>();
+    for (const r of [...((act.data as any[]) ?? []), ...((waitingRes.data as any[]) ?? [])]) {
+      if (r?.last_message_at && !activeMap.has(r.customer_id)) activeMap.set(r.customer_id, toThread(r));
+    }
+    const activeRows = Array.from(activeMap.values()).sort((a, b) => Date.parse(b.last_at) - Date.parse(a.last_at));
+    const archivedRows = ((arc.data as any[]) ?? []).map(toThread);
+    setThreads([...activeRows, ...archivedRows]);
+    setArchivedIds(new Set(archivedRows.map((r) => r.customer_id)));
+    return true;
+  };
+
   const loadThreads = async (isInitial = false) => {
     if (isInitial) setLoading(true);
+    const ok = await loadThreadsFromTable();
+    if (!ok) await loadThreadsLegacy();
+    if (isInitial) setLoading(false);
+  };
+
+  // Eski usul (0105 qo'yilgunga qadar zaxira): global 300 xabarlik oyna.
+  const loadThreadsLegacy = async () => {
     // sender + is_system (0104) — "javobsiz" hisobi uchun. is_system ustuni
     // hali yo'q bo'lsa (0104 qo'yilmagan) ustunsiz qayta so'raladi.
     const loadMsgs = (cols: string) =>
@@ -590,7 +739,6 @@ export function SupportTab({ active = true }: { active?: boolean } = {}) {
     // ko'rinishda qo'llanadi (arxiv avvalgidek).
     setThreads(Array.from(grouped.values()));
     setArchivedIds(new Set((threadRows ?? []).filter((r: any) => r.is_archived).map((r: any) => r.customer_id)));
-    if (isInitial) setLoading(false);
   };
 
   useEffect(() => {
