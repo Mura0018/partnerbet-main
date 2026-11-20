@@ -53,3 +53,25 @@ export async function ensureReplyOwnership(
   const o = owner as { display_name: string | null; full_name: string | null } | null;
   return { ok: false, ownerId, ownerName: o?.display_name || o?.full_name || null };
 }
+
+// 3-band: yakunlash / arxivlash / xabarni o'chirish — javob bilan bir xil
+// qoida, lekin egalik OLINMAYDI: egasi shu operator, egasiz suhbat yoki
+// rahbar (canOverride) bo'lsa ruxsat; aks holda egasi ma'lumoti bilan rad.
+export async function checkThreadOwnership(
+  admin: SupabaseClient,
+  customerId: string,
+  userId: string,
+  canOverride: boolean
+): Promise<ReplyOwnership> {
+  if (canOverride) return { ok: true, claimedNow: false };
+  const { data: thr } = await admin
+    .from("telegram_support_threads")
+    .select("claimed_by")
+    .eq("customer_id", customerId)
+    .maybeSingle();
+  const ownerId = (thr as { claimed_by: string | null } | null)?.claimed_by ?? null;
+  if (!ownerId || ownerId === userId) return { ok: true, claimedNow: false };
+  const { data: owner } = await admin.from("profiles").select("display_name, full_name").eq("id", ownerId).maybeSingle();
+  const o = owner as { display_name: string | null; full_name: string | null } | null;
+  return { ok: false, ownerId, ownerName: o?.display_name || o?.full_name || null };
+}

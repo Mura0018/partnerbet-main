@@ -314,6 +314,10 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
       // Polling birlashtirishi eski sahifalarni saqlaydi — o'chirilgan xabar
       // ham ekranda qolmasligi uchun mahalliy holatdan olib tashlanadi.
       if (r.ok) setMsgs((prev) => prev.filter((m) => m.id !== id));
+      else {
+        const d = await r.json().catch(() => ({}));
+        toast.error(d?.error === "not_owner" ? t("sup.notOwnerAction", { name: d?.ownerName || t("sup.operator") }) : t("sup.errPrefix"));
+      }
       await loadThread();
     });
   };
@@ -363,11 +367,16 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
   const archive = async () => {
     setArchiving(true);
     try {
-      await fetch("/api/admin/telegram-orders/support-archive", {
+      const res = await fetch("/api/admin/telegram-orders/support-archive", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: thread.customer_id, archived: true }),
       });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        toast.error(d?.error === "not_owner" ? t("sup.notOwnerAction", { name: d?.ownerName || t("sup.operator") }) : t("sup.errPrefix"));
+        return;
+      }
       onArchived();
     } finally {
       setArchiving(false);
@@ -385,8 +394,7 @@ function SupportThreadView({ thread, currentUserId, onBack, onArchived, active =
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          console.error("[support] yakunlanmadi:", data.error);
-          toast.error(t("sup.errPrefix"));
+          toast.error(data?.error === "not_owner" ? t("sup.notOwnerAction", { name: data?.ownerName || t("sup.operator") }) : t("sup.errPrefix"));
         } else {
           toast.success(t("sup.endSent"));
         }
